@@ -1,13 +1,17 @@
 {
-  "fecha": "2026-06-29",
+  "fecha": "2026-07-06",
   "noticias": [
     {
-      "titular": " Lo s agentes autó nom os de IA ya funcio nan si n se rvi do r es ce ntra les: la revol ución lleg ó a tu negoci o",
-      "url": "/noticias-ia/clau-de-fabl-e-5-los-agente-s-ia-que-tra-bajan-dia/"
+      "titular": "Claude Fable 5 regresa: Anthropic superó a OpenAI en ingresos esta semana",
+      "url": "/noticias-ia/anthropic-derroto-a-openai-claude-fable-5-restaura/"
     },
     {
-      "titular": "OpenAI frena su lanzamiento: GPT-5.6 solo para empresas aprobadas por gobierno",
-      "url": "/noticias-ia/el-nuevo-modelo-gpt-5-6-sol-terra-y-luna-ya-es-rea/"
+      "titular": "La IA científica despega: Anthropic entra en descubrimiento de medicamentos",
+      "url": "/noticias-ia/anthropic-entra-en-ciencia-claude-lanza-herramient/"
+    },
+    {
+      "titular": "Agentic AI despega: los robots digitales ya trabajan sin supervisión humana",
+      "url": "/noticias-ia/agentes-de-ia-autonomos-de-la-teoria-al-trabajo-re/"
     }
   ]
 }
