@@ -33,7 +33,7 @@ const TEMAS = {
     titulo: "📰 Noticiero IA — la semana en IA",
     investiga: true,
     instruccion: "Carrusel NOTICIERO con las 3-4 noticias de IA más importantes de los últimos 7 días (reales, de la búsqueda web), explicadas para un dueño de negocio.",
-    template: `EDITORIAL TECH NEWSLETTER style (tipo "The Rundown AI"): fondo crema #f2efe6, texto NEGRO, UN acento verde menta #9ef0c0 como marcador detrás de 1-2 palabras clave. Tipografía rounded grotesque bold, muy legible. Portada con foto cinematográfica real + efecto papel rasgado. Slides con foto arriba + titular + dato + sección "Cómo afecta". Minimal, premium, serio. Badge de número arriba a la derecha. NO colorido, NO clip-art.`,
+    template: `EDITORIAL TECH NEWSLETTER style (tipo "The Rundown AI"): fondo crema #f2efe6, texto NEGRO, UN acento verde menta #9ef0c0 como marcador detrás de 1-2 palabras clave. Tipografía rounded grotesque bold, muy legible. Portada con foto cinematográfica real + efecto papel rasgado. Cada slide: foto real arriba y debajo el copy como diseño editorial (una frase grande + una cifra clave resaltada + una línea corta de cierre "Cómo afecta"). Minimal, premium, serio. Badge de número arriba a la derecha. NO colorido, NO clip-art.`,
   },
   miercoles: {
     titulo: "🏭 IA por industria — casos concretos",
@@ -49,6 +49,11 @@ const TEMAS = {
   },
 };
 const tema = TEMAS[dia];
+
+// Regla dura anti "titular:/subtítulo:": el modelo tiende a renderizar literalmente
+// cualquier palabra estructural del prompt, así que se lo prohibimos explícitamente
+// en TODA imagen. Solo debe aparecer el copy final que lee la persona.
+const REGLA_TEXTO = `TEXT RULE (critical): the only text rendered in the image must be the final Spanish copy the reader is meant to see, as polished editorial typography. Do NOT render meta words or field labels such as "titular", "título", "subtítulo", "subtitulo", "dato", "texto", "slide", "CTA", "headline", "subtitle" or "caption", and NEVER render a word followed by a colon used as a label. No placeholder labels, no field names on the image.`;
 
 async function tg(method, payload, isForm = false) {
   const opt = { method: "POST" };
@@ -81,7 +86,7 @@ const schema = {
     angulo: { type: "string", description: "El ángulo/idea ÚNICO de hoy en una frase (para registrar y no repetir)." },
     slides: { type: "array", items: { type: "object", additionalProperties: false, properties: {
       titulo: { type: "string" },
-      prompt: { type: "string", description: "Prompt EN INGLÉS para generar la imagen del slide, art-directed, repitiendo el template del día e incluyendo el TEXTO EXACTO en español a renderizar (titular + dato). Última slide = CTA de texto 'Síguenos para más'. NO logos ni marcas." },
+      prompt: { type: "string", description: "Prompt EN INGLÉS, art-directed, que repite el template del día. Debe especificar el TEXTO EXACTO en español que se verá, escrito como copy FINAL de diseño (solo lo que lee la persona). PROHIBIDO que ese texto incluya rótulos ni meta-palabras como 'titular', 'título', 'subtítulo', 'dato', 'texto', 'slide' o 'CTA', ni una palabra seguida de dos puntos como etiqueta. Última slide = CTA con el texto 'Síguenos para más'. NO logos ni marcas." },
     }, required: ["titulo", "prompt"] } },
     caption: { type: "string", description: "Caption educativa para Instagram con hook, valor real, invita a seguir + 5-8 hashtags (mezcla IA/negocios/Perú/Chile)." },
   },
@@ -161,7 +166,7 @@ async function main() {
   const extra = isRetry ? "\n\n⚠️ ESTE ES UN REINTENTO: el contenido anterior fue rechazado por el equipo. Genera una versión CLARAMENTE MEJOR y distinta (mejor diseño, mejor texto, otro enfoque del mismo tema)." : "";
   const dir = await claude({
     model: "claude-sonnet-4-6", max_tokens: 4000,
-    system: `Eres Barbara, directora creativa de condor.ai. Diseñas carruseles de Instagram (${N_SLIDES} slides) de nivel agencia, educativos y que hacen seguir la cuenta. Sigues EXACTAMENTE el template del día. Incluyes el texto exacto a renderizar en cada slide. NUNCA repites ángulos, protagonistas ni textos de las piezas recientes (te las paso). Innova siempre. Responde SOLO con el JSON.`,
+    system: `Eres Barbara, directora creativa de condor.ai. Diseñas carruseles de Instagram (${N_SLIDES} slides) de nivel agencia, educativos y que hacen seguir la cuenta. Sigues EXACTAMENTE el template del día. Incluyes el texto exacto a renderizar en cada slide COMO COPY FINAL: en la imagen SOLO aparece lo que lee la persona, JAMÁS palabras estructurales como "titular", "subtítulo", "título", "dato", "texto", "slide" o "CTA", ni rótulos con dos puntos. NUNCA repites ángulos, protagonistas ni textos de las piezas recientes (te las paso). Innova siempre. Responde SOLO con el JSON.`,
     output_config: { format: { type: "json_schema", schema } },
     messages: [{ role: "user", content: `Tipo de hoy (${dia}): ${tema.instruccion}\n\nTEMPLATE OBLIGATORIO:\n${tema.template}\n\nPIEZAS RECIENTES (NO repitas estos ángulos, innova):\n${recientes}\n${research ? "\nInvestigación web:\n" + research : ""}${extra}\n\nCrea el carrusel de ${N_SLIDES} slides con un ángulo NUEVO.` }],
   });
@@ -172,7 +177,7 @@ async function main() {
   const imgs = [];
   for (let i = 0; i < slides.length; i++) {
     try {
-      const url = genImagen(slides[i].prompt + "\n\n" + tema.template, i);
+      const url = genImagen(slides[i].prompt + "\n\n" + tema.template + "\n\n" + REGLA_TEXTO, i);
       const buf = Buffer.from(await (await fetch(url)).arrayBuffer());
       imgs.push(buf);
     } catch (e) {

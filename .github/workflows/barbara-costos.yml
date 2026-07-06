@@ -1,0 +1,59 @@
+name: Barbara - costos semanales
+
+on:
+  schedule:
+    # Sábados 13:00 UTC (09:00 Chile). Resumen de créditos Higgsfield usados en la semana.
+    - cron: '0 13 * * 6'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  costos:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Instalar CLI de Higgsfield
+        run: npm install -g @higgsfield/cli@0.2.3
+      - name: Autenticar Higgsfield (descifrar credenciales rotadas)
+        env:
+          HF_CREDS_KEY: ${{ secrets.HF_CREDS_KEY }}
+          HF_ACCESS: ${{ secrets.HIGGSFIELD_ACCESS_TOKEN }}
+          HF_REFRESH: ${{ secrets.HIGGSFIELD_REFRESH_TOKEN }}
+        run: |
+          mkdir -p ~/.config/higgsfield
+          if [ -n "$HF_CREDS_KEY" ] && [ -f services/barbara/hf-creds.enc ]; then
+            openssl enc -d -aes-256-cbc -pbkdf2 -salt -in services/barbara/hf-creds.enc -out ~/.config/higgsfield/credentials.json -pass pass:"$HF_CREDS_KEY"
+          else
+            printf '{"access_token":"%s","refresh_token":"%s"}' "$HF_ACCESS" "$HF_REFRESH" > ~/.config/higgsfield/credentials.json
+          fi
+          sha256sum ~/.config/higgsfield/credentials.json | awk '{print $1}' > /tmp/hf_before.sha
+      - name: Calcular costos de la semana y enviar a Telegram
+        run: node services/barbara/costos.mjs
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          CLP_POR_CREDITO: ${{ vars.CLP_POR_CREDITO }}
+      - name: Persistir token si rotó (mantener credenciales vivas)
+        if: always()
+        env:
+          HF_CREDS_KEY: ${{ secrets.HF_CREDS_KEY }}
+        run: |
+          git config user.name "barbara-bot"
+          git config user.email "bot@condorai.cl"
+          if [ -n "$HF_CREDS_KEY" ] && [ -f ~/.config/higgsfield/credentials.json ]; then
+            AFTER=$(sha256sum ~/.config/higgsfield/credentials.json | awk '{print $1}')
+            BEFORE=$(cat /tmp/hf_before.sha 2>/dev/null || echo "")
+            if [ "$AFTER" != "$BEFORE" ]; then
+              openssl enc -aes-256-cbc -pbkdf2 -salt -in ~/.config/higgsfield/credentials.json -out services/barbara/hf-creds.enc -pass pass:"$HF_CREDS_KEY"
+              git add services/barbara/hf-creds.enc
+              if git diff --staged --quiet; then echo "sin cambios"; else
+                git commit -m "barbara: token rotado en costos $(date +%Y-%m-%d)"
+                for n in 1 2 3; do git pull --rebase origin main && git push && break || sleep 5; done
+              fi
+            fi
+          fi
