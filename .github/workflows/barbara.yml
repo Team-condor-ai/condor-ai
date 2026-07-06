@@ -27,7 +27,10 @@ jobs:
         with:
           node-version: '22'
       - name: Instalar CLI de Higgsfield
-        run: npm install -g @higgsfield/cli
+        # PIN de versión a propósito: instalar @latest hacía que un release rompiente
+        # (1.0.0, 27-jun-2026: workspace obligatorio + nuevo auth flow) tumbara a Barbara
+        # sola. Subir de versión debe ser un cambio deliberado, no automático.
+        run: npm install -g @higgsfield/cli@0.2.3
       - name: Autenticar Higgsfield (descifrar credenciales rotadas)
         env:
           HF_CREDS_KEY: ${{ secrets.HF_CREDS_KEY }}
@@ -49,16 +52,17 @@ jobs:
           # el 2026-06-29 con "No workspace selected". Lo seleccionamos de forma
           # auto-reparable: ID conocido y, si no, el primero de la cuenta del bot.
           # Al cambiar credentials.json, el paso de persistencia lo re-cifra en hf-creds.enc.
+          # Best-effort (nunca falla el job): 0.2.x NO exige workspace; sólo lo necesita
+          # la serie 1.x. Si el día de mañana se sube de versión, esto ya lo deja listo.
           WS_ID="${HF_WORKSPACE_ID:-a2878df7-43e1-4685-acca-5be527026fc2}"
           if higgsfield workspace set "$WS_ID" >/dev/null 2>&1; then
             echo "Workspace seleccionado: $WS_ID"
           else
-            echo "ID conocido no válido; auto-descubriendo el primer workspace de la cuenta…"
             WS_ID=$(higgsfield workspace list --json 2>/dev/null | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const j=JSON.parse(s);const a=Array.isArray(j)?j:(j.workspaces||[]);process.stdout.write(String((a[0]&&(a[0].id||a[0].workspace_id))||""))}catch{process.stdout.write("")}})')
             if [ -n "$WS_ID" ] && higgsfield workspace set "$WS_ID" >/dev/null 2>&1; then
               echo "Workspace auto-seleccionado: $WS_ID"
             else
-              echo "::error::No se pudo seleccionar un workspace de Higgsfield"; exit 1
+              echo "Aviso: no se seleccionó workspace (ok en CLI 0.2.x, que no lo requiere)."
             fi
           fi
       - name: Generar carrusel y enviar a Telegram
