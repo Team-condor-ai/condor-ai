@@ -102,7 +102,14 @@ function genImagen(prompt, idx) {
       if (/^https?:\/\//.test(url)) return url;
       ultimo = out.slice(-160);
     } catch (e) {
-      ultimo = String(e.stderr || e.message || e).slice(-160);
+      ultimo = String(e.stderr || e.message || e).slice(-300);
+    }
+    // Errores de config/auth (workspace, sesión, token) NO son transitorios: reintentar
+    // 18 veces con backoff sólo quema 10 min y la cuota. Aborta el run entero de inmediato.
+    if (/no workspace|session expired|unauthor|forbidden|invalid.*(token|credential)|\b(401|403)\b|auth login/i.test(ultimo)) {
+      const err = new Error("Higgsfield config/auth (no reintentable): " + ultimo.slice(-160));
+      err.permanent = true;
+      throw err;
     }
     if (intento < 3) {
       console.log(`slide ${idx + 1}: intento ${intento}/3 falló (${ultimo.slice(-60)}), esperando 45s…`);
@@ -168,7 +175,10 @@ async function main() {
       const url = genImagen(slides[i].prompt + "\n\n" + tema.template, i);
       const buf = Buffer.from(await (await fetch(url)).arrayBuffer());
       imgs.push(buf);
-    } catch (e) { console.log("slide", i + 1, "falló:", String(e).slice(0, 140)); }
+    } catch (e) {
+      if (e.permanent) throw e; // config/auth: no tiene sentido seguir con los demás slides
+      console.log("slide", i + 1, "falló:", String(e).slice(0, 140));
+    }
   }
   if (!imgs.length) throw new Error("No se generó ninguna imagen");
 

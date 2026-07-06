@@ -48,6 +48,7 @@ jobs:
           HF_CREDS_KEY: ${{ secrets.HF_CREDS_KEY }}
           HF_ACCESS: ${{ secrets.HIGGSFIELD_ACCESS_TOKEN }}
           HF_REFRESH: ${{ secrets.HIGGSFIELD_REFRESH_TOKEN }}
+          HF_WORKSPACE_ID: ${{ secrets.HIGGSFIELD_WORKSPACE_ID }}
         run: |
           mkdir -p ~/.config/higgsfield
           if [ -n "$HF_CREDS_KEY" ] && [ -f services/barbara/hf-creds.enc ]; then
@@ -58,6 +59,23 @@ jobs:
             printf '{"access_token":"%s","refresh_token":"%s"}' "$HF_ACCESS" "$HF_REFRESH" > ~/.config/higgsfield/credentials.json
           fi
           sha256sum ~/.config/higgsfield/credentials.json | awk '{print $1}' > /tmp/hf_before.sha
+          # El CLI de Higgsfield ahora EXIGE un workspace seleccionado antes de generar
+          # (antes generaba contra la cuenta privada por defecto). Esto rompió a Barbara
+          # el 2026-06-29 con "No workspace selected". Lo seleccionamos de forma
+          # auto-reparable: ID conocido y, si no, el primero de la cuenta del bot.
+          # Al cambiar credentials.json, el paso de persistencia lo re-cifra en hf-creds.enc.
+          WS_ID="${HF_WORKSPACE_ID:-a2878df7-43e1-4685-acca-5be527026fc2}"
+          if higgsfield workspace set "$WS_ID" >/dev/null 2>&1; then
+            echo "Workspace seleccionado: $WS_ID"
+          else
+            echo "ID conocido no válido; auto-descubriendo el primer workspace de la cuenta…"
+            WS_ID=$(higgsfield workspace list --json 2>/dev/null | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const j=JSON.parse(s);const a=Array.isArray(j)?j:(j.workspaces||[]);process.stdout.write(String((a[0]&&(a[0].id||a[0].workspace_id))||""))}catch{process.stdout.write("")}})')
+            if [ -n "$WS_ID" ] && higgsfield workspace set "$WS_ID" >/dev/null 2>&1; then
+              echo "Workspace auto-seleccionado: $WS_ID"
+            else
+              echo "::error::No se pudo seleccionar un workspace de Higgsfield"; exit 1
+            fi
+          fi
       - name: Generar reel y enviar a Telegram
         run: node services/barbara/reels.mjs
         env:
