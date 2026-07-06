@@ -1,0 +1,3 @@
+# Los scripts .sh SIEMPRE con LF, aunque se editen en Windows.
+# Si quedan en CRLF, el "#!/usr/bin/env bash" falla en Git Bash (env: bash\r).
+*.sh text eol=lf
