@@ -1,17 +1,17 @@
 {
-  "fecha": "2026-07-06",
+  "fecha": "2026-07-13",
   "noticias": [
     {
-      "titular": "Claude Fable 5 regresa: Anthropic superó a OpenAI en ingresos esta semana",
-      "url": "/noticias-ia/anthropic-derroto-a-openai-claude-fable-5-restaura/"
+      "titular": "OpenAI lanza GPT-5.6: tres modelos que van desde lo más poderoso hasta lo económico",
+      "url": "/noticias-ia/gpt-5-6-la-nueva-familia-de-modelos-de-openai-que-/"
     },
     {
-      "titular": "La IA científica despega: Anthropic entra en descubrimiento de medicamentos",
-      "url": "/noticias-ia/anthropic-entra-en-ciencia-claude-lanza-herramient/"
+      "titular": "Meta despide 8.000 empleados y reconoce: la IA no avanza tan rápido como esperábamos",
+      "url": "/noticias-ia/meta-reestructura-alrededor-de-la-ia-lecciones-sob/"
     },
     {
-      "titular": "Agentic AI despega: los robots digitales ya trabajan sin supervisión humana",
-      "url": "/noticias-ia/agentes-de-ia-autonomos-de-la-teoria-al-trabajo-re/"
+      "titular": "Google lanza el primer laboratorio de IA aplicada de África: oportunidad real para emprendedores",
+      "url": "/noticias-ia/google-africa-applied-ai-lab-como-startups-african/"
     }
   ]
 }
