@@ -1,17 +1,9 @@
 {
-  "fecha": "2026-07-13",
+  "fecha": "2026-07-20",
   "noticias": [
     {
-      "titular": "OpenAI lanza GPT-5.6: tres modelos que van desde lo más poderoso hasta lo económico",
-      "url": "/noticias-ia/gpt-5-6-la-nueva-familia-de-modelos-de-openai-que-/"
-    },
-    {
-      "titular": "Meta despide 8.000 empleados y reconoce: la IA no avanza tan rápido como esperábamos",
-      "url": "/noticias-ia/meta-reestructura-alrededor-de-la-ia-lecciones-sob/"
-    },
-    {
-      "titular": "Google lanza el primer laboratorio de IA aplicada de África: oportunidad real para emprendedores",
-      "url": "/noticias-ia/google-africa-applied-ai-lab-como-startups-african/"
+      "titular": " IA gener ati va crece a doble dígit o: qué esperar del boom tecnológico de 2026",
+      "url": "/noticias-ia/el-boom-de-l-a-ia-generativa-en-2026-como-esta-tra/"
     }
   ]
 }
