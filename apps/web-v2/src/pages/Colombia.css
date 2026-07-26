@@ -107,15 +107,15 @@
 /* Hero media / foto slot */
 .co-hero-media { position: relative; }
 .co-photo {
-  aspect-ratio: 4 / 3; border-radius: var(--r-lg);
-  background: linear-gradient(160deg, #fff, var(--base-2));
-  border: 1.5px dashed var(--niebla);
-  display: grid; place-items: center; box-shadow: var(--sombra);
+  aspect-ratio: 4 / 5; border-radius: var(--r-lg); overflow: hidden;
+  border: 1px solid var(--niebla); box-shadow: var(--sombra); background: var(--base-2);
 }
-.co-photo-inner { display: flex; flex-direction: column; align-items: center; gap: 6px; color: var(--ink-3); text-align: center; }
-.co-photo-ico { font-size: 2rem; }
-.co-photo-inner span { font-weight: 600; color: var(--ink-2); }
-.co-photo-inner small { font-size: 0.78rem; }
+.co-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.co-photo-thumb {
+  position: absolute; left: -14px; bottom: 30px; width: 108px; aspect-ratio: 9 / 14;
+  border-radius: var(--r-sm); overflow: hidden; border: 3px solid #fff; box-shadow: var(--sombra);
+}
+.co-photo-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .co-badge-float {
   position: absolute; right: -8px; bottom: -14px;
   background: #fff; border: 1px solid var(--niebla); border-radius: var(--r);

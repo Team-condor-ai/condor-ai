@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useReveal } from "../lib/useReveal";
 import Condor from "../components/Condor";
+import fotoEquipo from "../assets/colombia/equipo.jpg";
+import fotoOficina from "../assets/colombia/oficina.jpg";
 import "./Colombia.css";
 
 /* =============================================================================
@@ -83,13 +85,11 @@ export default function Colombia() {
         </div>
 
         <div className="co-hero-media reveal">
-          {/* Slot foto IA del equipo — pendiente de generar (art-direction: oficina corporativa) */}
           <div className="co-photo">
-            <div className="co-photo-inner">
-              <span className="co-photo-ico">📷</span>
-              <span>Foto IA del equipo</span>
-              <small>oficina corporativa · en producción</small>
-            </div>
+            <img src={fotoEquipo} alt="El equipo de Cóndor.ai trabajando en la oficina" />
+          </div>
+          <div className="co-photo-thumb" aria-hidden>
+            <img src={fotoOficina} alt="" loading="lazy" />
           </div>
           <div className="co-badge-float">★★★★★<small>+ clientes felices</small></div>
         </div>
