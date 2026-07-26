@@ -1,0 +1,37 @@
+name: Seguimiento de leads y reuniones
+
+on:
+  schedule:
+    # Cada 15 minutos: es la resolución de los recordatorios (el de 1 h sale entre 45 y 60 min antes).
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+# Si una pasada se atrasa, no encimar dos corriendo sobre la misma cola.
+concurrency:
+  group: seguimiento
+  cancel-in-progress: false
+
+jobs:
+  seguimiento:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Despachar cola de email + WhatsApp
+        run: node services/seguimiento/seguimiento.mjs
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+          ADMIN_NOTIFY: ${{ secrets.ADMIN_NOTIFY }}
+          WHATSAPP_TOKEN: ${{ secrets.WHATSAPP_TOKEN }}
+          WHATSAPP_PHONE_ID: ${{ secrets.WHATSAPP_PHONE_ID }}
+          WA_TPL_LANG: ${{ secrets.WA_TPL_LANG }}
+          WA_TPL_BIENVENIDA: ${{ secrets.WA_TPL_BIENVENIDA }}
+          WA_TPL_CONFIRMACION: ${{ secrets.WA_TPL_CONFIRMACION }}
+          WA_TPL_RECORDATORIO_24H: ${{ secrets.WA_TPL_RECORDATORIO_24H }}
+          WA_TPL_RECORDATORIO_1H: ${{ secrets.WA_TPL_RECORDATORIO_1H }}
+          WA_TPL_NOSHOW: ${{ secrets.WA_TPL_NOSHOW }}
