@@ -45,6 +45,32 @@ async function avisarPago(sb: any, clienteId: string, tipo: string) {
      <p>— El equipo de condor.ai</p>`);
 }
 
+// Pago de un lead de campaña (external_reference "lead:<id>"): marca el lead y avisa al equipo.
+async function marcarLeadPagado(sb: any, leadId: string, mpId: string, p: any) {
+  if (!/^\d+$/.test(leadId)) return;
+  const monto = Number(p.transaction_amount || 0);
+  const moneda = p.currency_id || "COP";
+  await sb.from("leads").update({
+    pago_estado: "pagado", pago_mp_id: mpId, pago_monto: monto, pago_moneda: moneda, pago_en: new Date().toISOString(),
+  }).eq("id", leadId);
+
+  const { data: lead } = await sb.from("leads").select("nombre,negocio,email,whatsapp,campana").eq("id", leadId).maybeSingle();
+  await enviarCorreo(ADMIN_NOTIFY, `💰 Pago de campaña · ${lead?.negocio || lead?.nombre || "lead " + leadId}`,
+    `<h2>Nuevo pago confirmado (lead de campaña)</h2>
+     <p><b>Lead:</b> ${lead?.nombre || ""} ${lead?.negocio ? `· ${lead.negocio}` : ""}<br>
+     <b>Contacto:</b> ${lead?.email || "—"} · ${lead?.whatsapp || "—"}<br>
+     <b>Campaña:</b> ${lead?.campana || "—"}<br>
+     <b>Monto:</b> ${moneda} ${monto.toLocaleString()}</p>
+     <p>Ya está marcado como pagado en el módulo de leads. Falta crearle la ficha de cliente para la mensualidad.</p>`);
+
+  if (lead?.email) {
+    await enviarCorreo(lead.email, "✅ Recibimos tu pago · condor.ai",
+      `<h2>¡Gracias por tu pago! 🎉</h2>
+       <p>Confirmamos <b>${moneda} ${monto.toLocaleString()}</b>. Ya empezamos con tu proyecto: en las próximas horas te escribimos para coordinar los contenidos.</p>
+       <p>— El equipo de condor.ai</p>`);
+  }
+}
+
 Deno.serve(async (req) => {
   const MP = Deno.env.get("MP_ACCESS_TOKEN") || "";
   const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
@@ -58,7 +84,10 @@ Deno.serve(async (req) => {
     if (type.includes("payment") && id) {
       const r = await fetch("https://api.mercadopago.com/v1/payments/" + id, { headers: { Authorization: "Bearer " + MP } });
       const p = await r.json();
-      if (p.status === "approved" && p.external_reference) {
+      // Campaña: los cobros de 'pago-lead' vienen como "lead:<id>" (el lead aún no es cliente del portal)
+      if (p.status === "approved" && String(p.external_reference || "").startsWith("lead:")) {
+        await marcarLeadPagado(sb, String(p.external_reference).slice(5), String(id), p);
+      } else if (p.status === "approved" && p.external_reference) {
         await sb.from("pagos").update({ estado: "pagado", mp_id: String(id) }).eq("id", p.external_reference);
         const { data: pago } = await sb.from("pagos").select("cliente_id,tipo").eq("id", p.external_reference).maybeSingle();
         if (pago) {
