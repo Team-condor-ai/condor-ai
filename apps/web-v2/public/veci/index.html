@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Veci · condor.ai</title>
+  <meta name="description" content="Veci — la app de tu edificio. Paga el gasto común, vota y entérate de todo desde el teléfono." />
+  <link rel="icon" type="image/png" href="/assets/favicon.png" />
+  <!-- Redirige a la landing de Veci (vive en Vercel). Preserva el query (?v=admin). -->
+  <script>
+    (function () {
+      var dest = 'https://veci-web.vercel.app/landing' + (window.location.search || '');
+      window.location.replace(dest);
+    })();
+  </script>
+  <meta http-equiv="refresh" content="0; url=https://veci-web.vercel.app/landing" />
+  <style>
+    html, body { height: 100%; margin: 0; }
+    body {
+      display: grid; place-items: center;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+      background: #f1f2f5; color: #14201a; text-align: center; padding: 24px;
+    }
+    .box { max-width: 360px; }
+    .dot {
+      width: 40px; height: 40px; margin: 0 auto 18px; border-radius: 12px;
+      background: linear-gradient(150deg, #53b400, #3f8409);
+      box-shadow: 0 12px 30px rgba(47, 111, 8, 0.3);
+    }
+    h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.02em; margin: 0 0 6px; }
+    p { color: #5a635c; font-size: 15px; margin: 0 0 18px; }
+    a { color: #2f6f08; font-weight: 600; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <div class="dot"></div>
+    <h1>Llevándote a Veci…</h1>
+    <p>La app de tu edificio.</p>
+    <noscript><a href="https://veci-web.vercel.app/landing">Continuar a Veci →</a></noscript>
+    <a href="https://veci-web.vercel.app/landing">¿No te redirige? Haz clic aquí</a>
+  </div>
+</body>
+</html>
