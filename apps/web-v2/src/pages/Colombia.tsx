@@ -9,18 +9,30 @@ import "./Colombia.css";
 /* =============================================================================
    Landing de campaña — Cóndor.ai × Colombia  (ruta /colombia)
    BASE de Joaquín. Un solo objetivo: agendar reunión o pedir contacto.
-   Max redisena encima; Samuel conecta el backend (POST /leads).
+   Max redisena encima.
 
-   Contrato del formulario (acordado en docs/campana-colombia/SAMUEL.md):
-     POST {VITE_LEADS_API}/leads
+   Backend: Google Apps Script (docs/campana-colombia/Code.gs), NO Supabase/
+   WhatsApp Cloud API — decisión 2026-07-28: sin tiempo para la burocracia de
+   Meta Business. El lead cae directo a una fila en Google Sheets y el
+   seguimiento (recordatorio 24 h antes, contacto post-lead) se hace a mano
+   desde ahí, marcando la columna "Estado".
+
+   Contrato del formulario:
+     POST {VITE_LEADS_API}          (la URL /exec del Apps Script, SIN sufijo)
      {
        tipo: "reunion" | "contacto",
        nombre: string, whatsapp: string, correo: string,
-       fecha_hora?: string,        // texto libre por ahora (Calendly = follow-up)
+       fecha_hora?: string,        // texto libre: "martes en la tarde"
        origen: { utm_source, utm_medium, utm_campaign, url },
        creativo?: string           // ?cr= en la URL, para atribución
      }
    Si VITE_LEADS_API no está seteada => modo demo (simula éxito y loguea el payload).
+
+   OJO CORS: el fetch va con Content-Type "text/plain" a propósito. Un
+   Content-Type "application/json" dispara un preflight OPTIONS que los Web
+   Apps de Apps Script no responden (falla en silencio). Con text/plain el
+   string sigue siendo JSON válido; Code.gs lo parsea igual desde
+   e.postData.contents.
    ============================================================================= */
 
 type Tipo = "reunion" | "contacto";
@@ -200,12 +212,15 @@ function LeadModal({ tipo, onClose }: { tipo: Tipo; onClose: () => void }) {
         setStatus("ok");
         return;
       }
-      const res = await fetch(`${LEADS_API}/leads`, {
+      // Content-Type text/plain a propósito: ver nota CORS arriba del archivo.
+      const res = await fetch(LEADS_API, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json().catch(() => ({ ok: true }));
+      if (data && data.ok === false) throw new Error(data.error || "Backend respondió error");
       setStatus("ok");
     } catch (err) {
       setStatus("error");
@@ -225,8 +240,8 @@ function LeadModal({ tipo, onClose }: { tipo: Tipo; onClose: () => void }) {
             <h3>{esReunion ? "¡Listo! Te enviaremos el horario." : "¡Recibido! Te contactamos pronto."}</h3>
             <p>
               {esReunion
-                ? "Te escribimos por WhatsApp y correo para confirmar tu reunión (8:00–21:00, hora Colombia)."
-                : "Uno de nosotros te contacta en menos de 24 horas. Gracias por confiar en Cóndor.ai."}
+                ? "Te escribimos por WhatsApp para confirmar el día y la hora de tu reunión (8:00–21:00, hora Colombia)."
+                : "Te contactaremos en un plazo de 24 horas por WhatsApp. Gracias por confiar en Cóndor.ai."}
             </p>
             <button className="co-btn co-btn-primary" onClick={onClose}>Cerrar</button>
           </div>
