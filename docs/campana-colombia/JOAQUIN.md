@@ -23,7 +23,8 @@ Dueño del arranque: primero existe una landing funcional y una campaña al aire
 - [ ] Generar la **foto IA del equipo** en oficina corporativa para la landing.
 
 ### C. Campaña Meta Ads
-- [ ] Cuenta/Business Manager + **Pixel** instalado en la landing (coordina CAPI con Ale).
+- [x] **Pixel + CAPI instalados en la landing** (código listo, ver "Lo que falta para lanzar").
+- [ ] Cuenta/Business Manager + sacar el **PIXEL_ID** y el token de CAPI.
 - [ ] Estructura de campaña: públicos **solo Colombia**, ubicaciones, objetivo (leads/mensajes).
 - [ ] Cargar los 7 creativos. Presupuesto test **~$10.000/día × 7 días** (confirmar moneda de la cuenta).
 - [ ] **Día 8:** pausar los 2 peores, +20% al ganador. Documentar CPL.
@@ -40,3 +41,29 @@ Dueño del arranque: primero existe una landing funcional y una campaña al aire
 
 ## Definición de listo
 Landing base desplegada y capturando leads reales (form → `/leads` → DB), pixel disparando, campaña configurada lista para lanzar.
+
+---
+
+## Lo que falta para lanzar (bloqueado en tus cuentas)
+
+La landing `/colombia` está **lista en código**: diseño, formularios, envío del lead y
+tracking (Pixel + CAPI con deduplicación, eventos `PageView` / `ViewContent` / `Schedule` /
+`Lead`). Lo único que falta son **dos valores** que solo salen de tus cuentas. Sin ellos la
+landing funciona, pero **no guarda leads y no reporta conversiones**.
+
+Ambos son variables de entorno del proyecto **web-v2 en Vercel** (ver `apps/web-v2/.env.example`).
+Después de cargarlas hay que **redesplegar**: Vite las hornea en el bundle en tiempo de build.
+
+| Variable | De dónde sale | Sin ella |
+|---|---|---|
+| `VITE_LEADS_API` | Google Sheets + Apps Script. Receta paso a paso arriba de `Code.gs` (5 min, tu cuenta de Google). Es la URL que termina en `/exec`. | El formulario **muestra error** y ofrece WhatsApp. Es a propósito: antes fingía éxito y el lead se perdía en silencio. |
+| `VITE_META_PIXEL_ID` | Business Manager → Eventos → tu Pixel. | No se carga el Pixel: la campaña queda **sin optimización ni atribución**. |
+
+Y para que el evento llegue también por servidor (≈ la mitad de los móviles bloquea el Pixel),
+Ale necesita `META_PIXEL_ID` + `META_CAPI_TOKEN` como secrets de Supabase y desplegar la función
+`capi` (`ALEJANDRO-ENTREGA.md` §3). Si eso no está, el Pixel del navegador sigue funcionando solo.
+
+**Cómo probar que quedó bien**, una vez cargadas:
+1. Entra a `condorai.cl/colombia?utm_campaign=prueba` y manda el formulario con tus datos.
+2. Tiene que aparecer una fila nueva en la hoja "Leads", con la campaña y la URL.
+3. Meta Events Manager → *Probar eventos*: `PageView`, `ViewContent` y `Schedule`/`Lead`.

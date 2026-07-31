@@ -2,6 +2,7 @@
 
 > Brief maestro del proyecto. Léelo completo antes de tocar tu parte.
 > Presentación visual del modelo: **https://condor-deck.vercel.app**
+> Qué se hizo y por qué, sesión por sesión: **[`BITACORA.md`](BITACORA.md)**
 
 ---
 

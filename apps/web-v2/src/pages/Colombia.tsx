@@ -52,24 +52,65 @@ import "./Colombia.css";
        tipo: "reunion" | "contacto",
        nombre: string, whatsapp: string, correo: string,
        fecha_hora?: string,        // texto libre: "martes en la tarde"
-       origen: { utm_source, utm_medium, utm_campaign, url },
+       origen: { utm_source, utm_medium, utm_campaign, utm_content, fbclid, url },
        creativo?: string           // ?cr= en la URL, para atribución
      }
-   Si VITE_LEADS_API no está seteada => modo demo (simula éxito y loguea el payload).
+   Code.gs solo lee utm_campaign, url y creativo; el resto viaja por si el
+   backend cambia (y para poder auditar de qué anuncio vino cada lead).
+   Sin VITE_LEADS_API: en DEV simula éxito y loguea el payload; en producción
+   falla a propósito (un "¡Listo!" sin backend = lead pagado perdido).
 
    OJO CORS: el fetch va con Content-Type "text/plain" a propósito. Un
    Content-Type "application/json" dispara un preflight OPTIONS que los Web
    Apps de Apps Script no responden (falla en silencio). Con text/plain el
    string sigue siendo JSON válido; Code.gs lo parsea igual desde
    e.postData.contents.
+
+   TRACKING (Meta Pixel + CAPI, contrato de ALEJANDRO-ENTREGA.md §Tracking):
+   la landing carga /assets/js/condor-tracking.js SOLO en esta ruta (el resto
+   del sitio no es tráfico pagado y no tiene por qué pagar el script ni el
+   consentimiento). El script expone condorTrack() y condorAtribucion(); cada
+   evento sale por el navegador y por el servidor con el mismo event_id, así
+   que Meta lo cuenta una vez y sigue llegando aunque el navegador bloquee el
+   Pixel (≈ la mitad de los móviles). Eventos: PageView (automático),
+   ViewContent (abre un formulario), Schedule (agenda) y Lead (pide contacto).
+   Sin VITE_META_PIXEL_ID el script ni se carga: la página funciona igual.
    ============================================================================= */
 
 type Tipo = "reunion" | "contacto";
 type Status = "idle" | "sending" | "ok" | "error";
 
+type DatosTrack = {
+  email?: string;
+  telefono?: string;
+  nombre?: string;
+  pais?: string;
+  extra?: Record<string, unknown>;
+};
+
+declare global {
+  interface Window {
+    CONDOR_PIXEL_ID?: string;
+    condorTrack?: (evento: string, datos?: DatosTrack) => string;
+    condorAtribucion?: () => Record<string, string>;
+  }
+}
+
 const LEADS_API = (import.meta.env.VITE_LEADS_API as string | undefined)?.replace(/\/$/, "") ?? "";
+const PIXEL_ID = (import.meta.env.VITE_META_PIXEL_ID as string | undefined)?.trim() ?? "";
+
+/* El Pixel nunca debe romper la página ni el envío del lead: si el script no
+   cargó (adblock, red caída, ID sin configurar) esto es un no-op. */
+function track(evento: string, datos?: DatosTrack) {
+  try {
+    window.condorTrack?.(evento, datos);
+  } catch {
+    /* el tracking no es parte del camino crítico */
+  }
+}
 
 const WSP = "+56 9 8898 9824";
+const WSP_LINK = `https://wa.me/${WSP.replace(/\D/g, "")}`;
 
 /* Sitios reales en vivo — la prueba más fuerte de la página.
    Las imágenes son capturas reales de cada demo (no mockups). */
@@ -109,6 +150,37 @@ const SITIOS = [
     txt: "La base: presencia profesional, clara y directa a WhatsApp. Es el punto de partida de la Landing Express.",
     href: "https://joaquinmunozs.github.io/condorweb-demo-esencial/",
   },
+];
+
+/* FONDO — facetas de cristal descendiendo.
+   El fondo anterior eran tres radial-gradient de colores sobre oscuro: el
+   "aurora mesh" que sale por defecto en cualquier plantilla generada, y la
+   razón por la que la página se leía a IA. Ahora el fondo es el MISMO material
+   del visor, en piezas, cayendo — así el glass de arriba tiene algo real que
+   refractar en vez de un degradado plano.
+
+   Es un sistema, no azar (el azar se ve a confeti):
+     · capa 1 = cerca  → grande, más contraste, más rápida
+     · capa 2 = media
+     · capa 3 = lejos  → chica, tenue, lenta y con desenfoque de profundidad
+   Un solo ángulo base (±20°) y la paleta cerrada de marca. `frac` es en qué
+   punto del ciclo arranca cada una (ver --delay abajo); repartidas para que la
+   pantalla nunca quede vacía ni amontonada. */
+const FACETAS = [
+  { x: 4, tam: 232, capa: 1, dur: 44, frac: 0.12, rot: -20, forma: "lamina", tinte: "azul" },
+  { x: 21, tam: 96, capa: 3, dur: 88, frac: 0.62, rot: 18, forma: "prisma", tinte: "azul" },
+  { x: 33, tam: 154, capa: 2, dur: 63, frac: 0.31, rot: -14, forma: "lamina", tinte: "violeta" },
+  { x: 47, tam: 78, capa: 3, dur: 92, frac: 0.05, rot: 22, forma: "hex", tinte: "azul" },
+  { x: 58, tam: 205, capa: 1, dur: 48, frac: 0.74, rot: 16, forma: "lamina", tinte: "azul" },
+  { x: 69, tam: 128, capa: 2, dur: 66, frac: 0.44, rot: -19, forma: "prisma", tinte: "verde" },
+  { x: 82, tam: 88, capa: 3, dur: 84, frac: 0.22, rot: 20, forma: "lamina", tinte: "azul" },
+  { x: 93, tam: 168, capa: 2, dur: 60, frac: 0.86, rot: -16, forma: "hex", tinte: "violeta" },
+  { x: 13, tam: 112, capa: 2, dur: 69, frac: 0.55, rot: 15, forma: "prisma", tinte: "azul" },
+  { x: 40, tam: 244, capa: 1, dur: 41, frac: 0.4, rot: -17, forma: "lamina", tinte: "azul" },
+  { x: 75, tam: 74, capa: 3, dur: 96, frac: 0.68, rot: -21, forma: "prisma", tinte: "azul" },
+  { x: 27, tam: 136, capa: 2, dur: 71, frac: 0.9, rot: 19, forma: "lamina", tinte: "azul" },
+  { x: 64, tam: 82, capa: 3, dur: 90, frac: 0.15, rot: -18, forma: "hex", tinte: "verde" },
+  { x: 88, tam: 196, capa: 1, dur: 46, frac: 0.58, rot: 21, forma: "lamina", tinte: "violeta" },
 ];
 
 const INCLUYE = [
@@ -225,10 +297,40 @@ export default function Colombia() {
   }, []);
 
   useMeta();
+  useTracking();
+  const mostrarBarra = useBarra();
+
+  /* Abrir un formulario es la microconversión que Meta puede optimizar antes de
+     tener volumen de Lead/Schedule: se reporta como ViewContent. */
+  const abrir = (tipo: Tipo) => {
+    track("ViewContent", { pais: "CO", extra: { formulario: tipo } });
+    setOpen(tipo);
+  };
 
   return (
     <main className="co">
       <div className="co-bg" aria-hidden />
+      <FondoDescenso />
+      <div className="co-facetas" aria-hidden>
+        {FACETAS.map((f, i) => (
+          <span
+            key={i}
+            className={`co-faceta co-f-${f.forma} co-capa-${f.capa} co-t-${f.tinte}`}
+            style={
+              {
+                "--x": `${f.x}%`,
+                "--tam": `${f.tam}px`,
+                "--rot": `${f.rot}deg`,
+                "--dur": `${f.dur}s`,
+                /* Delay NEGATIVO: la animación arranca a mitad de camino, así la
+                   primera pantalla ya tiene facetas repartidas en vez de un
+                   fondo vacío llenándose de a poco. */
+                "--delay": `${-(f.dur * f.frac).toFixed(1)}s`,
+              } as React.CSSProperties
+            }
+          />
+        ))}
+      </div>
       <div className="co-grain" aria-hidden />
 
       {/* Chrome mínimo: sin nav del sitio, un solo objetivo.
@@ -247,7 +349,7 @@ export default function Colombia() {
           </div>
           <div className="co-top-right">
             <span className="co-tag">Colombia</span>
-            <button className="co-btn co-btn-primary co-btn-sm co-top-cta" onClick={() => setOpen("reunion")}>
+            <button className="co-btn co-btn-primary co-btn-sm co-top-cta" onClick={() => abrir("reunion")}>
               Agendar
             </button>
           </div>
@@ -287,10 +389,10 @@ export default function Colombia() {
             <div className="co-visor-in">
               <p className="co-visor-lbl">Reunión sin costo</p>
               <p className="co-visor-txt">Te mostramos cómo quedaría tu página y cuánto cuesta. 30 minutos.</p>
-              <button className="co-btn co-btn-primary co-btn-block" onClick={() => setOpen("reunion")}>
+              <button className="co-btn co-btn-primary co-btn-block" onClick={() => abrir("reunion")}>
                 Agendemos una reunión
               </button>
-              <button className="co-btn co-btn-quiet co-btn-block" onClick={() => setOpen("contacto")}>
+              <button className="co-btn co-btn-quiet co-btn-block" onClick={() => abrir("contacto")}>
                 Prefiero que me contacten
               </button>
               <p className="co-visor-legal">Atendemos de 8:00 a 21:00, hora Colombia.</p>
@@ -328,9 +430,13 @@ export default function Colombia() {
             Sin scroll-jacking: en tráfico pagado, todo lo que retrasa el CTA cuesta. */}
         <ul className="co-rail">
           {SITIOS.map((s, i) => (
-            <li className="co-card reveal" key={s.marca} style={{ transitionDelay: `${Math.min(i, 3) * 70}ms` }}>
+            <li
+              className="co-card reveal"
+              key={s.marca}
+              style={{ transitionDelay: `${Math.min(i, 3) * 70}ms`, "--i": Math.min(i, 4) } as React.CSSProperties}
+            >
               <a
-                className="co-card-a"
+                className="co-card-a co-glint"
                 href={s.href}
                 target="_blank"
                 rel="noopener"
@@ -382,9 +488,9 @@ export default function Colombia() {
         <ul className="co-planes">
           {PLANES.map((p, i) => (
             <li
-              className={`co-plan reveal${p.destacado ? " is-destacado" : ""}`}
+              className={`co-plan reveal co-glint${p.destacado ? " is-destacado" : ""}`}
               key={p.id}
-              style={{ transitionDelay: `${i * 80}ms` }}
+              style={{ transitionDelay: `${i * 80}ms`, "--i": i } as React.CSSProperties}
             >
               {/* El plan sin badge igual reserva el hueco: si no, su título
                   arranca más arriba que el de los otros dos y la fila se
@@ -414,7 +520,7 @@ export default function Colombia() {
               </ul>
               <button
                 className={`co-btn co-btn-block ${p.destacado ? "co-btn-primary" : "co-btn-ghost"}`}
-                onClick={() => setOpen("reunion")}
+                onClick={() => abrir("reunion")}
               >
                 {p.mensual ? `Quiero la ${p.nombre.split(" ")[0]}` : "Conversemos el proyecto"}
               </button>
@@ -495,10 +601,10 @@ export default function Colombia() {
             Agenda una reunión de 30 minutos o déjanos tus datos y te escribimos. Sin costo y sin compromiso.
           </p>
           <div className="co-cierre-cta">
-            <button className="co-btn co-btn-primary" onClick={() => setOpen("reunion")}>
+            <button className="co-btn co-btn-primary" onClick={() => abrir("reunion")}>
               Agendemos una reunión
             </button>
-            <button className="co-btn co-btn-ghost" onClick={() => setOpen("contacto")}>
+            <button className="co-btn co-btn-ghost" onClick={() => abrir("contacto")}>
               Prefiero que me contacten
             </button>
           </div>
@@ -518,6 +624,23 @@ export default function Colombia() {
           <span>Inteligencia artificial para hacer crecer tu negocio.</span>
         </p>
       </footer>
+
+      {/* Barra fija de acción (solo celular). El tráfico es pagado: entre el
+          hero y el cierre hay ~5 pantallas donde el CTA no existe, y cada
+          pantalla sin acción visible es gente que se va. Aparece recién pasado
+          el hero para no duplicar el botón que ya está ahí, y se esconde en el
+          cierre —donde el CTA grande ya manda— para no taparlo. */}
+      <div className={`co-barra${mostrarBarra ? " is-visible" : ""}`}>
+        <div className="co-barra-in">
+          <p className="co-barra-txt">
+            Reunión sin costo
+            <span>30 min · sin compromiso</span>
+          </p>
+          <button className="co-btn co-btn-primary co-btn-sm" onClick={() => abrir("reunion")}>
+            Agendar
+          </button>
+        </div>
+      </div>
 
       {open && <LeadModal tipo={open} onClose={() => setOpen(null)} />}
     </main>
@@ -680,6 +803,261 @@ function useMeta() {
   }, []);
 }
 
+/**
+ * Meta Pixel + Conversions API, solo en esta ruta.
+ *
+ * El script vive en /public (no en el bundle) porque es de Alejandro y lo
+ * comparten las landings estáticas de la campaña; acá solo se inyecta. Se deja
+ * montado al desmontar la ruta: fbq es global y volver a cargarlo duplicaría
+ * PageView si el usuario navega a otra vista del SPA y regresa.
+ */
+function useTracking() {
+  useEffect(() => {
+    if (!PIXEL_ID) {
+      if (import.meta.env.DEV) console.info("[tracking] VITE_META_PIXEL_ID sin setear: Pixel desactivado.");
+      return;
+    }
+    const SRC = "/assets/js/condor-tracking.js";
+    /* Se pregunta por la ETIQUETA, no por window.condorTrack: el script es
+       async, así que entre que se inyecta y se ejecuta hay una ventana en la
+       que condorTrack todavía no existe. Con StrictMode (dos montajes seguidos
+       en dev) eso inyectaba el script dos veces y Meta recibía dos PageView
+       con event_id distinto — o sea, tráfico inflado al doble. */
+    if (document.querySelector(`script[src="${SRC}"]`)) {
+      // Ya está en la página (el usuario volvió a /colombia): solo la vista.
+      track("PageView");
+      return;
+    }
+    window.CONDOR_PIXEL_ID = PIXEL_ID;
+    const s = document.createElement("script");
+    s.src = SRC;
+    s.async = true;
+    document.head.appendChild(s);
+  }, []);
+}
+
+/**
+ * Visibilidad de la barra fija de acción (celular).
+ * Aparece cuando el CTA del hero salió de pantalla, y se retira al llegar al
+ * cierre: ahí ya hay un CTA grande y taparlo con una barra sería pelearse con
+ * uno mismo. Se apoya en IntersectionObserver y no en el evento de scroll,
+ * porque durante el scroll el hilo ya está ocupado repintando el descenso.
+ */
+function useBarra() {
+  const [ver, setVer] = useState(false);
+  useEffect(() => {
+    const hero = document.querySelector(".co-hero");
+    const cierre = document.querySelector(".co-cierre");
+    if (!hero || !cierre) return;
+    const estado = { heroFuera: false, cierreDentro: false };
+    const aplicar = () => setVer(estado.heroFuera && !estado.cierreDentro);
+
+    const obsHero = new IntersectionObserver(
+      ([e]) => {
+        estado.heroFuera = !e.isIntersecting;
+        aplicar();
+      },
+      { rootMargin: "-120px 0px 0px 0px" },
+    );
+    const obsCierre = new IntersectionObserver(
+      ([e]) => {
+        estado.cierreDentro = e.isIntersecting;
+        aplicar();
+      },
+      { rootMargin: "0px 0px -30% 0px" },
+    );
+    obsHero.observe(hero);
+    obsCierre.observe(cierre);
+    return () => {
+      obsHero.disconnect();
+      obsCierre.disconnect();
+    };
+  }, []);
+  return ver;
+}
+
+/* ═════════════════ FONDO — el descenso atado al scroll ═════════════════════
+   Un plano continuo de 8 s (Higgsfield): de sobre las nubes, atravesándolas,
+   hasta las luces de una ciudad en un valle. El scroll ES la cámara: el usuario
+   baja y la cámara baja. Arriba, altura y abstracción; abajo, justo donde
+   pedimos la reunión, la ciudad. La marca es un cóndor: desciende.
+
+   POR QUÉ FOTOGRAMAS Y NO EL <video>:
+   Scrubbear un MP4 exige seek cuadro a cuadro; con GOP normal se traba en
+   Android y en Safari iOS no arranca hasta tener el archivo entero en buffer.
+   El original pesa 39 MB. Como secuencia de WebP son 686 KB en móvil, cada
+   cuadro es independiente y el "seek" es un drawImage.
+
+   PRESUPUESTO:
+   · Dos sets: móvil ya viene RECORTADO a 9:16 (540×960, 40 cuadros, 686 KB).
+     Servir el 16:9 y recortar con CSS tiraría el 68% de los píxeles bajados.
+   · El cuadro 1 se dibuja apenas carga y hace de póster; el resto entra
+     después, de a 4, para no pelearle ancho de banda al hero ni al CTA.
+   · El canvas se rasteriza a DPR 1.25 como techo: es un fondo detrás de un
+     velo y de cristal, no necesita resolución de retina.
+   · Solo se redibuja cuando CAMBIA el cuadro, no en cada evento de scroll.
+   ========================================================================== */
+
+const DESCENSO = {
+  ancho: { dir: "/assets/colombia/descenso/d", n: 48 },
+  alto: { dir: "/assets/colombia/descenso/m", n: 40 },
+};
+
+function FondoDescenso() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const veloRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const velo = veloRef.current;
+    if (!canvas || !velo) return;
+    const ctx = canvas.getContext("2d", { alpha: false });
+    if (!ctx) return;
+
+    const movil = window.matchMedia("(max-width: 680px)").matches;
+    const set = movil ? DESCENSO.alto : DESCENSO.ancho;
+    const reducido = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    const cuadros: (HTMLImageElement | null)[] = new Array(set.n).fill(null);
+    let ultimoDibujado = -1;
+    let ultimaOpCanvas = -1;
+    let ultimaOpVelo = -1;
+    let vivo = true;
+
+    const medir = () => {
+      /* Techo de DPR: en móvil 1.0, en desktop 1.25. Es un fondo detrás de un
+         velo y de cristal esmerilado — nadie le ve los píxeles, y cada píxel de
+         más se paga en cada repintado durante el scroll. */
+      const dpr = Math.min(window.devicePixelRatio || 1, movil ? 1 : 1.25);
+      canvas.width = Math.round(window.innerWidth * dpr);
+      canvas.height = Math.round(window.innerHeight * dpr);
+      ultimoDibujado = -1; // forzar redibujo al cambiar de tamaño
+    };
+
+    /* Encaje "cover" a mano: el canvas no tiene object-fit. */
+    const dibujar = (img: HTMLImageElement) => {
+      const escala = Math.max(canvas.width / img.naturalWidth, canvas.height / img.naturalHeight);
+      const w = img.naturalWidth * escala;
+      const h = img.naturalHeight * escala;
+      ctx.drawImage(img, (canvas.width - w) / 2, (canvas.height - h) / 2, w, h);
+    };
+
+    /* Si el cuadro exacto aún no cargó, se usa el más cercano que sí: el fondo
+       nunca parpadea ni queda en negro mientras termina de bajar la secuencia. */
+    const masCercano = (i: number) => {
+      if (cuadros[i]) return i;
+      for (let d = 1; d < set.n; d++) {
+        if (cuadros[i - d]) return i - d;
+        if (cuadros[i + d]) return i + d;
+      }
+      return -1;
+    };
+
+    /* El descenso NO dura toda la página, y esto no es capricho: probado con el
+       plano final detrás del hero, el titular y el párrafo quedan ilegibles
+       sobre la ciudad encendida, y ningún velo lo arregla sin apagar la toma.
+       Entonces el vuelo ocupa las primeras 2.5 pantallas —hero, equipo y la
+       entrada a la vitrina, que es donde el usuario decide— y ahí aterriza.
+       Después la toma se DESVANECE durante una pantalla más y el resto del
+       sitio scrollea sobre el fondo de noche de siempre, donde el texto ya
+       estaba medido. El clímax queda donde se ve, no donde estorba. */
+    const PANTALLAS_VUELO = 2.5;
+    const PANTALLAS_SALIDA = 1;
+
+    const progreso = () => Math.min(1, Math.max(0, window.scrollY / (window.innerHeight * PANTALLAS_VUELO)));
+
+    const salida = () => {
+      const desde = window.innerHeight * PANTALLAS_VUELO;
+      const largo = window.innerHeight * PANTALLAS_SALIDA;
+      return Math.min(1, Math.max(0, (window.scrollY - desde) / largo));
+    };
+
+    const pintar = () => {
+      /* Con movimiento reducido la cámara no vuela: se queda en el momento en
+         que aparecen las luces, que es el cuadro que mejor cuenta la historia. */
+      const p = reducido ? 0.62 : progreso();
+      const idx = masCercano(Math.round(p * (set.n - 1)));
+      if (idx >= 0 && idx !== ultimoDibujado) {
+        dibujar(cuadros[idx] as HTMLImageElement);
+        ultimoDibujado = idx;
+      }
+      /* El velo sube con el descenso, pero NO lineal: la curva (p^1.6) lo deja
+         bajo mientras la cámara está en las nubes —que ya son oscuras y se ven
+         lindas— y lo empuja recién cuando entran las luces.
+
+         Los dos valores se REDONDEAN a centésimas y solo se escriben si
+         cambiaron. Estas capas están debajo de ~15 superficies con
+         backdrop-filter: tocarles la opacidad obliga a re-desenfocarlas todas.
+         Escribir un valor idéntico en cada frame de scroll costaba tanto como
+         repintar el canvas — medido, era la mitad del sobrecosto. */
+      const s = reducido ? 0 : salida();
+      const opCanvas = Math.round((1 - 0.82 * s) * 100) / 100;
+      const opVelo = Math.round((0.3 + 0.55 * Math.pow(p, 1.6)) * (1 - 0.5 * s) * 100) / 100;
+      if (opCanvas !== ultimaOpCanvas) {
+        canvas.style.opacity = String(opCanvas);
+        ultimaOpCanvas = opCanvas;
+      }
+      if (opVelo !== ultimaOpVelo) {
+        velo.style.opacity = String(opVelo);
+        ultimaOpVelo = opVelo;
+      }
+    };
+
+    let pedido = false;
+    const alScrollear = () => {
+      if (pedido) return;
+      pedido = true;
+      requestAnimationFrame(() => {
+        pedido = false;
+        if (vivo) pintar();
+      });
+    };
+
+    const cargar = (i: number) =>
+      new Promise<void>((listo) => {
+        const img = new Image();
+        img.decoding = "async";
+        img.onload = () => {
+          cuadros[i] = img;
+          listo();
+        };
+        img.onerror = () => listo(); // un cuadro que falta lo cubre masCercano()
+        img.src = `${set.dir}/f-${String(i + 1).padStart(3, "0")}.webp`;
+      });
+
+    medir();
+    window.addEventListener("resize", () => {
+      medir();
+      pintar();
+    });
+    window.addEventListener("scroll", alScrollear, { passive: true });
+
+    (async () => {
+      await cargar(0); // póster: se ve algo de inmediato
+      if (!vivo) return;
+      pintar();
+      // El resto en tandas de 4: la secuencia no compite con el hero ni el CTA.
+      const pendientes = Array.from({ length: set.n - 1 }, (_, k) => k + 1);
+      while (pendientes.length && vivo) {
+        await Promise.all(pendientes.splice(0, 4).map(cargar));
+        pintar();
+      }
+    })();
+
+    return () => {
+      vivo = false;
+      window.removeEventListener("scroll", alScrollear);
+    };
+  }, []);
+
+  return (
+    <>
+      <canvas className="co-descenso" ref={canvasRef} aria-hidden />
+      <div className="co-velo" ref={veloRef} aria-hidden />
+    </>
+  );
+}
+
 /* ══════════════════════════════ Modal de lead ══════════════════════════════ */
 
 function LeadModal({ tipo, onClose }: { tipo: Tipo; onClose: () => void }) {
@@ -691,16 +1069,29 @@ function LeadModal({ tipo, onClose }: { tipo: Tipo; onClose: () => void }) {
   const [errorMsg, setErrorMsg] = useState("");
   const cardRef = useRef<HTMLDivElement>(null);
 
+  /* Atribución: la fuente de verdad es condorAtribucion() (la guarda en la
+     primera visita y sobrevive a la navegación del SPA, cuando la URL ya no
+     trae ?utm_). La URL actual solo rellena lo que falte — sin el script del
+     Pixel, este es el único camino. */
   const atribucion = useMemo(() => {
     const q = new URLSearchParams(window.location.search);
+    let guardada: Record<string, string> = {};
+    try {
+      guardada = window.condorAtribucion?.() ?? {};
+    } catch {
+      /* sin tracking cargado */
+    }
+    const dato = (k: string) => guardada[k] || q.get(k) || "";
     return {
       origen: {
-        utm_source: q.get("utm_source") ?? "",
-        utm_medium: q.get("utm_medium") ?? "",
-        utm_campaign: q.get("utm_campaign") ?? "",
+        utm_source: dato("utm_source"),
+        utm_medium: dato("utm_medium"),
+        utm_campaign: dato("utm_campaign"),
+        utm_content: dato("utm_content"),
+        fbclid: dato("fbclid"),
         url: window.location.href,
       },
-      creativo: q.get("cr") ?? q.get("utm_content") ?? "",
+      creativo: q.get("cr") || dato("utm_content"),
     };
   }, []);
 
@@ -738,10 +1129,13 @@ function LeadModal({ tipo, onClose }: { tipo: Tipo; onClose: () => void }) {
 
     try {
       if (!LEADS_API) {
-        // Modo demo (VITE_LEADS_API sin setear): simula éxito.
+        // En desarrollo se simula el éxito para poder probar el flujo completo.
+        // En producción NO: un "¡Listo!" sin backend es un lead pagado que se
+        // pierde en silencio. Mejor mostrar el error y empujar a WhatsApp.
+        if (!import.meta.env.DEV) throw new Error("VITE_LEADS_API sin configurar en el deploy");
         console.info("[lead demo] POST /leads →", payload);
         await new Promise((r) => setTimeout(r, 700));
-        setStatus("ok");
+        exito();
         return;
       }
       // Content-Type text/plain a propósito: ver nota CORS arriba del archivo.
@@ -753,11 +1147,26 @@ function LeadModal({ tipo, onClose }: { tipo: Tipo; onClose: () => void }) {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json().catch(() => ({ ok: true }));
       if (data && data.ok === false) throw new Error(data.error || "Backend respondió error");
-      setStatus("ok");
+      exito();
     } catch (err) {
       setStatus("error");
       setErrorMsg("No pudimos enviar tus datos. Reintenta o escríbenos por WhatsApp.");
       console.error("[lead] error", err);
+    }
+
+    /* La conversión se reporta SOLO cuando el lead quedó guardado: si Meta
+       optimiza sobre envíos fallidos, compra tráfico que nunca llega a la hoja.
+       Schedule vs Lead separa "agendó" de "que me contacten" para poder pujar
+       distinto por cada uno. */
+    function exito() {
+      track(esReunion ? "Schedule" : "Lead", {
+        email: payload.correo,
+        telefono: payload.whatsapp,
+        nombre: payload.nombre,
+        pais: "CO",
+        extra: { formulario: tipo },
+      });
+      setStatus("ok");
     }
   }
 
@@ -835,7 +1244,18 @@ function LeadModal({ tipo, onClose }: { tipo: Tipo; onClose: () => void }) {
 
             {status === "error" && (
               <p className="co-form-err" role="alert">
-                {errorMsg}
+                {errorMsg}{" "}
+                {/* Salida de emergencia: el lead ya está pagado, no se puede perder
+                    porque el backend falle. El mensaje va prellenado. */}
+                <a
+                  href={`${WSP_LINK}?text=${encodeURIComponent(
+                    `Hola, soy ${nombre.trim() || "..."} y quiero información sobre mi página web.`,
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Escribir por WhatsApp →
+                </a>
               </p>
             )}
 

@@ -4,5 +4,7 @@ node_modules/
 *.log
 .env
 .env.*
+# Plantilla sin valores: documenta qué variables necesita cada app.
+!.env.example
 supabase/.temp/
 **/credentials.json

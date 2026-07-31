@@ -12,8 +12,11 @@
       muestrear las capturas de atrás (el cristal se ve plano y gris).
       Por eso .co-stage y .co-visor NO llevan la clase .reveal.
    2) El cristal nunca se transforma: mover un elemento con backdrop-filter lo
-      obliga a re-muestrear el fondo cada frame. Lo único que se mueve es el
-      sheen, que va ENCIMA y solo con transform.
+      obliga a re-muestrear el fondo cada frame. Lo único que se mueve encima
+      del cristal es el sheen, y solo con transform.
+      (El fondo SÍ se mueve —las facetas—, que es lo que le da al glass algo
+      que refractar. Ese costo está medido y acotado: ver el bloque FONDO EN
+      MOVIMIENTO más abajo.)
    3) No apilar glass sobre glass (apple-design §12): la legibilidad se cae.
    ============================================================================= */
 
@@ -37,13 +40,28 @@ html.co-root body {
   --co-tx-2: #9fb0d8; /* ~8.7:1 */
   --co-tx-3: #7f8fbe; /* ~5.9:1 — AA en texto normal */
 
-  /* ── Material (glass) ────────────────────────────────────────────────────── */
-  --co-glass: rgba(255, 255, 255, 0.05);
-  --co-glass-alta: rgba(255, 255, 255, 0.08);
-  --co-borde: rgba(255, 255, 255, 0.1);
+  /* ── Material (glass) ─────────────────────────────────────────────────────
+     El cristal se define por TRES cosas juntas, no por el blur solo:
+       1. TINTE propio (un vidrio de verdad tiene color, no es 100% neutro)
+       2. DENSIDAD suficiente para que el fondo se lea filtrado y no crudo
+       3. CANTO de luz que revela el espesor
+     Los tintes van sobre --co-noche, no en blanco puro: un velo blanco sobre
+     noche lava el color y da ese gris lechoso de plantilla. Estas mezclas
+     conservan el azul de la marca mientras suben la densidad.
+
+     La densidad subió fuerte (antes 5% de blanco) porque el fondo pasó a ser
+     una FOTO: con 5% el contenido se leía sobre la ciudad, no sobre cristal.
+     El costo del blur no cambia con la opacidad — esto es gratis. */
+  --co-glass: rgba(19, 28, 62, 0.58); /* superficie estándar (cards, planes) */
+  --co-glass-alta: rgba(30, 42, 82, 0.66); /* elementos interactivos */
+  --co-glass-densa: rgba(14, 21, 48, 0.74); /* sobre zonas claras de la foto */
+  --co-borde: rgba(255, 255, 255, 0.14);
   --co-borde-luz: rgba(255, 255, 255, 0.3); /* canto superior = luz enganchada */
   --co-blur: 22px;
   --co-blur-grande: 40px; /* superficies grandes leen más gruesas */
+  /* Realce interior: la línea de 1px que hace ver el canto como espesor y no
+     como borde dibujado. Se repite en cada superficie, así que es un token. */
+  --co-realce: inset 0 1px 0 rgba(255, 255, 255, 0.14), inset 0 -1px 0 rgba(0, 0, 0, 0.22);
 
   /* ── Forma — radios concéntricos (contenedor → hijo → chip) ──────────────── */
   --co-r-xl: 30px;
@@ -55,6 +73,16 @@ html.co-root body {
   --co-sombra-xl: 0 50px 120px -40px rgba(0, 0, 0, 0.85);
 
   position: relative;
+  /* z-index: 0 hace de .co un contexto de apilamiento, y SIN ESO las tres capas
+     de fondo (.co-bg, .co-facetas, .co-grain) no se ven: con z-index negativo y
+     un padre que no es contexto de apilamiento, se pintan en la raíz, o sea por
+     DEBAJO del background opaco de .co. Verificado pintando .co-bg de verde
+     puro: no cambiaba un píxel. La página venía siendo un #070b1f plano y por
+     eso el glass no tenía nada que refractar.
+     Tiene que ser z-index y NO `isolation: isolate`: isolation crea además un
+     backdrop root y mataría el backdrop-filter del visor (regla 1 de arriba).
+     z-index crea contexto de apilamiento sin crear backdrop root. */
+  z-index: 0;
   min-height: 100vh;
   background: var(--co-noche);
   color: var(--co-tx);
@@ -62,19 +90,179 @@ html.co-root body {
   letter-spacing: -0.011em;
 }
 
-/* Fondo: dos focos de luz de marca sobre noche. Fijo y sin animación —
-   un fondo que se mueve a pantalla completa es lo que pide no hacer
-   apple-design §14, y además obligaría al cristal a re-muestrear. */
+/* Fondo base: la NOCHE sobre la que caen las facetas. Antes eran tres focos de
+   color (azul + violeta + verde) sobre oscuro — el "aurora mesh" que sale por
+   defecto en cualquier plantilla generada por IA, y lo que hacía que la página
+   se leyera a genérica. Ahora queda un solo foco, y va ARRIBA-IZQUIERDA para
+   coincidir con la dirección de luz del canto del visor: antes el foco estaba
+   a la derecha y el canto brillaba a la izquierda, o sea dos fuentes de luz
+   contradictorias en la misma pantalla. El verde tenue de abajo se queda: es
+   el que hace que el CTA no flote sobre vacío. */
 .co-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -5;
+  pointer-events: none;
+  background:
+    radial-gradient(1150px 680px at 12% -12%, rgba(39, 71, 255, 0.26), transparent 64%),
+    radial-gradient(900px 700px at 50% 114%, rgba(0, 200, 120, 0.08), transparent 62%),
+    linear-gradient(180deg, var(--co-noche) 0%, var(--co-noche-2) 48%, var(--co-noche) 100%);
+}
+
+/* ══════════════ EL DESCENSO — video atado al scroll ════════════════════════
+   Orden de capas del fondo, de atrás hacia adelante:
+     -5 .co-bg       degradados de noche — se ven mientras carga la secuencia
+                     y quedan de red de seguridad si las imágenes fallan
+     -4 .co-descenso el canvas con el cuadro actual del descenso
+     -3 .co-velo     velo de contraste (su opacidad la maneja el JS)
+     -2 .co-facetas  las facetas, ahora subordinadas al video
+     -1 .co-grain    grano
+   ========================================================================== */
+.co-descenso {
+  position: fixed;
+  inset: 0;
+  z-index: -4;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  /* La opacidad la mueve el JS al terminar el vuelo (ver PANTALLAS_SALIDA).
+     Es una capa de compositor a pantalla completa: cambiarla no repinta nada. */
+  will-change: opacity;
+}
+
+/* El plano final es una ciudad entera encendida y encima va texto blanco. Sin
+   velo, el copy del cierre y el legal quedan por debajo de AA. Es más denso
+   abajo, que es donde vive el texto, y su opacidad sube con el descenso. */
+.co-velo {
+  position: fixed;
+  inset: 0;
+  z-index: -3;
+  pointer-events: none;
+  opacity: 0.3; /* valor inicial; a partir de ahí lo mueve el scroll */
+  /* La banda del 32% estaba casi transparente porque asumí que ahí siempre hay
+     cielo oscuro. En el plano final ahí está la ciudad encendida, y es justo la
+     altura del párrafo del hero: medido, el texto quedaba ilegible aun con el
+     velo al máximo. Ahora el degradado no baja de 0.5 en ninguna parte. */
+  background:
+    linear-gradient(180deg, rgba(7, 11, 31, 0.62) 0%, rgba(7, 11, 31, 0.52) 34%, rgba(7, 11, 31, 0.88) 100%),
+    radial-gradient(120% 80% at 50% 100%, rgba(7, 11, 31, 0.6), transparent 70%);
+}
+
+/* ══════════════ FONDO EN MOVIMIENTO — facetas de cristal ═══════════════════
+   El glass necesita ALGO detrás que valga la pena refractar: sobre un degradado
+   plano, un backdrop-filter no tiene nada que hacer y la superficie se lee como
+   una tarjeta gris. Las facetas le dan al material contenido real que deformar.
+
+   PRESUPUESTO (Android de gama media, tráfico pagado de Meta):
+   Todo píxel que cambia detrás de un backdrop-filter obliga a re-desenfocar esa
+   zona cada frame, y en esta página hay ~15 superficies glass. Por eso:
+     · Solo se anima `transform` → capa de compositor, cero trabajo de layout
+       ni de paint en el hilo principal.
+     · Nada de opacity/width/filter animados: eso sí gatilla repaint por frame.
+     · El desenfoque de profundidad (capa 3) es ESTÁTICO: se rasteriza una vez.
+     · Ciclos de 41–96 s. Es ambiente, no protagonista — la firma de la página
+       sigue siendo el sheen del visor (una sola animación compleja por página).
+     · En móvil se cae a la mitad de las piezas (ver el media query del final).
+   ============================================================================ */
+.co-facetas {
   position: fixed;
   inset: 0;
   z-index: -2;
   pointer-events: none;
-  background:
-    radial-gradient(1100px 620px at 78% -10%, rgba(39, 71, 255, 0.28), transparent 62%),
-    radial-gradient(820px 560px at -8% 42%, rgba(122, 91, 255, 0.16), transparent 60%),
-    radial-gradient(900px 700px at 50% 112%, rgba(0, 200, 120, 0.09), transparent 62%),
-    linear-gradient(180deg, var(--co-noche) 0%, var(--co-noche-2) 48%, var(--co-noche) 100%);
+  overflow: hidden; /* sin esto las piezas grandes generan scroll horizontal */
+}
+
+.co-faceta {
+  --tinte: 190, 214, 255; /* azul hielo por defecto */
+  position: absolute;
+  top: 0;
+  left: var(--x);
+  width: var(--tam);
+  height: var(--tam);
+  will-change: transform;
+  animation: co-descender var(--dur) linear infinite;
+  animation-delay: var(--delay);
+}
+.co-t-violeta {
+  --tinte: 168, 146, 255;
+}
+.co-t-verde {
+  --tinte: 0, 200, 120;
+}
+
+/* Tres formas, un mismo lenguaje: cantos rectos, esquinas apenas suavizadas.
+   El borde es lo que las hace leer como CRISTAL y no como manchas de color. */
+/* El alfa del borde se multiplica por el opacity de la capa: lo que se ve es el
+   producto, no el número suelto. Calibrado para que las piezas se lean como
+   ambiente y NUNCA compitan con el titular — el h1 va encima de ellas. */
+.co-f-lamina {
+  border: 1px solid rgba(var(--tinte), 0.26);
+  border-radius: 4px;
+  background: linear-gradient(150deg, rgba(var(--tinte), 0.07), rgba(var(--tinte), 0.012) 62%);
+}
+.co-f-prisma {
+  /* Cuadrado girado = rombo, pero con border real (un clip-path se come el
+     borde y deja el canto a medias). El giro sale del --rot de cada pieza. */
+  border: 1px solid rgba(var(--tinte), 0.3);
+  border-radius: 3px;
+  background: linear-gradient(180deg, rgba(var(--tinte), 0.06), transparent 70%);
+}
+.co-f-hex {
+  /* Sin borde: el clip-path lo cortaría por la mitad. Compensa con más relleno. */
+  clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%);
+  background: linear-gradient(160deg, rgba(var(--tinte), 0.1), rgba(var(--tinte), 0.02) 65%);
+}
+
+/* Profundidad: lejos = chico, tenue y desenfocado. El blur va acá y NO en el
+   keyframe, así se rasteriza una sola vez y moverlo no cuesta nada.
+
+   Bajadas a la mitad desde que entró el descenso: con un fondo fotográfico
+   detrás, la firma de la página pasó a ser el video. Dos animaciones de fondo
+   compitiendo es exactamente lo que hace ver una página sobrecargada; las
+   facetas quedan como esquirlas de cristal que el plano ilumina de a ratos —
+   lo que ata el fondo al material del visor y evita que se lea a stock. */
+.co-capa-1 {
+  opacity: 0.26;
+}
+.co-capa-2 {
+  opacity: 0.19;
+}
+.co-capa-3 {
+  opacity: 0.13;
+  filter: blur(2.5px);
+}
+
+/* Descenso. La rotación cambia poco (12°) en todo el ciclo: lo justo para que
+   la pieza no se lea como una calcomanía deslizándose. */
+@keyframes co-descender {
+  from {
+    transform: translate3d(0, -45vh, 0) rotate(var(--rot));
+  }
+  to {
+    transform: translate3d(0, 145vh, 0) rotate(calc(var(--rot) + 12deg));
+  }
+}
+
+/* Movimiento reducido: NO se apaga el fondo (quedaría el degradado plano que
+   estamos tratando de matar). Se PAUSA. Como cada pieza tiene un delay
+   negativo distinto, quedan congeladas en una composición repartida. */
+@media (prefers-reduced-motion: reduce) {
+  .co-faceta {
+    animation-play-state: paused;
+  }
+}
+
+/* Móvil: la mitad de las piezas y 30% más chicas. No es estética, es el
+   presupuesto — es el dispositivo más débil y el que trae todo el tráfico.
+   Se cae una de cada dos para que sigan quedando las tres capas. */
+@media (max-width: 680px) {
+  .co-faceta:nth-child(2n) {
+    display: none;
+  }
+  .co-faceta {
+    width: calc(var(--tam) * 0.7);
+    height: calc(var(--tam) * 0.7);
+  }
 }
 
 /* Grano finísimo: mata el banding de los degradados sobre noche y da textura
@@ -398,13 +586,84 @@ html.co-root body {
   overflow: hidden;
   border-radius: var(--co-r-xl);
   padding: 19px;
-  background: linear-gradient(165deg, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0.04));
+  /* ESPESOR. Un panel de vidrio no es una lámina: la luz entra por el canto que
+     encara la fuente (arriba-izquierda, donde vive el sheen) y en el canto
+     opuesto el material acumula masa y comprime el fondo. Son dos gradientes
+     sobre el tinte base — no un blur más, así que no cuestan nada por frame.
+     Esto es lo que en el editor de Figma se arma apilando capas de fill; acá se
+     resuelve en una sola propiedad. */
+  /* Densidad: es la superficie donde vive el CTA primario, encima de una
+     captura con cielo claro. Con el tinte translúcido de antes el botón
+     competía con la foto. El tinte de marca va sobre --co-glass, no en blanco:
+     un velo blanco sobre noche da el gris lechoso de plantilla. */
+  background:
+    radial-gradient(135% 115% at 0% 0%, rgba(255, 255, 255, 0.1), transparent 46%),
+    radial-gradient(120% 110% at 100% 100%, rgba(4, 8, 24, 0.26), transparent 44%),
+    linear-gradient(165deg, rgba(255, 255, 255, 0.07), transparent 70%), var(--co-glass);
   /* Superficie grande → blur más fuerte y sombra más profunda. */
   backdrop-filter: blur(var(--co-blur-grande)) saturate(150%);
   -webkit-backdrop-filter: blur(var(--co-blur-grande)) saturate(150%);
   border: 1px solid var(--co-borde);
-  border-top-color: var(--co-borde-luz);
-  box-shadow: var(--co-sombra-xl), inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  box-shadow:
+    var(--co-sombra-xl),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.22); /* el canto en sombra cierra el volumen */
+}
+
+/* CANTO DE LUZ ANGULAR.
+   Antes el borde era un 1px uniforme con el top más claro. Pero el canto de un
+   cristal no refleja igual en todo su perímetro: brilla donde encara la luz y
+   casi se apaga en el opuesto. Ese borde parejo es la razón #2 por la que el
+   glassmorphism se ve a plástico (la #1, el fondo plano, ya la resolvimos
+   poniendo la página en noche con las capturas detrás).
+   Técnica: conic-gradient recortado a un anillo de 1.4px con dos máscaras que
+   se restan (la del content-box "muerde" el centro). No es un borde, es una
+   capa pintada — por eso puede tener degradado angular, cosa que `border` no
+   sabe hacer. */
+.co-visor::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1; /* la arista se mantiene nítida por sobre el sheen */
+  pointer-events: none;
+  border-radius: calc(var(--co-r-xl) - 1px); /* va DENTRO del border de 1px */
+  padding: 1.4px;
+  /* `from 315deg` ancla el ángulo 0 del degradado al canto superior-izquierdo,
+     que es de donde viene la luz en toda la composición (el inset highlight
+     está arriba y el sheen nace ahí). El mínimo cae en el canto opuesto.
+     Los comentarios son la posición EN PANTALLA, no el ángulo del gradiente:
+     no coinciden, y confundirlos deja el cristal iluminado al revés. */
+  background: conic-gradient(
+    from 315deg at 50% 50%,
+    rgba(255, 255, 255, 0.55) 0deg /* arriba-izquierda — máximo */,
+    rgba(255, 255, 255, 0.32) 45deg /* arriba */,
+    rgba(255, 255, 255, 0.1) 110deg /* derecha */,
+    rgba(160, 190, 255, 0.05) 180deg /* abajo-derecha — mínimo */,
+    rgba(255, 255, 255, 0.1) 250deg /* abajo-izquierda */,
+    rgba(255, 255, 255, 0.32) 310deg /* izquierda */,
+    rgba(255, 255, 255, 0.55) 360deg
+  );
+  -webkit-mask: linear-gradient(#000, #000) content-box, linear-gradient(#000, #000);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000, #000) content-box, linear-gradient(#000, #000);
+  mask-composite: exclude;
+}
+
+/* GRANO SOBRE EL MATERIAL.
+   El .co-grain global va detrás del cristal, así que el backdrop-filter se lo
+   come: la cara del visor quedaba perfectamente lisa y eso lee como plástico
+   digital. Mismo ruido, ahora ENCIMA. Va en el ::after (el ::before ya lo gasta
+   el canto) y pinta sobre el contenido: a 0.05 de opacidad no toca el
+   contraste del texto y unifica la superficie. */
+.co-visor::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0.05;
+  border-radius: inherit;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 /* Brillo especular. Suavidad HORNEADA en el gradiente, no con filter: blur()
    — un blur por frame sobre algo que se mueve es caro. Solo transform. */
@@ -509,6 +768,72 @@ html.co-root body {
   margin-inline: 0;
 }
 
+/* ══════════════════════════ GLINT — luz que cruza el cristal ════════════════
+   Una banda de luz recorre la superficie en diagonal, como el reflejo de una
+   fuente al pasar frente a un panel de vidrio. Es lo que separa "una caja
+   translúcida" de "una pieza de material": el cristal responde a la luz.
+
+   Reglas para que no se lea a barato (que es el riesgo real de este efecto):
+   · NO es un loop infinito. Un brillo que pasa cada 3 s eternamente es el
+     cliché de plantilla de venta. Acá cruza UNA vez, cuando la tarjeta entra
+     en pantalla, y se calla. Se dispara con .in, la clase que ya pone
+     useReveal al revelar la sección — cero JS nuevo.
+   · Escalonado por posición (--i): las tarjetas de una fila no destellan
+     todas juntas, se encadenan. Eso lee como una luz que barre, no como un
+     efecto aplicado a N elementos.
+   · Solo transform sobre un pseudo-elemento => capa de compositor. No toca el
+     backdrop-filter de la tarjeta, que es lo caro.
+   · 1.15 s: por debajo de 0.9 s se siente a parpadeo de neón. */
+.co-glint {
+  position: relative;
+}
+.co-glint::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 45%;
+  height: 100%;
+  z-index: 3;
+  pointer-events: none;
+  opacity: 0;
+  /* Diagonal: una banda vertical se lee a "escáner". El ángulo la vuelve luz. */
+  background: linear-gradient(102deg, transparent, rgba(255, 255, 255, 0.13) 46%, rgba(190, 214, 255, 0.06) 62%, transparent);
+  transform: translate3d(-160%, 0, 0) skewX(-14deg);
+}
+/* Dos formas de dispararlo: la clase .in en el propio elemento, o en un
+   ancestro (el caso normal — .reveal vive en el <li> y el cristal es el <a>
+   de adentro, que es el que tiene overflow:hidden y el radio). */
+.co-glint.in::after,
+.in .co-glint::after {
+  animation: co-glint 1.15s cubic-bezier(0.32, 0.06, 0.4, 1) 1 both;
+  /* Escalonado: 90 ms entre vecinas. --i lo pone el TSX por índice. */
+  animation-delay: calc(0.42s + var(--i, 0) * 0.09s);
+}
+@keyframes co-glint {
+  0% {
+    opacity: 0;
+    transform: translate3d(-160%, 0, 0) skewX(-14deg);
+  }
+  22% {
+    opacity: 1;
+  }
+  78% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(330%, 0, 0) skewX(-14deg);
+  }
+}
+/* Movimiento reducido: sin barrido. La tarjeta ya se ve completa sin él. */
+@media (prefers-reduced-motion: reduce) {
+  .co-glint.in::after,
+  .in .co-glint::after {
+    animation: none;
+  }
+}
+
 /* ── Vitrina: riel con scroll-snap en celular, grilla en desktop ─────────────
    Sin scroll-jacking a propósito: en tráfico pagado todo lo que retrasa el CTA
    cuesta plata. El momentum lo da el scroll nativo del sistema. */
@@ -517,7 +842,10 @@ html.co-root body {
   list-style: none;
   display: grid;
   grid-auto-flow: column;
-  grid-auto-columns: 79%;
+  /* 79% dejaba la card siguiente casi entera fuera de cuadro. A 72% siempre
+     asoma un trozo claro de la que viene: la afordancia de "hay más al lado"
+     tiene que ser visual, no un texto que diga "desliza". */
+  grid-auto-columns: 72%;
   gap: 13px;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
@@ -536,6 +864,7 @@ html.co-root body {
   display: flex;
 }
 .co-card-a {
+  position: relative;
   display: flex;
   flex-direction: column;
   width: 100%;
@@ -545,22 +874,30 @@ html.co-root body {
   border: 1px solid var(--co-borde);
   backdrop-filter: blur(var(--co-blur));
   -webkit-backdrop-filter: blur(var(--co-blur));
-  box-shadow: var(--co-sombra);
+  box-shadow: var(--co-sombra), var(--co-realce);
   transition: transform 0.36s var(--ease), border-color 0.3s var(--ease), box-shadow 0.36s var(--ease);
 }
 @media (hover: hover) {
   .co-card-a:hover {
     transform: translateY(-5px);
     border-color: rgba(0, 200, 120, 0.4);
-    box-shadow: 0 40px 90px -34px rgba(0, 0, 0, 0.9);
+    box-shadow: 0 40px 90px -34px rgba(0, 0, 0, 0.9), var(--co-realce);
   }
 }
+/* 16/10 en un riel al 72% da una card de ~400 px de alto: la sección entera se
+   comía una pantalla completa de celular. A 16/11.5 la captura sigue leyéndose
+   (es una web, se reconoce por el encabezado) y la card baja ~60 px. */
 .co-card-shot {
   display: block;
-  aspect-ratio: 16 / 10;
+  aspect-ratio: 16 / 11.5;
   overflow: hidden;
   background: var(--co-noche-2);
   border-bottom: 1px solid var(--co-borde);
+}
+@media (min-width: 780px) {
+  .co-card-shot {
+    aspect-ratio: 16 / 10;
+  }
 }
 .co-card-shot img {
   width: 100%;
@@ -595,10 +932,23 @@ html.co-root body {
   letter-spacing: -0.022em;
   margin: 5px 0 8px;
 }
+/* En celular el copy de cada card se recorta a 2 líneas: el usuario está
+   decidiendo si ENTRA al demo, no leyendo la ficha completa. Son ~50 px menos
+   por card y el CTA sube al alcance del pulgar. En desktop van completos. */
 .co-card-txt {
   font-size: 0.925rem;
   line-height: 1.55;
   color: var(--co-tx-2);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+@media (min-width: 780px) {
+  .co-card-txt {
+    display: block;
+    overflow: visible;
+  }
 }
 /* Pinneado al fondo: en la grilla de desktop la primera tarjeta ocupa dos
    columnas y es más alta, así que su vecina de fila quedaba con un hueco
@@ -625,6 +975,8 @@ html.co-root body {
   gap: 14px;
 }
 .co-panel {
+  position: relative;
+  overflow: hidden;
   padding: 24px 24px 26px;
   border-radius: var(--co-r);
   background: var(--co-glass);
@@ -632,7 +984,7 @@ html.co-root body {
   border-top-color: rgba(255, 255, 255, 0.16);
   backdrop-filter: blur(var(--co-blur));
   -webkit-backdrop-filter: blur(var(--co-blur));
-  box-shadow: var(--co-sombra);
+  box-shadow: var(--co-sombra), var(--co-realce);
 }
 .co-panel-t {
   font-family: var(--display);
@@ -665,12 +1017,15 @@ html.co-root body {
   border: 1px solid var(--co-borde);
   backdrop-filter: blur(var(--co-blur));
   -webkit-backdrop-filter: blur(var(--co-blur));
-  box-shadow: var(--co-sombra);
+  box-shadow: var(--co-sombra), var(--co-realce);
+  overflow: hidden; /* recorta el glint al radio de la tarjeta */
 }
+/* El plan destacado es donde queremos que caiga la decisión: se le da más
+   material (no solo más color) para que pese más que sus vecinos. */
 .co-plan.is-destacado {
-  background: linear-gradient(170deg, rgba(0, 200, 120, 0.13), rgba(255, 255, 255, 0.045));
+  background: linear-gradient(170deg, rgba(0, 200, 120, 0.14), transparent 62%), var(--co-glass-densa);
   border-color: rgba(0, 200, 120, 0.36);
-  box-shadow: var(--co-sombra-xl), inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  box-shadow: var(--co-sombra-xl), var(--co-realce);
 }
 .co-plan-badge {
   align-self: flex-start;
@@ -832,6 +1187,8 @@ html.co-root body {
   gap: 14px;
 }
 .co-resena {
+  position: relative;
+  overflow: hidden;
   height: 100%;
   padding: 24px;
   border-radius: var(--co-r);
@@ -839,7 +1196,7 @@ html.co-root body {
   border: 1px solid var(--co-borde);
   backdrop-filter: blur(var(--co-blur));
   -webkit-backdrop-filter: blur(var(--co-blur));
-  box-shadow: var(--co-sombra);
+  box-shadow: var(--co-sombra), var(--co-realce);
 }
 .co-stars {
   color: #ffc23d;
@@ -877,6 +1234,7 @@ html.co-root body {
   border: 1px solid var(--co-borde);
   backdrop-filter: blur(var(--co-blur));
   -webkit-backdrop-filter: blur(var(--co-blur));
+  box-shadow: var(--co-realce);
   overflow: hidden;
 }
 .co-faq-item summary {
@@ -934,6 +1292,80 @@ html.co-root body {
   max-width: 62ch;
 }
 
+/* ══════════════════ Barra fija de acción (solo celular) ═════════════════════
+   El tráfico llega de un anuncio y la página tiene ~7 pantallas: entre el hero
+   y el cierre el CTA no existe. Cada pantalla sin acción visible es gente que
+   se va. La barra mantiene la reunión a un toque, siempre.
+
+   No es un pop-up ni un banner de descuento: no interrumpe, no tapa contenido
+   (el body reserva su alto) y no se puede cerrar porque no molesta — es la
+   misma acción de la página, anclada. */
+.co-barra {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
+  padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px));
+  background: var(--co-glass-densa);
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  border-top: 1px solid var(--co-borde);
+  box-shadow: 0 -18px 40px -22px rgba(0, 0, 0, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  /* Oculta de verdad: visibility saca la barra del orden de tabulación. Con
+     solo opacity/transform, el primer Tab enfocaba un botón invisible — el
+     mismo error que ya se había corregido en el CTA de la barra superior. */
+  visibility: hidden;
+  opacity: 0;
+  transform: translate3d(0, 100%, 0);
+  transition: transform 0.34s var(--ease), opacity 0.24s var(--ease), visibility 0s linear 0.34s;
+}
+.co-barra.is-visible {
+  visibility: visible;
+  opacity: 1;
+  transform: none;
+  transition: transform 0.34s var(--ease), opacity 0.24s var(--ease), visibility 0s;
+}
+.co-barra-in {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  max-width: 560px;
+  margin: 0 auto;
+}
+.co-barra-txt {
+  font-size: 0.92rem;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.012em;
+  color: var(--co-tx);
+}
+.co-barra-txt span {
+  display: block;
+  font-size: 0.76rem;
+  font-weight: 400;
+  color: var(--co-tx-3);
+}
+.co-barra .co-btn {
+  flex: 0 0 auto;
+  min-height: 46px;
+  padding: 0 22px;
+}
+/* Desktop: el CTA del visor y el de la barra superior ya cubren la intención.
+   Una barra inferior ahí sería ruido. */
+@media (min-width: 680px) {
+  .co-barra {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .co-barra {
+    transition: opacity 0.2s ease, visibility 0s linear 0.2s;
+    transform: none;
+  }
+}
+
 /* ── Cierre ──────────────────────────────────────────────────────────────── */
 
 .co-cierre {
@@ -941,16 +1373,26 @@ html.co-root body {
   margin: 0 auto;
   padding: clamp(20px, 4vw, 40px) var(--gutter) clamp(60px, 9vw, 100px);
 }
+/* El CTA final es la última superficie que ve el usuario antes de decidir, y
+   cae justo donde el descenso terminó: sobre la ciudad encendida. No tenía
+   backdrop-filter —solo un gradiente translúcido—, así que la foto lo
+   atravesaba entera y el copy competía con las luces de las calles.
+   Ahora es cristal denso de verdad: la ciudad se ve DETRÁS del material, no a
+   través de un vidrio limpio. */
 .co-cierre-in {
   position: relative;
   overflow: hidden;
   text-align: center;
   padding: clamp(36px, 6vw, 64px) clamp(22px, 5vw, 56px);
   border-radius: var(--co-r-xl);
-  background: linear-gradient(165deg, rgba(0, 200, 120, 0.14), rgba(39, 71, 255, 0.12) 60%, rgba(255, 255, 255, 0.04));
+  background:
+    linear-gradient(165deg, rgba(0, 200, 120, 0.13), rgba(39, 71, 255, 0.1) 60%, transparent),
+    var(--co-glass-densa);
+  backdrop-filter: blur(var(--co-blur-grande)) saturate(140%);
+  -webkit-backdrop-filter: blur(var(--co-blur-grande)) saturate(140%);
   border: 1px solid rgba(0, 200, 120, 0.26);
   border-top-color: var(--co-borde-luz);
-  box-shadow: var(--co-sombra-xl), inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  box-shadow: var(--co-sombra-xl), var(--co-realce);
 }
 .co-cierre-in .co-p {
   margin: 14px auto 0;
@@ -969,7 +1411,9 @@ html.co-root body {
 .co-foot {
   max-width: var(--max);
   margin: 0 auto;
-  padding: 26px var(--gutter) 44px;
+  /* El padding inferior reserva el alto de la barra fija: sin esto la barra
+     tapa el WhatsApp del pie, que es la última salida de contacto. */
+  padding: 26px var(--gutter) calc(44px + 74px + env(safe-area-inset-bottom, 0px));
   border-top: 1px solid rgba(158, 180, 235, 0.12);
   display: flex;
   align-items: center;
@@ -1111,6 +1555,16 @@ html.co-root body {
   color: #ff8f9b;
   font-size: 0.87rem;
   margin: 4px 0 10px;
+}
+/* Salida a WhatsApp cuando el backend falla: tiene que leerse como acción, no
+   como parte del mensaje de error (por eso el blanco, no el rojo). */
+.co-form-err a {
+  display: inline-block;
+  margin-top: 4px;
+  color: #fff;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 .co-form .co-btn-primary {
   margin-top: 6px;
