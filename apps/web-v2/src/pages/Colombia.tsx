@@ -2,79 +2,58 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useReveal } from "../lib/useReveal";
 import ave from "../assets/colombia/ave.webp";
+import laptop from "../assets/colombia/laptop.webp";
 import fotoEquipo from "../assets/colombia/equipo.webp";
 import fotoOficina from "../assets/colombia/oficina.webp";
-import sitioEcommerce from "../assets/colombia/sitios/ecommerce.webp";
 import sitioInmobiliario from "../assets/colombia/sitios/inmobiliario.webp";
-import sitioServicios from "../assets/colombia/sitios/servicios.webp";
+import sitioEcommerce from "../assets/colombia/sitios/ecommerce.webp";
 import sitioRestaurante from "../assets/colombia/sitios/restaurante.webp";
-import sitioEsencial from "../assets/colombia/sitios/esencial.webp";
 import "./Colombia.css";
 
 /* =============================================================================
    Landing de campaña — Cóndor.ai × Colombia  (ruta /colombia)
    Un solo objetivo: agendar reunión o pedir contacto.
 
-   DIRECCIÓN DE ARTE — "El visor" (noche andina + cristal real)
+   REESCRITURA 2026-07-31 — "La página honesta"
    ---------------------------------------------------------------------------
-   La página invierte el esquema del sitio (claro) a NOCHE, usando los tokens
-   --night / --on-night que ya existen en index.css para la mitad "espacio" de
-   la marca. No es gusto: el glass necesita luz y profundidad detrás para leerse
-   como material. Sobre blanco plano se ve como una tarjeta gris — es la razón
-   #1 por la que el glassmorphism se ve barato.
+   La versión anterior era oscura, con video atado al scroll, cristal, precios,
+   planes, FAQ y nueve secciones. Se cambió por decisión de negocio: el anuncio
+   trae a alguien que no nos conoce, y una página que promete mucho antes de
+   habernos visto la cara genera desconfianza, no deseo.
 
-   FIRMA VISUAL (una sola animación compleja, Fase 4):
-   El "visor" del hero es un slab de cristal que obedece física de vidrio:
-   aplica backdrop-filter sobre CAPTURAS REALES de los sitios que construimos,
-   y un brillo especular sigue al puntero como luz sobre vidrio.
+   Lo que esta página NO dice, a propósito:
+     · precios — se hablan en la reunión, con el proyecto sobre la mesa
+     · que usamos IA — es cómo trabajamos, no lo que el cliente compra
+     · plazos de entrega — prometer días sin conocer el proyecto es mentir
+   Nada de eso sobrevive al primer "depende", y prometerlo en la landing
+   convierte peor y quema la reunión.
 
-   Presupuesto de performance (Android de gama media en 4G, tráfico de Meta):
-     - El slab de cristal NO se transforma nunca → el backdrop-filter no se
-       re-muestrea por frame. Mover un elemento con backdrop-filter es caro.
-     - Lo único que se mueve por frame es el sheen: un elemento ENCIMA del
-       cristal animado solo con transform → compositor puro.
-     - La suavidad del sheen va horneada en el radial-gradient, NO con
-       filter: blur() (un blur por frame sobre algo que se mueve es caro).
-     - En táctil no hay puntero: el sheen se ata al scroll del hero.
-   El CTA primario es ESMERALDA (#00C878), no rojo: PROYECTO.md §10 documenta
-   "verde esmeralda (CTA)" como convención de marca. Contraste sobre noche 9:1
-   y con la tinta del botón 10.7:1 — AA con holgura, que el rojo no alcanzaba.
+   Lo que SÍ dice: quiénes somos, con nuestras caras y nuestra oficina de
+   verdad (fotos reales, no stock ni render), qué hemos hecho (sitios en vivo,
+   no maquetas) y dos formas de hablar con nosotros.
 
-   Backend: Google Apps Script (docs/campana-colombia/Code.gs), NO Supabase/
-   WhatsApp Cloud API — decisión 2026-07-28: sin tiempo para la burocracia de
-   Meta Business. El lead cae directo a una fila en Google Sheets y el
-   seguimiento (recordatorio 24 h antes, contacto post-lead) se hace a mano
-   desde ahí, marcando la columna "Estado".
+   Estructura completa: hero → quiénes somos → trabajo → cierre. Cuatro
+   secciones. Cada scroll extra en tráfico pagado es gente que se va.
 
-   Contrato del formulario (NO romper — MAX.md; coordinado con Samuel):
+   Contrato del formulario (NO romper — coordinado con Samuel):
      POST {VITE_LEADS_API}          (la URL /exec del Apps Script, SIN sufijo)
      {
        tipo: "reunion" | "contacto",
        nombre: string, whatsapp: string, correo: string,
-       fecha_hora?: string,        // texto libre: "martes en la tarde"
+       fecha_hora?: string,
        origen: { utm_source, utm_medium, utm_campaign, utm_content, fbclid, url },
-       creativo?: string           // ?cr= en la URL, para atribución
+       creativo?: string
      }
-   Code.gs solo lee utm_campaign, url y creativo; el resto viaja por si el
-   backend cambia (y para poder auditar de qué anuncio vino cada lead).
-   Sin VITE_LEADS_API: en DEV simula éxito y loguea el payload; en producción
-   falla a propósito (un "¡Listo!" sin backend = lead pagado perdido).
+   Sin VITE_LEADS_API: en DEV simula éxito; en producción falla a propósito
+   (un "¡Listo!" sin backend = lead pagado perdido en silencio).
 
-   OJO CORS: el fetch va con Content-Type "text/plain" a propósito. Un
-   Content-Type "application/json" dispara un preflight OPTIONS que los Web
-   Apps de Apps Script no responden (falla en silencio). Con text/plain el
-   string sigue siendo JSON válido; Code.gs lo parsea igual desde
-   e.postData.contents.
+   OJO CORS: el fetch va con Content-Type "text/plain" a propósito. Con
+   "application/json" se dispara un preflight OPTIONS que los Web Apps de Apps
+   Script no responden (falla en silencio). El string sigue siendo JSON válido.
 
-   TRACKING (Meta Pixel + CAPI, contrato de ALEJANDRO-ENTREGA.md §Tracking):
-   la landing carga /assets/js/condor-tracking.js SOLO en esta ruta (el resto
-   del sitio no es tráfico pagado y no tiene por qué pagar el script ni el
-   consentimiento). El script expone condorTrack() y condorAtribucion(); cada
-   evento sale por el navegador y por el servidor con el mismo event_id, así
-   que Meta lo cuenta una vez y sigue llegando aunque el navegador bloquee el
-   Pixel (≈ la mitad de los móviles). Eventos: PageView (automático),
-   ViewContent (abre un formulario), Schedule (agenda) y Lead (pide contacto).
-   Sin VITE_META_PIXEL_ID el script ni se carga: la página funciona igual.
+   TRACKING: Meta Pixel + CAPI (ALEJANDRO-ENTREGA.md §Tracking). Solo en esta
+   ruta. Eventos: PageView, ViewContent (abre un formulario), Schedule (agenda),
+   Lead (pide contacto). Sin VITE_META_PIXEL_ID no se carga nada.
    ============================================================================= */
 
 type Tipo = "reunion" | "contacto";
@@ -99,8 +78,7 @@ declare global {
 const LEADS_API = (import.meta.env.VITE_LEADS_API as string | undefined)?.replace(/\/$/, "") ?? "";
 const PIXEL_ID = (import.meta.env.VITE_META_PIXEL_ID as string | undefined)?.trim() ?? "";
 
-/* El Pixel nunca debe romper la página ni el envío del lead: si el script no
-   cargó (adblock, red caída, ID sin configurar) esto es un no-op. */
+/* El Pixel nunca debe romper la página ni el envío del lead. */
 function track(evento: string, datos?: DatosTrack) {
   try {
     window.condorTrack?.(evento, datos);
@@ -112,185 +90,98 @@ function track(evento: string, datos?: DatosTrack) {
 const WSP = "+56 9 8898 9824";
 const WSP_LINK = `https://wa.me/${WSP.replace(/\D/g, "")}`;
 
-/* Sitios reales en vivo — la prueba más fuerte de la página.
-   Las imágenes son capturas reales de cada demo (no mockups). */
+/* Sitios reales, en vivo. Sin adjetivos de venta: la prueba es que se puede
+   entrar. Descripciones de una línea — quien quiera saber más, entra. */
 const SITIOS = [
   {
     img: sitioInmobiliario,
-    marca: "HÁBITAT",
+    marca: "Hábitat",
     rubro: "Inmobiliaria",
-    txt: "Buscador de propiedades en Bogotá, Medellín y Cali, con una asesora de IA que califica al cliente y agenda las visitas.",
     href: "/demos/inmobiliario/",
   },
   {
     img: sitioEcommerce,
-    marca: "CUMBRE",
-    rubro: "Tienda online",
-    txt: "Catálogo, carrito y suscripción mensual, con un asistente que recomienda el grano según el gusto de cada cliente.",
+    marca: "Cumbre",
+    rubro: "Tienda de café",
     href: "/demos/ecommerce/",
   },
   {
-    img: sitioServicios,
-    marca: "VÉRTICE",
-    rubro: "Clínica",
-    txt: "Tratamientos, equipo y precios, con una recepcionista de IA que responde dudas y agenda valoraciones 24/7.",
-    href: "/demos/servicios/",
-  },
-  {
     img: sitioRestaurante,
-    marca: "DON LUCHO",
+    marca: "Don Lucho",
     rubro: "Restaurante",
-    txt: "Carta digital con video de cada plato, historia de la casa y reservas que caen directo al WhatsApp del local.",
     href: "https://joaquinmunozs.github.io/condorweb-demo-restaurante/",
   },
+];
+
+/* ══════════════════════ PRUEBA SOCIAL — OJO, LEER ═══════════════════════════
+   Estas resenas son de MAQUETA: sirven para ver como se ve y como se mueve el
+   riel, nada mas. No son de clientes reales.
+
+   Por eso la lista real arranca VACIA en produccion y la seccion no se
+   renderiza sin datos. No es exceso de celo: publicar testimonios inventados en
+   una pagina cuya unica propuesta es "somos reales, estas son nuestras caras"
+   es lo que mas rapido destruye esa propuesta — y ademas enganaria a gente que
+   esta a punto de dejar sus datos.
+
+   PARA PONERLAS EN VIVO: reemplazar el contenido de RESENAS con testimonios
+   reales (con permiso del cliente) y cambiar la constante de abajo. Mientras
+   tanto, en localhost se ven las de maqueta y en produccion no aparece nada.
+   ============================================================================ */
+/* PERSONAS Y NEGOCIOS INVENTADOS. Cada rubro se eligió para que pegue con lo
+   que dice el testimonio (una clínica valora los cambios rápidos, un
+   restaurante valora que le lleguen pedidos por WhatsApp, un estudio jurídico
+   valora hablar siempre con la misma persona). Coherencia = se puede juzgar la
+   maqueta; realidad = no, ninguna de estas personas existe.
+
+   SIN CIUDAD, a propósito: nombre + rubro + ubicación identifica a un negocio
+   concreto, y con testimonios inventados eso puede caerle encima a alguien que
+   existe de verdad. El rubro solo da el contexto que hace creíble la frase, que
+   es para lo único que está. Mantenerlo así también cuando sean reales, salvo
+   que el cliente pida aparecer con su ciudad. */
+const RESENAS_MAQUETA = [
   {
-    img: sitioEsencial,
-    marca: "TU NEGOCIO",
-    rubro: "Servicios",
-    txt: "La base: presencia profesional, clara y directa a WhatsApp. Es el punto de partida de la Landing Express.",
-    href: "https://joaquinmunozs.github.io/condorweb-demo-esencial/",
+    texto:
+      "Nos entendieron el negocio desde la primera reunión. La página quedó justo como la queríamos y los cambios que pedimos los hicieron el mismo día.",
+    quien: "Mariana Restrepo",
+    negocio: "Clínica dental",
+  },
+  {
+    texto:
+      "Llevábamos años con una página que no servía para nada. Ahora la gente nos escribe directo por WhatsApp desde el sitio.",
+    quien: "Andrés Gutiérrez",
+    negocio: "Restaurante",
+  },
+  {
+    texto: "Lo que más valoro es que siempre supe con quién estaba hablando. Nada de intermediarios ni de tickets.",
+    quien: "Catalina Ospina",
+    negocio: "Estudio jurídico",
+  },
+  {
+    texto:
+      "Nos hicieron preguntas que ni nosotros nos habíamos hecho sobre el negocio. Se nota que no es una plantilla rellenada.",
+    quien: "Julián Mesa",
+    negocio: "Marca de ropa",
+  },
+  {
+    texto: "Quedó lista antes de lo que esperábamos y nos explicaron cómo administrarla nosotros mismos.",
+    quien: "Daniela Cárdenas",
+    negocio: "Jardín infantil",
   },
 ];
 
-/* FONDO — facetas de cristal descendiendo.
-   El fondo anterior eran tres radial-gradient de colores sobre oscuro: el
-   "aurora mesh" que sale por defecto en cualquier plantilla generada, y la
-   razón por la que la página se leía a IA. Ahora el fondo es el MISMO material
-   del visor, en piezas, cayendo — así el glass de arriba tiene algo real que
-   refractar en vez de un degradado plano.
-
-   Es un sistema, no azar (el azar se ve a confeti):
-     · capa 1 = cerca  → grande, más contraste, más rápida
-     · capa 2 = media
-     · capa 3 = lejos  → chica, tenue, lenta y con desenfoque de profundidad
-   Un solo ángulo base (±20°) y la paleta cerrada de marca. `frac` es en qué
-   punto del ciclo arranca cada una (ver --delay abajo); repartidas para que la
-   pantalla nunca quede vacía ni amontonada. */
-const FACETAS = [
-  { x: 4, tam: 232, capa: 1, dur: 44, frac: 0.12, rot: -20, forma: "lamina", tinte: "azul" },
-  { x: 21, tam: 96, capa: 3, dur: 88, frac: 0.62, rot: 18, forma: "prisma", tinte: "azul" },
-  { x: 33, tam: 154, capa: 2, dur: 63, frac: 0.31, rot: -14, forma: "lamina", tinte: "violeta" },
-  { x: 47, tam: 78, capa: 3, dur: 92, frac: 0.05, rot: 22, forma: "hex", tinte: "azul" },
-  { x: 58, tam: 205, capa: 1, dur: 48, frac: 0.74, rot: 16, forma: "lamina", tinte: "azul" },
-  { x: 69, tam: 128, capa: 2, dur: 66, frac: 0.44, rot: -19, forma: "prisma", tinte: "verde" },
-  { x: 82, tam: 88, capa: 3, dur: 84, frac: 0.22, rot: 20, forma: "lamina", tinte: "azul" },
-  { x: 93, tam: 168, capa: 2, dur: 60, frac: 0.86, rot: -16, forma: "hex", tinte: "violeta" },
-  { x: 13, tam: 112, capa: 2, dur: 69, frac: 0.55, rot: 15, forma: "prisma", tinte: "azul" },
-  { x: 40, tam: 244, capa: 1, dur: 41, frac: 0.4, rot: -17, forma: "lamina", tinte: "azul" },
-  { x: 75, tam: 74, capa: 3, dur: 96, frac: 0.68, rot: -21, forma: "prisma", tinte: "azul" },
-  { x: 27, tam: 136, capa: 2, dur: 71, frac: 0.9, rot: 19, forma: "lamina", tinte: "azul" },
-  { x: 64, tam: 82, capa: 3, dur: 90, frac: 0.15, rot: -18, forma: "hex", tinte: "verde" },
-  { x: 88, tam: 196, capa: 1, dur: 46, frac: 0.58, rot: 21, forma: "lamina", tinte: "violeta" },
-];
-
-const INCLUYE = [
-  {
-    t: "Un asistente de IA propio",
-    d: "Un agente entrenado con tu negocio que atiende, recomienda, cotiza y agenda solo, las 24 horas. Ninguna agencia local te lo entrega.",
-  },
-  {
-    t: "Que te encuentren en Google",
-    d: "Ficha de Google y SEO local: apareces cuando alguien busca lo que vendes, en tu ciudad, en el momento en que lo necesita.",
-  },
-  {
-    t: "Todo termina en tu WhatsApp",
-    d: "Cada visita se convierte en una conversación tuya, en un clic. Sin formularios eternos ni correos que nadie abre.",
-  },
-  {
-    t: "Hosting, dominio y soporte",
-    d: "Incluidos en la mensualidad, con cambios ligeros cuando los pidas. Tu página evoluciona con el negocio.",
-  },
-];
-
-const PLANES = [
-  {
-    id: "express",
-    nombre: "Landing Express",
-    pago: "$400.000",
-    mensual: "USD $6",
-    mensualCop: "~$24.000 COP",
-    destacado: true,
-    badge: "Arranca aquí",
-    para: "Para vender un servicio o producto con una sola página que convierte.",
-    items: ["Una página, enfocada en un objetivo", "Diseño a medida (sin plantillas)", "Botón directo a WhatsApp", "Ficha de Google", "Entrega desde 48 horas"],
-  },
-  {
-    id: "profesional",
-    nombre: "Web Profesional",
-    pago: "$1.250.000",
-    mensual: "USD $18",
-    mensualCop: "~$72.000 COP",
-    destacado: false,
-    badge: "El más elegido",
-    para: "Para negocios que necesitan catálogo, varias secciones y automatizar la atención.",
-    items: ["Sitio completo, varias secciones", "Asistente de IA entrenado con tu negocio", "Catálogo o portafolio", "Integración con Shopify", "SEO local y analítica"],
-  },
-  {
-    id: "medida",
-    nombre: "Plataforma a Medida",
-    pago: "desde $2.200.000",
-    mensual: null,
-    mensualCop: "Mensualidad a cotizar",
-    destacado: false,
-    badge: null,
-    para: "Para cuando el negocio necesita un sistema, no una página.",
-    items: ["Desarrollo a medida", "Cuentas de usuario y paneles", "Pagos e integraciones", "Automatizaciones con IA", "Soporte dedicado"],
-  },
-];
-
-const PASOS = [
-  { n: "01", t: "Conversamos", d: "Reunión de 30 minutos. Nos cuentas qué vendes y a quién. Salimos con el objetivo claro." },
-  { n: "02", t: "Diseñamos", d: "Armamos tu página a medida con tu marca, tus fotos y tu forma de vender. Nada de plantillas." },
-  { n: "03", t: "Revisas", d: "Te la mostramos funcionando y ajustamos los detalles hasta que te guste de verdad." },
-  { n: "04", t: "Publicamos", d: "Queda en línea conectada a WhatsApp y Google. Desde ahí empieza a trabajar por ti." },
-];
-
-const RESENAS = [
-  { txt: "Rápidos y quedó increíble. Empezamos a recibir mensajes la primera semana.", by: "Cliente real · retail" },
-  { txt: "Entendieron mi negocio y la web vende sola. La recomiendo.", by: "Cliente real · servicios" },
-  { txt: "Precio justo y soporte de verdad. Cero vueltas.", by: "Cliente real · gastronomía" },
-];
-
-const FAQ = [
-  {
-    q: "¿En cuánto tiempo queda lista?",
-    a: "Desde 48 horas hábiles una vez que tenemos tu información (logo, fotos y qué quieres lograr). Una web completa toma entre 3 y 5 días.",
-  },
-  {
-    q: "¿Qué pasa si no me gusta el diseño?",
-    a: "Lo ajustamos. La revisión es parte del proceso y no avanzamos a publicar hasta que estés conforme con el resultado.",
-  },
-  {
-    q: "¿Para qué es la mensualidad?",
-    a: "Cubre el hosting, el dominio, el soporte y los cambios ligeros. Es lo que mantiene tu página en línea, rápida y actualizada. Sin ella tendrías que pagar y administrar todo eso aparte.",
-  },
-  {
-    q: "¿Necesito saber de tecnología?",
-    a: "No. Tú nos cuentas del negocio y nosotros nos encargamos del diseño, los textos, el hosting y la conexión con WhatsApp y Google.",
-  },
-  {
-    q: "¿Trabajan con negocios en Colombia?",
-    a: "Sí. Todo el proceso es en línea: la reunión, las revisiones y la entrega. Atendemos entre 8:00 y 21:00 hora Colombia.",
-  },
-  {
-    q: "¿Puedo ver algo que hayan hecho?",
-    a: "Sí, y en vivo. Los cinco sitios de la sección de arriba son reales y están publicados. Entra, navega y conversa con el asistente de IA de cada uno.",
-  },
-];
+/* En produccion la lista va vacia a proposito -> la seccion no se renderiza.
+   Cuando existan resenas reales, reemplazar esta linea por la lista de verdad. */
+const RESENAS = import.meta.env.DEV ? RESENAS_MAQUETA : [];
 
 /* -------------------------------------------------------------------------- */
 
 export default function Colombia() {
   useReveal(useLocation().pathname);
   const [open, setOpen] = useState<Tipo | null>(null);
-  const stageRef = useRef<HTMLDivElement>(null);
-  const sheenRef = useRef<HTMLSpanElement>(null);
 
-  useSheen(stageRef, sheenRef);
-  const pegado = useScrolled(10);
-
-  /* La página es standalone (sin Layout) y el sitio es claro: pinto la raíz de
-     noche para que el overscroll y la barra del navegador no muestren blanco. */
+  /* La página es standalone y el sitio global es claro, pero con su propio
+     fondo. Se pinta la raíz con el crema de esta landing para que el
+     overscroll y la barra del navegador no muestren otro color. */
   useEffect(() => {
     document.documentElement.classList.add("co-root");
     return () => document.documentElement.classList.remove("co-root");
@@ -298,10 +189,11 @@ export default function Colombia() {
 
   useMeta();
   useTracking();
-  const mostrarBarra = useBarra();
+  useSerif();
+  const laptopRef = useParallax();
 
-  /* Abrir un formulario es la microconversión que Meta puede optimizar antes de
-     tener volumen de Lead/Schedule: se reporta como ViewContent. */
+  /* Abrir un formulario es la microconversión que Meta puede optimizar antes
+     de tener volumen de Lead/Schedule: se reporta como ViewContent. */
   const abrir = (tipo: Tipo) => {
     track("ViewContent", { pais: "CO", extra: { formulario: tipo } });
     setOpen(tipo);
@@ -309,302 +201,172 @@ export default function Colombia() {
 
   return (
     <main className="co">
-      <div className="co-bg" aria-hidden />
-      <FondoDescenso />
-      <div className="co-facetas" aria-hidden>
-        {FACETAS.map((f, i) => (
-          <span
-            key={i}
-            className={`co-faceta co-f-${f.forma} co-capa-${f.capa} co-t-${f.tinte}`}
-            style={
-              {
-                "--x": `${f.x}%`,
-                "--tam": `${f.tam}px`,
-                "--rot": `${f.rot}deg`,
-                "--dur": `${f.dur}s`,
-                /* Delay NEGATIVO: la animación arranca a mitad de camino, así la
-                   primera pantalla ya tiene facetas repartidas en vez de un
-                   fondo vacío llenándose de a poco. */
-                "--delay": `${-(f.dur * f.frac).toFixed(1)}s`,
-              } as React.CSSProperties
-            }
-          />
-        ))}
-      </div>
-      <div className="co-grain" aria-hidden />
-
-      {/* Chrome mínimo: sin nav del sitio, un solo objetivo.
-          Barra translúcida con scroll edge effect (gana peso al despegarse del
-          top) en vez de un border-bottom de 1px. */}
-      <header className={`co-top${pegado ? " is-pegado" : ""}`}>
-        <div className="co-top-in">
-          <div className="co-brand">
-            {/* El ave del logo oficial (recortada de assets/logo.png): el
-                wordmark del PNG es negro y desaparecería sobre noche, así que
-                la palabra va como texto vivo. */}
-            <img className="co-mark" src={ave} alt="" width="34" height="25" />
-            <b>
-              cóndor<i>.ai</i>
-            </b>
-          </div>
-          <div className="co-top-right">
-            <span className="co-tag">Colombia</span>
-            <button className="co-btn co-btn-primary co-btn-sm co-top-cta" onClick={() => abrir("reunion")}>
-              Agendar
-            </button>
-          </div>
+      {/* Tres capas de fondo con comportamiento distinto (ver "EL FONDO" en el
+          CSS): las manchas de color viven en la PÁGINA y scrollean contigo; el
+          grano y la trama grabada se quedan fijos a la pantalla.
+          Las manchas son elementos reales y no gradientes del contenedor porque
+          cada una necesita su propia silueta irregular y su propio giro: un
+          radial-gradient sólo sabe hacer elipses. */}
+      <div className="co-luz" aria-hidden>
+        {/* El envoltorio existe por rendimiento, no por layout: se dibuja a un
+            tercio del tamaño y se escala ×3, así el blur trabaja sobre nueve
+            veces menos píxeles. Ver .co-luz-in en el CSS. */}
+        <div className="co-luz-in">
+          <span className="co-mancha co-m1" />
+          <span className="co-mancha co-m2" />
+          <span className="co-mancha co-m3" />
+          <span className="co-mancha co-m4" />
+          <span className="co-mancha co-m5" />
+          <span className="co-mancha co-m6" />
         </div>
+      </div>
+      <div className="co-trama" aria-hidden />
+
+      <header className="co-top">
+        <div className="co-brand">
+          <img className="co-mark" src={ave} alt="" width="30" height="22" />
+          <b>
+            cóndor<i>.ai</i>
+          </b>
+        </div>
+        <span className="co-tag">Colombia</span>
       </header>
 
-      {/* ═══════════════ HERO — "El visor" ═══════════════ */}
+      {/* ═══════════════════════════ HERO ═══════════════════════════ */}
+      {/* La entrada va ESCALONADA (--d) y no toda junta: el orden en que
+          aparecen las cosas es el orden en que hay que leerlas. Titular, luego
+          la promesa, luego la accion. Todo entra en menos de un segundo — es
+          trafico pagado, no una intro. */}
       <section className="co-hero">
-        <div className="co-hero-copy">
-          <p className="co-eyebrow reveal">Páginas web con inteligencia artificial</p>
-          <h1 className="co-h1 reveal">
-            Tu página web, lista y <span className="co-grad">vendiendo</span> en 48 horas.
-          </h1>
-          <p className="co-lead reveal">
-            Diseño a medida, hecha para el celular y para que te encuentren en Google. Nosotros la construimos; tú
-            atiendes a los clientes que llegan.
-          </p>
-          <ul className="co-trust reveal">
-            <li className="co-chip">Entrega desde 48 h</li>
-            <li className="co-chip">Hosting y soporte 24/7</li>
-            <li className="co-chip">Asistente de IA incluido</li>
-          </ul>
+        <h1 className="co-h1 reveal" style={{ "--d": "0.05s" } as React.CSSProperties}>
+          Creamos tu página web
+          <em>de principio a fin</em>
+        </h1>
+        <p className="co-lead reveal" style={{ "--d": "0.16s" } as React.CSSProperties}>
+          Somos un equipo pequeño. Nos sentamos contigo, entendemos tu negocio y la construimos nosotros mismos.
+        </p>
+
+        <div className="co-ctas reveal" style={{ "--d": "0.26s" } as React.CSSProperties}>
+          <button className="co-btn co-btn-primary" onClick={() => abrir("reunion")}>
+            <IcoCalendario />
+            Quiero agendar una reunión
+            <IcoFlecha />
+          </button>
+          <button className="co-btn co-btn-glass" onClick={() => abrir("contacto")}>
+            <IcoChat />
+            Prefiero que me contacten
+          </button>
         </div>
 
-        {/* El visor: cristal real sobre capturas reales de nuestro trabajo. */}
-        <div className="co-stage" ref={stageRef}>
-          {/* Dos capas, no tres: .co-stage-back tiene overflow:hidden, así que
-              una tercera captura asomando por la izquierda queda recortada y el
-              velo la apaga del todo. Se leía como nada y pesaba igual. */}
-          <div className="co-stage-back" aria-hidden>
-            <img className="co-stage-img co-stage-img-a" src={sitioInmobiliario} alt="" />
-            <img className="co-stage-img co-stage-img-b" src={sitioRestaurante} alt="" loading="lazy" />
-          </div>
-
-          <div className="co-visor">
-            <span className="co-sheen" ref={sheenRef} aria-hidden />
-            <div className="co-visor-in">
-              <p className="co-visor-lbl">Reunión sin costo</p>
-              <p className="co-visor-txt">Te mostramos cómo quedaría tu página y cuánto cuesta. 30 minutos.</p>
-              <button className="co-btn co-btn-primary co-btn-block" onClick={() => abrir("reunion")}>
-                Agendemos una reunión
-              </button>
-              <button className="co-btn co-btn-quiet co-btn-block" onClick={() => abrir("contacto")}>
-                Prefiero que me contacten
-              </button>
-              <p className="co-visor-legal">Atendemos de 8:00 a 21:00, hora Colombia.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Somos personas, con oficina. Prueba, no relleno. */}
-      <section className="co-equipo">
-        <figure className="co-equipo-foto reveal">
-          <img src={fotoEquipo} alt="El equipo de Cóndor.ai trabajando en su oficina" loading="lazy" />
+        {/* Mockup real con fondo transparente: el portátil se apoya sobre el
+            lavado de color de la página en vez de traer su propio recuadro
+            blanco, que es lo que delata a los mockups pegados.
+            Es ademas el objeto de la FIRMA de movimiento: deriva con el scroll
+            (ver useParallax) para que el hero tenga profundidad. */}
+        {/* El parallax va en la IMG y el revelado en la FIGURE: los dos escriben
+            `transform`, y en el mismo elemento uno pisaría al otro. */}
+        <figure className="co-laptop reveal" style={{ "--d": "0.36s" } as React.CSSProperties}>
+          <img
+            ref={laptopRef}
+            src={laptop}
+            alt="Un sitio web hecho por Cóndor.ai, abierto en un computador"
+            width="1600"
+            height="973"
+          />
         </figure>
-        <div className="co-equipo-copy reveal">
-          <p className="co-eyebrow">Quiénes lo hacen</p>
-          <h2 className="co-h2">Un equipo con nombre, cara y oficina.</h2>
-          <p className="co-p">
-            No somos un formulario. Somos cuatro personas que diseñan, programan y responden. A la reunión entra quien
-            va a construir tu página, no un vendedor.
-          </p>
+      </section>
+
+      {/* ═══════════════════════ QUIÉNES SOMOS ═══════════════════════ */}
+      <section className="co-sec" id="equipo">
+        <div className="co-nosotros co-glass-panel co-glint reveal">
+          <div className="co-nosotros-copy co-sub" style={{ "--d": "0.12s" } as React.CSSProperties}>
+            <p className="co-kicker">Quiénes somos</p>
+            <h2 className="co-h2">Cuatro personas y una oficina.</h2>
+            <p className="co-p">
+              No somos una agencia grande ni un formulario de contacto. A la reunión entra quien va a construir tu
+              página, y es con quien vas a hablar después.
+            </p>
+            <p className="co-p">Estas somos nosotros trabajando, un martes cualquiera.</p>
+          </div>
+          <div className="co-fotos">
+            <figure className="co-sub" style={{ "--d": "0.2s" } as React.CSSProperties}>
+              <img src={fotoEquipo} alt="El equipo de Cóndor.ai trabajando en la oficina" loading="lazy" />
+            </figure>
+            <figure className="co-sub" style={{ "--d": "0.3s" } as React.CSSProperties}>
+              <img src={fotoOficina} alt="La oficina de Cóndor.ai" loading="lazy" />
+            </figure>
+          </div>
         </div>
       </section>
 
-      {/* ═══════════════ VITRINA — sitios en vivo ═══════════════ */}
+      {/* ═════════════════════════ TRABAJO ═════════════════════════ */}
       <section className="co-sec" id="trabajo">
         <div className="co-sec-head reveal">
-          <p className="co-eyebrow">Trabajo real, no maquetas</p>
-          <h2 className="co-h2">Entra a los sitios que construimos. Están en vivo.</h2>
-          <p className="co-p co-p-sub">
-            Cada uno tiene su asistente de IA atendiendo. Navégalos como lo haría tu cliente, desde el celular.
-          </p>
+          <p className="co-kicker">Nuestro trabajo</p>
+          <h2 className="co-h2">Algunos sitios que hicimos.</h2>
+          <p className="co-p co-p-sub">Están publicados. Entra y navégalos como lo haría tu cliente.</p>
         </div>
-
-        {/* Riel con scroll-snap nativo en celular · grilla en desktop.
-            Sin scroll-jacking: en tráfico pagado, todo lo que retrasa el CTA cuesta. */}
-        <ul className="co-rail">
+        <ul className="co-sitios">
           {SITIOS.map((s, i) => (
             <li
-              className="co-card reveal"
+              className="reveal"
               key={s.marca}
-              style={{ transitionDelay: `${Math.min(i, 3) * 70}ms`, "--i": Math.min(i, 4) } as React.CSSProperties}
+              style={{ transitionDelay: `${i * 80}ms`, "--i": i } as React.CSSProperties}
             >
-              <a
-                className="co-card-a co-glint"
-                href={s.href}
-                target="_blank"
-                rel="noopener"
-                aria-label={`Ver el sitio de ${s.marca} en vivo`}
-              >
-                <span className="co-card-shot">
-                  <img src={s.img} alt={`Sitio web de ${s.marca}, ${s.rubro.toLowerCase()}`} loading="lazy" />
+              <a className="co-glass co-glint" href={s.href} target="_blank" rel="noopener">
+                <span className="co-sitio-img">
+                  <img src={s.img} alt={`Sitio web de ${s.marca}`} loading="lazy" />
                 </span>
-                <span className="co-card-body">
-                  <span className="co-card-rubro">{s.rubro}</span>
-                  <b className="co-card-marca">{s.marca}</b>
-                  <span className="co-card-txt">{s.txt}</span>
-                  <span className="co-card-cta">Ver el sitio en vivo →</span>
+                <span className="co-sitio-pie">
+                  <b>{s.marca}</b>
+                  <span>{s.rubro}</span>
                 </span>
               </a>
             </li>
           ))}
         </ul>
-        <p className="co-rail-nota reveal">
-          ¿Tu rubro no está acá? Lo diseñamos igual, a tu medida.
-        </p>
       </section>
 
-      {/* ═══════════════ QUÉ INCLUYE ═══════════════ */}
-      <section className="co-sec">
-        <div className="co-sec-head reveal">
-          <p className="co-eyebrow">Qué te llevas</p>
-          <h2 className="co-h2">No es una página. Es un vendedor que no duerme.</h2>
-        </div>
-        <ul className="co-grid-2">
-          {INCLUYE.map((c, i) => (
-            <li className="co-panel reveal" key={c.t} style={{ transitionDelay: `${(i % 2) * 80}ms` }}>
-              <h3 className="co-panel-t">{c.t}</h3>
-              <p className="co-panel-d">{c.d}</p>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      {/* ═══════════════ PRECIOS ═══════════════ */}
-      <section className="co-sec" id="precios">
-        <div className="co-sec-head reveal">
-          <p className="co-eyebrow">Precios claros</p>
-          <h2 className="co-h2">Un pago para construirla, una mensualidad baja para mantenerla.</h2>
-          <p className="co-p co-p-sub">
-            La mensualidad cubre hosting, dominio, soporte y cambios ligeros. Precios en pesos colombianos.
-          </p>
-        </div>
-        <ul className="co-planes">
-          {PLANES.map((p, i) => (
-            <li
-              className={`co-plan reveal co-glint${p.destacado ? " is-destacado" : ""}`}
-              key={p.id}
-              style={{ transitionDelay: `${i * 80}ms`, "--i": i } as React.CSSProperties}
-            >
-              {/* El plan sin badge igual reserva el hueco: si no, su título
-                  arranca más arriba que el de los otros dos y la fila se
-                  desalinea. */}
-              <span className={`co-plan-badge${p.badge ? "" : " is-hueco"}`} aria-hidden={!p.badge}>
-                {p.badge ?? " "}
-              </span>
-              <h3 className="co-plan-nombre">{p.nombre}</h3>
-              <p className="co-plan-para">{p.para}</p>
-              <p className="co-plan-precio">
-                <span className="co-plan-monto">{p.pago}</span>
-                <span className="co-plan-moneda">COP</span>
-              </p>
-              <p className="co-plan-mensual">
-                {p.mensual ? (
-                  <>
-                    + <b>{p.mensual}</b>/mes <span className="co-plan-cop">{p.mensualCop}</span>
-                  </>
-                ) : (
-                  <span className="co-plan-cop">{p.mensualCop}</span>
-                )}
-              </p>
-              <ul className="co-plan-items">
-                {p.items.map((it) => (
-                  <li key={it}>{it}</li>
-                ))}
-              </ul>
-              <button
-                className={`co-btn co-btn-block ${p.destacado ? "co-btn-primary" : "co-btn-ghost"}`}
-                onClick={() => abrir("reunion")}
-              >
-                {p.mensual ? `Quiero la ${p.nombre.split(" ")[0]}` : "Conversemos el proyecto"}
-              </button>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      {/* ═══════════════ PROCESO ═══════════════ */}
-      <section className="co-sec co-proceso">
-        <div className="co-proceso-copy">
-          <div className="co-sec-head co-sec-head-l reveal">
-            <p className="co-eyebrow">Cómo trabajamos</p>
-            <h2 className="co-h2">Cuatro pasos, sin vueltas.</h2>
+      {/* ═════════════════════ PRUEBA SOCIAL ═════════════════════════
+          Va JUSTO ANTES del CTA final: es el ultimo argumento antes de pedir
+          los datos. Ponerla arriba la desperdicia, porque todavia no hay
+          intencion; ponerla despues del cierre es no ponerla.
+          Si no hay resenas cargadas la seccion no existe — ver el bloque
+          "PRUEBA SOCIAL" arriba. */}
+      {RESENAS.length > 0 && (
+        <section className="co-sec co-resenas-sec" aria-label="Lo que dicen nuestros clientes">
+          <div className="co-sec-head reveal">
+            <p className="co-kicker">Lo que dicen</p>
+            <h2 className="co-h2">Clientes que ya trabajaron con nosotros.</h2>
           </div>
-          <ol className="co-pasos">
-            {PASOS.map((p, i) => (
-              <li className="co-paso reveal" key={p.n} style={{ transitionDelay: `${i * 70}ms` }}>
-                <span className="co-paso-n">{p.n}</span>
-                <div>
-                  <b className="co-paso-t">{p.t}</b>
-                  <p className="co-paso-d">{p.d}</p>
-                </div>
-              </li>
-            ))}
-          </ol>
-        </div>
-        <figure className="co-proceso-foto reveal">
-          <img src={fotoOficina} alt="La oficina de Cóndor.ai, con el logo de la marca en la pared" loading="lazy" />
-        </figure>
-      </section>
+          {/* El riel se duplica para que el bucle no tenga corte: la copia se
+              esconde de lectores de pantalla, si no el texto se lee dos veces. */}
+          <div className="co-riel reveal">
+            <ul className="co-riel-pista">
+              {RESENAS.map((r, i) => (
+                <Resena key={`a${i}`} {...r} />
+              ))}
+              {RESENAS.map((r, i) => (
+                <Resena key={`b${i}`} {...r} copia />
+              ))}
+            </ul>
+          </div>
+        </section>
+      )}
 
-      {/* ═══════════════ RESEÑAS ═══════════════ */}
-      <section className="co-sec">
-        <div className="co-sec-head reveal">
-          <p className="co-eyebrow">Lo que dicen</p>
-          <h2 className="co-h2">Clientes que ya tienen su página trabajando.</h2>
-        </div>
-        <ul className="co-resenas">
-          {RESENAS.map((r, i) => (
-            <li key={i}>
-              <figure className="co-resena reveal" style={{ transitionDelay: `${i * 80}ms` }}>
-                <div className="co-stars" aria-label="5 de 5 estrellas">
-                  ★★★★★
-                </div>
-                <blockquote>{r.txt}</blockquote>
-                <figcaption>{r.by}</figcaption>
-              </figure>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      {/* ═══════════════ FAQ ═══════════════ */}
-      <section className="co-sec co-sec-faq">
-        <div className="co-sec-head reveal">
-          <p className="co-eyebrow">Antes de agendar</p>
-          <h2 className="co-h2">Preguntas frecuentes</h2>
-        </div>
-        <div className="co-faq">
-          {FAQ.map((f, i) => (
-            <details className="co-faq-item reveal" key={f.q} style={{ transitionDelay: `${Math.min(i, 4) * 50}ms` }}>
-              <summary>
-                {f.q}
-                <span className="co-faq-ico" aria-hidden />
-              </summary>
-              <p>{f.a}</p>
-            </details>
-          ))}
-        </div>
-      </section>
-
-      {/* ═══════════════ CIERRE ═══════════════ */}
+      {/* ══════════════════════════ CIERRE ══════════════════════════ */}
       <section className="co-cierre">
-        <div className="co-cierre-in reveal">
-          <h2 className="co-h2">¿Arrancamos con tu página?</h2>
-          <p className="co-p">
-            Agenda una reunión de 30 minutos o déjanos tus datos y te escribimos. Sin costo y sin compromiso.
-          </p>
-          <div className="co-cierre-cta">
+        <div className="co-cierre-in co-glass-panel co-glint reveal">
+          <h2 className="co-h2">¿Conversamos?</h2>
+          <p className="co-p">Una reunión de 30 minutos para conocer tu negocio. Sin costo y sin compromiso.</p>
+          <div className="co-ctas">
             <button className="co-btn co-btn-primary" onClick={() => abrir("reunion")}>
-              Agendemos una reunión
+              <IcoCalendario />
+              Quiero agendar una reunión
+              <IcoFlecha />
             </button>
-            <button className="co-btn co-btn-ghost" onClick={() => abrir("contacto")}>
+            <button className="co-btn co-btn-glass" onClick={() => abrir("contacto")}>
+              <IcoChat />
               Prefiero que me contacten
             </button>
           </div>
@@ -613,159 +375,78 @@ export default function Colombia() {
 
       <footer className="co-foot">
         <div className="co-brand">
-          <img className="co-mark" src={ave} alt="" width="34" height="25" loading="lazy" />
+          <img className="co-mark" src={ave} alt="" width="26" height="19" loading="lazy" />
           <b>
             cóndor<i>.ai</i>
           </b>
         </div>
-        <p className="co-foot-txt">
-          WhatsApp {WSP} · condorai.cl
-          <br />
-          <span>Inteligencia artificial para hacer crecer tu negocio.</span>
+        <p>
+          <a href={WSP_LINK} target="_blank" rel="noopener noreferrer">
+            WhatsApp {WSP}
+          </a>
+          <span>Atendemos de 8:00 a 21:00, hora Colombia.</span>
         </p>
       </footer>
-
-      {/* Barra fija de acción (solo celular). El tráfico es pagado: entre el
-          hero y el cierre hay ~5 pantallas donde el CTA no existe, y cada
-          pantalla sin acción visible es gente que se va. Aparece recién pasado
-          el hero para no duplicar el botón que ya está ahí, y se esconde en el
-          cierre —donde el CTA grande ya manda— para no taparlo. */}
-      <div className={`co-barra${mostrarBarra ? " is-visible" : ""}`}>
-        <div className="co-barra-in">
-          <p className="co-barra-txt">
-            Reunión sin costo
-            <span>30 min · sin compromiso</span>
-          </p>
-          <button className="co-btn co-btn-primary co-btn-sm" onClick={() => abrir("reunion")}>
-            Agendar
-          </button>
-        </div>
-      </div>
 
       {open && <LeadModal tipo={open} onClose={() => setOpen(null)} />}
     </main>
   );
 }
 
-/* ══════════════════════════ FIRMA: el sheen del visor ══════════════════════ */
-
-/**
- * Brillo especular del cristal (Fase 4 — la única animación compleja de la página).
- *
- * Puntero fino → el sheen persigue al cursor con un resorte críticamente
- * amortiguado (sin overshoot: es luz, no un objeto con masa).
- * Táctil → no hay puntero, así que se ata al progreso de scroll del hero.
- *
- * Solo se escribe `transform` sobre un elemento que está ENCIMA del cristal:
- * el backdrop-filter del cristal no se re-muestrea. Ver nota de performance
- * arriba del archivo.
- */
-function useSheen(
-  stageRef: React.RefObject<HTMLDivElement | null>,
-  sheenRef: React.RefObject<HTMLSpanElement | null>
-) {
-  useEffect(() => {
-    const stage = stageRef.current;
-    const sheen = sheenRef.current;
-    if (!stage || !sheen) return;
-
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const fino = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
-
-    // Posición de reposo: arriba a la derecha, como una ventana reflejada.
-    const REPOSO = { x: 0.68, y: 0.1 };
-    let destino = { ...REPOSO };
-    const actual = { ...REPOSO };
-    let raf = 0;
-
-    const pintar = (nx: number, ny: number) => {
-      const w = stage.clientWidth;
-      const h = stage.clientHeight;
-      const sw = sheen.offsetWidth;
-      const sh = sheen.offsetHeight;
-      sheen.style.transform = `translate3d(${(nx * w - sw / 2).toFixed(1)}px, ${(ny * h - sh / 2).toFixed(1)}px, 0)`;
-    };
-
-    pintar(actual.x, actual.y);
-    if (reduce) return;
-
-    const bucle = () => {
-      // Resorte críticamente amortiguado (damping 1.0, response ~0.35s).
-      const k = 0.12;
-      actual.x += (destino.x - actual.x) * k;
-      actual.y += (destino.y - actual.y) * k;
-      pintar(actual.x, actual.y);
-      const quieto = Math.abs(destino.x - actual.x) < 0.0008 && Math.abs(destino.y - actual.y) < 0.0008;
-      raf = quieto ? 0 : requestAnimationFrame(bucle);
-    };
-    const arrancar = () => {
-      if (!raf) raf = requestAnimationFrame(bucle);
-    };
-
-    if (fino) {
-      const onMove = (e: PointerEvent) => {
-        const r = stage.getBoundingClientRect();
-        destino.x = (e.clientX - r.left) / r.width;
-        destino.y = (e.clientY - r.top) / r.height;
-        arrancar();
-      };
-      const onLeave = () => {
-        destino = { ...REPOSO };
-        arrancar();
-      };
-      // Se escucha en la ventana: la luz reacciona aunque el cursor pase cerca,
-      // no solo encima del cristal (así se comporta un reflejo real).
-      window.addEventListener("pointermove", onMove, { passive: true });
-      window.addEventListener("pointerleave", onLeave);
-      return () => {
-        window.removeEventListener("pointermove", onMove);
-        window.removeEventListener("pointerleave", onLeave);
-        cancelAnimationFrame(raf);
-      };
-    }
-
-    // Táctil: el reflejo recorre el cristal según el scroll.
-    let pendiente = false;
-    const onScroll = () => {
-      if (pendiente) return;
-      pendiente = true;
-      requestAnimationFrame(() => {
-        pendiente = false;
-        const r = stage.getBoundingClientRect();
-        const p = 1 - Math.min(1, Math.max(0, (r.top + r.height) / (window.innerHeight + r.height)));
-        destino.x = 0.3 + p * 0.5;
-        destino.y = 0.05 + p * 0.6;
-        arrancar();
-      });
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    onScroll();
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      cancelAnimationFrame(raf);
-    };
-  }, [stageRef, sheenRef]);
+function Resena({
+  texto,
+  quien,
+  negocio,
+  copia,
+}: {
+  texto: string;
+  quien: string;
+  negocio: string;
+  copia?: boolean;
+}) {
+  return (
+    <li className="co-resena" aria-hidden={copia || undefined}>
+      <p className="co-resena-txt">{texto}</p>
+      <p className="co-resena-quien">
+        <b>{quien}</b>
+        <span>{negocio}</span>
+      </p>
+    </li>
+  );
 }
 
-/** Scroll edge effect de la barra superior (apple-design §12: no un border de 1px). */
-function useScrolled(umbral: number) {
-  const [pegado, setPegado] = useState(false);
-  useEffect(() => {
-    let pendiente = false;
-    const onScroll = () => {
-      if (pendiente) return;
-      pendiente = true;
-      requestAnimationFrame(() => {
-        pendiente = false;
-        setPegado(window.scrollY > umbral);
-      });
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    onScroll();
-    return () => window.removeEventListener("scroll", onScroll);
-  }, [umbral]);
-  return pegado;
+/* ══════════════════════════════ Iconos ═════════════════════════════════════ */
+/* Inline y con currentColor: heredan el color del botón y no cuestan pedido. */
+
+function IcoCalendario() {
+  return (
+    <svg className="co-ico" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <rect x="3" y="5" width="18" height="16" rx="3.5" stroke="currentColor" strokeWidth="1.9" />
+      <path d="M3 10h18M8 3v4M16 3v4" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
+    </svg>
+  );
 }
+function IcoChat() {
+  return (
+    <svg className="co-ico" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M20 12.2c0 3.9-3.6 7-8 7-1 0-2-.2-2.9-.5L4 20l1.4-3.6C4.5 15.2 4 13.8 4 12.2c0-3.9 3.6-7 8-7s8 3.1 8 7Z"
+        stroke="currentColor"
+        strokeWidth="1.9"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+function IcoFlecha() {
+  return (
+    <svg className="co-ico co-ico-fin" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path d="M5 12h13m0 0-5.5-5.5M18 12l-5.5 5.5" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+/* ══════════════════════════════ Hooks ══════════════════════════════════════ */
 
 /**
  * Meta de la ruta. La landing es el destino de un anuncio pagado: cuando Meta
@@ -774,9 +455,9 @@ function useScrolled(umbral: number) {
  */
 function useMeta() {
   useEffect(() => {
-    const titulo = "Cóndor.ai — Tu página web lista y vendiendo en 48 horas | Colombia";
+    const titulo = "Cóndor.ai — Creamos tu página web de principio a fin | Colombia";
     const desc =
-      "Páginas web y landings a medida para negocios en Colombia, con asistente de IA, WhatsApp y Google. Desde $400.000 COP, entrega desde 48 horas. Agenda una reunión sin costo.";
+      "Somos un equipo pequeño. Nos sentamos contigo, entendemos tu negocio y construimos tu página web nosotros mismos. Agenda una reunión sin costo.";
     const previo = document.title;
     document.title = titulo;
 
@@ -804,12 +485,102 @@ function useMeta() {
 }
 
 /**
- * Meta Pixel + Conversions API, solo en esta ruta.
+ * FIRMA DE MOVIMIENTO — el portátil deriva con el scroll.
  *
- * El script vive en /public (no en el bundle) porque es de Alejandro y lo
- * comparten las landings estáticas de la campaña; acá solo se inyecta. Se deja
- * montado al desmontar la ruta: fbq es global y volver a cargarlo duplicaría
- * PageView si el usuario navega a otra vista del SPA y regresa.
+ * Sube un poco más lento que la página, así el hero gana profundidad y el
+ * momento en que se apoya sobre la tarjeta de "quiénes somos" se siente como
+ * que ATERRIZA ahí, no como que estaba pegado desde el principio.
+ *
+ * Es la única animación compleja de la página, a propósito: varias compitiendo
+ * es lo que hace ver una landing sobrecargada, y acá todo lo que distrae del
+ * CTA cuesta plata.
+ *
+ * Decisiones de costo (es una imagen grande):
+ *   · Solo se escribe `transform` → capa de compositor, sin layout ni paint.
+ *   · rAF-throttled: el evento de scroll dispara decenas de veces por frame.
+ *   · Se apaga con IntersectionObserver cuando el portátil sale de pantalla:
+ *     seguir calculando para algo que no se ve es trabajo regalado.
+ *   · Se redondea a 1 decimal y no se escribe si no cambió — evita invalidar
+ *     la capa por diferencias invisibles.
+ *   · prefers-reduced-motion lo desactiva entero (queda quieto, sin salto).
+ */
+function useParallax() {
+  const ref = useRef<HTMLImageElement>(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    /* Rango corto: 44px. Más que eso deja de leerse como profundidad y empieza
+       a leerse como que el elemento se despega de la página. */
+    const RANGO = 44;
+    let visible = true;
+    let pedido = false;
+    let ultimo = -999;
+
+    const pintar = () => {
+      const caja = el.getBoundingClientRect();
+      /* Progreso del elemento cruzando el viewport: 0 cuando entra por abajo,
+         1 cuando sale por arriba. Se centra en 0 para que la deriva sea
+         simétrica y el elemento pase por su posición real a mitad de camino. */
+      const p = (window.innerHeight - caja.top) / (window.innerHeight + caja.height);
+      const y = Math.round((0.5 - Math.min(1, Math.max(0, p))) * RANGO * 10) / 10;
+      if (y !== ultimo) {
+        el.style.transform = `translate3d(0, ${y}px, 0)`;
+        ultimo = y;
+      }
+    };
+
+    const alScrollear = () => {
+      if (pedido || !visible) return;
+      pedido = true;
+      requestAnimationFrame(() => {
+        pedido = false;
+        pintar();
+      });
+    };
+
+    const obs = new IntersectionObserver(([e]) => {
+      visible = e.isIntersecting;
+      if (visible) pintar();
+    });
+    obs.observe(el);
+    window.addEventListener("scroll", alScrollear, { passive: true });
+    window.addEventListener("resize", alScrollear);
+    pintar();
+
+    return () => {
+      obs.disconnect();
+      window.removeEventListener("scroll", alScrollear);
+      window.removeEventListener("resize", alScrollear);
+    };
+  }, []);
+
+  return ref;
+}
+
+/**
+ * Serif itálica del titular (Fontshare). Se carga SOLO en esta ruta, no en el
+ * index.html global: es la única página que la usa y el resto del sitio no
+ * tiene por qué pagar la descarga.
+ */
+function useSerif() {
+  useEffect(() => {
+    const href = "https://api.fontshare.com/v2/css?f[]=zodiak@400i,401&display=swap";
+    if (document.head.querySelector(`link[href="${href}"]`)) return;
+    const l = document.createElement("link");
+    l.rel = "stylesheet";
+    l.href = href;
+    document.head.appendChild(l);
+  }, []);
+}
+
+/**
+ * Meta Pixel + Conversions API, solo en esta ruta.
+ * El script vive en /public (es de Alejandro y lo comparten las landings
+ * estáticas); acá solo se inyecta. Se deja montado al desmontar: fbq es global
+ * y recargarlo duplicaría PageView si el usuario navega y vuelve.
  */
 function useTracking() {
   useEffect(() => {
@@ -820,11 +591,9 @@ function useTracking() {
     const SRC = "/assets/js/condor-tracking.js";
     /* Se pregunta por la ETIQUETA, no por window.condorTrack: el script es
        async, así que entre que se inyecta y se ejecuta hay una ventana en la
-       que condorTrack todavía no existe. Con StrictMode (dos montajes seguidos
-       en dev) eso inyectaba el script dos veces y Meta recibía dos PageView
-       con event_id distinto — o sea, tráfico inflado al doble. */
+       que condorTrack todavía no existe. Con StrictMode eso inyectaba el
+       script dos veces y Meta recibía dos PageView — tráfico inflado al doble. */
     if (document.querySelector(`script[src="${SRC}"]`)) {
-      // Ya está en la página (el usuario volvió a /colombia): solo la vista.
       track("PageView");
       return;
     }
@@ -834,228 +603,6 @@ function useTracking() {
     s.async = true;
     document.head.appendChild(s);
   }, []);
-}
-
-/**
- * Visibilidad de la barra fija de acción (celular).
- * Aparece cuando el CTA del hero salió de pantalla, y se retira al llegar al
- * cierre: ahí ya hay un CTA grande y taparlo con una barra sería pelearse con
- * uno mismo. Se apoya en IntersectionObserver y no en el evento de scroll,
- * porque durante el scroll el hilo ya está ocupado repintando el descenso.
- */
-function useBarra() {
-  const [ver, setVer] = useState(false);
-  useEffect(() => {
-    const hero = document.querySelector(".co-hero");
-    const cierre = document.querySelector(".co-cierre");
-    if (!hero || !cierre) return;
-    const estado = { heroFuera: false, cierreDentro: false };
-    const aplicar = () => setVer(estado.heroFuera && !estado.cierreDentro);
-
-    const obsHero = new IntersectionObserver(
-      ([e]) => {
-        estado.heroFuera = !e.isIntersecting;
-        aplicar();
-      },
-      { rootMargin: "-120px 0px 0px 0px" },
-    );
-    const obsCierre = new IntersectionObserver(
-      ([e]) => {
-        estado.cierreDentro = e.isIntersecting;
-        aplicar();
-      },
-      { rootMargin: "0px 0px -30% 0px" },
-    );
-    obsHero.observe(hero);
-    obsCierre.observe(cierre);
-    return () => {
-      obsHero.disconnect();
-      obsCierre.disconnect();
-    };
-  }, []);
-  return ver;
-}
-
-/* ═════════════════ FONDO — el descenso atado al scroll ═════════════════════
-   Un plano continuo de 8 s (Higgsfield): de sobre las nubes, atravesándolas,
-   hasta las luces de una ciudad en un valle. El scroll ES la cámara: el usuario
-   baja y la cámara baja. Arriba, altura y abstracción; abajo, justo donde
-   pedimos la reunión, la ciudad. La marca es un cóndor: desciende.
-
-   POR QUÉ FOTOGRAMAS Y NO EL <video>:
-   Scrubbear un MP4 exige seek cuadro a cuadro; con GOP normal se traba en
-   Android y en Safari iOS no arranca hasta tener el archivo entero en buffer.
-   El original pesa 39 MB. Como secuencia de WebP son 686 KB en móvil, cada
-   cuadro es independiente y el "seek" es un drawImage.
-
-   PRESUPUESTO:
-   · Dos sets: móvil ya viene RECORTADO a 9:16 (540×960, 40 cuadros, 686 KB).
-     Servir el 16:9 y recortar con CSS tiraría el 68% de los píxeles bajados.
-   · El cuadro 1 se dibuja apenas carga y hace de póster; el resto entra
-     después, de a 4, para no pelearle ancho de banda al hero ni al CTA.
-   · El canvas se rasteriza a DPR 1.25 como techo: es un fondo detrás de un
-     velo y de cristal, no necesita resolución de retina.
-   · Solo se redibuja cuando CAMBIA el cuadro, no en cada evento de scroll.
-   ========================================================================== */
-
-const DESCENSO = {
-  ancho: { dir: "/assets/colombia/descenso/d", n: 48 },
-  alto: { dir: "/assets/colombia/descenso/m", n: 40 },
-};
-
-function FondoDescenso() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const veloRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    const velo = veloRef.current;
-    if (!canvas || !velo) return;
-    const ctx = canvas.getContext("2d", { alpha: false });
-    if (!ctx) return;
-
-    const movil = window.matchMedia("(max-width: 680px)").matches;
-    const set = movil ? DESCENSO.alto : DESCENSO.ancho;
-    const reducido = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-    const cuadros: (HTMLImageElement | null)[] = new Array(set.n).fill(null);
-    let ultimoDibujado = -1;
-    let ultimaOpCanvas = -1;
-    let ultimaOpVelo = -1;
-    let vivo = true;
-
-    const medir = () => {
-      /* Techo de DPR: en móvil 1.0, en desktop 1.25. Es un fondo detrás de un
-         velo y de cristal esmerilado — nadie le ve los píxeles, y cada píxel de
-         más se paga en cada repintado durante el scroll. */
-      const dpr = Math.min(window.devicePixelRatio || 1, movil ? 1 : 1.25);
-      canvas.width = Math.round(window.innerWidth * dpr);
-      canvas.height = Math.round(window.innerHeight * dpr);
-      ultimoDibujado = -1; // forzar redibujo al cambiar de tamaño
-    };
-
-    /* Encaje "cover" a mano: el canvas no tiene object-fit. */
-    const dibujar = (img: HTMLImageElement) => {
-      const escala = Math.max(canvas.width / img.naturalWidth, canvas.height / img.naturalHeight);
-      const w = img.naturalWidth * escala;
-      const h = img.naturalHeight * escala;
-      ctx.drawImage(img, (canvas.width - w) / 2, (canvas.height - h) / 2, w, h);
-    };
-
-    /* Si el cuadro exacto aún no cargó, se usa el más cercano que sí: el fondo
-       nunca parpadea ni queda en negro mientras termina de bajar la secuencia. */
-    const masCercano = (i: number) => {
-      if (cuadros[i]) return i;
-      for (let d = 1; d < set.n; d++) {
-        if (cuadros[i - d]) return i - d;
-        if (cuadros[i + d]) return i + d;
-      }
-      return -1;
-    };
-
-    /* El descenso NO dura toda la página, y esto no es capricho: probado con el
-       plano final detrás del hero, el titular y el párrafo quedan ilegibles
-       sobre la ciudad encendida, y ningún velo lo arregla sin apagar la toma.
-       Entonces el vuelo ocupa las primeras 2.5 pantallas —hero, equipo y la
-       entrada a la vitrina, que es donde el usuario decide— y ahí aterriza.
-       Después la toma se DESVANECE durante una pantalla más y el resto del
-       sitio scrollea sobre el fondo de noche de siempre, donde el texto ya
-       estaba medido. El clímax queda donde se ve, no donde estorba. */
-    const PANTALLAS_VUELO = 2.5;
-    const PANTALLAS_SALIDA = 1;
-
-    const progreso = () => Math.min(1, Math.max(0, window.scrollY / (window.innerHeight * PANTALLAS_VUELO)));
-
-    const salida = () => {
-      const desde = window.innerHeight * PANTALLAS_VUELO;
-      const largo = window.innerHeight * PANTALLAS_SALIDA;
-      return Math.min(1, Math.max(0, (window.scrollY - desde) / largo));
-    };
-
-    const pintar = () => {
-      /* Con movimiento reducido la cámara no vuela: se queda en el momento en
-         que aparecen las luces, que es el cuadro que mejor cuenta la historia. */
-      const p = reducido ? 0.62 : progreso();
-      const idx = masCercano(Math.round(p * (set.n - 1)));
-      if (idx >= 0 && idx !== ultimoDibujado) {
-        dibujar(cuadros[idx] as HTMLImageElement);
-        ultimoDibujado = idx;
-      }
-      /* El velo sube con el descenso, pero NO lineal: la curva (p^1.6) lo deja
-         bajo mientras la cámara está en las nubes —que ya son oscuras y se ven
-         lindas— y lo empuja recién cuando entran las luces.
-
-         Los dos valores se REDONDEAN a centésimas y solo se escriben si
-         cambiaron. Estas capas están debajo de ~15 superficies con
-         backdrop-filter: tocarles la opacidad obliga a re-desenfocarlas todas.
-         Escribir un valor idéntico en cada frame de scroll costaba tanto como
-         repintar el canvas — medido, era la mitad del sobrecosto. */
-      const s = reducido ? 0 : salida();
-      const opCanvas = Math.round((1 - 0.82 * s) * 100) / 100;
-      const opVelo = Math.round((0.3 + 0.55 * Math.pow(p, 1.6)) * (1 - 0.5 * s) * 100) / 100;
-      if (opCanvas !== ultimaOpCanvas) {
-        canvas.style.opacity = String(opCanvas);
-        ultimaOpCanvas = opCanvas;
-      }
-      if (opVelo !== ultimaOpVelo) {
-        velo.style.opacity = String(opVelo);
-        ultimaOpVelo = opVelo;
-      }
-    };
-
-    let pedido = false;
-    const alScrollear = () => {
-      if (pedido) return;
-      pedido = true;
-      requestAnimationFrame(() => {
-        pedido = false;
-        if (vivo) pintar();
-      });
-    };
-
-    const cargar = (i: number) =>
-      new Promise<void>((listo) => {
-        const img = new Image();
-        img.decoding = "async";
-        img.onload = () => {
-          cuadros[i] = img;
-          listo();
-        };
-        img.onerror = () => listo(); // un cuadro que falta lo cubre masCercano()
-        img.src = `${set.dir}/f-${String(i + 1).padStart(3, "0")}.webp`;
-      });
-
-    medir();
-    window.addEventListener("resize", () => {
-      medir();
-      pintar();
-    });
-    window.addEventListener("scroll", alScrollear, { passive: true });
-
-    (async () => {
-      await cargar(0); // póster: se ve algo de inmediato
-      if (!vivo) return;
-      pintar();
-      // El resto en tandas de 4: la secuencia no compite con el hero ni el CTA.
-      const pendientes = Array.from({ length: set.n - 1 }, (_, k) => k + 1);
-      while (pendientes.length && vivo) {
-        await Promise.all(pendientes.splice(0, 4).map(cargar));
-        pintar();
-      }
-    })();
-
-    return () => {
-      vivo = false;
-      window.removeEventListener("scroll", alScrollear);
-    };
-  }, []);
-
-  return (
-    <>
-      <canvas className="co-descenso" ref={canvasRef} aria-hidden />
-      <div className="co-velo" ref={veloRef} aria-hidden />
-    </>
-  );
 }
 
 /* ══════════════════════════════ Modal de lead ══════════════════════════════ */
@@ -1071,8 +618,7 @@ function LeadModal({ tipo, onClose }: { tipo: Tipo; onClose: () => void }) {
 
   /* Atribución: la fuente de verdad es condorAtribucion() (la guarda en la
      primera visita y sobrevive a la navegación del SPA, cuando la URL ya no
-     trae ?utm_). La URL actual solo rellena lo que falte — sin el script del
-     Pixel, este es el único camino. */
+     trae ?utm_). La URL actual solo rellena lo que falte. */
   const atribucion = useMemo(() => {
     const q = new URLSearchParams(window.location.search);
     let guardada: Record<string, string> = {};
@@ -1155,9 +701,8 @@ function LeadModal({ tipo, onClose }: { tipo: Tipo; onClose: () => void }) {
     }
 
     /* La conversión se reporta SOLO cuando el lead quedó guardado: si Meta
-       optimiza sobre envíos fallidos, compra tráfico que nunca llega a la hoja.
-       Schedule vs Lead separa "agendó" de "que me contacten" para poder pujar
-       distinto por cada uno. */
+       optimiza sobre envíos fallidos, compra tráfico que nunca llega a la
+       hoja. Schedule vs Lead separa "agendó" de "que me contacten". */
     function exito() {
       track(esReunion ? "Schedule" : "Lead", {
         email: payload.correo,
@@ -1188,11 +733,11 @@ function LeadModal({ tipo, onClose }: { tipo: Tipo; onClose: () => void }) {
             <div className="co-ok-ico" aria-hidden>
               ✓
             </div>
-            <h3>{esReunion ? "¡Listo! Te enviamos el horario." : "¡Recibido! Te contactamos pronto."}</h3>
+            <h3>{esReunion ? "¡Listo! Te escribimos." : "¡Recibido!"}</h3>
             <p>
               {esReunion
-                ? "Te escribimos por WhatsApp para confirmar el día y la hora de tu reunión (8:00–21:00, hora Colombia)."
-                : "Te contactamos en menos de 24 horas por WhatsApp. Gracias por confiar en Cóndor.ai."}
+                ? "Te contactamos por WhatsApp para confirmar el día y la hora (8:00–21:00, hora Colombia)."
+                : "Te contactamos en menos de 24 horas por WhatsApp. Gracias por escribirnos."}
             </p>
             <button className="co-btn co-btn-primary co-btn-block" onClick={onClose}>
               Cerrar
@@ -1203,7 +748,7 @@ function LeadModal({ tipo, onClose }: { tipo: Tipo; onClose: () => void }) {
             <h3>{esReunion ? "Agendemos una reunión" : "Déjanos tus datos"}</h3>
             <p className="co-form-sub">
               {esReunion
-                ? "Máximo 1 hora, entre 8:00 y 21:00 hora Colombia. Sin costo y sin compromiso."
+                ? "Media hora, entre 8:00 y 21:00 hora Colombia. Sin costo y sin compromiso."
                 : "Te contactamos en menos de 24 horas. Rápido y sin vueltas."}
             </p>
 
@@ -1245,8 +790,8 @@ function LeadModal({ tipo, onClose }: { tipo: Tipo; onClose: () => void }) {
             {status === "error" && (
               <p className="co-form-err" role="alert">
                 {errorMsg}{" "}
-                {/* Salida de emergencia: el lead ya está pagado, no se puede perder
-                    porque el backend falle. El mensaje va prellenado. */}
+                {/* Salida de emergencia: el lead ya está pagado, no se puede
+                    perder porque el backend falle. */}
                 <a
                   href={`${WSP_LINK}?text=${encodeURIComponent(
                     `Hola, soy ${nombre.trim() || "..."} y quiero información sobre mi página web.`,

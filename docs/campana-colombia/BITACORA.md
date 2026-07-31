@@ -8,6 +8,210 @@ Contexto del proyecto en [`PROYECTO.md`](PROYECTO.md) · tareas por persona en l
 
 ---
 
+## 2026-07-31 · Reescritura "La página honesta" + material Apple/Howden
+
+Cambio completo de la landing, por decisión de negocio. Referencia visual dada
+por Joaquín (mockup claro, cálido, dos CTA grandes, sección de equipo).
+
+### Qué se sacó y por qué
+
+**De 9 secciones a 4. De 9,2 pantallas de scroll a 3,4.**
+Fuera: precios y planes, FAQ, reseñas, proceso en 4 pasos, el descenso en video,
+el cristal oscuro, las facetas, la barra fija.
+
+Y tres cosas que la página **ya no dice, a propósito**:
+- **Precios** — se hablan en la reunión, con el proyecto sobre la mesa.
+- **Que usamos IA** — es *cómo* trabajamos, no lo que el cliente compra.
+- **Plazos de entrega** — prometer días sin conocer el proyecto es mentir.
+
+Ninguna de las tres sobrevive al primer "depende", y prometerlas en la landing
+convierte peor y quema la reunión. Lo que queda: quiénes somos (fotos reales de
+equipo y oficina), qué hicimos (sitios en vivo) y dos formas de hablarnos.
+Estructura: hero → quiénes somos → trabajo → cierre.
+
+### Dirección de arte
+
+Claro y cálido, **contra el patrón del rubro**: toda agencia de tecnología en
+LATAM usa oscuro con neón. La luz cálida hace que parezca un negocio con oficina
+y no un SaaS — y es la luz de nuestras fotos, así que página y fotos leen como
+una sola cosa. El color vive **solo** en el fondo y en el CTA verde; todo el
+texto es tinta casi negra. Esa disciplina es lo que deja que el botón mande.
+
+El portátil del hero es el **mockup real con fondo transparente** (PNG → WebP,
+1.344 KB → 148 KB, alfa intacto), apoyado directo sobre el lavado de color. Sin
+marco: el recuadro blanco alrededor es lo que delata a un mockup pegado.
+
+### Material — port del sistema glass de Howden
+
+Se trae la receta exacta de `plataforma-howden-main/frontend/app/globals.css`
+(`.glass-card` / `.glass-panel` / `.liquid-glint`): doble capa (gradiente 135° +
+base sólida), `saturate(1.8)`, borde blanco 0.6, inset highlight. **Re-tintada
+para fondo cálido**: el blanco puro sobre durazno se ve azulado y sucio.
+
+Tres niveles, porque el peso del material **es** jerarquía (apple-design §12):
+`--co-mat-cta` (ligero → accionable) · `--co-mat` (tarjetas) · `--co-mat-panel`
+(estructural, más blur y más sombra).
+
+**Error corregido midiendo:** la primera calibración quedó demasiado densa
+(0.62/0.46) y el cristal dejó de dejar pasar el lavado de color — se veía como
+una tarjeta blanca, que es justo lo que este material no debe ser. Se bajó a los
+valores de Howden (0.40/0.18 sobre base 0.30) con un punto de calidez.
+
+Regla dura respetada: **nunca cristal sobre cristal**. Las fotos y las capturas
+van en marcos opacos dentro de las tarjetas de vidrio; apilar translúcidos mata
+la legibilidad.
+
+**Glint:** mismo efecto de Howden, distinta duración. Allá es loop infinito de
+5 s porque son pantallas de trabajo; acá cruza **una vez** al revelarse y se
+calla — en una landing, un brillo cada 5 s para siempre es el cliché de
+plantilla de venta y compite con el CTA. Escalonado 90 ms (verificado: delays
+0.35 / 0.44 / 0.53 s).
+
+### Tipografía y filosofía Apple
+
+Texto en **sistema Apple** (`-apple-system` → SF Pro), igual que Howden: ya trae
+optical sizing y tablas de tracking, y no cuesta un pedido de red. Única webfont:
+la serif itálica del titular (Zodiak), que es la firma de la página.
+
+Tracking **específico por tamaño** (§15): display `-0.035em`, h2 `-0.028em`,
+cuerpo ~0, y **positivo** en los textos chicos (kicker `+0.04em`, legal
+`+0.006em`). Un `letter-spacing` único está mal en algún tamaño por definición.
+
+Otros puntos aplicados: respuesta en `:active` y no al soltar (§1); la flecha del
+CTA adelanta el gesto en hover (§8); el modal **materializa** con blur + escala a
+la vez en vez de subir opacidad (§12); scrim que atenúa para la tarea modal (§12).
+
+### Medido, no supuesto
+
+**Contraste real** (píxel renderizado detrás del texto, no el color declarado —
+sobre cristal el fondo efectivo es la mezcla): cuerpo sobre panel **7,27**,
+h2 **18,35**, pill de vidrio **18,38**, lead **6,9**, chip **6,72**. Todos AA
+con holgura.
+
+**Las tres señales de accesibilidad** (§14), que son independientes:
+`prefers-reduced-transparency` → blur off y fondo sólido 0.97 ·
+`prefers-contrast: more` → fondos sólidos y bordes definidos ·
+`prefers-reduced-motion` → sin desplazamientos ni glint.
+
+Verificado además: 4 secciones, cero desborde horizontal, formulario de lead
+completo (mismo contrato con el Sheet, tracking intacto), modal por encima.
+
+### El portátil, y por qué se monta sobre la tarjeta
+
+Entró el mockup real con fondo transparente que pasó Joaquín (PNG → WebP,
+1.344 KB → 148 KB, alfa intacto) en reemplazo del portátil dibujado en CSS.
+
+**Se superpone al panel de "quiénes somos"** — 58 px en desktop, 18 px en móvil.
+Es lo único que puede hacerse con un recorte y no con una captura rectangular:
+las dos secciones dejan de ser bloques apilados y se leen como una escena.
+Detalle que salió gratis: el panel tiene `backdrop-filter`, que difumina lo que
+queda *detrás*; como el portátil se pinta por delante entra nítido sobre el
+cristal esmerilado, y ese contraste nítido-sobre-difuso es lo que hace ver el
+vidrio.
+
+### El fondo, en tres pasos (cada uno por un problema real)
+
+**1. El color no era un lugar, era un filtro.** `.co-luz` estaba en `fixed`, así
+que se veía idéntico pasara lo que pasara con el scroll. Pasó a `absolute` sobre
+toda la página: bajar es atravesar el color, y las tarjetas de cristal cruzan
+zonas distintas — que es lo que el material necesita para no verse plano.
+
+**2. Círculos → manchas irregulares.** Un `radial-gradient` solo sabe hacer
+elipses concéntricas, y ese es exactamente el fondo que genera cualquier
+plantilla. Ahora son seis elementos con silueta propia (`border-radius` de ocho
+valores, que es la única forma en CSS de un contorno asimétrico real), cada uno
+girado y estirado.
+
+*Costo, y cómo se resolvió:* seis superficies de blur grandes costaban un frame
+de **1.182 ms** al rasterizar. Se dibuja la capa a un tercio del tamaño y se
+escala ×3 → el blur trabaja sobre nueve veces menos píxeles. Bajó a **24 ms**.
+Se puede hacer porque el resultado ya es difuso: escalar algo borroso no se nota.
+
+**3. El grano.** Tres intentos, y el que importa es *por qué* fallaron los dos
+primeros. El fondo tiene luminancia media 249 (casi blanco):
+
+| técnica | aporte de textura |
+|---|---|
+| opacidad simple sobre ruido gris | +0,28 — no hace grano, hace un velo gris |
+| `mix-blend-mode: overlay` | +0,33 — sobre base tan clara actúa como `screen` y satura a blanco |
+| `multiply` con ruido casi blanco | +4,11 — sobre fondo claro el grano tiene que ser oscuro |
+
+Y después, por pedido explícito: **el grano solo donde hay color**. Eso obligó a
+invertir la técnica — de *dibujar* ruido encima a *recortar* la capa de color
+con una máscara de ruido. Donde hay mancha se la come y se ve el grano; donde
+solo hay crema recorta crema sobre crema, o sea nada. El grano pasó a ser una
+propiedad del color, que es lo que es en una foto: está en la emulsión, no en el
+aire. Medido: crema **1,46** con máscara contra **1,52** sin ella (idéntico), y
+sobre color **9,19** contra **2,55**.
+
+*Detalle de robustez:* la máscara genera **blanco** con alfa ruidosa, no negro.
+Si un navegador la interpretara por luminancia en vez de por alfa, con RGB negro
+la luminancia sería 0 en todas partes y **desaparecería el fondo entero**.
+
+### El diagnóstico del móvil que estaba equivocado
+
+Reporte: "el gradiente no se ve en el celular, probablemente están fuera de la
+pantalla". Medido con una rejilla de distancia al crema, **las manchas no estaban
+fuera de pantalla**: móvil daba valores *iguales o mayores* que desktop (134
+contra 126 en la fila superior).
+
+El problema real eran **huecos verticales** — las filas 20 %, 50 % y 70 % daban
+casi cero y la página se apagaba a tramos. Se solaparon las manchas para que el
+recorrido sea continuo. Además, en 390 px de ancho lo que entraba era la *cola*
+del degradado y no su núcleo: se redujo el desborde lateral y se ensancharon.
+
+*Y eso tuvo un costo que hubo que pagar:* traer el color al centro en móvil bajó
+el lead a 4,7:1 y el rubro a 4,55. En desktop el texto vive en la columna central
+y las manchas entran por los costados, así que nunca coinciden; **en móvil el
+texto ocupa todo el ancho y no hay zona segura**. Se bajó el pico (no la
+cobertura) solo en móvil y volvieron a 4,83–6,81.
+
+### Movimiento
+
+**Firma:** el portátil deriva con el scroll (44 px), así el hero gana profundidad
+y el momento en que se apoya sobre la tarjeta se siente como que *aterriza*. Es
+la única animación compleja a propósito — varias compitiendo es lo que hace ver
+una landing sobrecargada. Solo escribe `transform`, va limitada por `rAF`, se
+apaga con `IntersectionObserver` fuera de pantalla y no reescribe si no cambió.
+
+El resto es soporte: entrada escalonada en el hero (0,05 → 0,36 s, en el orden en
+que hay que leer), sub-revelado encadenado dentro del panel de equipo, superficies
+que *se materializan* (desplazamiento + escala, no solo fade) y botones que se
+hunden más rápido de lo que vuelven — con una sola duración el botón se siente
+gomoso al presionar.
+
+Costo medido scrolleando en móvil con throttling 6×: mediana **6,1 ms**, idéntica
+a la línea base.
+
+### Prueba social — con un seguro puesto
+
+Riel horizontal en bucle continuo, justo antes del CTA final (es el último
+argumento antes de pedir los datos). La lista va duplicada y la pista se desplaza
+exactamente −50 %, así el bucle no tiene costura; las copias llevan `aria-hidden`
+para que un lector de pantalla no lea cada testimonio dos veces. Se detiene al
+pasar el puntero.
+
+**Las tarjetas del riel NO llevan cristal, deliberadamente.** Mover un elemento
+con `backdrop-filter` obliga a re-muestrear el fondo cada frame y es lo más caro
+de esta página. Son superficies sólidas: más baratas, y además evitan apilar
+translúcido sobre translúcido.
+
+**Los testimonios son de maqueta y NO PUEDEN publicarse por accidente:** la lista
+sale vacía en producción (`import.meta.env.DEV`) y la sección no se renderiza sin
+datos. Verificado en el bundle real: ninguno de los cinco nombres inventados
+aparece en el JS de producción. El motivo es de fondo, no de forma — esta página
+se juega entera a "somos reales, estas son nuestras caras"; testimonios
+inventados destruyen esa propuesta más rápido que ninguna otra cosa, y engañarían
+a alguien que está a punto de dejar sus datos.
+
+Los rubros se eligieron para que peguen con cada frase (una clínica valora los
+cambios rápidos, un restaurante que le lleguen pedidos, un estudio jurídico
+hablar siempre con la misma persona). **Sin ciudad**, por decisión: nombre +
+rubro + ubicación identifica un negocio concreto. Mantener así también cuando
+sean reales, salvo que el cliente pida aparecer con la suya.
+
+---
+
 ## 2026-07-30 · Tracking, fondo en movimiento y sistema de cristal
 
 Cierre de la fase de frontend previa a producción. Tres frentes: **medición de la
@@ -182,12 +386,15 @@ Ambas se hornean en el build: hay que **redesplegar** después de cargarlas
 Para que el evento salga también por servidor, Ale necesita `META_CAPI_TOKEN` como
 secret de Supabase y desplegar la función `capi` ([`ALEJANDRO-ENTREGA.md`](ALEJANDRO-ENTREGA.md) §3).
 
-### Decisión de negocio — precios
+### Testimonios reales
 
-En la sección de precios hay **dos señales que se contradicen**: *"El más elegido"*
-está en **Web Profesional ($1.250.000)**, pero todo el peso visual —tinte verde,
-botón primario, badge destacado— está en **Landing Express ($400.000)**. La prueba
-social apunta a un plan y el diseño empuja al otro, que factura 3 veces menos.
+La sección de prueba social **no aparece en producción** hasta que existan. Para
+activarla: reemplazar el contenido de `RESENAS` en `Colombia.tsx` por testimonios
+reales, con permiso del cliente. Formato: frase + nombre + rubro (sin ciudad).
 
-No se cambió porque **cuál plan empujar es decisión de negocio, no de diseño**. Se
-resuelve moviendo `destacado: true` entre planes en `Colombia.tsx`.
+### Ya no aplica
+
+La contradicción de la sección de precios (*"El más elegido"* en un plan y todo el
+peso visual en otro) **desapareció con la reescritura**: la página ya no muestra
+precios ni planes. Si alguna vez vuelven, revisar que la prueba social y la
+jerarquía visual apunten al mismo plan.
