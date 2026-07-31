@@ -90,6 +90,23 @@ function track(evento: string, datos?: DatosTrack) {
 const WSP = "+56 9 8898 9824";
 const WSP_LINK = `https://wa.me/${WSP.replace(/\D/g, "")}`;
 
+/* Correo de contacto para el ejercicio de derechos (Ley 1581). */
+const CORREO_DATOS = "contacto@teamcondorcl.com";
+
+/* Metadatos de la ruta. Viven acá y en scripts/prerender.mjs, que es el que
+   genera el /colombia/index.html que sí leen los scrapers. Si cambias uno,
+   cambia el otro: son la misma tarjeta. */
+const META_URL = "https://condorai.cl/colombia/";
+const META_TITULO = "Tu página web lista, sin cotizaciones que nunca llegan | Cóndor.ai Colombia";
+const META_DESC =
+  "Cuatro personas y una oficina. Nos sentamos contigo, entendemos tu negocio y construimos tu página web nosotros mismos. Reunión de 30 minutos sin costo.";
+const META_IMG = "https://condorai.cl/assets/og-colombia.jpg";
+
+/* Franjas en vez de un campo de texto: reconocer cuesta menos que recordar, y
+   el dato llega normalizado. No son horas exactas a propósito — proponer un
+   horario concreto que después no tenemos libre es peor que coordinarlo. */
+const FRANJAS = ["Mañana (8–12)", "Tarde (12–18)", "Noche (18–21)", "Me acomoda cualquiera"];
+
 /* Sitios reales, en vivo. Sin adjetivos de venta: la prueba es que se puede
    entrar. Descripciones de una línea — quien quiera saber más, entra. */
 const SITIOS = [
@@ -110,6 +127,87 @@ const SITIOS = [
     marca: "Don Lucho",
     rubro: "Restaurante",
     href: "https://joaquinmunozs.github.io/condorweb-demo-restaurante/",
+  },
+];
+
+/* ═══════════════════════ SEÑALES DE CONFIANZA ══════════════════════════════
+   Van bajo el CTA del hero, que es donde nace la duda.
+
+   REGLA DURA: cada línea tiene que ser VERIFICABLE por el visitante o cierta
+   en la operación. Nada de "+100 clientes felices" ni "10 años de experiencia"
+   mientras no sea verdad: en una página cuya propuesta entera es "somos reales,
+   estas son nuestras caras", una cifra inflada la destruye completa — y el
+   comprador colombiano llega con el radar de estafa encendido.
+
+   JOAQUÍN: confirma estas cuatro antes de publicar. Si alguna no se cumple
+   siempre, sácala; una promesa que se rompe en la reunión cuesta el cliente.
+   ============================================================================ */
+const SEÑALES = [
+  "Reunión sin costo y sin compromiso",
+  "El dominio queda a tu nombre, no al nuestro",
+  "Hablas siempre con quien construye tu página",
+  "Puedes visitar los sitios que hicimos, están en vivo",
+];
+
+/* ═══════════════════════════ CÓMO TRABAJAMOS ═══════════════════════════════
+   La incertidumbre sobre "qué pasa después de que doy mis datos" es uno de los
+   motivos más comunes para no dejarlos. Describir el proceso completo antes de
+   pedirlos elimina esa duda sin prometer nada que no se cumpla. */
+const PASOS = [
+  {
+    n: "01",
+    t: "Agendas y te confirmamos",
+    d: "Eliges el momento que te acomoda. Te llega la confirmación por correo y te escribimos por WhatsApp.",
+  },
+  {
+    n: "02",
+    t: "Conversamos 30 minutos",
+    d: "Por videollamada. Te preguntamos por tu negocio, quién te compra y qué necesitas que la página haga.",
+  },
+  {
+    n: "03",
+    t: "Te pasamos la propuesta",
+    d: "Con el alcance y el precio por escrito. Si no te sirve, no pasa nada: la reunión no te costó.",
+  },
+  {
+    n: "04",
+    t: "La construimos y te la entregamos",
+    d: "Con el dominio a tu nombre y te enseñamos a administrarla. Después sigues hablando con la misma persona.",
+  },
+];
+
+/* ══════════════════════════════ OBJECIONES ═════════════════════════════════
+   Las preguntas que un dueño de PYME se hace y que, si no encuentra
+   respondidas, resuelve cerrando la pestaña. Están redactadas como las haría
+   él, no como las haría un vendedor.
+
+   JOAQUÍN: estas respuestas describen cómo trabajan ustedes. Revísalas una por
+   una — están escritas desde lo que dice el resto de la página, y si alguna no
+   es exacta hay que corregirla acá antes de publicar. */
+const PREGUNTAS = [
+  {
+    q: "¿Cuánto cuesta?",
+    a: "Depende de lo que necesite tu negocio, y por eso no ponemos un precio en esta página: una cifra inventada para atraerte y después cambiarla en la reunión sería una pérdida de tiempo para los dos. En la reunión te damos el precio por escrito, con el alcance detallado. Si no te sirve, no seguimos y no te costó nada.",
+  },
+  {
+    q: "¿Están en Colombia?",
+    a: "Nuestra oficina está en Chile y trabajamos con clientes en Colombia. Atendemos en horario colombiano, de 8:00 a 21:00, y las reuniones son por videollamada. Te lo decimos de entrada porque preferimos que lo sepas antes de la reunión y no después.",
+  },
+  {
+    q: "¿El dominio y la página quedan a mi nombre?",
+    a: "Sí. El dominio se registra a nombre de tu empresa y los accesos son tuyos. No trabajamos con páginas arrendadas de las que no te puedes llevar.",
+  },
+  {
+    q: "¿Puedo editarla yo después?",
+    a: "Sí. Te entregamos la página junto con una sesión para que aprendas a cambiar textos, fotos y precios por tu cuenta. Si prefieres que lo hagamos nosotros, también.",
+  },
+  {
+    q: "¿Cuánto se demoran?",
+    a: "Depende del tamaño del sitio, y lo sabemos recién después de conocer tu proyecto. En la reunión te damos una fecha concreta y queda por escrito en la propuesta.",
+  },
+  {
+    q: "¿Qué pasa si no me gusta cómo va quedando?",
+    a: "Lo revisas mientras la construimos, no al final. Trabajamos por etapas y en cada una nos dices qué cambiar antes de seguir.",
   },
 ];
 
@@ -178,6 +276,7 @@ const RESENAS = import.meta.env.DEV ? RESENAS_MAQUETA : [];
 export default function Colombia() {
   useReveal(useLocation().pathname);
   const [open, setOpen] = useState<Tipo | null>(null);
+  const [privacidad, setPrivacidad] = useState(false);
 
   /* La página es standalone y el sitio global es claro, pero con su propio
      fondo. Se pinta la raíz con el crema de esta landing para que el
@@ -238,25 +337,49 @@ export default function Colombia() {
           la promesa, luego la accion. Todo entra en menos de un segundo — es
           trafico pagado, no una intro. */}
       <section className="co-hero">
+        {/* El titular nombra el DOLOR del comprador, no lo que hacemos
+            nosotros. Los dos perfiles que trae el anuncio son "no tengo web" y
+            "llevo meses cotizando"; el segundo es el que ya sufrió el problema
+            y el que convierte, así que el titular le habla a él. */}
         <h1 className="co-h1 reveal" style={{ "--d": "0.05s" } as React.CSSProperties}>
-          Creamos tu página web
-          <em>de principio a fin</em>
+          Tu página web lista,
+          <em>sin cotizaciones que nunca llegan</em>
         </h1>
         <p className="co-lead reveal" style={{ "--d": "0.16s" } as React.CSSProperties}>
-          Somos un equipo pequeño. Nos sentamos contigo, entendemos tu negocio y la construimos nosotros mismos.
+          Somos cuatro personas con una oficina. Nos sentamos contigo, entendemos tu negocio y la construimos
+          nosotros mismos. Hablas siempre con quien la está haciendo.
         </p>
 
         <div className="co-ctas reveal" style={{ "--d": "0.26s" } as React.CSSProperties}>
           <button className="co-btn co-btn-primary" onClick={() => abrir("reunion")}>
             <IcoCalendario />
-            Quiero agendar una reunión
+            Agendar mi reunión gratis
             <IcoFlecha />
           </button>
-          <button className="co-btn co-btn-glass" onClick={() => abrir("contacto")}>
+          {/* Baja de botón a enlace A PROPÓSITO. Dos botones del mismo peso
+              hacen que la mayoría elija el de menor compromiso ("que me
+              contacten"), que además convierte mucho peor. Sigue estando —
+              quitarlo pierde al que no quiere comprometerse hoy — pero deja de
+              competir visualmente con la acción que sí queremos. */}
+          <button className="co-btn-link" onClick={() => abrir("contacto")}>
             <IcoChat />
-            Prefiero que me contacten
+            Prefiero que me escriban primero
           </button>
         </div>
+
+        {/* Señales de confianza JUSTO bajo el CTA: es donde aparece la duda
+            ("¿y si me estafan?"). En Colombia el fraude digital es una
+            preocupación cotidiana y este comprador no nos conoce.
+            REGLA: cada línea de acá tiene que ser verificable. Nada de "+100
+            clientes" ni años inventados. */}
+        <ul className="co-senales reveal" style={{ "--d": "0.32s" } as React.CSSProperties}>
+          {SEÑALES.map((s) => (
+            <li key={s}>
+              <IcoCheck />
+              {s}
+            </li>
+          ))}
+        </ul>
 
         {/* Mockup real con fondo transparente: el portátil se apoya sobre el
             lavado de color de la página en vez de traer su propio recuadro
@@ -327,6 +450,50 @@ export default function Colombia() {
         </ul>
       </section>
 
+      {/* ═══════════════════════ CÓMO TRABAJAMOS ═══════════════════════ */}
+      {/* Va DESPUÉS del trabajo y ANTES de las preguntas: primero ve que
+          sabemos hacerlo, después cómo sería trabajar con nosotros. */}
+      <section className="co-sec" id="proceso">
+        <div className="co-sec-head reveal">
+          <p className="co-kicker">Cómo trabajamos</p>
+          <h2 className="co-h2">Qué pasa después de que agendas.</h2>
+          <p className="co-p co-p-sub">Sin sorpresas. Estos son los cuatro pasos, completos.</p>
+        </div>
+        <ol className="co-pasos">
+          {PASOS.map((p, i) => (
+            <li className="co-glass reveal" key={p.n} style={{ transitionDelay: `${i * 70}ms` }}>
+              <span className="co-paso-n">{p.n}</span>
+              <h3>{p.t}</h3>
+              <p>{p.d}</p>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      {/* ═════════════════════════ OBJECIONES ═══════════════════════════ */}
+      {/* Detalles nativos: sin JS, accesibles, y el navegador se encarga del
+          teclado. Abrir una no cierra las otras a propósito — quien está
+          comparando quiere leer varias. */}
+      <section className="co-sec" id="preguntas">
+        <div className="co-sec-head reveal">
+          <p className="co-kicker">Sin letra chica</p>
+          <h2 className="co-h2">Lo que siempre nos preguntan.</h2>
+        </div>
+        <ul className="co-faq">
+          {PREGUNTAS.map((f, i) => (
+            <li className="reveal" key={f.q} style={{ transitionDelay: `${i * 50}ms` }}>
+              <details className="co-glass">
+                <summary>
+                  {f.q}
+                  <IcoMas />
+                </summary>
+                <p>{f.a}</p>
+              </details>
+            </li>
+          ))}
+        </ul>
+      </section>
+
       {/* ═════════════════════ PRUEBA SOCIAL ═════════════════════════
           Va JUSTO ANTES del CTA final: es el ultimo argumento antes de pedir
           los datos. Ponerla arriba la desperdicia, porque todavia no hay
@@ -358,16 +525,19 @@ export default function Colombia() {
       <section className="co-cierre">
         <div className="co-cierre-in co-glass-panel co-glint reveal">
           <h2 className="co-h2">¿Conversamos?</h2>
-          <p className="co-p">Una reunión de 30 minutos para conocer tu negocio. Sin costo y sin compromiso.</p>
+          <p className="co-p">
+            Media hora por videollamada para conocer tu negocio. Sin costo, y si no te convence la propuesta no
+            seguimos.
+          </p>
           <div className="co-ctas">
             <button className="co-btn co-btn-primary" onClick={() => abrir("reunion")}>
               <IcoCalendario />
-              Quiero agendar una reunión
+              Agendar mi reunión gratis
               <IcoFlecha />
             </button>
-            <button className="co-btn co-btn-glass" onClick={() => abrir("contacto")}>
+            <button className="co-btn-link" onClick={() => abrir("contacto")}>
               <IcoChat />
-              Prefiero que me contacten
+              Prefiero que me escriban primero
             </button>
           </div>
         </div>
@@ -385,10 +555,14 @@ export default function Colombia() {
             WhatsApp {WSP}
           </a>
           <span>Atendemos de 8:00 a 21:00, hora Colombia.</span>
+          <button className="co-foot-link" onClick={() => setPrivacidad(true)}>
+            Política de tratamiento de datos
+          </button>
         </p>
       </footer>
 
-      {open && <LeadModal tipo={open} onClose={() => setOpen(null)} />}
+      {open && <LeadModal tipo={open} onClose={() => setOpen(null)} onPrivacidad={() => setPrivacidad(true)} />}
+      {privacidad && <ModalPrivacidad onClose={() => setPrivacidad(false)} />}
     </main>
   );
 }
@@ -445,6 +619,88 @@ function IcoFlecha() {
     </svg>
   );
 }
+function IcoCheck() {
+  return (
+    <svg className="co-ico-check" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path d="m4.5 12.5 5 5 10-11" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+function IcoMas() {
+  return (
+    <svg className="co-ico-mas" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+/* ══════════════════════ Política de tratamiento de datos ═══════════════════ */
+/* Ley 1581 de 2012 + Decreto 1377 de 2013. Va como modal y no como página
+   aparte para no sacar al visitante de la landing: salir del embudo en tráfico
+   pagado es perderlo.
+
+   JOAQUÍN: revisa que la razón social y el correo sean los correctos antes de
+   publicar. Si la empresa tiene NIT o razón social colombiana, agrégala: es
+   justamente el dato que este comprador busca para comprobar que existes. */
+function ModalPrivacidad({ onClose }: { onClose: () => void }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    const previo = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = previo;
+    };
+  }, [onClose]);
+
+  return (
+    <div className="co-modal" role="dialog" aria-modal="true" aria-label="Política de tratamiento de datos" onClick={onClose}>
+      <div className="co-modal-card co-modal-texto" onClick={(e) => e.stopPropagation()}>
+        <button className="co-modal-x" onClick={onClose} aria-label="Cerrar">
+          <span aria-hidden>×</span>
+        </button>
+        <h3>Política de tratamiento de datos</h3>
+        <p className="co-form-sub">Ley 1581 de 2012 y Decreto 1377 de 2013 de Colombia.</p>
+
+        <h4>Quién trata tus datos</h4>
+        <p>
+          Cóndor.ai, responsable del tratamiento. Puedes escribirnos a <b>{CORREO_DATOS}</b> o al WhatsApp {WSP}.
+        </p>
+
+        <h4>Qué datos recogemos y para qué</h4>
+        <p>
+          Solo tu nombre, tu número de WhatsApp y tu correo, más el horario que prefieras. Los usamos para dos cosas:
+          coordinar y realizar la reunión que solicitaste, y enviarte por correo la confirmación y un recordatorio
+          antes de esa reunión. Nada más.
+        </p>
+
+        <h4>Qué NO hacemos</h4>
+        <p>
+          No vendemos, arrendamos ni entregamos tus datos a terceros con fines comerciales. No te inscribimos en
+          listas de publicidad sin que lo pidas.
+        </p>
+
+        <h4>Cuánto tiempo los guardamos</h4>
+        <p>
+          Mientras dure la relación comercial. Si no llegamos a trabajar juntos, los eliminamos al pedirlo o pasados
+          doce meses desde el último contacto.
+        </p>
+
+        <h4>Tus derechos</h4>
+        <p>
+          Puedes conocer, actualizar y rectificar tus datos, pedir prueba de esta autorización, ser informado sobre su
+          uso, presentar quejas ante la Superintendencia de Industria y Comercio y solicitar que los eliminemos.
+          Escríbenos a <b>{CORREO_DATOS}</b> y respondemos dentro de los plazos de ley.
+        </p>
+
+        <button className="co-btn co-btn-primary co-btn-block" onClick={onClose}>
+          Entendido
+        </button>
+      </div>
+    </div>
+  );
+}
 
 /* ══════════════════════════════ Hooks ══════════════════════════════════════ */
 
@@ -455,11 +711,8 @@ function IcoFlecha() {
  */
 function useMeta() {
   useEffect(() => {
-    const titulo = "Cóndor.ai — Creamos tu página web de principio a fin | Colombia";
-    const desc =
-      "Somos un equipo pequeño. Nos sentamos contigo, entendemos tu negocio y construimos tu página web nosotros mismos. Agenda una reunión sin costo.";
     const previo = document.title;
-    document.title = titulo;
+    document.title = META_TITULO;
 
     const puestos: HTMLMetaElement[] = [];
     const poner = (attr: "name" | "property", clave: string, valor: string) => {
@@ -472,10 +725,24 @@ function useMeta() {
       }
       el.setAttribute("content", valor);
     };
-    poner("name", "description", desc);
-    poner("property", "og:title", titulo);
-    poner("property", "og:description", desc);
+    poner("name", "description", META_DESC);
+    poner("property", "og:title", META_TITULO);
+    poner("property", "og:description", META_DESC);
     poner("property", "og:type", "website");
+    poner("property", "og:url", META_URL);
+    poner("property", "og:locale", "es_CO");
+    /* Sin og:image, compartir el link por WhatsApp muestra un rectángulo gris.
+       En Colombia el link de un proveedor circula por WhatsApp antes de que
+       alguien decida, así que esa tarjeta es parte de la venta.
+       OJO: los scrapers de Meta y WhatsApp NO ejecutan JavaScript — estas
+       etiquetas puestas desde React no las ven. Las que valen son las que
+       escribe scripts/prerender.mjs en /colombia/index.html. Estas quedan para
+       el navegador y para que dev y producción digan lo mismo. */
+    poner("property", "og:image", META_IMG);
+    poner("property", "og:image:width", "1200");
+    poner("property", "og:image:height", "630");
+    poner("name", "twitter:card", "summary_large_image");
+    poner("name", "twitter:image", META_IMG);
 
     return () => {
       document.title = previo;
@@ -607,13 +874,25 @@ function useTracking() {
 
 /* ══════════════════════════════ Modal de lead ══════════════════════════════ */
 
-function LeadModal({ tipo, onClose }: { tipo: Tipo; onClose: () => void }) {
+function LeadModal({
+  tipo,
+  onClose,
+  onPrivacidad,
+}: {
+  tipo: Tipo;
+  onClose: () => void;
+  onPrivacidad: () => void;
+}) {
   const [nombre, setNombre] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
   const [correo, setCorreo] = useState("");
   const [cuando, setCuando] = useState("");
   const [status, setStatus] = useState<Status>("idle");
   const [errorMsg, setErrorMsg] = useState("");
+  /* Se marca cuando el usuario intenta enviar: hasta entonces no se pinta
+     ningún campo en rojo. Regañar antes de que termine de escribir es la
+     manera más rápida de que abandone el formulario. */
+  const [intento, setIntento] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
   /* Atribución: la fuente de verdad es condorAtribucion() (la guarda en la
@@ -658,8 +937,17 @@ function LeadModal({ tipo, onClose }: { tipo: Tipo; onClose: () => void }) {
   const telOk = whatsapp.replace(/\D/g, "").length >= 7;
   const puedeEnviar = nombre.trim().length >= 2 && emailOk && telOk && status !== "sending";
 
+  /* Qué falta, en palabras. "Revisa este dato: el correo" resuelve el problema;
+     un borde rojo sin explicación deja al usuario adivinando. */
+  const faltan = [
+    nombre.trim().length < 2 && "tu nombre",
+    !telOk && "el WhatsApp",
+    !emailOk && "el correo",
+  ].filter(Boolean) as string[];
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    setIntento(true);
     if (!puedeEnviar) return;
     setStatus("sending");
     setErrorMsg("");
@@ -729,15 +1017,33 @@ function LeadModal({ tipo, onClose }: { tipo: Tipo; onClose: () => void }) {
         </button>
 
         {status === "ok" ? (
+          /* Decirle exactamente qué va a pasar y cuándo cierra el ciclo: la
+             ansiedad post-envío ("¿habrá llegado?") es lo que hace que la
+             persona escriba por otro canal o se arrepienta. */
           <div className="co-ok">
             <div className="co-ok-ico" aria-hidden>
               ✓
             </div>
-            <h3>{esReunion ? "¡Listo! Te escribimos." : "¡Recibido!"}</h3>
+            <h3>{esReunion ? "¡Listo, quedó agendada!" : "¡Recibido!"}</h3>
             <p>
-              {esReunion
-                ? "Te contactamos por WhatsApp para confirmar el día y la hora (8:00–21:00, hora Colombia)."
-                : "Te contactamos en menos de 24 horas por WhatsApp. Gracias por escribirnos."}
+              {esReunion ? (
+                <>
+                  Te acabamos de mandar la confirmación a <b>{correo.trim().toLowerCase()}</b>. Te escribimos por
+                  WhatsApp para cerrar el día y la hora, dentro del horario de 8:00 a 21:00 hora Colombia.
+                </>
+              ) : (
+                <>
+                  Te escribimos por WhatsApp en menos de 24 horas. También te llegó un correo a{" "}
+                  <b>{correo.trim().toLowerCase()}</b> con la información.
+                </>
+              )}
+            </p>
+            <p className="co-ok-nota">
+              ¿No te llegó? Revisa la carpeta de spam o escríbenos directo por{" "}
+              <a href={WSP_LINK} target="_blank" rel="noopener noreferrer">
+                WhatsApp
+              </a>
+              .
             </p>
             <button className="co-btn co-btn-primary co-btn-block" onClick={onClose}>
               Cerrar
@@ -754,7 +1060,13 @@ function LeadModal({ tipo, onClose }: { tipo: Tipo; onClose: () => void }) {
 
             <label className="co-field">
               <span>Nombre</span>
-              <input value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Tu nombre" autoFocus />
+              <input
+                value={nombre}
+                onChange={(e) => setNombre(e.target.value)}
+                placeholder="Tu nombre"
+                autoFocus
+                aria-invalid={intento && nombre.trim().length < 2}
+              />
             </label>
             <label className="co-field">
               <span>WhatsApp</span>
@@ -763,7 +1075,9 @@ function LeadModal({ tipo, onClose }: { tipo: Tipo; onClose: () => void }) {
                 onChange={(e) => setWhatsapp(e.target.value)}
                 inputMode="tel"
                 placeholder="+57 300 000 0000"
+                aria-invalid={intento && !telOk}
               />
+              <i className="co-field-ayuda">Por acá te escribimos para coordinar. No enviamos publicidad.</i>
             </label>
             <label className="co-field">
               <span>Correo</span>
@@ -772,19 +1086,44 @@ function LeadModal({ tipo, onClose }: { tipo: Tipo; onClose: () => void }) {
                 onChange={(e) => setCorreo(e.target.value)}
                 inputMode="email"
                 placeholder="tucorreo@ejemplo.com"
+                aria-invalid={intento && !emailOk}
               />
+              {/* Pedir DOS canales necesita justificarse o se lee como que
+                  vamos a perseguirlo. Acá el correo tiene una función concreta
+                  y distinta del WhatsApp: es donde llegan la confirmación y el
+                  recordatorio automáticos. */}
+              <i className="co-field-ayuda">
+                {esReunion
+                  ? "Acá te llega la confirmación y un recordatorio antes de la reunión."
+                  : "Para mandarte la información por escrito."}
+              </i>
             </label>
             {esReunion && (
-              <label className="co-field">
-                <span>
-                  ¿Qué día y hora te acomoda? <i>(opcional)</i>
-                </span>
+              <fieldset className="co-field co-cuando">
+                <legend>¿Cuándo te acomoda?</legend>
+                {/* Elegir de una lista en vez de escribir: menos esfuerzo, y
+                    además nos llega en un formato que se puede coordinar sin
+                    tres mensajes de ida y vuelta. Sigue admitiendo texto libre
+                    para el que quiera precisar. */}
+                <div className="co-chips">
+                  {FRANJAS.map((f) => (
+                    <button
+                      type="button"
+                      key={f}
+                      className={`co-chip${cuando === f ? " is-on" : ""}`}
+                      aria-pressed={cuando === f}
+                      onClick={() => setCuando(cuando === f ? "" : f)}
+                    >
+                      {f}
+                    </button>
+                  ))}
+                </div>
                 <input
-                  value={cuando}
+                  value={FRANJAS.includes(cuando) ? "" : cuando}
                   onChange={(e) => setCuando(e.target.value)}
-                  placeholder="Ej: martes en la tarde"
+                  placeholder="O escríbelo: “jueves después de las 6”"
                 />
-              </label>
+              </fieldset>
             )}
 
             {status === "error" && (
@@ -804,10 +1143,36 @@ function LeadModal({ tipo, onClose }: { tipo: Tipo; onClose: () => void }) {
               </p>
             )}
 
-            <button className="co-btn co-btn-primary co-btn-block" type="submit" disabled={!puedeEnviar}>
-              {status === "sending" ? "Enviando…" : esReunion ? "Agendar mi reunión" : "Quiero que me contacten"}
+            {/* El botón NUNCA se deshabilita: un botón gris antes de escribir
+                se lee como roto, y quita la sensación de que la acción está
+                disponible. Si falta algo, el submit lo señala.
+                La atenuación va por CLASE y no por aria-disabled: aria-disabled
+                anuncia el botón como deshabilitado a los lectores de pantalla
+                mientras el clic sí funciona — una contradicción que deja fuera
+                a quien navega con teclado o lector. */}
+            <button
+              className={`co-btn co-btn-primary co-btn-block${puedeEnviar ? "" : " is-incompleto"}`}
+              type="submit"
+            >
+              {status === "sending" ? "Enviando…" : esReunion ? "Agendar mi reunión" : "Quiero que me escriban"}
             </button>
-            <p className="co-form-legal">Al enviar aceptas que te contactemos por estos medios.</p>
+            {intento && !puedeEnviar && status !== "sending" && (
+              <p className="co-form-err" role="alert">
+                Revisa {faltan.length > 1 ? "estos datos" : "este dato"}: {faltan.join(", ")}.
+              </p>
+            )}
+            {/* Ley 1581 de 2012 (habeas data): para tratar datos personales de
+                una persona en Colombia hace falta autorización informada y una
+                política de tratamiento accesible. "Aceptas que te contactemos"
+                a secas no cumple ninguna de las dos. */}
+            <p className="co-form-legal">
+              Al enviar autorizas a Cóndor.ai a contactarte por WhatsApp y correo para coordinar esta reunión, según
+              nuestra{" "}
+              <button type="button" className="co-link-inline" onClick={onPrivacidad}>
+                política de tratamiento de datos
+              </button>
+              . Puedes pedir que los eliminemos cuando quieras.
+            </p>
           </form>
         )}
       </div>
