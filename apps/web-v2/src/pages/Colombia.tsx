@@ -100,6 +100,20 @@ const META_DESC =
   "Más de 4 años creando páginas web para empresas en Latinoamérica. Hacemos que a tus clientes les resulte fácil llegar a ti. Reunión de 30 minutos, sin costo.";
 const META_IMG = "https://condorai.cl/assets/og-colombia.jpg";
 
+/* ══════════════════════════════ PROMOCIÓN ══════════════════════════════════
+   Calcomanía de 40% en el hero, solo durante agosto.
+
+   VENCE SOLA. La fecha de corte está acá y el sticker deja de renderizarse
+   cuando pasa: un "solo por agosto" que sigue puesto en septiembre le dice al
+   visitante que la urgencia era mentira, y esta es una página que se sostiene
+   sobre lo contrario. Para extender la promo, mueve PROMO_HASTA.
+
+   El descuento tiene que ser real contra el precio que cotizas normalmente.
+   En Colombia anunciar un porcentaje sobre un precio inflado es publicidad
+   engañosa (Estatuto del Consumidor) y además se nota en la reunión. */
+const PROMO_HASTA = new Date("2026-09-01T00:00:00-05:00"); // 00:00 del 1-sep, hora CO
+const PROMO_ACTIVA = Date.now() < PROMO_HASTA.getTime();
+
 /* ════════════════════════════ AGENDA ══════════════════════════════════════
    El visitante elige día y hora exactos. Antes elegía una franja ("tarde") y
    Joaquín cerraba la hora por WhatsApp; con fecha concreta el recordatorio
@@ -226,7 +240,13 @@ const PASOS = [
 const PREGUNTAS = [
   {
     q: "¿Cuánto cuesta?",
-    a: "Depende de lo que necesite tu negocio, y por eso no ponemos un precio en esta página: una cifra inventada para atraerte y después cambiarla en la reunión sería una pérdida de tiempo para los dos. En la reunión te damos el precio por escrito, con el alcance detallado. Si no te sirve, no seguimos y no te costó nada.",
+    a:
+      "Depende de lo que necesite tu negocio, y por eso no ponemos un precio en esta página: una cifra inventada para atraerte y después cambiarla en la reunión sería una pérdida de tiempo para los dos. En la reunión te damos el precio por escrito, con el alcance detallado. Si no te sirve, no seguimos y no te costó nada." +
+      // Si el visitante ve la calcomanía y el FAQ no la menciona, la promo
+      // parece un adorno. Aparece y desaparece con ella.
+      (PROMO_ACTIVA
+        ? " Durante agosto ese precio lleva un 40% de descuento; basta con que agendes dentro del mes."
+        : ""),
   },
   {
     q: "¿Están en Colombia?",
@@ -373,6 +393,15 @@ export default function Colombia() {
           la promesa, luego la accion. Todo entra en menos de un segundo — es
           trafico pagado, no una intro. */}
       <section className="co-hero">
+        {/* Va dentro del hero y no fija a la pantalla: una calcomanía es algo
+            pegado a la página, no un banner que persigue al usuario. */}
+        {PROMO_ACTIVA && (
+          <div className="co-sticker" role="note">
+            <b>40%</b>
+            <span>de descuento</span>
+            <i>solo en agosto</i>
+          </div>
+        )}
         <h1 className="co-h1">
           Tu página web lista,
           <em>a tu medida</em>
