@@ -6,7 +6,8 @@
  *
  * QUÉ CORREOS SALEN SOLOS
  *   1. Al lead, apenas envía el formulario → confirmación de que llegó.
- *   2. A nosotros, en el mismo momento → aviso para escribirle por WhatsApp.
+ *   2. A nosotros, en el mismo momento → aviso por correo Y por Telegram
+ *      (Sandra, el mismo bot y grupo que usan las Edge Functions del portal).
  *   3. Al lead, 24 h antes de la reunión → recordatorio.
  *   4. Al lead, ~2 h antes de la reunión → último recordatorio.
  *
@@ -50,6 +51,17 @@
 const CONFIG = {
   // A dónde llega el aviso interno de lead nuevo. CAMBIAR.
   AVISAR_A: "contacto@teamcondorcl.com",
+
+  // ── Sandra (Telegram) ────────────────────────────────────────────────
+  // El MISMO bot y el mismo grupo que ya usan las Edge Functions de Supabase
+  // (`reunion-notificar`, `lead-whatsapp`). Se reutiliza a propósito: un solo
+  // bot y un solo grupo para todo lo que llega, venga de donde venga.
+  // Los valores están en Supabase como SANDRA_TELEGRAM_BOT_TOKEN y
+  // SANDRA_TELEGRAM_CHAT_ID: se copian tal cual acá.
+  // Si se dejan vacíos, no se manda nada y el lead se guarda igual.
+  TELEGRAM_TOKEN: "",
+  TELEGRAM_CHAT_ID: "",
+
   // Nombre que ve el destinatario como remitente.
   REMITENTE: "Cóndor.ai",
   // WhatsApp que se muestra en los correos.
@@ -214,6 +226,52 @@ function correoRecordatorio_(datos, horas) {
   );
 }
 
+/**
+ * Sandra avisa en el grupo de Telegram. Mismo bot y mismo grupo que usan las
+ * Edge Functions del portal, para que todo lo que entra caiga en un solo lugar.
+ *
+ * Best-effort como los correos: si Telegram falla, el lead ya está guardado.
+ */
+function telegramAviso_(datos) {
+  if (!CONFIG.TELEGRAM_TOKEN || !CONFIG.TELEGRAM_CHAT_ID) return;
+  const esReunion = datos.tipo === "reunion";
+  const wsp = String(datos.whatsapp || "").replace(/\D/g, "");
+  const lineas = [
+    esReunion ? "📅 <b>Nueva reunión agendada</b>" : "☎️ <b>Piden que los contacten</b>",
+    "<i>Campaña Colombia · condorai.cl/colombia</i>",
+    "",
+    "👤 " + escaparHtml_(datos.nombre),
+    "📱 " + escaparHtml_(datos.whatsapp),
+    "✉️ " + escaparHtml_(datos.correo || "—"),
+  ];
+  if (esReunion && datos.fecha_hora) lineas.push("🕒 " + escaparHtml_(datos.fecha_hora) + " (hora Colombia)");
+  const camp = (datos.origen && datos.origen.utm_campaign) || "";
+  const crea = datos.creativo || "";
+  if (camp || crea) lineas.push("📊 " + escaparHtml_(camp || "—") + " · creativo " + escaparHtml_(crea || "—"));
+  if (wsp) lineas.push("", '<a href="https://wa.me/' + wsp + '">Abrir WhatsApp</a>');
+
+  try {
+    UrlFetchApp.fetch("https://api.telegram.org/bot" + CONFIG.TELEGRAM_TOKEN + "/sendMessage", {
+      method: "post",
+      contentType: "application/json",
+      muteHttpExceptions: true,
+      payload: JSON.stringify({
+        chat_id: CONFIG.TELEGRAM_CHAT_ID,
+        text: lineas.join("\n"),
+        parse_mode: "HTML",
+        disable_web_page_preview: true,
+      }),
+    });
+  } catch (err) {
+    console.error("Telegram falló: " + err);
+  }
+}
+
+/** Telegram interpreta HTML: un nombre con < o & rompería el mensaje entero. */
+function escaparHtml_(s) {
+  return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
 /** Un correo nunca puede tumbar el guardado del lead. */
 function enviar_(para, asunto, html) {
   try {
@@ -271,6 +329,27 @@ function respuesta_(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
 }
 
+/**
+ * Bloques ya tomados, en ISO. La landing los pide al abrir el formulario y
+ * pinta esos horarios como no disponibles.
+ *
+ * Solo mira de ahora en adelante: los del pasado no le sirven a nadie y la
+ * lista crecería para siempre.
+ */
+function bloquesOcupados_() {
+  const sheet = getSheet_();
+  const filas = sheet.getLastRow() - 1;
+  if (filas < 1) return [];
+  const columna = sheet.getRange(2, col_("Fecha reunión"), filas, 1).getValues();
+  const ahora = Date.now();
+  const out = [];
+  for (let i = 0; i < columna.length; i++) {
+    const v = columna[i][0];
+    if (v instanceof Date && v.getTime() > ahora) out.push(v.toISOString());
+  }
+  return out;
+}
+
 function doPost(e) {
   try {
     const body = JSON.parse((e.postData && e.postData.contents) || "{}");
@@ -295,6 +374,25 @@ function doPost(e) {
       if (!isNaN(d.getTime())) fechaReunion = d;
     }
 
+    // El bloque no puede estar tomado. La landing ya los pinta como no
+    // disponibles, pero entre que alguien carga la página y envía el
+    // formulario pueden pasar minutos: sin esta comprobación, dos personas que
+    // abrieron la página a la vez terminan citadas a la misma hora.
+    if (fechaReunion) {
+      const ocupados = bloquesOcupados_();
+      const t = fechaReunion.getTime();
+      for (let i = 0; i < ocupados.length; i++) {
+        if (new Date(ocupados[i]).getTime() === t) {
+          return respuesta_({
+            ok: false,
+            code: "SLOT_OCUPADO",
+            error: "Ese horario se acaba de tomar. Elige otro, por favor.",
+            ocupados: ocupados,
+          });
+        }
+      }
+    }
+
     const sheet = getSheet_();
     sheet.appendRow([
       new Date(),
@@ -317,6 +415,7 @@ function doPost(e) {
     const datos = { tipo: tipo, nombre: nombre, whatsapp: whatsapp, correo: correo, fecha_hora: fecha_hora, origen: origen, creativo: creativo };
     correoConfirmacion_(datos);
     correoAviso_(datos);
+    telegramAviso_(datos);
 
     return respuesta_({ ok: true });
   } catch (err) {
@@ -324,8 +423,17 @@ function doPost(e) {
   }
 }
 
-/** Para probar el deploy a mano desde el navegador (GET a la URL /exec). */
-function doGet() {
+/**
+ * GET. Con `?ocupados=1` devuelve los bloques ya tomados, que es lo que la
+ * landing consulta para pintar los horarios no disponibles. Sin parámetros,
+ * sirve para comprobar a mano que el deploy está vivo.
+ *
+ * No expone ningún dato de las personas: solo las marcas de tiempo.
+ */
+function doGet(e) {
+  if (e && e.parameter && e.parameter.ocupados) {
+    return respuesta_({ ok: true, ocupados: bloquesOcupados_() });
+  }
   return respuesta_({ ok: true, info: "Leads Colombia — endpoint activo. Usa POST." });
 }
 
@@ -353,6 +461,7 @@ function probarCorreos() {
   };
   correoConfirmacion_(demo);
   correoAviso_(demo);
+  telegramAviso_(demo);
   demo.fechaReunion = new Date(Date.now() + 24 * 36e5);
   correoRecordatorio_(demo, 24);
   demo.fechaReunion = new Date(Date.now() + 2 * 36e5);

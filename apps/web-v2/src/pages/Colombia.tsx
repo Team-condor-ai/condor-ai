@@ -146,6 +146,32 @@ function horasDe(dia: Date): number[] {
 const etiquetaHora = (h: number) => `${h}:00`;
 const etiquetaDia = (d: Date) => `${DIAS_CORTOS[d.getDay()]} ${d.getDate()} de ${MESES[d.getMonth()]}`;
 
+/** El instante exacto de un bloque, que es la clave con la que se compara. */
+const instante = (d: Date, h: number) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), h, 0, 0).getTime();
+
+/**
+ * Bloques ya reservados por otra persona.
+ *
+ * Los sirve el mismo Apps Script que recibe los leads (`?ocupados=1`), que
+ * devuelve solo marcas de tiempo — ningún dato de las personas.
+ *
+ * Si la consulta falla, o si todavía no hay backend configurado, se devuelve
+ * una lista vacía y se ofrecen todos los horarios: es mejor arriesgar una
+ * coincidencia (que el POST rechaza igual) que dejar al visitante sin poder
+ * agendar porque una petición secundaria no respondió.
+ */
+async function cargarOcupados(): Promise<number[]> {
+  if (!LEADS_API) return [];
+  try {
+    const res = await fetch(`${LEADS_API}?ocupados=1`, { method: "GET" });
+    if (!res.ok) return [];
+    const data = (await res.json()) as { ocupados?: string[] };
+    return (data.ocupados ?? []).map((iso) => new Date(iso).getTime()).filter((t) => !Number.isNaN(t));
+  } catch {
+    return [];
+  }
+}
+
 /* Sitios reales, en vivo. Sin adjetivos de venta: la prueba es que se puede
    entrar. Descripciones de una línea — quien quiera saber más, entra. */
 const SITIOS = [
@@ -393,7 +419,7 @@ export default function Colombia() {
               contacten"), que además convierte mucho peor. Sigue estando —
               quitarlo pierde al que no quiere comprometerse hoy — pero deja de
               competir visualmente con la acción que sí queremos. */}
-          <button className="co-btn-link" onClick={() => abrir("contacto")}>
+          <button className="co-btn co-btn-gris" onClick={() => abrir("contacto")}>
             <IcoChat />
             Prefiero que me escriban primero
           </button>
@@ -566,7 +592,7 @@ export default function Colombia() {
               Agendar mi reunión gratis
               <IcoFlecha />
             </button>
-            <button className="co-btn-link" onClick={() => abrir("contacto")}>
+            <button className="co-btn co-btn-gris" onClick={() => abrir("contacto")}>
               <IcoChat />
               Prefiero que me escriban primero
             </button>
@@ -695,16 +721,25 @@ function Agenda({
   hora,
   setDia,
   setHora,
+  ocupados,
 }: {
   dia: Date | null;
   hora: number | null;
   setDia: (d: Date) => void;
   setHora: (h: number) => void;
+  ocupados: number[];
 }) {
   /* Se calcula una vez: si se recalculara en cada render, un cambio de hora
      mientras el formulario está abierto movería los días bajo el cursor. */
   const dias = useMemo(() => diasDisponibles(), []);
   const horas = dia ? horasDe(dia) : [];
+  const tomado = (d: Date, h: number) => ocupados.includes(instante(d, h));
+  /* Un día sin ningún bloque libre se marca completo en el riel: así el
+     visitante no lo toca para encontrarse con la fila vacía. */
+  const diaLleno = (d: Date) => {
+    const hs = horasDe(d);
+    return hs.length > 0 && hs.every((h) => tomado(d, h));
+  };
 
   return (
     <div className="co-agenda">
@@ -714,12 +749,15 @@ function Agenda({
         {dias.map((d) => {
           const sel = !!dia && d.toDateString() === dia.toDateString();
           const esHoy = d.toDateString() === new Date().toDateString();
+          const lleno = diaLleno(d);
           return (
             <button
               type="button"
               key={d.toISOString()}
-              className={`co-dia${sel ? " is-on" : ""}`}
+              className={`co-dia${sel ? " is-on" : ""}${lleno ? " is-lleno" : ""}`}
               aria-pressed={sel}
+              disabled={lleno}
+              title={lleno ? "Sin horarios disponibles" : undefined}
               onClick={() => {
                 setDia(d);
                 setHora(0); // 0 = sin hora: obliga a elegir una del día nuevo
@@ -739,18 +777,30 @@ function Agenda({
             {etiquetaDia(dia)} · hora Colombia
           </p>
           <div className="co-horas" role="group" aria-label="Elige la hora">
-            {horas.map((h) => (
-              <button
-                type="button"
-                key={h}
-                className={`co-hora${hora === h ? " is-on" : ""}`}
-                aria-pressed={hora === h}
-                onClick={() => setHora(h)}
-              >
-                {etiquetaHora(h)}
-              </button>
-            ))}
+            {horas.map((h) => {
+              const ocupado = tomado(dia, h);
+              return (
+                <button
+                  type="button"
+                  key={h}
+                  className={`co-hora${hora === h ? " is-on" : ""}${ocupado ? " is-ocupado" : ""}`}
+                  aria-pressed={hora === h}
+                  disabled={ocupado}
+                  // Se muestra tachado en vez de esconderlo: ver un hueco
+                  // ocupado dice que hay gente agendando, y eso empuja a
+                  // reservar. Esconderlo solo deja una lista más corta sin
+                  // explicación.
+                  aria-label={ocupado ? `${etiquetaHora(h)}, no disponible` : etiquetaHora(h)}
+                  onClick={() => setHora(h)}
+                >
+                  {etiquetaHora(h)}
+                </button>
+              );
+            })}
           </div>
+          {horas.every((h) => tomado(dia, h)) && horas.length > 0 && (
+            <p className="co-agenda-vacio">Este día ya está completo. Prueba con otro.</p>
+          )}
         </>
       )}
     </div>
@@ -953,6 +1003,12 @@ function LeadModal({
      ningún campo en rojo. Regañar antes de que termine de escribir es la
      manera más rápida de que abandone el formulario. */
   const [intento, setIntento] = useState(false);
+  /* Bloques que ya tomó otra persona. Se piden al abrir y se refrescan si el
+     backend rechaza por choque. */
+  const [ocupados, setOcupados] = useState<number[]>([]);
+  /* Aviso puntual cuando el horario elegido se lo llevó otro mientras el
+     formulario estaba abierto. */
+  const [choque, setChoque] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
   /* Atribución: la fuente de verdad es condorAtribucion() (la guarda en la
@@ -991,6 +1047,20 @@ function LeadModal({
       document.body.style.overflow = overflowPrevio;
     };
   }, [onClose]);
+
+  /* Los horarios tomados se piden al abrir el formulario, no al cargar la
+     página: la mayoría de las visitas no lo abre nunca y sería una petición
+     regalada. Solo hace falta para "reunión". */
+  useEffect(() => {
+    if (tipo !== "reunion") return;
+    let vivo = true;
+    cargarOcupados().then((o) => {
+      if (vivo) setOcupados(o);
+    });
+    return () => {
+      vivo = false;
+    };
+  }, [tipo]);
 
   const esReunion = tipo === "reunion";
   const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo);
@@ -1053,6 +1123,24 @@ function LeadModal({
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json().catch(() => ({ ok: true }));
+
+      /* Choque de horario: entre que se abrió el formulario y se envió, otra
+         persona tomó el mismo bloque. No es un error del visitante ni del
+         envío, así que no se le muestra el mensaje de fallo: se refresca la
+         disponibilidad, se suelta la hora elegida y se le pide otra. */
+      if (data && data.code === "SLOT_OCUPADO") {
+        setOcupados(
+          ((data.ocupados as string[]) ?? [])
+            .map((iso) => new Date(iso).getTime())
+            .filter((t) => !Number.isNaN(t)),
+        );
+        setHora(null);
+        setStatus("idle");
+        setErrorMsg("");
+        setChoque(true);
+        return;
+      }
+
       if (data && data.ok === false) throw new Error(data.error || "Backend respondió error");
       exito();
     } catch (err) {
@@ -1172,7 +1260,28 @@ function LeadModal({
                   : "Para mandarte la información por escrito."}
               </i>
             </label>
-            {esReunion && <Agenda dia={dia} hora={hora} setDia={setDia} setHora={setHora} />}
+            {esReunion && (
+              <>
+                {choque && (
+                  <p className="co-aviso-choque" role="status">
+                    Ese horario se lo acaban de tomar. Elige otro y listo.
+                  </p>
+                )}
+                <Agenda
+                  dia={dia}
+                  hora={hora}
+                  setDia={(d) => {
+                    setChoque(false);
+                    setDia(d);
+                  }}
+                  setHora={(h) => {
+                    setChoque(false);
+                    setHora(h);
+                  }}
+                  ocupados={ocupados}
+                />
+              </>
+            )}
 
             {status === "error" && (
               <p className="co-form-err" role="alert">

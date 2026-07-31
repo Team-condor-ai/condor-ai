@@ -1333,10 +1333,34 @@ html.co-root body {
    conoce, y le confirma justo lo que teme.
    ═══════════════════════════════════════════════════════════════════════════ */
 
-/* ── CTA secundario degradado a enlace ─────────────────────────────────────
-   Ley de Hick: con dos botones del mismo peso gana el de menor compromiso, y
-   "que me contacten" convierte mucho peor que "agendo". Sigue estando y se
-   toca igual de bien (48px de alto), pero deja de competir. */
+/* ── CTA secundario: botón gris, más chico que el principal ────────────────
+   Vuelve a ser botón, pero NO uno del mismo peso. Ley de Hick: con dos
+   botones idénticos gana el de menor compromiso, y "que me escriban" convierte
+   mucho peor que "agendo". La jerarquía se sostiene con tres cosas a la vez:
+   material apagado (gris sobre verde saturado), 8px menos de alto y un punto
+   menos de tamaño de letra. Sigue siendo cómodo de tocar: 52px pasan de sobra
+   los 44 que pide Apple. */
+.co-btn-gris {
+  min-height: 52px;
+  font-size: clamp(0.94rem, 2.3vw, 1rem);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.9) 0%, rgba(244, 241, 238, 0.86) 100%);
+  color: var(--co-tinta-2);
+  border-color: rgba(14, 17, 22, 0.1);
+  box-shadow: 0 4px 14px -6px rgba(14, 18, 40, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+.co-btn-gris .co-ico {
+  width: 19px;
+  height: 19px;
+  opacity: 0.6;
+}
+.co-btn-gris:hover {
+  transform: translateY(-1px);
+  color: var(--co-tinta);
+  border-color: rgba(14, 17, 22, 0.18);
+  box-shadow: 0 10px 22px -10px rgba(14, 18, 40, 0.26), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+}
+
+/* Queda por compatibilidad: el enlace suelto ya no se usa en la landing. */
 .co-btn-link {
   display: inline-flex;
   align-items: center;
@@ -1843,4 +1867,62 @@ html.co-root body {
   .co-foot {
     padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
   }
+}
+
+/* ── Horarios ya tomados ───────────────────────────────────────────────────
+   Se muestran TACHADOS y no se esconden. Ver que hay huecos ocupados dice que
+   otra gente está agendando —prueba social real, no inventada— y empuja a
+   reservar. Esconderlos solo deja una lista más corta, sin explicación de por
+   qué faltan horas.
+
+   El estilo es explícitamente "apagado", no "roto": nada de rojo. Un bloque
+   que otro tomó no es un error del visitante. */
+.co-hora.is-ocupado,
+.co-hora:disabled {
+  background: rgba(14, 17, 22, 0.035);
+  border-color: rgba(14, 17, 22, 0.07);
+  color: var(--co-tinta-3);
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+  opacity: 0.72;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+.co-hora:disabled:hover {
+  transform: none;
+  border-color: rgba(14, 17, 22, 0.07);
+  color: var(--co-tinta-3);
+}
+
+/* Un día entero sin cupo: se apaga en el riel para que nadie lo toque y se
+   encuentre con la fila vacía. */
+.co-dia.is-lleno {
+  opacity: 0.42;
+  cursor: not-allowed;
+  background: rgba(14, 17, 22, 0.03);
+  border-style: dashed;
+}
+.co-dia.is-lleno:hover {
+  transform: none;
+  border-color: var(--co-linea);
+}
+
+.co-agenda-vacio {
+  margin: 10px 0 0;
+  font-size: 0.88rem;
+  color: var(--co-tinta-3);
+}
+
+/* Aviso de choque: alguien tomó el bloque mientras el formulario estaba
+   abierto. Es informativo, no un fallo del envío — de ahí el tono ámbar y no
+   el rojo de error. */
+.co-aviso-choque {
+  margin: 0;
+  padding: 11px 14px;
+  border-radius: 14px;
+  background: rgba(255, 176, 32, 0.14);
+  border: 1px solid rgba(196, 120, 0, 0.22);
+  color: #8a5a00;
+  font-size: 0.9rem;
+  line-height: 1.45;
 }
