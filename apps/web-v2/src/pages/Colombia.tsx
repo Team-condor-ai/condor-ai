@@ -1,6 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useLocation } from "react-router-dom";
-import { useReveal } from "../lib/useReveal";
 import ave from "../assets/colombia/ave.webp";
 import laptop from "../assets/colombia/laptop.webp";
 import fotoEquipo from "../assets/colombia/equipo.webp";
@@ -97,15 +95,56 @@ const CORREO_DATOS = "contacto@teamcondorcl.com";
    genera el /colombia/index.html que sí leen los scrapers. Si cambias uno,
    cambia el otro: son la misma tarjeta. */
 const META_URL = "https://condorai.cl/colombia/";
-const META_TITULO = "Tu página web lista, sin cotizaciones que nunca llegan | Cóndor.ai Colombia";
+const META_TITULO = "Tu página web lista, a tu medida | Cóndor.ai Colombia";
 const META_DESC =
-  "Cuatro personas y una oficina. Nos sentamos contigo, entendemos tu negocio y construimos tu página web nosotros mismos. Reunión de 30 minutos sin costo.";
+  "Más de 4 años creando páginas web para empresas en Latinoamérica. Hacemos que a tus clientes les resulte fácil llegar a ti. Reunión de 30 minutos, sin costo.";
 const META_IMG = "https://condorai.cl/assets/og-colombia.jpg";
 
-/* Franjas en vez de un campo de texto: reconocer cuesta menos que recordar, y
-   el dato llega normalizado. No son horas exactas a propósito — proponer un
-   horario concreto que después no tenemos libre es peor que coordinarlo. */
-const FRANJAS = ["Mañana (8–12)", "Tarde (12–18)", "Noche (18–21)", "Me acomoda cualquiera"];
+/* ════════════════════════════ AGENDA ══════════════════════════════════════
+   El visitante elige día y hora exactos. Antes elegía una franja ("tarde") y
+   Joaquín cerraba la hora por WhatsApp; con fecha concreta el recordatorio
+   automático sale solo, sin que nadie llene nada a mano.
+
+   NO hay sincronización con un calendario real: dos personas pueden pedir el
+   mismo bloque. Con el volumen de esta campaña es manejable —la reunión se
+   confirma igual por WhatsApp— y una agenda conectada es un proyecto aparte.
+
+   Horario de atención: 8:00 a 21:00 hora Colombia, de lunes a sábado. El
+   último bloque empieza a las 20:00 porque la reunión dura media hora. */
+const HORA_DESDE = 8;
+const HORA_HASTA = 20;
+const DIAS_VISIBLES = 21; // tres semanas: más que eso nadie planifica
+const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+const DIAS_CORTOS = ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"];
+
+/** Los próximos días hábiles con al menos un bloque libre. */
+function diasDisponibles(): Date[] {
+  const hoy = new Date();
+  const dias: Date[] = [];
+  for (let i = 0; i < DIAS_VISIBLES; i++) {
+    const d = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() + i);
+    if (d.getDay() === 0) continue; // domingo no
+    // Hoy solo aparece si todavía queda algún bloque por delante.
+    if (i === 0 && hoy.getHours() >= HORA_HASTA) continue;
+    dias.push(d);
+  }
+  return dias;
+}
+
+/** Bloques de una hora para el día elegido; los ya pasados no se ofrecen. */
+function horasDe(dia: Date): number[] {
+  const ahora = new Date();
+  const esHoy = dia.toDateString() === ahora.toDateString();
+  const horas: number[] = [];
+  for (let h = HORA_DESDE; h <= HORA_HASTA; h++) {
+    if (esHoy && h <= ahora.getHours()) continue;
+    horas.push(h);
+  }
+  return horas;
+}
+
+const etiquetaHora = (h: number) => `${h}:00`;
+const etiquetaDia = (d: Date) => `${DIAS_CORTOS[d.getDay()]} ${d.getDate()} de ${MESES[d.getMonth()]}`;
 
 /* Sitios reales, en vivo. Sin adjetivos de venta: la prueba es que se puede
    entrar. Descripciones de una línea — quien quiera saber más, entra. */
@@ -274,7 +313,6 @@ const RESENAS = import.meta.env.DEV ? RESENAS_MAQUETA : [];
 /* -------------------------------------------------------------------------- */
 
 export default function Colombia() {
-  useReveal(useLocation().pathname);
   const [open, setOpen] = useState<Tipo | null>(null);
   const [privacidad, setPrivacidad] = useState(false);
 
@@ -289,7 +327,6 @@ export default function Colombia() {
   useMeta();
   useTracking();
   useSerif();
-  const laptopRef = useParallax();
 
   /* Abrir un formulario es la microconversión que Meta puede optimizar antes
      de tener volumen de Lead/Schedule: se reporta como ViewContent. */
@@ -328,7 +365,6 @@ export default function Colombia() {
             cóndor<i>.ai</i>
           </b>
         </div>
-        <span className="co-tag">Colombia</span>
       </header>
 
       {/* ═══════════════════════════ HERO ═══════════════════════════ */}
@@ -337,20 +373,16 @@ export default function Colombia() {
           la promesa, luego la accion. Todo entra en menos de un segundo — es
           trafico pagado, no una intro. */}
       <section className="co-hero">
-        {/* El titular nombra el DOLOR del comprador, no lo que hacemos
-            nosotros. Los dos perfiles que trae el anuncio son "no tengo web" y
-            "llevo meses cotizando"; el segundo es el que ya sufrió el problema
-            y el que convierte, así que el titular le habla a él. */}
-        <h1 className="co-h1 reveal" style={{ "--d": "0.05s" } as React.CSSProperties}>
+        <h1 className="co-h1">
           Tu página web lista,
-          <em>sin cotizaciones que nunca llegan</em>
+          <em>a tu medida</em>
         </h1>
-        <p className="co-lead reveal" style={{ "--d": "0.16s" } as React.CSSProperties}>
-          Somos cuatro personas con una oficina. Nos sentamos contigo, entendemos tu negocio y la construimos
-          nosotros mismos. Hablas siempre con quien la está haciendo.
+        <p className="co-lead">
+          Más de 4 años creando páginas web para empresas en Latinoamérica. Hacemos que a tus clientes les resulte
+          fácil llegar a ti.
         </p>
 
-        <div className="co-ctas reveal" style={{ "--d": "0.26s" } as React.CSSProperties}>
+        <div className="co-ctas">
           <button className="co-btn co-btn-primary" onClick={() => abrir("reunion")}>
             <IcoCalendario />
             Agendar mi reunión gratis
@@ -372,7 +404,7 @@ export default function Colombia() {
             preocupación cotidiana y este comprador no nos conoce.
             REGLA: cada línea de acá tiene que ser verificable. Nada de "+100
             clientes" ni años inventados. */}
-        <ul className="co-senales reveal" style={{ "--d": "0.32s" } as React.CSSProperties}>
+        <ul className="co-senales">
           {SEÑALES.map((s) => (
             <li key={s}>
               <IcoCheck />
@@ -388,9 +420,8 @@ export default function Colombia() {
             (ver useParallax) para que el hero tenga profundidad. */}
         {/* El parallax va en la IMG y el revelado en la FIGURE: los dos escriben
             `transform`, y en el mismo elemento uno pisaría al otro. */}
-        <figure className="co-laptop reveal" style={{ "--d": "0.36s" } as React.CSSProperties}>
+        <figure className="co-laptop">
           <img
-            ref={laptopRef}
             src={laptop}
             alt="Un sitio web hecho por Cóndor.ai, abierto en un computador"
             width="1600"
@@ -401,8 +432,8 @@ export default function Colombia() {
 
       {/* ═══════════════════════ QUIÉNES SOMOS ═══════════════════════ */}
       <section className="co-sec" id="equipo">
-        <div className="co-nosotros co-glass-panel co-glint reveal">
-          <div className="co-nosotros-copy co-sub" style={{ "--d": "0.12s" } as React.CSSProperties}>
+        <div className="co-nosotros co-glass-panel co-glint">
+          <div className="co-nosotros-copy">
             <p className="co-kicker">Quiénes somos</p>
             <h2 className="co-h2">Cuatro personas y una oficina.</h2>
             <p className="co-p">
@@ -412,10 +443,10 @@ export default function Colombia() {
             <p className="co-p">Estas somos nosotros trabajando, un martes cualquiera.</p>
           </div>
           <div className="co-fotos">
-            <figure className="co-sub" style={{ "--d": "0.2s" } as React.CSSProperties}>
+            <figure>
               <img src={fotoEquipo} alt="El equipo de Cóndor.ai trabajando en la oficina" loading="lazy" />
             </figure>
-            <figure className="co-sub" style={{ "--d": "0.3s" } as React.CSSProperties}>
+            <figure>
               <img src={fotoOficina} alt="La oficina de Cóndor.ai" loading="lazy" />
             </figure>
           </div>
@@ -424,7 +455,7 @@ export default function Colombia() {
 
       {/* ═════════════════════════ TRABAJO ═════════════════════════ */}
       <section className="co-sec" id="trabajo">
-        <div className="co-sec-head reveal">
+        <div className="co-sec-head">
           <p className="co-kicker">Nuestro trabajo</p>
           <h2 className="co-h2">Algunos sitios que hicimos.</h2>
           <p className="co-p co-p-sub">Están publicados. Entra y navégalos como lo haría tu cliente.</p>
@@ -432,7 +463,7 @@ export default function Colombia() {
         <ul className="co-sitios">
           {SITIOS.map((s, i) => (
             <li
-              className="reveal"
+              
               key={s.marca}
               style={{ transitionDelay: `${i * 80}ms`, "--i": i } as React.CSSProperties}
             >
@@ -454,14 +485,14 @@ export default function Colombia() {
       {/* Va DESPUÉS del trabajo y ANTES de las preguntas: primero ve que
           sabemos hacerlo, después cómo sería trabajar con nosotros. */}
       <section className="co-sec" id="proceso">
-        <div className="co-sec-head reveal">
+        <div className="co-sec-head">
           <p className="co-kicker">Cómo trabajamos</p>
           <h2 className="co-h2">Qué pasa después de que agendas.</h2>
           <p className="co-p co-p-sub">Sin sorpresas. Estos son los cuatro pasos, completos.</p>
         </div>
         <ol className="co-pasos">
           {PASOS.map((p, i) => (
-            <li className="co-glass reveal" key={p.n} style={{ transitionDelay: `${i * 70}ms` }}>
+            <li className="co-glass" key={p.n} style={{ transitionDelay: `${i * 70}ms` }}>
               <span className="co-paso-n">{p.n}</span>
               <h3>{p.t}</h3>
               <p>{p.d}</p>
@@ -475,13 +506,13 @@ export default function Colombia() {
           teclado. Abrir una no cierra las otras a propósito — quien está
           comparando quiere leer varias. */}
       <section className="co-sec" id="preguntas">
-        <div className="co-sec-head reveal">
+        <div className="co-sec-head">
           <p className="co-kicker">Sin letra chica</p>
           <h2 className="co-h2">Lo que siempre nos preguntan.</h2>
         </div>
         <ul className="co-faq">
           {PREGUNTAS.map((f, i) => (
-            <li className="reveal" key={f.q} style={{ transitionDelay: `${i * 50}ms` }}>
+            <li  key={f.q} style={{ transitionDelay: `${i * 50}ms` }}>
               <details className="co-glass">
                 <summary>
                   {f.q}
@@ -502,13 +533,13 @@ export default function Colombia() {
           "PRUEBA SOCIAL" arriba. */}
       {RESENAS.length > 0 && (
         <section className="co-sec co-resenas-sec" aria-label="Lo que dicen nuestros clientes">
-          <div className="co-sec-head reveal">
+          <div className="co-sec-head">
             <p className="co-kicker">Lo que dicen</p>
             <h2 className="co-h2">Clientes que ya trabajaron con nosotros.</h2>
           </div>
           {/* El riel se duplica para que el bucle no tenga corte: la copia se
               esconde de lectores de pantalla, si no el texto se lee dos veces. */}
-          <div className="co-riel reveal">
+          <div className="co-riel">
             <ul className="co-riel-pista">
               {RESENAS.map((r, i) => (
                 <Resena key={`a${i}`} {...r} />
@@ -523,7 +554,7 @@ export default function Colombia() {
 
       {/* ══════════════════════════ CIERRE ══════════════════════════ */}
       <section className="co-cierre">
-        <div className="co-cierre-in co-glass-panel co-glint reveal">
+        <div className="co-cierre-in co-glass-panel co-glint">
           <h2 className="co-h2">¿Conversamos?</h2>
           <p className="co-p">
             Media hora por videollamada para conocer tu negocio. Sin costo, y si no te convence la propuesta no
@@ -560,6 +591,23 @@ export default function Colombia() {
           </button>
         </p>
       </footer>
+
+      {/* ═══════════════════ BARRA FIJA (SOLO MÓVIL) ═══════════════════ */}
+      {/* Casi todo el tráfico de la campaña llega por celular, y ahí el CTA
+          del hero desaparece al primer scroll: entre esa pantalla y la del
+          cierre hay cuatro secciones sin ninguna forma de agendar.
+          Está visible desde el primer frame y no aparece con el scroll — que
+          algo se materialice a mitad de página es justo lo que la página no
+          hace. Se esconde con el modal abierto para no competir con él. */}
+      {!open && !privacidad && (
+        <div className="co-fijo">
+          <button className="co-btn co-btn-primary" onClick={() => abrir("reunion")}>
+            <IcoCalendario />
+            Agendar mi reunión gratis
+            <IcoFlecha />
+          </button>
+        </div>
+      )}
 
       {open && <LeadModal tipo={open} onClose={() => setOpen(null)} onPrivacidad={() => setPrivacidad(true)} />}
       {privacidad && <ModalPrivacidad onClose={() => setPrivacidad(false)} />}
@@ -631,6 +679,81 @@ function IcoMas() {
     <svg className="co-ico-mas" viewBox="0 0 24 24" fill="none" aria-hidden>
       <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
     </svg>
+  );
+}
+
+/* ════════════════════════════ Agenda ═══════════════════════════════════════
+   Dos pasos, uno debajo del otro: primero el día en un riel horizontal,
+   después la hora. No es una cuadrícula de mes completo a propósito — en un
+   teléfono, 30 celdas de las que la mitad están deshabilitadas es más difícil
+   de leer que una tira con los días que sí se pueden elegir.
+
+   El bloque de hora aparece SOLO después de elegir día: mostrar las dos cosas
+   a la vez obliga a decidir dos variables al mismo tiempo. */
+function Agenda({
+  dia,
+  hora,
+  setDia,
+  setHora,
+}: {
+  dia: Date | null;
+  hora: number | null;
+  setDia: (d: Date) => void;
+  setHora: (h: number) => void;
+}) {
+  /* Se calcula una vez: si se recalculara en cada render, un cambio de hora
+     mientras el formulario está abierto movería los días bajo el cursor. */
+  const dias = useMemo(() => diasDisponibles(), []);
+  const horas = dia ? horasDe(dia) : [];
+
+  return (
+    <div className="co-agenda">
+      <p className="co-agenda-tit">¿Cuándo te acomoda?</p>
+
+      <div className="co-dias" role="group" aria-label="Elige el día">
+        {dias.map((d) => {
+          const sel = !!dia && d.toDateString() === dia.toDateString();
+          const esHoy = d.toDateString() === new Date().toDateString();
+          return (
+            <button
+              type="button"
+              key={d.toISOString()}
+              className={`co-dia${sel ? " is-on" : ""}`}
+              aria-pressed={sel}
+              onClick={() => {
+                setDia(d);
+                setHora(0); // 0 = sin hora: obliga a elegir una del día nuevo
+              }}
+            >
+              <span className="co-dia-sem">{esHoy ? "hoy" : DIAS_CORTOS[d.getDay()]}</span>
+              <span className="co-dia-num">{d.getDate()}</span>
+              <span className="co-dia-mes">{MESES[d.getMonth()].slice(0, 3)}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {dia && (
+        <>
+          <p className="co-agenda-sub">
+            {etiquetaDia(dia)} · hora Colombia
+          </p>
+          <div className="co-horas" role="group" aria-label="Elige la hora">
+            {horas.map((h) => (
+              <button
+                type="button"
+                key={h}
+                className={`co-hora${hora === h ? " is-on" : ""}`}
+                aria-pressed={hora === h}
+                onClick={() => setHora(h)}
+              >
+                {etiquetaHora(h)}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
   );
 }
 
@@ -752,94 +875,28 @@ function useMeta() {
 }
 
 /**
- * FIRMA DE MOVIMIENTO — el portátil deriva con el scroll.
- *
- * Sube un poco más lento que la página, así el hero gana profundidad y el
- * momento en que se apoya sobre la tarjeta de "quiénes somos" se siente como
- * que ATERRIZA ahí, no como que estaba pegado desde el principio.
- *
- * Es la única animación compleja de la página, a propósito: varias compitiendo
- * es lo que hace ver una landing sobrecargada, y acá todo lo que distrae del
- * CTA cuesta plata.
- *
- * Decisiones de costo (es una imagen grande):
- *   · Solo se escribe `transform` → capa de compositor, sin layout ni paint.
- *   · rAF-throttled: el evento de scroll dispara decenas de veces por frame.
- *   · Se apaga con IntersectionObserver cuando el portátil sale de pantalla:
- *     seguir calculando para algo que no se ve es trabajo regalado.
- *   · Se redondea a 1 decimal y no se escribe si no cambió — evita invalidar
- *     la capa por diferencias invisibles.
- *   · prefers-reduced-motion lo desactiva entero (queda quieto, sin salto).
- */
-function useParallax() {
-  const ref = useRef<HTMLImageElement>(null);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-
-    /* Rango corto: 44px. Más que eso deja de leerse como profundidad y empieza
-       a leerse como que el elemento se despega de la página. */
-    const RANGO = 44;
-    let visible = true;
-    let pedido = false;
-    let ultimo = -999;
-
-    const pintar = () => {
-      const caja = el.getBoundingClientRect();
-      /* Progreso del elemento cruzando el viewport: 0 cuando entra por abajo,
-         1 cuando sale por arriba. Se centra en 0 para que la deriva sea
-         simétrica y el elemento pase por su posición real a mitad de camino. */
-      const p = (window.innerHeight - caja.top) / (window.innerHeight + caja.height);
-      const y = Math.round((0.5 - Math.min(1, Math.max(0, p))) * RANGO * 10) / 10;
-      if (y !== ultimo) {
-        el.style.transform = `translate3d(0, ${y}px, 0)`;
-        ultimo = y;
-      }
-    };
-
-    const alScrollear = () => {
-      if (pedido || !visible) return;
-      pedido = true;
-      requestAnimationFrame(() => {
-        pedido = false;
-        pintar();
-      });
-    };
-
-    const obs = new IntersectionObserver(([e]) => {
-      visible = e.isIntersecting;
-      if (visible) pintar();
-    });
-    obs.observe(el);
-    window.addEventListener("scroll", alScrollear, { passive: true });
-    window.addEventListener("resize", alScrollear);
-    pintar();
-
-    return () => {
-      obs.disconnect();
-      window.removeEventListener("scroll", alScrollear);
-      window.removeEventListener("resize", alScrollear);
-    };
-  }, []);
-
-  return ref;
-}
-
-/**
  * Serif itálica del titular (Fontshare). Se carga SOLO en esta ruta, no en el
  * index.html global: es la única página que la usa y el resto del sitio no
  * tiene por qué pagar la descarga.
  */
 function useSerif() {
   useEffect(() => {
-    const href = "https://api.fontshare.com/v2/css?f[]=zodiak@400i,401&display=swap";
-    if (document.head.querySelector(`link[href="${href}"]`)) return;
-    const l = document.createElement("link");
-    l.rel = "stylesheet";
-    l.href = href;
-    document.head.appendChild(l);
+    /* Zodiak: la serif itálica del titular, la firma de la página.
+       Inter: puente hacia San Francisco en Android y Windows. SF no se puede
+       servir por web fuera de plataformas Apple, e Inter es lo más cercano
+       que sí se puede. En un iPhone nunca se descarga: -apple-system gana
+       antes en el stack. */
+    const hrefs = [
+      "https://api.fontshare.com/v2/css?f[]=zodiak@400i,401&display=swap",
+      "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap",
+    ];
+    hrefs.forEach((href) => {
+      if (document.head.querySelector(`link[href="${href}"]`)) return;
+      const l = document.createElement("link");
+      l.rel = "stylesheet";
+      l.href = href;
+      document.head.appendChild(l);
+    });
   }, []);
 }
 
@@ -886,7 +943,10 @@ function LeadModal({
   const [nombre, setNombre] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
   const [correo, setCorreo] = useState("");
-  const [cuando, setCuando] = useState("");
+  /* Día y hora se guardan por separado: el día se elige primero y recién ahí
+     aparecen sus bloques, que dependen de si es hoy o no. */
+  const [dia, setDia] = useState<Date | null>(null);
+  const [hora, setHora] = useState<number | null>(null);
   const [status, setStatus] = useState<Status>("idle");
   const [errorMsg, setErrorMsg] = useState("");
   /* Se marca cuando el usuario intenta enviar: hasta entonces no se pinta
@@ -935,7 +995,10 @@ function LeadModal({
   const esReunion = tipo === "reunion";
   const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo);
   const telOk = whatsapp.replace(/\D/g, "").length >= 7;
-  const puedeEnviar = nombre.trim().length >= 2 && emailOk && telOk && status !== "sending";
+  /* Para una reunión el día y la hora ahora son obligatorios: son el dato del
+     que dependen la confirmación y los recordatorios automáticos. */
+  const agendaOk = !esReunion || (!!dia && !!hora);
+  const puedeEnviar = nombre.trim().length >= 2 && emailOk && telOk && agendaOk && status !== "sending";
 
   /* Qué falta, en palabras. "Revisa este dato: el correo" resuelve el problema;
      un borde rojo sin explicación deja al usuario adivinando. */
@@ -943,6 +1006,7 @@ function LeadModal({
     nombre.trim().length < 2 && "tu nombre",
     !telOk && "el WhatsApp",
     !emailOk && "el correo",
+    esReunion && !(dia && hora) && "el día y la hora",
   ].filter(Boolean) as string[];
 
   async function submit(e: React.FormEvent) {
@@ -952,12 +1016,21 @@ function LeadModal({
     setStatus("sending");
     setErrorMsg("");
 
+    /* fecha_hora viaja en dos formatos: uno legible para la hoja y el correo,
+       y uno ISO para que Apps Script lo convierta en fecha real y dispare los
+       recordatorios sin que nadie escriba nada a mano. */
+    const cuandoISO = dia && hora ? new Date(dia.getFullYear(), dia.getMonth(), dia.getDate(), hora, 0, 0) : null;
     const payload = {
       tipo,
       nombre: nombre.trim(),
       whatsapp: whatsapp.trim(),
       correo: correo.trim().toLowerCase(),
-      ...(esReunion && cuando.trim() ? { fecha_hora: cuando.trim() } : {}),
+      ...(cuandoISO
+        ? {
+            fecha_hora: `${etiquetaDia(dia!)} a las ${etiquetaHora(hora!)}`,
+            fecha_iso: cuandoISO.toISOString(),
+          }
+        : {}),
       ...atribucion,
     };
 
@@ -1028,8 +1101,9 @@ function LeadModal({
             <p>
               {esReunion ? (
                 <>
-                  Te acabamos de mandar la confirmación a <b>{correo.trim().toLowerCase()}</b>. Te escribimos por
-                  WhatsApp para cerrar el día y la hora, dentro del horario de 8:00 a 21:00 hora Colombia.
+                  Te esperamos el <b>{dia ? etiquetaDia(dia) : ""} a las {hora ? etiquetaHora(hora) : ""}</b>, hora
+                  Colombia. Te mandamos la confirmación a <b>{correo.trim().toLowerCase()}</b> y te escribimos por
+                  WhatsApp con el enlace de la videollamada.
                 </>
               ) : (
                 <>
@@ -1098,33 +1172,7 @@ function LeadModal({
                   : "Para mandarte la información por escrito."}
               </i>
             </label>
-            {esReunion && (
-              <fieldset className="co-field co-cuando">
-                <legend>¿Cuándo te acomoda?</legend>
-                {/* Elegir de una lista en vez de escribir: menos esfuerzo, y
-                    además nos llega en un formato que se puede coordinar sin
-                    tres mensajes de ida y vuelta. Sigue admitiendo texto libre
-                    para el que quiera precisar. */}
-                <div className="co-chips">
-                  {FRANJAS.map((f) => (
-                    <button
-                      type="button"
-                      key={f}
-                      className={`co-chip${cuando === f ? " is-on" : ""}`}
-                      aria-pressed={cuando === f}
-                      onClick={() => setCuando(cuando === f ? "" : f)}
-                    >
-                      {f}
-                    </button>
-                  ))}
-                </div>
-                <input
-                  value={FRANJAS.includes(cuando) ? "" : cuando}
-                  onChange={(e) => setCuando(e.target.value)}
-                  placeholder="O escríbelo: “jueves después de las 6”"
-                />
-              </fieldset>
-            )}
+            {esReunion && <Agenda dia={dia} hora={hora} setDia={setDia} setHora={setHora} />}
 
             {status === "error" && (
               <p className="co-form-err" role="alert">

@@ -30,10 +30,9 @@ const RUTAS = [
   {
     ruta: "colombia",
     url: "https://condorai.cl/colombia/",
-    titulo: "Tu página web lista, sin cotizaciones que nunca llegan | Cóndor.ai Colombia",
+    titulo: "Tu página web lista, a tu medida | Cóndor.ai Colombia",
     desc:
-      "Cuatro personas y una oficina. Nos sentamos contigo, entendemos tu negocio y construimos tu página web " +
-      "nosotros mismos. Reunión de 30 minutos sin costo.",
+      "Más de 4 años creando páginas web para empresas en Latinoamérica. Hacemos que a tus clientes les resulte fácil llegar a ti. Reunión de 30 minutos, sin costo.",
     imagen: "https://condorai.cl/assets/og-colombia.jpg",
     locale: "es_CO",
   },

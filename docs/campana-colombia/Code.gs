@@ -10,10 +10,11 @@
  *   3. Al lead, 24 h antes de la reunión → recordatorio.
  *   4. Al lead, ~2 h antes de la reunión → último recordatorio.
  *
- * Los dos recordatorios salen de la columna "Fecha reunión", que se llena A
- * MANO cuando Joaquín cierra el día y la hora por WhatsApp. Mientras esa celda
- * esté vacía no se manda ningún recordatorio: el formulario solo pide una
- * franja ("tarde"), y con eso no se puede recordar nada.
+ * Los dos recordatorios salen de la columna "Fecha reunión", que ahora llega
+ * SOLA: desde 2026-07-31 la landing tiene calendario y el visitante elige día
+ * y hora exactos. Si esa celda está vacía (lead viejo, o alguien que pidió
+ * "que me contacten") no se manda ningún recordatorio; se puede escribir la
+ * fecha a mano y el trigger la toma igual.
  *
  * CÓMO INSTALARLO (una vez, ~5 min):
  *  1. Crea una Google Sheet nueva (sheets.new). Ponle nombre "Leads Colombia".
@@ -153,14 +154,15 @@ function correoConfirmacion_(datos) {
   if (!datos.correo) return;
   const esReunion = datos.tipo === "reunion";
   const cuando = datos.fecha_hora
-    ? "<p>Nos dijiste que te acomoda: <b>" + datos.fecha_hora + "</b>. Lo tenemos anotado.</p>"
+    ? '<p style="font-size:17px;color:#0e1116;">Quedó para el <b>' + datos.fecha_hora + "</b>, hora Colombia.</p>"
     : "";
 
   const cuerpo = esReunion
     ? "<p>Hola " + datos.nombre + ",</p>" +
-      "<p>Recibimos tu solicitud de reunión. <b>Te escribimos por WhatsApp</b> al " + datos.whatsapp +
-      " para cerrar el día y la hora, dentro del horario de 8:00 a 21:00 hora Colombia.</p>" +
+      "<p>Tu reunión quedó agendada.</p>" +
       cuando +
+      "<p><b>Te escribimos por WhatsApp</b> al " + datos.whatsapp +
+      " con el enlace de la videollamada.</p>" +
       "<p>La reunión dura 30 minutos, es por videollamada y no tiene costo. Te vamos a preguntar por tu negocio, " +
       "quién te compra y qué necesitas que la página haga. De ahí sale la propuesta, con el precio por escrito.</p>" +
       "<p>Si no te sirve lo que te proponemos, ahí queda y no te costó nada.</p>"
@@ -284,6 +286,15 @@ function doPost(e) {
       return respuesta_({ ok: false, error: "Faltan campos requeridos (nombre, whatsapp, tipo)." });
     }
 
+    // La landing manda la fecha elegida en ISO: se guarda como fecha real para
+    // que los recordatorios salgan solos. Si algún día llega sin ella (versión
+    // vieja de la página), la columna queda vacía y se llena a mano.
+    let fechaReunion = "";
+    if (tipo === "reunion" && body.fecha_iso) {
+      const d = new Date(body.fecha_iso);
+      if (!isNaN(d.getTime())) fechaReunion = d;
+    }
+
     const sheet = getSheet_();
     sheet.appendRow([
       new Date(),
@@ -292,7 +303,7 @@ function doPost(e) {
       whatsapp,
       correo || "",
       tipo === "reunion" ? fecha_hora || "" : "",
-      "", // Fecha reunión — la llena Joaquín al confirmar
+      fechaReunion,
       "Pendiente",
       "", // Recordatorio 24h
       "", // Recordatorio 2h
