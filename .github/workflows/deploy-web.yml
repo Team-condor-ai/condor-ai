@@ -43,8 +43,23 @@ jobs:
       - name: Instalar dependencias
         run: npm ci
 
+      # Las VITE_* se leen en tiempo de BUILD, no en el navegador: si faltan
+      # acá, el bundle sale sin Pixel y sin backend de leads y la campaña
+      # corre a ciegas. Definirlas en Settings → Secrets → Actions.
       - name: Build (Vite)
+        env:
+          VITE_META_PIXEL_ID: ${{ secrets.VITE_META_PIXEL_ID }}
+          VITE_LEADS_API: ${{ secrets.VITE_LEADS_API }}
         run: npm run build
+
+      # Aviso temprano: sin estas dos la landing publica igual, pero no mide
+      # conversiones ni guarda un solo lead. Mejor verlo en el log del deploy
+      # que descubrirlo cuando la campaña ya gastó.
+      - name: Revisar configuración de la campaña
+        run: |
+          [ -n "${{ secrets.VITE_META_PIXEL_ID }}" ] || echo "::warning::VITE_META_PIXEL_ID vacío — /colombia se publica SIN Meta Pixel."
+          [ -n "${{ secrets.VITE_LEADS_API }}" ] || echo "::warning::VITE_LEADS_API vacío — el formulario de /colombia fallará y no guardará leads."
+          test -f dist/colombia/index.html || { echo "::error::No se generó dist/colombia/index.html — /colombia volvería a responder 404."; exit 1; }
 
       - name: Fallback SPA (404 = index)
         run: cp dist/index.html dist/404.html

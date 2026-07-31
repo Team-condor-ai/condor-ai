@@ -1317,3 +1317,324 @@ html.co-root body {
     background: rgba(38, 26, 22, 0.8);
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   AÑADIDO 2026-07-31 — Confianza y transparencia
+   ---------------------------------------------------------------------------
+   El comprador de esta campaña es un dueño de PYME colombiano que o no tiene
+   web, o lleva meses pidiendo cotizaciones que no llegan. Llega desde un
+   anuncio, no nos conoce, y en Colombia el fraude digital es una preocupación
+   cotidiana: la duda que hay que resolver no es "¿me gusta el diseño?" sino
+   "¿esta gente existe y va a cumplir?".
+
+   Todo lo de abajo responde a eso, y nada de esto grita: el material sigue
+   siendo el mismo cristal cálido. Un contador de urgencia o un banner rojo en
+   una página que promete honestidad se lee como el truco que este comprador ya
+   conoce, y le confirma justo lo que teme.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── CTA secundario degradado a enlace ─────────────────────────────────────
+   Ley de Hick: con dos botones del mismo peso gana el de menor compromiso, y
+   "que me contacten" convierte mucho peor que "agendo". Sigue estando y se
+   toca igual de bien (48px de alto), pero deja de competir. */
+.co-btn-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  width: 100%;
+  min-height: 48px;
+  padding: 0 14px;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.98rem;
+  font-weight: 550;
+  letter-spacing: -0.008em;
+  color: var(--co-tinta-2);
+  border-radius: var(--co-pill);
+  transition: color 0.2s ease, transform 0.2s var(--co-ease);
+}
+.co-btn-link .co-ico {
+  width: 19px;
+  height: 19px;
+  opacity: 0.75;
+}
+.co-btn-link:hover {
+  color: var(--co-tinta);
+}
+.co-btn-link:active {
+  transform: scale(0.98);
+}
+
+/* ── Señales de confianza bajo el CTA ──────────────────────────────────────
+   En el punto exacto donde aparece la duda. Sin caja ni fondo propio: son
+   hechos, no un banner, y encerrarlos en una tarjeta los haría leer como
+   publicidad — que es precisamente lo que les quitaría credibilidad. */
+.co-senales {
+  list-style: none;
+  margin: 22px auto 0;
+  padding: 0;
+  max-width: 560px;
+  display: grid;
+  gap: 9px;
+  text-align: left;
+}
+.co-senales li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.95rem;
+  line-height: 1.45;
+  color: var(--co-tinta-2);
+  letter-spacing: -0.006em;
+}
+.co-ico-check {
+  width: 17px;
+  height: 17px;
+  flex: 0 0 auto;
+  margin-top: 2px;
+  color: var(--co-verde);
+}
+@media (min-width: 700px) {
+  .co-senales {
+    max-width: 760px;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px 26px;
+  }
+}
+
+/* ── Cómo trabajamos ───────────────────────────────────────────────────────
+   La incertidumbre sobre qué pasa después de dejar los datos es de los motivos
+   más comunes para no dejarlos. El número grande y tenue ordena la lectura sin
+   robarle jerarquía al título de cada paso. */
+.co-pasos {
+  list-style: none;
+  margin: 26px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 14px;
+}
+.co-pasos > li {
+  position: relative;
+  padding: 24px 22px 22px;
+  border-radius: 22px;
+}
+.co-paso-n {
+  display: block;
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 0.82rem;
+  letter-spacing: 0.1em;
+  color: var(--co-verde);
+  margin-bottom: 10px;
+}
+/* El index.css global le pone Clash Display a todos los h3, que es una display
+   condensada: acá sale apretada e ilegible al lado del cuerpo del sistema.
+   Esta página usa tipografía de sistema en todo salvo la serif del titular. */
+.co-pasos h3 {
+  margin: 0 0 7px;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", system-ui, sans-serif;
+  font-size: 1.12rem;
+  font-weight: 640;
+  letter-spacing: -0.018em;
+  color: var(--co-tinta);
+}
+.co-pasos p {
+  margin: 0;
+  font-size: 0.97rem;
+  line-height: 1.55;
+  color: var(--co-tinta-2);
+}
+@media (min-width: 760px) {
+  .co-pasos {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+}
+@media (min-width: 1100px) {
+  .co-pasos {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* ── Preguntas ─────────────────────────────────────────────────────────────
+   <details> nativo: sin JS, accesible por teclado y funciona aunque el bundle
+   falle. Varias pueden quedar abiertas a la vez porque quien está comparando
+   proveedores quiere leer más de una. */
+.co-faq {
+  list-style: none;
+  margin: 26px auto 0;
+  padding: 0;
+  max-width: 780px;
+  display: grid;
+  gap: 10px;
+}
+.co-faq details {
+  border-radius: 18px;
+  overflow: hidden;
+}
+.co-faq summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 20px;
+  cursor: pointer;
+  list-style: none;
+  font-size: 1.02rem;
+  font-weight: 600;
+  letter-spacing: -0.014em;
+  color: var(--co-tinta);
+}
+.co-faq summary::-webkit-details-marker {
+  display: none;
+}
+.co-ico-mas {
+  width: 19px;
+  height: 19px;
+  flex: 0 0 auto;
+  color: var(--co-tinta-3);
+  transition: transform 0.25s var(--co-ease), color 0.2s ease;
+}
+.co-faq details[open] .co-ico-mas {
+  transform: rotate(45deg);
+  color: var(--co-verde);
+}
+.co-faq details p {
+  margin: 0;
+  padding: 0 20px 20px;
+  font-size: 0.97rem;
+  line-height: 1.6;
+  color: var(--co-tinta-2);
+}
+
+/* ── Formulario: ayudas, chips de horario y errores ────────────────────────
+   La ayuda bajo el campo explica POR QUÉ pedimos el dato. Pedir WhatsApp y
+   correo sin decir para qué se lee como que vamos a perseguirlo; con la razón
+   escrita, el mismo campo deja de doler. */
+.co-field-ayuda {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.83rem;
+  font-style: normal;
+  line-height: 1.4;
+  color: var(--co-tinta-3);
+}
+.co-field input[aria-invalid="true"] {
+  border-color: #d8563c;
+  box-shadow: 0 0 0 3px rgba(216, 86, 60, 0.14);
+}
+
+.co-cuando {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0; /* fieldset trae un min-width intrínseco que rompe el grid */
+}
+.co-cuando legend {
+  padding: 0;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--co-tinta);
+  letter-spacing: -0.006em;
+}
+.co-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 10px 0;
+}
+/* Reconocer cuesta menos que recordar: tocar una franja en vez de redactarla
+   baja el esfuerzo justo en el último paso, que es donde se abandona. */
+.co-chip {
+  padding: 9px 15px;
+  border-radius: var(--co-pill);
+  border: 1px solid var(--co-linea);
+  background: rgba(255, 255, 255, 0.5);
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 550;
+  color: var(--co-tinta-2);
+  cursor: pointer;
+  transition: background 0.18s var(--co-ease), border-color 0.18s ease, color 0.18s ease, transform 0.18s var(--co-ease);
+}
+.co-chip:hover {
+  border-color: rgba(14, 17, 22, 0.26);
+  color: var(--co-tinta);
+}
+.co-chip.is-on {
+  background: var(--co-verde);
+  border-color: transparent;
+  color: #04220f;
+  box-shadow: 0 6px 16px rgba(0, 190, 90, 0.28);
+}
+.co-chip:active {
+  transform: scale(0.96);
+}
+
+/* El botón no se deshabilita nunca (ver el comentario en el TSX): un botón gris
+   antes de escribir se lee como roto. Cuando faltan datos solo se atenúa —
+   por clase, nunca con aria-disabled ni con el atributo disabled, para que el
+   clic y el teclado sigan funcionando y el formulario pueda decir qué falta. */
+.co-btn-primary.is-incompleto {
+  filter: saturate(0.5) brightness(1.06);
+  box-shadow: 0 6px 18px rgba(0, 190, 90, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+.co-ok-nota {
+  margin-top: -4px;
+  font-size: 0.88rem;
+  color: var(--co-tinta-3);
+}
+.co-ok-nota a {
+  color: var(--co-tinta-2);
+}
+
+/* ── Enlaces de texto (política de datos) ──────────────────────────────── */
+.co-link-inline,
+.co-foot-link {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-thickness: 1px;
+}
+.co-link-inline:hover,
+.co-foot-link:hover {
+  color: var(--co-tinta);
+}
+.co-foot-link {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.86rem;
+  color: var(--co-tinta-3);
+}
+
+/* ── Modal de texto largo (política de datos) ──────────────────────────── */
+.co-modal-texto {
+  text-align: left;
+  max-height: 84vh;
+  overflow-y: auto;
+}
+.co-modal-texto h4 {
+  margin: 18px 0 5px;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", system-ui, sans-serif;
+  font-size: 0.95rem;
+  font-weight: 640;
+  letter-spacing: -0.01em;
+  color: var(--co-tinta);
+}
+.co-modal-texto p {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.58;
+  color: var(--co-tinta-2);
+}
+.co-modal-texto .co-btn {
+  margin-top: 22px;
+}
