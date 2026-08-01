@@ -63,10 +63,25 @@ for (const r of RUTAS) {
   ].join("\n    ");
 
   // Se quitan el <title> y la description del index global para no dejar dos.
-  const html = base
+  let html = base
     .replace(/<title>[\s\S]*?<\/title>\s*/i, "")
     .replace(/<meta\s+name="description"[^>]*>\s*/i, "")
     .replace("</head>", `  ${metas}\n  </head>`);
+
+  /* Fuera las webfonts que esta ruta NO usa.
+   *
+   * El index.html es uno solo para todo el SPA y carga Clash Display y General
+   * Sans, que usan la home y Planes. /colombia usa la tipografía del sistema
+   * (San Francisco en Apple, Inter como puente en el resto) y solo necesita la
+   * serif del titular, que se pide desde el componente.
+   *
+   * Son dos hojas de estilo a dominios externos que BLOQUEAN el render, más
+   * sus archivos de fuente. En una página de campaña, donde cada décima de
+   * segundo antes del primer pintado cuesta visitantes, no se pagan solas. */
+  html = html.replace(
+    /<link[^>]+api\.fontshare\.com[^>]*>\s*/gi,
+    "",
+  );
 
   const carpeta = join(dist, r.ruta);
   mkdirSync(carpeta, { recursive: true });

@@ -938,7 +938,10 @@ function useSerif() {
        antes en el stack. */
     const hrefs = [
       "https://api.fontshare.com/v2/css?f[]=zodiak@400i,401&display=swap",
-      "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap",
+      // Solo los pesos que usa la página y solo el subconjunto latino: con
+      // los cuatro pesos y todos los subconjuntos, el navegador terminaba
+      // pidiendo el MISMO archivo tres veces (141 KB de más).
+      "https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap&subset=latin",
     ];
     hrefs.forEach((href) => {
       if (document.head.querySelector(`link[href="${href}"]`)) return;
