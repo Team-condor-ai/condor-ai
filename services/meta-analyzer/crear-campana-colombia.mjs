@@ -40,7 +40,7 @@ import { basename, extname, join } from "node:path";
 const API = "https://graph.facebook.com/v21.0";
 const TOKEN = (process.env.META_ACCESS_TOKEN || "").trim();
 const PIXEL_ID = (process.env.META_PIXEL_ID || "2066041737623288").trim();
-const PAGE_ID = (process.env.META_PAGE_ID || "").trim();
+const PAGE_ID = (process.env.META_PAGE_ID || "1110141278850197").trim();
 const DRY = process.argv.includes("--dry-run");
 const DIR_CREATIVOS = process.env.CREATIVOS_DIR || "creativos";
 
@@ -100,27 +100,84 @@ const urlDeCreativo = (n) =>
   `${PLAN.urlBase}?utm_source=${PLAN.utm.source}&utm_medium=${PLAN.utm.medium}` +
   `&utm_campaign=${PLAN.utm.campaign}&utm_content=creativo_${String(n).padStart(2, "0")}`;
 
-/* ── Creativos: se leen de una carpeta local ───────────────────────────── */
+/* ── Creativos ─────────────────────────────────────────────────────────────
+ *
+ * La carpeta trae cada concepto en TRES formatos (16:9, 4:5 y 9:16) más los
+ * videos. Un anuncio por CONCEPTO, no por archivo: los tres formatos del mismo
+ * concepto son el mismo anuncio mostrado en distintos lugares.
+ *
+ * El formato se deduce de las DIMENSIONES REALES y no del nombre del archivo:
+ * en esta carpeta los nombres no son fiables ("billete dolar vertical 16,9"
+ * mide 941x1672, que es 9:16; "imagen profesional horizontal 4,5" es 4:5).
+ * Fiarse del nombre habría mandado la imagen horizontal a Reels.
+ */
 
 const IMAGENES = [".jpg", ".jpeg", ".png"];
 const VIDEOS = [".mp4", ".mov"];
 
-function listarCreativos() {
+/** Tokens de formato que se quitan del nombre para agrupar por concepto. */
+const RUIDO = /\b(cuadrad[oa]|horizontal|vertical+|16[,.]?9|9[,.]?16|4[,.]?5|1x1|copy)\b/gi;
+
+function ratioA(w, h) {
+  const r = w / h;
+  if (r > 1.5) return "16:9";
+  if (r < 0.65) return "9:16";
+  if (r < 0.95) return "4:5";
+  return "1:1";
+}
+
+/** Lee el tamaño de un PNG o JPEG sin dependencias. */
+function medidas(ruta) {
+  const b = readFileSync(ruta);
+  if (b[0] === 0x89 && b[1] === 0x50) {
+    return { w: b.readUInt32BE(16), h: b.readUInt32BE(20) };
+  }
+  let i = 2;
+  while (i < b.length) {
+    if (b[i] !== 0xff) { i++; continue; }
+    const m = b[i + 1];
+    if (m >= 0xc0 && m <= 0xcf && m !== 0xc4 && m !== 0xc8 && m !== 0xcc) {
+      return { h: b.readUInt16BE(i + 5), w: b.readUInt16BE(i + 7) };
+    }
+    i += 2 + b.readUInt16BE(i + 2);
+  }
+  return { w: 0, h: 0 };
+}
+
+function listarConceptos() {
   let archivos = [];
   try {
     archivos = readdirSync(DIR_CREATIVOS);
   } catch {
     return [];
   }
-  return archivos
-    .filter((f) => [...IMAGENES, ...VIDEOS].includes(extname(f).toLowerCase()))
-    .sort()
-    .map((f) => ({
-      archivo: join(DIR_CREATIVOS, f),
-      nombre: basename(f, extname(f)),
-      tipo: VIDEOS.includes(extname(f).toLowerCase()) ? "video" : "imagen",
-    }));
+
+  const porConcepto = new Map();
+  for (const f of archivos.sort()) {
+    const ext = extname(f).toLowerCase();
+    const ruta = join(DIR_CREATIVOS, f);
+
+    if (VIDEOS.includes(ext)) {
+      // Cada video es su propio anuncio: no vienen en variantes de formato.
+      porConcepto.set(f, { nombre: basename(f, ext), tipo: "video", archivos: [{ ruta, formato: "video" }] });
+      continue;
+    }
+    if (!IMAGENES.includes(ext)) continue;
+
+    const concepto = basename(f, ext).replace(RUIDO, " ").replace(/\s+/g, " ").trim().toLowerCase();
+    const { w, h } = medidas(ruta);
+    if (!porConcepto.has(concepto)) porConcepto.set(concepto, { nombre: concepto, tipo: "imagen", archivos: [] });
+    porConcepto.get(concepto).archivos.push({ ruta, formato: ratioA(w, h), w, h });
+  }
+  return [...porConcepto.values()];
 }
+
+/** El formato que manda cuando solo se puede elegir uno.
+ *  4:5 es el que mejor rinde en el feed, que es donde va la mayor parte del
+ *  presupuesto; 9:16 solo gana en Reels y Stories. */
+const ORDEN_FORMATO = ["4:5", "1:1", "9:16", "16:9"];
+const principal = (archivos) =>
+  ORDEN_FORMATO.map((f) => archivos.find((a) => a.formato === f)).find(Boolean) ?? archivos[0];
 
 /** Sube una imagen y devuelve su hash, que es como Meta la referencia. */
 async function subirImagen(ruta) {
@@ -175,9 +232,14 @@ async function main() {
   const diarioMinimo = Math.round(diarioCLP * tasa * decimales);
   console.log(`Presupuesto: ${diarioCLP} CLP/día → ${diarioMinimo} (unidad mínima ${cuenta.currency})`);
 
-  const creativos = listarCreativos();
-  console.log(`Creativos encontrados en ./${DIR_CREATIVOS}: ${creativos.length}`);
-  creativos.forEach((c, i) => console.log(`  ${i + 1}. [${c.tipo}] ${c.nombre} → ${urlDeCreativo(i + 1)}`));
+  const creativos = listarConceptos();
+  console.log(`\nConceptos encontrados en ${DIR_CREATIVOS}: ${creativos.length} anuncios\n`);
+  creativos.forEach((c, i) => {
+    const fmts = c.archivos.map((a) => a.formato).join(", ");
+    console.log(`  ${i + 1}. [${c.tipo}] ${c.nombre}`);
+    console.log(`     formatos: ${fmts}`);
+    console.log(`     url: ${urlDeCreativo(i + 1)}`);
+  });
 
   if (DRY) {
     console.log("\n[--dry-run] No se creó nada.");
@@ -229,17 +291,23 @@ async function main() {
 
     const spec = { page_id: PAGE_ID };
     if (c.tipo === "imagen") {
+      // Se sube el formato que manda en feed. Los otros dos quedan disponibles
+      // en la biblioteca de la cuenta: Meta recorta solo para cada ubicación, y
+      // montar reglas de customización por placement con este presupuesto añade
+      // superficie de error sin ganancia medible.
+      const elegido = principal(c.archivos);
+      console.log(`     usando ${elegido.formato} (${elegido.w}x${elegido.h})`);
       spec.link_data = {
         link,
         message: mensaje,
         name: COPY.titular,
         description: COPY.descripcion,
-        image_hash: await subirImagen(c.archivo),
+        image_hash: await subirImagen(elegido.ruta),
         call_to_action: { type: COPY.cta, value: { link } },
       };
     } else {
       spec.video_data = {
-        video_id: await subirVideo(c.archivo),
+        video_id: await subirVideo(c.archivos[0].ruta),
         message: mensaje,
         title: COPY.titular,
         link_description: COPY.descripcion,

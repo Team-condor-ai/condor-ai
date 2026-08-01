@@ -1,0 +1,53 @@
+name: Campaña Colombia (Meta Ads)
+
+# Crea la campaña en Meta usando META_ACCESS_TOKEN desde los secrets, así el
+# token nunca sale del repositorio.
+#
+# SIEMPRE hay que lanzarlo a mano y elegir el modo:
+#   revisar → no toca nada, solo imprime el plan y el estado de la cuenta
+#   crear   → crea campaña, conjunto y anuncios, TODO EN PAUSA
+#
+# Los creativos NO están en el repo (son pesados y no tienen por qué estar en
+# git). Se suben como artefacto antes de correr esto, o se corre en local.
+
+on:
+  workflow_dispatch:
+    inputs:
+      modo:
+        description: "Qué hacer"
+        required: true
+        default: revisar
+        type: choice
+        options: [revisar, crear]
+
+jobs:
+  campana:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # Los creativos viajan como artefacto de una ejecución previa, si existe.
+      - name: Traer creativos (si se subieron)
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: creativos-colombia
+          path: services/meta-analyzer/creativos
+
+      - name: Ejecutar
+        working-directory: services/meta-analyzer
+        env:
+          META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
+          META_AD_ACCOUNT_ID: ${{ secrets.META_AD_ACCOUNT_ID }}
+          META_PIXEL_ID: ${{ secrets.VITE_META_PIXEL_ID }}
+          META_PAGE_ID: "1110141278850197"
+        run: |
+          if [ "${{ inputs.modo }}" = "crear" ]; then
+            node crear-campana-colombia.mjs
+          else
+            node crear-campana-colombia.mjs --dry-run
+          fi
