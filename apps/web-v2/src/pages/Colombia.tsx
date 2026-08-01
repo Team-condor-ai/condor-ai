@@ -1150,16 +1150,28 @@ function LeadModal({
     }
 
     /* La conversión se reporta SOLO cuando el lead quedó guardado: si Meta
-       optimiza sobre envíos fallidos, compra tráfico que nunca llega a la
-       hoja. Schedule vs Lead separa "agendó" de "que me contacten". */
+       optimiza sobre envíos fallidos, compra tráfico que nunca llega a la hoja.
+     *
+     * Se manda SIEMPRE `Lead`, y además `Schedule` cuando la persona agendó.
+     * Antes era uno u otro, y con eso ningún evento juntaba volumen: el
+     * presupuesto de esta campaña (~11 USD/día) no da para 50 conversiones
+     * semanales de cada tipo, que es el umbral con el que Meta sale de la fase
+     * de aprendizaje. Repartir los leads entre dos eventos dejaba a los dos
+     * por debajo.
+     * Ahora `Lead` cuenta todo y sirve para optimizar; `Schedule` sigue
+     * separado para medir cuántos de esos leads agendaron de verdad. Meta
+     * acepta varios eventos por conversión sin contarlos como duplicados: son
+     * eventos distintos, cada uno con su propio eventID. */
     function exito() {
-      track(esReunion ? "Schedule" : "Lead", {
+      const datos = {
         email: payload.correo,
         telefono: payload.whatsapp,
         nombre: payload.nombre,
         pais: "CO",
         extra: { formulario: tipo },
-      });
+      };
+      track("Lead", datos);
+      if (esReunion) track("Schedule", datos);
       setStatus("ok");
     }
   }
