@@ -18,7 +18,7 @@ on:
         required: true
         default: revisar
         type: choice
-        options: [revisar, crear]
+        options: [estado, revisar, crear]
 
 jobs:
   campana:
@@ -46,8 +46,8 @@ jobs:
           META_PIXEL_ID: ${{ secrets.VITE_META_PIXEL_ID }}
           META_PAGE_ID: "1110141278850197"
         run: |
-          if [ "${{ inputs.modo }}" = "crear" ]; then
-            node crear-campana-colombia.mjs
-          else
-            node crear-campana-colombia.mjs --dry-run
-          fi
+          case "${{ inputs.modo }}" in
+            estado)  node estado-cuenta.mjs ;;
+            crear)   node crear-campana-colombia.mjs ;;
+            *)       node crear-campana-colombia.mjs --dry-run ;;
+          esac
