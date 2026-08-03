@@ -1,9 +1,17 @@
 {
-  "fecha": "2026-07-20",
+  "fecha": "2026-08-03",
   "noticias": [
     {
-      "titular": " IA gener ati va crece a doble dígit o: qué esperar del boom tecnológico de 2026",
-      "url": "/noticias-ia/el-boom-de-l-a-ia-generativa-en-2026-como-esta-tra/"
+      "titular": "IA rompe ecuaciones matemáticas que décadas de humanos no pudieron resolver",
+      "url": "/noticias-ia/el-avance-matematico-como-la-ia-acaba-de-cambiar-e/"
+    },
+    {
+      "titular": "California obliga a IA a etiquetar contenido sintético o pagar $5k diarios",
+      "url": "/noticias-ia/nueva-ley-californiana-en-ia-transparencia-obligat/"
+    },
+    {
+      "titular": "1,100 empleados de OpenAI, Google, Meta piden frenar la IA descontrolada",
+      "url": "/noticias-ia/la-rebelion-interna-como-los-mejores-talentos-de-i/"
     }
   ]
 }
