@@ -408,6 +408,14 @@ export default function Colombia() {
           fácil llegar a ti.
         </p>
 
+        {/* Etiqueta que apunta al botón: nombra el deseo del visitante con sus
+            palabras ("quiero mi página web"), no con las nuestras ("agendar una
+            reunión"), que es un paso intermedio y suena a compromiso. */}
+        <span className="co-cta-tag">
+          quiero mi página web
+          <IcoFlechaAbajo />
+        </span>
+
         <div className="co-ctas">
           <button className="co-btn co-btn-primary" onClick={() => abrir("reunion")}>
             <IcoCalendario />
@@ -690,6 +698,15 @@ function IcoFlecha() {
   return (
     <svg className="co-ico co-ico-fin" viewBox="0 0 24 24" fill="none" aria-hidden>
       <path d="M5 12h13m0 0-5.5-5.5M18 12l-5.5 5.5" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+/** Flecha hacia abajo de la etiqueta que apunta al botón principal. */
+function IcoFlechaAbajo() {
+  return (
+    <svg className="co-tag-flecha" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path d="M12 5v13m0 0 5.5-5.5M12 18l-5.5-5.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
@@ -1038,6 +1055,52 @@ function LeadModal({
       creativo: q.get("cr") || dato("utm_content"),
     };
   }, []);
+
+  /* ── Abandono del formulario ("carrito abandonado") ──────────────────────
+     Quien escribe su WhatsApp y cierra sin enviar hoy se pierde entero: pagamos
+     el clic y no queda ni el dato. Se manda lo que alcanzó a escribir como lead
+     `parcial`; en la hoja aparece con estado "Abandonó" y Sandra avisa igual,
+     para poder escribirle a mano.
+
+     sendBeacon y no fetch: al cerrar la pestaña el navegador cancela las
+     peticiones en vuelo, y beacon está hecho justo para este caso. Va como
+     text/plain por lo mismo que el envío normal (ver nota CORS arriba del
+     archivo): evita el preflight que Apps Script no responde. */
+  const abandono = useRef({ nombre: "", whatsapp: "", correo: "", enviado: false, cerrado: false });
+  abandono.current.nombre = nombre;
+  abandono.current.whatsapp = whatsapp;
+  abandono.current.correo = correo;
+  // "sending" y "ok" no son abandono: uno está en curso y el otro ya convirtió.
+  abandono.current.cerrado = status === "ok" || status === "sending";
+
+  useEffect(() => {
+    function avisarAbandono() {
+      const a = abandono.current;
+      if (a.enviado || a.cerrado || !LEADS_API) return;
+      // Sin un solo dato de contacto no hay nada que trabajar: no se manda.
+      if (!a.nombre.trim() && !a.whatsapp.replace(/\D/g, "") && !a.correo.trim()) return;
+      a.enviado = true;
+      const cuerpo = JSON.stringify({
+        tipo: "parcial",
+        nombre: a.nombre.trim(),
+        whatsapp: a.whatsapp.trim(),
+        correo: a.correo.trim().toLowerCase(),
+        formulario: tipo,
+        ...atribucion,
+      });
+      try {
+        navigator.sendBeacon(LEADS_API, new Blob([cuerpo], { type: "text/plain;charset=utf-8" }));
+      } catch {
+        /* Navegador sin sendBeacon: se pierde ese abandono, pero nunca se rompe
+           el cierre del modal por intentar registrarlo. */
+      }
+    }
+    window.addEventListener("pagehide", avisarAbandono); // cerrar pestaña o navegar
+    return () => {
+      window.removeEventListener("pagehide", avisarAbandono);
+      avisarAbandono(); // cerrar el modal también es abandonar
+    };
+  }, [tipo, atribucion]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();

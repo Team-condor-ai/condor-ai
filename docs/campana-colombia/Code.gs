@@ -91,9 +91,10 @@ const HEADERS = [
 const TIPO_LABEL = {
   reunion: "📅 Agendó reunión",
   contacto: "☎️ Quiere que lo contacten",
+  parcial: "⚠️ Abandonó el formulario",
 };
 
-const ESTADOS = ["Pendiente", "Contactado", "Confirmado", "No respondió"];
+const ESTADOS = ["Pendiente", "Contactado", "Confirmado", "No respondió", "Abandonó"];
 
 /* ──────────────────────────────── HOJA ──────────────────────────────────── */
 
@@ -204,7 +205,11 @@ function correoAviso_(datos) {
     '<p><a href="' + wsp + '">Abrir chat con ' + datos.nombre + "</a></p>" +
     "<p>Cuando cierres el día y la hora, escríbelos en la columna <b>Fecha reunión</b> de la hoja: " +
     "de ahí salen los recordatorios automáticos.</p>";
-  enviar_(CONFIG.AVISAR_A, "Lead nuevo Colombia: " + datos.nombre, plantilla_("Lead nuevo", cuerpo, "Aviso interno."));
+  const esParcial = datos.tipo === "parcial";
+  const asunto = esParcial
+    ? "Abandonó el formulario (Colombia): " + datos.nombre
+    : "Lead nuevo Colombia: " + datos.nombre;
+  enviar_(CONFIG.AVISAR_A, asunto, plantilla_(esParcial ? "Formulario abandonado" : "Lead nuevo", cuerpo, "Aviso interno."));
 }
 
 /** 3 y 4 · Recordatorios. `horas` es cuánto falta para la reunión. */
@@ -235,9 +240,14 @@ function correoRecordatorio_(datos, horas) {
 function telegramAviso_(datos) {
   if (!CONFIG.TELEGRAM_TOKEN || !CONFIG.TELEGRAM_CHAT_ID) return;
   const esReunion = datos.tipo === "reunion";
+  const esParcial = datos.tipo === "parcial";
   const wsp = String(datos.whatsapp || "").replace(/\D/g, "");
   const lineas = [
-    esReunion ? "📅 <b>Nueva reunión agendada</b>" : "☎️ <b>Piden que los contacten</b>",
+    esParcial
+      ? "⚠️ <b>Abandonó el formulario</b>"
+      : esReunion
+      ? "📅 <b>Nueva reunión agendada</b>"
+      : "☎️ <b>Piden que los contacten</b>",
     "<i>Campaña Colombia · condorai.cl/colombia</i>",
     "",
     "👤 " + escaparHtml_(datos.nombre),
@@ -245,6 +255,7 @@ function telegramAviso_(datos) {
     "✉️ " + escaparHtml_(datos.correo || "—"),
   ];
   if (esReunion && datos.fecha_hora) lineas.push("🕒 " + escaparHtml_(datos.fecha_hora) + " (hora Colombia)");
+  if (esParcial) lineas.push("", "<i>Escribió esto y se fue sin enviar. Vale la pena escribirle.</i>");
   const camp = (datos.origen && datos.origen.utm_campaign) || "";
   const crea = datos.creativo || "";
   if (camp || crea) lineas.push("📊 " + escaparHtml_(camp || "—") + " · creativo " + escaparHtml_(crea || "—"));
@@ -361,7 +372,16 @@ function doPost(e) {
     const origen = body.origen;
     const creativo = body.creativo;
 
-    if (!nombre || !whatsapp || (tipo !== "reunion" && tipo !== "contacto")) {
+    /* "parcial" = abandono. Alguien empezó a llenar el formulario, escribió
+       algo y se fue sin enviar. Vale la pena guardarlo: un WhatsApp suelto ya
+       es un lead que se puede trabajar a mano, y hoy esa gente se perdía sin
+       dejar rastro. Por eso acá basta UN dato de contacto, no los tres. */
+    const esParcial = tipo === "parcial";
+    if (esParcial) {
+      if (!nombre && !whatsapp && !correo) {
+        return respuesta_({ ok: false, error: "Abandono sin ningún dato: no se guarda." });
+      }
+    } else if (!nombre || !whatsapp || (tipo !== "reunion" && tipo !== "contacto")) {
       return respuesta_({ ok: false, error: "Faltan campos requeridos (nombre, whatsapp, tipo)." });
     }
 
@@ -397,12 +417,12 @@ function doPost(e) {
     sheet.appendRow([
       new Date(),
       TIPO_LABEL[tipo] || tipo,
-      nombre,
-      whatsapp,
+      nombre || "(sin nombre)",
+      whatsapp || "",
       correo || "",
       tipo === "reunion" ? fecha_hora || "" : "",
       fechaReunion,
-      "Pendiente",
+      esParcial ? "Abandonó" : "Pendiente",
       "", // Recordatorio 24h
       "", // Recordatorio 2h
       (origen && origen.utm_campaign) || "",
@@ -412,8 +432,11 @@ function doPost(e) {
     aplicarValidacionEstado_(sheet, sheet.getLastRow());
 
     // El lead YA está guardado: si un correo falla, no se pierde nada.
-    const datos = { tipo: tipo, nombre: nombre, whatsapp: whatsapp, correo: correo, fecha_hora: fecha_hora, origen: origen, creativo: creativo };
-    correoConfirmacion_(datos);
+    const datos = { tipo: tipo, nombre: nombre || "(sin nombre)", whatsapp: whatsapp, correo: correo, fecha_hora: fecha_hora, origen: origen, creativo: creativo };
+    /* Al que abandonó NO se le manda el correo de confirmación: nunca terminó
+       de aceptar nada (Ley 1581) y un "gracias por agendar" a quien no agendó
+       queda pésimo. El aviso interno y Sandra sí salen: son para nosotros. */
+    if (!esParcial) correoConfirmacion_(datos);
     correoAviso_(datos);
     telegramAviso_(datos);
 

@@ -646,6 +646,38 @@ html.co-root body {
   margin: 30px auto 0;
 }
 
+/* Etiqueta con flecha que apunta al botón principal. Va escrita en primera
+   persona a propósito: el visitante quiere una página web, no una reunión.
+   Deliberadamente pequeña y sin fondo fuerte — si compite con el botón, le
+   roba la atención en vez de dirigirla. */
+.co-cta-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 26px auto -14px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: rgba(0, 190, 90, 0.1);
+  color: var(--co-verde-alto, #00be5a);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1;
+}
+.co-cta-tag .co-tag-flecha {
+  width: 15px;
+  height: 15px;
+  animation: co-tag-bota 1.8s ease-in-out infinite;
+}
+@keyframes co-tag-bota {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(3px); }
+}
+/* Quien pidió menos movimiento no necesita una flecha saltando en bucle. */
+@media (prefers-reduced-motion: reduce) {
+  .co-cta-tag .co-tag-flecha { animation: none; }
+}
+
 /* ════════════════════════════ Barra superior ═══════════════════════════════
    Sin navegación: la página tiene un solo objetivo y un menú solo ofrece
    formas de irse (apple-design §16.6 — simplicidad no es minimalismo: se quita
