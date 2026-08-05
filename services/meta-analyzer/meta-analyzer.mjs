@@ -79,9 +79,25 @@ async function main() {
   const resumen = [];
   for (const c of activas) {
     try {
-      // Día de campaña desde el lanzamiento
-      const inicio = new Date(c.start_time || c.created_time || hoy);
-      const diaCampaña = Math.max(1, Math.floor((hoy - inicio) / 86400000) + 1);
+      /* Día de campaña.
+       *
+       * NO sirve `start_time`: es cuándo se CREÓ la campaña, no cuándo
+       * empezó a entregar. La de Colombia se creó el 1-ago y salió al aire
+       * el 4-ago, así que contaba 3 días de más — y con eso el análisis
+       * recomendaba escalar o pausar creativos que ni siquiera habían
+       * terminado su primer día real.
+       *
+       * El día 1 es el primero con gasto. Se saca del desglose diario, que
+       * solo trae días con entrega.
+       */
+      const diario = await metaGet(`${c.id}/insights`, {
+        fields: "spend", date_preset: "maximum", level: "campaign", time_increment: 1,
+      });
+      const conGasto = (diario.data || []).filter(d => Number(d.spend || 0) > 0);
+      const primerDia = conGasto.length ? new Date(conGasto[0].date_start + "T12:00:00Z") : null;
+      const diaCampaña = primerDia
+        ? Math.max(1, Math.floor((hoy - primerDia) / 86400000) + 1)
+        : 1;   // creada pero todavía sin entregar
 
       const ins = await metaGet(`${c.id}/insights`, { fields: INSIGHTS, date_preset: "maximum", level: "campaign" });
       const d = (ins.data || [])[0] || {};
