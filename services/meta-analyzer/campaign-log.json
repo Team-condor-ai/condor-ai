@@ -6,5 +6,13 @@
     "costo": 425,
     "gasto": 93523,
     "moneda": "CLP"
+  },
+  {
+    "fecha": "2026-08-05",
+    "dia": 4,
+    "resultados": 0,
+    "costo": null,
+    "gasto": 6103,
+    "moneda": "CLP"
   }
 ]
