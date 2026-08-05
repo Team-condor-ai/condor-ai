@@ -20,11 +20,26 @@ import "./Colombia.css";
    habernos visto la cara genera desconfianza, no deseo.
 
    Lo que esta página NO dice, a propósito:
-     · precios — se hablan en la reunión, con el proyecto sobre la mesa
      · que usamos IA — es cómo trabajamos, no lo que el cliente compra
      · plazos de entrega — prometer días sin conocer el proyecto es mentir
    Nada de eso sobrevive al primer "depende", y prometerlo en la landing
    convierte peor y quema la reunión.
+
+   CAMBIO 2026-08-05 — el precio SÍ va
+   ---------------------------------------------------------------------------
+   La versión anterior omitía el precio a propósito ("se habla en la reunión").
+   Los dos primeros días de campaña lo desmintieron: 129 visitas desde el
+   anuncio, CTR 7,3% (excelente) y **cero** leads. El anuncio convence y la
+   página no cierra.
+
+   En "páginas web" el precio es LA pregunta. No responderla no la evita: hace
+   que la persona se vaya a averiguar a otro lado. Por eso ahora va el "desde
+   $390.000 COP" en el titular, en las señales de confianza y en los metadatos.
+
+   El resto del razonamiento sigue en pie: los plazos y el alcance se cierran
+   en la reunión, que es donde hay un proyecto concreto sobre la mesa.
+   Se prueba 2 días; si sigue sin convertir, el siguiente paso es sacar el
+   agendamiento y pedir solo el WhatsApp.
 
    Lo que SÍ dice: quiénes somos, con nuestras caras y nuestra oficina de
    verdad (fotos reales, no stock ni render), qué hemos hecho (sitios en vivo,
@@ -95,9 +110,9 @@ const CORREO_DATOS = "contacto@teamcondorcl.com";
    genera el /colombia/index.html que sí leen los scrapers. Si cambias uno,
    cambia el otro: son la misma tarjeta. */
 const META_URL = "https://condorai.cl/colombia/";
-const META_TITULO = "Tu página web lista, a tu medida | Cóndor.ai Colombia";
+const META_TITULO = "Página web profesional desde $390.000 COP | Cóndor.ai Colombia";
 const META_DESC =
-  "Más de 4 años creando páginas web para empresas en Latinoamérica. Hacemos que a tus clientes les resulte fácil llegar a ti. Reunión de 30 minutos, sin costo.";
+  "Diseño propio, no plantilla: se ve bien en el celular, aparece en Google y lleva el botón de WhatsApp. Desde $390.000 COP. Agenda una reunión de 30 minutos, sin costo.";
 const META_IMG = "https://condorai.cl/assets/og-colombia.jpg";
 
 /* ════════════════════════════ AGENDA ══════════════════════════════════════
@@ -208,6 +223,7 @@ const SITIOS = [
    siempre, sácala; una promesa que se rompe en la reunión cuesta el cliente.
    ============================================================================ */
 const SEÑALES = [
+  "Desde $390.000 COP, sin mensualidad obligatoria",
   "Reunión sin costo y sin compromiso",
   "El dominio queda a tu nombre, no al nuestro",
   "Hablas siempre con quien construye tu página",
@@ -400,12 +416,13 @@ export default function Colombia() {
           trafico pagado, no una intro. */}
       <section className="co-hero">
         <h1 className="co-h1">
-          Tu página web lista,
-          <em>a tu medida</em>
+          Tu página web profesional
+          <em>desde $390.000 COP</em>
         </h1>
         <p className="co-lead">
-          Más de 4 años creando páginas web para empresas en Latinoamérica. Hacemos que a tus clientes les resulte
-          fácil llegar a ti.
+          Diseño propio, no una plantilla. Se ve bien en el celular, aparece en Google y tiene
+          el botón de WhatsApp donde tus clientes lo van a buscar. La hacemos nosotros, con
+          más de 4 años construyendo sitios para empresas en Latinoamérica.
         </p>
 
         {/* Etiqueta que apunta al botón: nombra el deseo del visitante con sus
@@ -419,7 +436,7 @@ export default function Colombia() {
         <div className="co-ctas">
           <button className="co-btn co-btn-primary" onClick={() => abrir("reunion")}>
             <IcoCalendario />
-            Agendar mi reunión gratis
+            Agenda tu reunión y planifiquemos tu página
             <IcoFlecha />
           </button>
           {/* Baja de botón a enlace A PROPÓSITO. Dos botones del mismo peso
@@ -597,7 +614,7 @@ export default function Colombia() {
           <div className="co-ctas">
             <button className="co-btn co-btn-primary" onClick={() => abrir("reunion")}>
               <IcoCalendario />
-              Agendar mi reunión gratis
+              Agenda tu reunión y planifiquemos tu página
               <IcoFlecha />
             </button>
             <button className="co-btn co-btn-gris" onClick={() => abrir("contacto")}>
@@ -637,7 +654,7 @@ export default function Colombia() {
         <div className="co-fijo">
           <button className="co-btn co-btn-primary" onClick={() => abrir("reunion")}>
             <IcoCalendario />
-            Agendar mi reunión gratis
+            Agenda tu reunión y planifiquemos tu página
             <IcoFlecha />
           </button>
         </div>

@@ -30,9 +30,9 @@ const RUTAS = [
   {
     ruta: "colombia",
     url: "https://condorai.cl/colombia/",
-    titulo: "Tu página web lista, a tu medida | Cóndor.ai Colombia",
+    titulo: "Página web profesional desde $390.000 COP | Cóndor.ai Colombia",
     desc:
-      "Más de 4 años creando páginas web para empresas en Latinoamérica. Hacemos que a tus clientes les resulte fácil llegar a ti. Reunión de 30 minutos, sin costo.",
+      "Diseño propio, no plantilla: se ve bien en el celular, aparece en Google y lleva el botón de WhatsApp. Desde $390.000 COP. Agenda una reunión de 30 minutos, sin costo.",
     imagen: "https://condorai.cl/assets/og-colombia.jpg",
     locale: "es_CO",
   },
