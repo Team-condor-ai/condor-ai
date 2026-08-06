@@ -1958,3 +1958,128 @@ html.co-root body {
   font-size: 0.9rem;
   line-height: 1.45;
 }
+
+/* ═══════════════════ FORMULARIO RÁPIDO (2 campos, abierto) ════════════════
+   Reemplaza al modal de agendamiento. El 5-ago los datos fueron claros: 43
+   personas abrieron el formulario viejo y ninguna lo completó — cinco campos
+   y un calendario para alguien que llegó hace cuarenta segundos.
+
+   Va abierto en el hero: sin clic previo, sin modal, dos campos.
+   ======================================================================== */
+.co-form-rapido {
+  width: 100%;
+  max-width: 34rem;
+  margin: 1.6rem auto 0.4rem;  /* auto: el cierre centra su contenido */
+  padding: 1.15rem 1.2rem 1rem;
+  border-radius: 18px;
+  background: var(--co-mat-cta, rgba(255, 253, 251, 0.6));
+  border: 1px solid var(--co-linea);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 10px 34px -18px rgba(14, 17, 22, 0.4);
+  text-align: left;
+}
+
+.co-form-titulo {
+  margin: 0 0 0.2rem;
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: var(--co-tinta);
+  letter-spacing: -0.01em;
+}
+
+.co-form-bajada {
+  margin: 0 0 0.9rem;
+  font-size: 0.86rem;
+  line-height: 1.4;
+  color: var(--co-tinta-2);
+}
+
+/* Una sola fila en escritorio; apilado en móvil, que es de donde viene la
+   mayoría del tráfico pago. */
+.co-form-campos {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 0.5rem;
+}
+
+@media (max-width: 34rem) {
+  .co-form-campos { grid-template-columns: 1fr; }
+}
+
+.co-form-rapido input {
+  width: 100%;
+  padding: 0.72rem 0.85rem;
+  font: inherit;
+  font-size: 0.95rem;
+  color: var(--co-tinta);
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid var(--co-linea);
+  border-radius: 11px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.co-form-rapido input::placeholder { color: var(--co-tinta-3); }
+
+.co-form-rapido input:focus {
+  outline: none;
+  border-color: var(--co-verde);
+  box-shadow: 0 0 0 3px rgba(0, 201, 92, 0.18);
+}
+
+.co-form-rapido button[type="submit"] {
+  padding: 0.72rem 1.15rem;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+  white-space: nowrap;
+  color: #06210f;
+  background: var(--co-verde);
+  border: none;
+  border-radius: 11px;
+  cursor: pointer;
+  transition: filter 0.15s, transform 0.1s;
+}
+
+.co-form-rapido button[type="submit"]:hover { filter: brightness(1.06); }
+.co-form-rapido button[type="submit"]:active { transform: translateY(1px); }
+.co-form-rapido button[type="submit"]:disabled { opacity: 0.7; cursor: default; }
+
+.co-form-error {
+  margin: 0.6rem 0 0;
+  font-size: 0.85rem;
+  color: #b3261e;
+}
+
+.co-form-error a { color: inherit; font-weight: 600; }
+
+.co-form-legal {
+  margin: 0.7rem 0 0;
+  font-size: 0.72rem;
+  line-height: 1.35;
+  color: var(--co-tinta-3);
+}
+
+/* Confirmación: ocupa el mismo lugar, sin saltos de layout. */
+.co-form-ok {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  border-color: rgba(0, 201, 92, 0.45);
+}
+
+.co-form-ok strong { font-size: 1.05rem; color: var(--co-tinta); }
+.co-form-ok p { margin: 0; font-size: 0.9rem; color: var(--co-tinta-2); }
+
+/* El aviso de la Ley 1581 va como botón (abre el modal) pero se lee como
+   enlace: el visitante no tiene por qué notar la diferencia. */
+.co-form-link {
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}

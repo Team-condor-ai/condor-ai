@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import ave from "../assets/colombia/ave.webp";
 import laptop from "../assets/colombia/laptop.webp";
 import fotoEquipo from "../assets/colombia/equipo.webp";
@@ -6,11 +6,12 @@ import fotoOficina from "../assets/colombia/oficina.webp";
 import sitioInmobiliario from "../assets/colombia/sitios/inmobiliario.webp";
 import sitioEcommerce from "../assets/colombia/sitios/ecommerce.webp";
 import sitioRestaurante from "../assets/colombia/sitios/restaurante.webp";
+import FormularioRapido from "../components/FormularioRapido";
 import "./Colombia.css";
 
 /* =============================================================================
    Landing de campaña — Cóndor.ai × Colombia  (ruta /colombia)
-   Un solo objetivo: agendar reunión o pedir contacto.
+   Un solo objetivo: conseguir un nombre y un WhatsApp.
 
    REESCRITURA 2026-07-31 — "La página honesta"
    ---------------------------------------------------------------------------
@@ -38,12 +39,28 @@ import "./Colombia.css";
 
    El resto del razonamiento sigue en pie: los plazos y el alcance se cierran
    en la reunión, que es donde hay un proyecto concreto sobre la mesa.
-   Se prueba 2 días; si sigue sin convertir, el siguiente paso es sacar el
-   agendamiento y pedir solo el WhatsApp.
+
+   CAMBIO 2026-08-05 (tarde) — fuera el agendamiento
+   ---------------------------------------------------------------------------
+   Con el precio puesto, el embudo del segundo día quedó así:
+
+       146 llegaron a la página
+        43 abrieron el formulario   (29% — la página convence)
+         0 lo completaron           (0%)
+
+   El problema no era la página: era pedirle a alguien que llegó hace cuarenta
+   segundos su nombre, su WhatsApp, su correo, un día y una hora, dentro de un
+   modal que primero había que abrir. Las 43 tenían intención y se perdieron
+   ahí.
+
+   Ahora hay un solo formulario, abierto, de dos campos —nombre y WhatsApp— en
+   el hero y repetido en el cierre. El calendario, el modal y el campo de correo
+   se eliminaron; el horario se acuerda por WhatsApp, que es lo que pasaba de
+   todos modos. Ver components/FormularioRapido.tsx.
 
    Lo que SÍ dice: quiénes somos, con nuestras caras y nuestra oficina de
    verdad (fotos reales, no stock ni render), qué hemos hecho (sitios en vivo,
-   no maquetas) y dos formas de hablar con nosotros.
+   no maquetas) y cómo hablar con nosotros.
 
    Estructura completa: hero → quiénes somos → trabajo → cierre. Cuatro
    secciones. Cada scroll extra en tráfico pagado es gente que se va.
@@ -51,26 +68,24 @@ import "./Colombia.css";
    Contrato del formulario (NO romper — coordinado con Samuel):
      POST {VITE_LEADS_API}          (la URL /exec del Apps Script, SIN sufijo)
      {
-       tipo: "reunion" | "contacto",
+       tipo: "contacto",
        nombre: string, whatsapp: string, correo: string,
-       fecha_hora?: string,
        origen: { utm_source, utm_medium, utm_campaign, utm_content, fbclid, url },
        creativo?: string
      }
-   Sin VITE_LEADS_API: en DEV simula éxito; en producción falla a propósito
-   (un "¡Listo!" sin backend = lead pagado perdido en silencio).
+   El Apps Script sigue esperando `correo` y `tipo`, así que se mandan igual:
+   `correo` vacío y `tipo` siempre "contacto". La hoja de cálculo no cambia.
+   Sin VITE_LEADS_API el envío falla a propósito (un "¡Listo!" sin backend =
+   lead pagado perdido en silencio).
 
    OJO CORS: el fetch va con Content-Type "text/plain" a propósito. Con
    "application/json" se dispara un preflight OPTIONS que los Web Apps de Apps
    Script no responden (falla en silencio). El string sigue siendo JSON válido.
 
    TRACKING: Meta Pixel + CAPI (ALEJANDRO-ENTREGA.md §Tracking). Solo en esta
-   ruta. Eventos: PageView, ViewContent (abre un formulario), Schedule (agenda),
-   Lead (pide contacto). Sin VITE_META_PIXEL_ID no se carga nada.
+   ruta. Eventos: PageView y Lead. ViewContent y Schedule desaparecieron junto
+   con el modal y el calendario. Sin VITE_META_PIXEL_ID no se carga nada.
    ============================================================================= */
-
-type Tipo = "reunion" | "contacto";
-type Status = "idle" | "sending" | "ok" | "error";
 
 type DatosTrack = {
   email?: string;
@@ -112,83 +127,9 @@ const CORREO_DATOS = "contacto@teamcondorcl.com";
 const META_URL = "https://condorai.cl/colombia/";
 const META_TITULO = "Página web profesional desde $390.000 COP | Cóndor.ai Colombia";
 const META_DESC =
-  "Diseño propio, no plantilla: se ve bien en el celular, aparece en Google y lleva el botón de WhatsApp. Desde $390.000 COP. Agenda una reunión de 30 minutos, sin costo.";
+  "Diseño propio, no plantilla: se ve bien en el celular, aparece en Google y lleva el botón de WhatsApp. Desde $390.000 COP. Déjanos tu WhatsApp y te contactamos hoy, sin costo.";
 const META_IMG = "https://condorai.cl/assets/og-colombia.jpg";
 
-/* ════════════════════════════ AGENDA ══════════════════════════════════════
-   El visitante elige día y hora exactos. Antes elegía una franja ("tarde") y
-   Joaquín cerraba la hora por WhatsApp; con fecha concreta el recordatorio
-   automático sale solo, sin que nadie llene nada a mano.
-
-   NO hay sincronización con un calendario real: dos personas pueden pedir el
-   mismo bloque. Con el volumen de esta campaña es manejable —la reunión se
-   confirma igual por WhatsApp— y una agenda conectada es un proyecto aparte.
-
-   Horario de atención: 8:00 a 21:00 hora Colombia, de lunes a sábado. El
-   último bloque empieza a las 20:00 porque la reunión dura media hora. */
-const HORA_DESDE = 8;
-const HORA_HASTA = 20;
-const DIAS_VISIBLES = 21; // tres semanas: más que eso nadie planifica
-const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
-const DIAS_CORTOS = ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"];
-
-/** Los próximos días hábiles con al menos un bloque libre. */
-function diasDisponibles(): Date[] {
-  const hoy = new Date();
-  const dias: Date[] = [];
-  for (let i = 0; i < DIAS_VISIBLES; i++) {
-    const d = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() + i);
-    if (d.getDay() === 0) continue; // domingo no
-    // Hoy solo aparece si todavía queda algún bloque por delante.
-    if (i === 0 && hoy.getHours() >= HORA_HASTA) continue;
-    dias.push(d);
-  }
-  return dias;
-}
-
-/** Bloques de una hora para el día elegido; los ya pasados no se ofrecen. */
-function horasDe(dia: Date): number[] {
-  const ahora = new Date();
-  const esHoy = dia.toDateString() === ahora.toDateString();
-  const horas: number[] = [];
-  for (let h = HORA_DESDE; h <= HORA_HASTA; h++) {
-    if (esHoy && h <= ahora.getHours()) continue;
-    horas.push(h);
-  }
-  return horas;
-}
-
-const etiquetaHora = (h: number) => `${h}:00`;
-const etiquetaDia = (d: Date) => `${DIAS_CORTOS[d.getDay()]} ${d.getDate()} de ${MESES[d.getMonth()]}`;
-
-/** El instante exacto de un bloque, que es la clave con la que se compara. */
-const instante = (d: Date, h: number) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), h, 0, 0).getTime();
-
-/**
- * Bloques ya reservados por otra persona.
- *
- * Los sirve el mismo Apps Script que recibe los leads (`?ocupados=1`), que
- * devuelve solo marcas de tiempo — ningún dato de las personas.
- *
- * Si la consulta falla, o si todavía no hay backend configurado, se devuelve
- * una lista vacía y se ofrecen todos los horarios: es mejor arriesgar una
- * coincidencia (que el POST rechaza igual) que dejar al visitante sin poder
- * agendar porque una petición secundaria no respondió.
- */
-async function cargarOcupados(): Promise<number[]> {
-  if (!LEADS_API) return [];
-  try {
-    const res = await fetch(`${LEADS_API}?ocupados=1`, { method: "GET" });
-    if (!res.ok) return [];
-    const data = (await res.json()) as { ocupados?: string[] };
-    return (data.ocupados ?? []).map((iso) => new Date(iso).getTime()).filter((t) => !Number.isNaN(t));
-  } catch {
-    return [];
-  }
-}
-
-/* Sitios reales, en vivo. Sin adjetivos de venta: la prueba es que se puede
-   entrar. Descripciones de una línea — quien quiera saber más, entra. */
 const SITIOS = [
   {
     img: sitioInmobiliario,
@@ -237,8 +178,8 @@ const SEÑALES = [
 const PASOS = [
   {
     n: "01",
-    t: "Agendas y te confirmamos",
-    d: "Eliges el momento que te acomoda. Te llega la confirmación por correo y te escribimos por WhatsApp.",
+    t: "Nos dejas tu WhatsApp",
+    d: "Solo tu nombre y tu número. Te escribimos el mismo día para coordinar cuándo conversamos.",
   },
   {
     n: "02",
@@ -272,7 +213,7 @@ const PREGUNTAS = [
   },
   {
     q: "¿Están en Colombia?",
-    a: "Nuestra oficina está en Chile y trabajamos con clientes en Colombia. Atendemos en horario colombiano, de 8:00 a 21:00, y las reuniones son por videollamada. Te lo decimos de entrada porque preferimos que lo sepas antes de la reunión y no después.",
+    a: "Nuestra oficina está en Chile y trabajamos con clientes en Colombia. Atendemos en horario colombiano, de 8:00 a 21:00, y las reuniones son por videollamada. Te lo decimos de entrada porque preferimos que lo sepas antes de escribirnos y no después.",
   },
   {
     q: "¿El dominio y la página quedan a mi nombre?",
@@ -355,7 +296,6 @@ const RESENAS = import.meta.env.DEV ? RESENAS_MAQUETA : [];
 /* -------------------------------------------------------------------------- */
 
 export default function Colombia() {
-  const [open, setOpen] = useState<Tipo | null>(null);
   const [privacidad, setPrivacidad] = useState(false);
 
   /* La página es standalone y el sitio global es claro, pero con su propio
@@ -369,13 +309,6 @@ export default function Colombia() {
   useMeta();
   useTracking();
   useSerif();
-
-  /* Abrir un formulario es la microconversión que Meta puede optimizar antes
-     de tener volumen de Lead/Schedule: se reporta como ViewContent. */
-  const abrir = (tipo: Tipo) => {
-    track("ViewContent", { pais: "CO", extra: { formulario: tipo } });
-    setOpen(tipo);
-  };
 
   return (
     <main className="co">
@@ -425,30 +358,20 @@ export default function Colombia() {
           más de 4 años construyendo sitios para empresas en Latinoamérica.
         </p>
 
-        {/* Etiqueta que apunta al botón: nombra el deseo del visitante con sus
-            palabras ("quiero mi página web"), no con las nuestras ("agendar una
-            reunión"), que es un paso intermedio y suena a compromiso. */}
-        <span className="co-cta-tag">
-          quiero mi página web
-          <IcoFlechaAbajo />
-        </span>
-
-        <div className="co-ctas">
-          <button className="co-btn co-btn-primary" onClick={() => abrir("reunion")}>
-            <IcoCalendario />
-            Agenda tu reunión y planifiquemos tu página
-            <IcoFlecha />
-          </button>
-          {/* Baja de botón a enlace A PROPÓSITO. Dos botones del mismo peso
-              hacen que la mayoría elija el de menor compromiso ("que me
-              contacten"), que además convierte mucho peor. Sigue estando —
-              quitarlo pierde al que no quiere comprometerse hoy — pero deja de
-              competir visualmente con la acción que sí queremos. */}
-          <button className="co-btn co-btn-gris" onClick={() => abrir("contacto")}>
-            <IcoChat />
-            Prefiero que me escriban primero
-          </button>
-        </div>
+        {/* El formulario va ABIERTO, no detrás de un botón.
+            El 5-ago los datos fueron claros: de 146 visitas, 43 abrieron el
+            formulario y ninguna lo completó. La intención estaba; la mataron
+            los cinco campos y el calendario. Ahora son dos campos y ningún
+            clic previo. */}
+        <FormularioRapido
+          endpoint={LEADS_API}
+          atribucion={window.condorAtribucion?.() ?? {}}
+          whatsappEmpresa={WSP_LINK}
+          onPrivacidad={() => setPrivacidad(true)}
+          onLead={(d) =>
+            track("Lead", { nombre: d.nombre, telefono: d.whatsapp, pais: "CO" })
+          }
+        />
 
         {/* Señales de confianza JUSTO bajo el CTA: es donde aparece la duda
             ("¿y si me estafan?"). En Colombia el fraude digital es una
@@ -538,7 +461,7 @@ export default function Colombia() {
       <section className="co-sec" id="proceso">
         <div className="co-sec-head">
           <p className="co-kicker">Cómo trabajamos</p>
-          <h2 className="co-h2">Qué pasa después de que agendas.</h2>
+          <h2 className="co-h2">Qué pasa después de que nos escribes.</h2>
           <p className="co-p co-p-sub">Sin sorpresas. Estos son los cuatro pasos, completos.</p>
         </div>
         <ol className="co-pasos">
@@ -608,20 +531,20 @@ export default function Colombia() {
         <div className="co-cierre-in co-glass-panel co-glint">
           <h2 className="co-h2">¿Conversamos?</h2>
           <p className="co-p">
-            Media hora por videollamada para conocer tu negocio. Sin costo, y si no te convence la propuesta no
-            seguimos.
+            Déjanos tu nombre y tu WhatsApp: te escribimos hoy para entender qué necesitas. Sin costo, y si no te
+            convence la propuesta no seguimos.
           </p>
-          <div className="co-ctas">
-            <button className="co-btn co-btn-primary" onClick={() => abrir("reunion")}>
-              <IcoCalendario />
-              Agenda tu reunión y planifiquemos tu página
-              <IcoFlecha />
-            </button>
-            <button className="co-btn co-btn-gris" onClick={() => abrir("contacto")}>
-              <IcoChat />
-              Prefiero que me escriban primero
-            </button>
-          </div>
+          {/* El mismo formulario del hero, otra vez acá: quien llegó leyendo
+              hasta el final no debería tener que volver arriba para escribirnos. */}
+          <FormularioRapido
+            endpoint={LEADS_API}
+            atribucion={window.condorAtribucion?.() ?? {}}
+            whatsappEmpresa={WSP_LINK}
+            onPrivacidad={() => setPrivacidad(true)}
+            onLead={(d) =>
+              track("Lead", { nombre: d.nombre, telefono: d.whatsapp, pais: "CO" })
+            }
+          />
         </div>
       </section>
 
@@ -644,23 +567,26 @@ export default function Colombia() {
       </footer>
 
       {/* ═══════════════════ BARRA FIJA (SOLO MÓVIL) ═══════════════════ */}
-      {/* Casi todo el tráfico de la campaña llega por celular, y ahí el CTA
-          del hero desaparece al primer scroll: entre esa pantalla y la del
-          cierre hay cuatro secciones sin ninguna forma de agendar.
+      {/* Casi todo el tráfico de la campaña llega por celular, y ahí el
+          formulario del hero desaparece al primer scroll: entre esa pantalla y
+          la del cierre hay cuatro secciones sin ninguna forma de escribirnos.
           Está visible desde el primer frame y no aparece con el scroll — que
           algo se materialice a mitad de página es justo lo que la página no
-          hace. Se esconde con el modal abierto para no competir con él. */}
-      {!open && !privacidad && (
+          hace. Lleva al formulario y deja el cursor puesto en el primer campo. */}
+      {!privacidad && (
         <div className="co-fijo">
-          <button className="co-btn co-btn-primary" onClick={() => abrir("reunion")}>
-            <IcoCalendario />
-            Agenda tu reunión y planifiquemos tu página
+          <button className="co-btn co-btn-primary"
+                  onClick={() => {
+                    const c = document.querySelector<HTMLInputElement>(".co-form-rapido input");
+                    c?.scrollIntoView({ behavior: "smooth", block: "center" });
+                    setTimeout(() => c?.focus(), 420);
+                  }}>
+            Déjanos tu WhatsApp y te contactamos
             <IcoFlecha />
           </button>
         </div>
       )}
 
-      {open && <LeadModal tipo={open} onClose={() => setOpen(null)} onPrivacidad={() => setPrivacidad(true)} />}
       {privacidad && <ModalPrivacidad onClose={() => setPrivacidad(false)} />}
     </main>
   );
@@ -691,26 +617,6 @@ function Resena({
 /* ══════════════════════════════ Iconos ═════════════════════════════════════ */
 /* Inline y con currentColor: heredan el color del botón y no cuestan pedido. */
 
-function IcoCalendario() {
-  return (
-    <svg className="co-ico" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <rect x="3" y="5" width="18" height="16" rx="3.5" stroke="currentColor" strokeWidth="1.9" />
-      <path d="M3 10h18M8 3v4M16 3v4" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
-    </svg>
-  );
-}
-function IcoChat() {
-  return (
-    <svg className="co-ico" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path
-        d="M20 12.2c0 3.9-3.6 7-8 7-1 0-2-.2-2.9-.5L4 20l1.4-3.6C4.5 15.2 4 13.8 4 12.2c0-3.9 3.6-7 8-7s8 3.1 8 7Z"
-        stroke="currentColor"
-        strokeWidth="1.9"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
 function IcoFlecha() {
   return (
     <svg className="co-ico co-ico-fin" viewBox="0 0 24 24" fill="none" aria-hidden>
@@ -720,13 +626,6 @@ function IcoFlecha() {
 }
 
 /** Flecha hacia abajo de la etiqueta que apunta al botón principal. */
-function IcoFlechaAbajo() {
-  return (
-    <svg className="co-tag-flecha" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path d="M12 5v13m0 0 5.5-5.5M12 18l-5.5-5.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
 function IcoCheck() {
   return (
     <svg className="co-ico-check" viewBox="0 0 24 24" fill="none" aria-hidden>
@@ -742,104 +641,6 @@ function IcoMas() {
   );
 }
 
-/* ════════════════════════════ Agenda ═══════════════════════════════════════
-   Dos pasos, uno debajo del otro: primero el día en un riel horizontal,
-   después la hora. No es una cuadrícula de mes completo a propósito — en un
-   teléfono, 30 celdas de las que la mitad están deshabilitadas es más difícil
-   de leer que una tira con los días que sí se pueden elegir.
-
-   El bloque de hora aparece SOLO después de elegir día: mostrar las dos cosas
-   a la vez obliga a decidir dos variables al mismo tiempo. */
-function Agenda({
-  dia,
-  hora,
-  setDia,
-  setHora,
-  ocupados,
-}: {
-  dia: Date | null;
-  hora: number | null;
-  setDia: (d: Date) => void;
-  setHora: (h: number) => void;
-  ocupados: number[];
-}) {
-  /* Se calcula una vez: si se recalculara en cada render, un cambio de hora
-     mientras el formulario está abierto movería los días bajo el cursor. */
-  const dias = useMemo(() => diasDisponibles(), []);
-  const horas = dia ? horasDe(dia) : [];
-  const tomado = (d: Date, h: number) => ocupados.includes(instante(d, h));
-  /* Un día sin ningún bloque libre se marca completo en el riel: así el
-     visitante no lo toca para encontrarse con la fila vacía. */
-  const diaLleno = (d: Date) => {
-    const hs = horasDe(d);
-    return hs.length > 0 && hs.every((h) => tomado(d, h));
-  };
-
-  return (
-    <div className="co-agenda">
-      <p className="co-agenda-tit">¿Cuándo te acomoda?</p>
-
-      <div className="co-dias" role="group" aria-label="Elige el día">
-        {dias.map((d) => {
-          const sel = !!dia && d.toDateString() === dia.toDateString();
-          const esHoy = d.toDateString() === new Date().toDateString();
-          const lleno = diaLleno(d);
-          return (
-            <button
-              type="button"
-              key={d.toISOString()}
-              className={`co-dia${sel ? " is-on" : ""}${lleno ? " is-lleno" : ""}`}
-              aria-pressed={sel}
-              disabled={lleno}
-              title={lleno ? "Sin horarios disponibles" : undefined}
-              onClick={() => {
-                setDia(d);
-                setHora(0); // 0 = sin hora: obliga a elegir una del día nuevo
-              }}
-            >
-              <span className="co-dia-sem">{esHoy ? "hoy" : DIAS_CORTOS[d.getDay()]}</span>
-              <span className="co-dia-num">{d.getDate()}</span>
-              <span className="co-dia-mes">{MESES[d.getMonth()].slice(0, 3)}</span>
-            </button>
-          );
-        })}
-      </div>
-
-      {dia && (
-        <>
-          <p className="co-agenda-sub">
-            {etiquetaDia(dia)} · hora Colombia
-          </p>
-          <div className="co-horas" role="group" aria-label="Elige la hora">
-            {horas.map((h) => {
-              const ocupado = tomado(dia, h);
-              return (
-                <button
-                  type="button"
-                  key={h}
-                  className={`co-hora${hora === h ? " is-on" : ""}${ocupado ? " is-ocupado" : ""}`}
-                  aria-pressed={hora === h}
-                  disabled={ocupado}
-                  // Se muestra tachado en vez de esconderlo: ver un hueco
-                  // ocupado dice que hay gente agendando, y eso empuja a
-                  // reservar. Esconderlo solo deja una lista más corta sin
-                  // explicación.
-                  aria-label={ocupado ? `${etiquetaHora(h)}, no disponible` : etiquetaHora(h)}
-                  onClick={() => setHora(h)}
-                >
-                  {etiquetaHora(h)}
-                </button>
-              );
-            })}
-          </div>
-          {horas.every((h) => tomado(dia, h)) && horas.length > 0 && (
-            <p className="co-agenda-vacio">Este día ya está completo. Prueba con otro.</p>
-          )}
-        </>
-      )}
-    </div>
-  );
-}
 
 /* ══════════════════════ Política de tratamiento de datos ═══════════════════ */
 /* Ley 1581 de 2012 + Decreto 1377 de 2013. Va como modal y no como página
@@ -1014,420 +815,4 @@ function useTracking() {
     s.async = true;
     document.head.appendChild(s);
   }, []);
-}
-
-/* ══════════════════════════════ Modal de lead ══════════════════════════════ */
-
-function LeadModal({
-  tipo,
-  onClose,
-  onPrivacidad,
-}: {
-  tipo: Tipo;
-  onClose: () => void;
-  onPrivacidad: () => void;
-}) {
-  const [nombre, setNombre] = useState("");
-  const [whatsapp, setWhatsapp] = useState("");
-  const [correo, setCorreo] = useState("");
-  /* Día y hora se guardan por separado: el día se elige primero y recién ahí
-     aparecen sus bloques, que dependen de si es hoy o no. */
-  const [dia, setDia] = useState<Date | null>(null);
-  const [hora, setHora] = useState<number | null>(null);
-  const [status, setStatus] = useState<Status>("idle");
-  const [errorMsg, setErrorMsg] = useState("");
-  /* Se marca cuando el usuario intenta enviar: hasta entonces no se pinta
-     ningún campo en rojo. Regañar antes de que termine de escribir es la
-     manera más rápida de que abandone el formulario. */
-  const [intento, setIntento] = useState(false);
-  /* Bloques que ya tomó otra persona. Se piden al abrir y se refrescan si el
-     backend rechaza por choque. */
-  const [ocupados, setOcupados] = useState<number[]>([]);
-  /* Aviso puntual cuando el horario elegido se lo llevó otro mientras el
-     formulario estaba abierto. */
-  const [choque, setChoque] = useState(false);
-  const cardRef = useRef<HTMLDivElement>(null);
-
-  /* Atribución: la fuente de verdad es condorAtribucion() (la guarda en la
-     primera visita y sobrevive a la navegación del SPA, cuando la URL ya no
-     trae ?utm_). La URL actual solo rellena lo que falte. */
-  const atribucion = useMemo(() => {
-    const q = new URLSearchParams(window.location.search);
-    let guardada: Record<string, string> = {};
-    try {
-      guardada = window.condorAtribucion?.() ?? {};
-    } catch {
-      /* sin tracking cargado */
-    }
-    const dato = (k: string) => guardada[k] || q.get(k) || "";
-    return {
-      origen: {
-        utm_source: dato("utm_source"),
-        utm_medium: dato("utm_medium"),
-        utm_campaign: dato("utm_campaign"),
-        utm_content: dato("utm_content"),
-        fbclid: dato("fbclid"),
-        url: window.location.href,
-      },
-      creativo: q.get("cr") || dato("utm_content"),
-    };
-  }, []);
-
-  /* ── Abandono del formulario ("carrito abandonado") ──────────────────────
-     Quien escribe su WhatsApp y cierra sin enviar hoy se pierde entero: pagamos
-     el clic y no queda ni el dato. Se manda lo que alcanzó a escribir como lead
-     `parcial`; en la hoja aparece con estado "Abandonó" y Sandra avisa igual,
-     para poder escribirle a mano.
-
-     sendBeacon y no fetch: al cerrar la pestaña el navegador cancela las
-     peticiones en vuelo, y beacon está hecho justo para este caso. Va como
-     text/plain por lo mismo que el envío normal (ver nota CORS arriba del
-     archivo): evita el preflight que Apps Script no responde. */
-  const abandono = useRef({ nombre: "", whatsapp: "", correo: "", enviado: false, cerrado: false });
-  abandono.current.nombre = nombre;
-  abandono.current.whatsapp = whatsapp;
-  abandono.current.correo = correo;
-  // "sending" y "ok" no son abandono: uno está en curso y el otro ya convirtió.
-  abandono.current.cerrado = status === "ok" || status === "sending";
-
-  useEffect(() => {
-    function avisarAbandono() {
-      const a = abandono.current;
-      if (a.enviado || a.cerrado || !LEADS_API) return;
-      // Sin un solo dato de contacto no hay nada que trabajar: no se manda.
-      if (!a.nombre.trim() && !a.whatsapp.replace(/\D/g, "") && !a.correo.trim()) return;
-      a.enviado = true;
-      const cuerpo = JSON.stringify({
-        tipo: "parcial",
-        nombre: a.nombre.trim(),
-        whatsapp: a.whatsapp.trim(),
-        correo: a.correo.trim().toLowerCase(),
-        formulario: tipo,
-        ...atribucion,
-      });
-      try {
-        navigator.sendBeacon(LEADS_API, new Blob([cuerpo], { type: "text/plain;charset=utf-8" }));
-      } catch {
-        /* Navegador sin sendBeacon: se pierde ese abandono, pero nunca se rompe
-           el cierre del modal por intentar registrarlo. */
-      }
-    }
-    window.addEventListener("pagehide", avisarAbandono); // cerrar pestaña o navegar
-    return () => {
-      window.removeEventListener("pagehide", avisarAbandono);
-      avisarAbandono(); // cerrar el modal también es abandonar
-    };
-  }, [tipo, atribucion]);
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", onKey);
-    // Bloqueo del scroll de fondo: sin esto la página se mueve detrás del modal.
-    const overflowPrevio = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = overflowPrevio;
-    };
-  }, [onClose]);
-
-  /* Los horarios tomados se piden al abrir el formulario, no al cargar la
-     página: la mayoría de las visitas no lo abre nunca y sería una petición
-     regalada. Solo hace falta para "reunión". */
-  useEffect(() => {
-    if (tipo !== "reunion") return;
-    let vivo = true;
-    cargarOcupados().then((o) => {
-      if (vivo) setOcupados(o);
-    });
-    return () => {
-      vivo = false;
-    };
-  }, [tipo]);
-
-  const esReunion = tipo === "reunion";
-  const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo);
-  const telOk = whatsapp.replace(/\D/g, "").length >= 7;
-  /* Para una reunión el día y la hora ahora son obligatorios: son el dato del
-     que dependen la confirmación y los recordatorios automáticos. */
-  const agendaOk = !esReunion || (!!dia && !!hora);
-  const puedeEnviar = nombre.trim().length >= 2 && emailOk && telOk && agendaOk && status !== "sending";
-
-  /* Qué falta, en palabras. "Revisa este dato: el correo" resuelve el problema;
-     un borde rojo sin explicación deja al usuario adivinando. */
-  const faltan = [
-    nombre.trim().length < 2 && "tu nombre",
-    !telOk && "el WhatsApp",
-    !emailOk && "el correo",
-    esReunion && !(dia && hora) && "el día y la hora",
-  ].filter(Boolean) as string[];
-
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    setIntento(true);
-    if (!puedeEnviar) return;
-    setStatus("sending");
-    setErrorMsg("");
-
-    /* fecha_hora viaja en dos formatos: uno legible para la hoja y el correo,
-       y uno ISO para que Apps Script lo convierta en fecha real y dispare los
-       recordatorios sin que nadie escriba nada a mano. */
-    const cuandoISO = dia && hora ? new Date(dia.getFullYear(), dia.getMonth(), dia.getDate(), hora, 0, 0) : null;
-    const payload = {
-      tipo,
-      nombre: nombre.trim(),
-      whatsapp: whatsapp.trim(),
-      correo: correo.trim().toLowerCase(),
-      ...(cuandoISO
-        ? {
-            fecha_hora: `${etiquetaDia(dia!)} a las ${etiquetaHora(hora!)}`,
-            fecha_iso: cuandoISO.toISOString(),
-          }
-        : {}),
-      ...atribucion,
-    };
-
-    try {
-      if (!LEADS_API) {
-        // En desarrollo se simula el éxito para poder probar el flujo completo.
-        // En producción NO: un "¡Listo!" sin backend es un lead pagado que se
-        // pierde en silencio. Mejor mostrar el error y empujar a WhatsApp.
-        if (!import.meta.env.DEV) throw new Error("VITE_LEADS_API sin configurar en el deploy");
-        console.info("[lead demo] POST /leads →", payload);
-        await new Promise((r) => setTimeout(r, 700));
-        exito();
-        return;
-      }
-      // Content-Type text/plain a propósito: ver nota CORS arriba del archivo.
-      const res = await fetch(LEADS_API, {
-        method: "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json().catch(() => ({ ok: true }));
-
-      /* Choque de horario: entre que se abrió el formulario y se envió, otra
-         persona tomó el mismo bloque. No es un error del visitante ni del
-         envío, así que no se le muestra el mensaje de fallo: se refresca la
-         disponibilidad, se suelta la hora elegida y se le pide otra. */
-      if (data && data.code === "SLOT_OCUPADO") {
-        setOcupados(
-          ((data.ocupados as string[]) ?? [])
-            .map((iso) => new Date(iso).getTime())
-            .filter((t) => !Number.isNaN(t)),
-        );
-        setHora(null);
-        setStatus("idle");
-        setErrorMsg("");
-        setChoque(true);
-        return;
-      }
-
-      if (data && data.ok === false) throw new Error(data.error || "Backend respondió error");
-      exito();
-    } catch (err) {
-      setStatus("error");
-      setErrorMsg("No pudimos enviar tus datos. Reintenta o escríbenos por WhatsApp.");
-      console.error("[lead] error", err);
-    }
-
-    /* La conversión se reporta SOLO cuando el lead quedó guardado: si Meta
-       optimiza sobre envíos fallidos, compra tráfico que nunca llega a la hoja.
-     *
-     * Se manda SIEMPRE `Lead`, y además `Schedule` cuando la persona agendó.
-     * Antes era uno u otro, y con eso ningún evento juntaba volumen: el
-     * presupuesto de esta campaña (~11 USD/día) no da para 50 conversiones
-     * semanales de cada tipo, que es el umbral con el que Meta sale de la fase
-     * de aprendizaje. Repartir los leads entre dos eventos dejaba a los dos
-     * por debajo.
-     * Ahora `Lead` cuenta todo y sirve para optimizar; `Schedule` sigue
-     * separado para medir cuántos de esos leads agendaron de verdad. Meta
-     * acepta varios eventos por conversión sin contarlos como duplicados: son
-     * eventos distintos, cada uno con su propio eventID. */
-    function exito() {
-      const datos = {
-        email: payload.correo,
-        telefono: payload.whatsapp,
-        nombre: payload.nombre,
-        pais: "CO",
-        extra: { formulario: tipo },
-      };
-      track("Lead", datos);
-      if (esReunion) track("Schedule", datos);
-      setStatus("ok");
-    }
-  }
-
-  return (
-    <div
-      className="co-modal"
-      role="dialog"
-      aria-modal="true"
-      aria-label={esReunion ? "Agendar reunión" : "Solicitar contacto"}
-      onClick={onClose}
-    >
-      <div className="co-modal-card" ref={cardRef} onClick={(e) => e.stopPropagation()}>
-        <button className="co-modal-x" onClick={onClose} aria-label="Cerrar">
-          <span aria-hidden>×</span>
-        </button>
-
-        {status === "ok" ? (
-          /* Decirle exactamente qué va a pasar y cuándo cierra el ciclo: la
-             ansiedad post-envío ("¿habrá llegado?") es lo que hace que la
-             persona escriba por otro canal o se arrepienta. */
-          <div className="co-ok">
-            <div className="co-ok-ico" aria-hidden>
-              ✓
-            </div>
-            <h3>{esReunion ? "¡Listo, quedó agendada!" : "¡Recibido!"}</h3>
-            <p>
-              {esReunion ? (
-                <>
-                  Te esperamos el <b>{dia ? etiquetaDia(dia) : ""} a las {hora ? etiquetaHora(hora) : ""}</b>, hora
-                  Colombia. Te mandamos la confirmación a <b>{correo.trim().toLowerCase()}</b> y te escribimos por
-                  WhatsApp con el enlace de la videollamada.
-                </>
-              ) : (
-                <>
-                  Te escribimos por WhatsApp en menos de 24 horas. También te llegó un correo a{" "}
-                  <b>{correo.trim().toLowerCase()}</b> con la información.
-                </>
-              )}
-            </p>
-            <p className="co-ok-nota">
-              ¿No te llegó? Revisa la carpeta de spam o escríbenos directo por{" "}
-              <a href={WSP_LINK} target="_blank" rel="noopener noreferrer">
-                WhatsApp
-              </a>
-              .
-            </p>
-            <button className="co-btn co-btn-primary co-btn-block" onClick={onClose}>
-              Cerrar
-            </button>
-          </div>
-        ) : (
-          <form className="co-form" onSubmit={submit}>
-            <h3>{esReunion ? "Agendemos una reunión" : "Déjanos tus datos"}</h3>
-            <p className="co-form-sub">
-              {esReunion
-                ? "Media hora, entre 8:00 y 21:00 hora Colombia. Sin costo y sin compromiso."
-                : "Te contactamos en menos de 24 horas. Rápido y sin vueltas."}
-            </p>
-
-            <label className="co-field">
-              <span>Nombre</span>
-              <input
-                value={nombre}
-                onChange={(e) => setNombre(e.target.value)}
-                placeholder="Tu nombre"
-                autoFocus
-                aria-invalid={intento && nombre.trim().length < 2}
-              />
-            </label>
-            <label className="co-field">
-              <span>WhatsApp</span>
-              <input
-                value={whatsapp}
-                onChange={(e) => setWhatsapp(e.target.value)}
-                inputMode="tel"
-                placeholder="+57 300 000 0000"
-                aria-invalid={intento && !telOk}
-              />
-              <i className="co-field-ayuda">Por acá te escribimos para coordinar. No enviamos publicidad.</i>
-            </label>
-            <label className="co-field">
-              <span>Correo</span>
-              <input
-                value={correo}
-                onChange={(e) => setCorreo(e.target.value)}
-                inputMode="email"
-                placeholder="tucorreo@ejemplo.com"
-                aria-invalid={intento && !emailOk}
-              />
-              {/* Pedir DOS canales necesita justificarse o se lee como que
-                  vamos a perseguirlo. Acá el correo tiene una función concreta
-                  y distinta del WhatsApp: es donde llegan la confirmación y el
-                  recordatorio automáticos. */}
-              <i className="co-field-ayuda">
-                {esReunion
-                  ? "Acá te llega la confirmación y un recordatorio antes de la reunión."
-                  : "Para mandarte la información por escrito."}
-              </i>
-            </label>
-            {esReunion && (
-              <>
-                {choque && (
-                  <p className="co-aviso-choque" role="status">
-                    Ese horario se lo acaban de tomar. Elige otro y listo.
-                  </p>
-                )}
-                <Agenda
-                  dia={dia}
-                  hora={hora}
-                  setDia={(d) => {
-                    setChoque(false);
-                    setDia(d);
-                  }}
-                  setHora={(h) => {
-                    setChoque(false);
-                    setHora(h);
-                  }}
-                  ocupados={ocupados}
-                />
-              </>
-            )}
-
-            {status === "error" && (
-              <p className="co-form-err" role="alert">
-                {errorMsg}{" "}
-                {/* Salida de emergencia: el lead ya está pagado, no se puede
-                    perder porque el backend falle. */}
-                <a
-                  href={`${WSP_LINK}?text=${encodeURIComponent(
-                    `Hola, soy ${nombre.trim() || "..."} y quiero información sobre mi página web.`,
-                  )}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Escribir por WhatsApp →
-                </a>
-              </p>
-            )}
-
-            {/* El botón NUNCA se deshabilita: un botón gris antes de escribir
-                se lee como roto, y quita la sensación de que la acción está
-                disponible. Si falta algo, el submit lo señala.
-                La atenuación va por CLASE y no por aria-disabled: aria-disabled
-                anuncia el botón como deshabilitado a los lectores de pantalla
-                mientras el clic sí funciona — una contradicción que deja fuera
-                a quien navega con teclado o lector. */}
-            <button
-              className={`co-btn co-btn-primary co-btn-block${puedeEnviar ? "" : " is-incompleto"}`}
-              type="submit"
-            >
-              {status === "sending" ? "Enviando…" : esReunion ? "Agendar mi reunión" : "Quiero que me escriban"}
-            </button>
-            {intento && !puedeEnviar && status !== "sending" && (
-              <p className="co-form-err" role="alert">
-                Revisa {faltan.length > 1 ? "estos datos" : "este dato"}: {faltan.join(", ")}.
-              </p>
-            )}
-            {/* Ley 1581 de 2012 (habeas data): para tratar datos personales de
-                una persona en Colombia hace falta autorización informada y una
-                política de tratamiento accesible. "Aceptas que te contactemos"
-                a secas no cumple ninguna de las dos. */}
-            <p className="co-form-legal">
-              Al enviar autorizas a Cóndor.ai a contactarte por WhatsApp y correo para coordinar esta reunión, según
-              nuestra{" "}
-              <button type="button" className="co-link-inline" onClick={onPrivacidad}>
-                política de tratamiento de datos
-              </button>
-              . Puedes pedir que los eliminemos cuando quieras.
-            </p>
-          </form>
-        )}
-      </div>
-    </div>
-  );
 }

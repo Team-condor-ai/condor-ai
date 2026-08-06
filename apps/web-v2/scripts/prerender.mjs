@@ -32,7 +32,7 @@ const RUTAS = [
     url: "https://condorai.cl/colombia/",
     titulo: "Página web profesional desde $390.000 COP | Cóndor.ai Colombia",
     desc:
-      "Diseño propio, no plantilla: se ve bien en el celular, aparece en Google y lleva el botón de WhatsApp. Desde $390.000 COP. Agenda una reunión de 30 minutos, sin costo.",
+      "Diseño propio, no plantilla: se ve bien en el celular, aparece en Google y lleva el botón de WhatsApp. Desde $390.000 COP. Déjanos tu WhatsApp y te contactamos hoy, sin costo.",
     imagen: "https://condorai.cl/assets/og-colombia.jpg",
     locale: "es_CO",
   },
