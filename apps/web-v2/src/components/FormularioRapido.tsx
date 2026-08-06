@@ -36,6 +36,11 @@ type Props = {
   atribucion?: Record<string, string>;
   /** Para el Pixel: se avisa cuando el lead entra de verdad. */
   onLead?: (datos: { whatsapp: string }) => void;
+  /** Se avisa UNA vez, cuando la persona escribe el primer dígito. Es la única
+      métrica intermedia que queda: sin modal que abrir, sin esto solo se sabe
+      "llegó" y "dejó el número", y un día con cero leads no distingue entre
+      "nadie lo intentó" y "lo intentaron y el formulario falló". */
+  onIntento?: () => void;
   /** WhatsApp de la empresa, para el que prefiere escribir él. */
   whatsappEmpresa?: string;
   /** Abre la política de datos. Obligatorio en Colombia (Ley 1581 de 2012):
@@ -65,6 +70,7 @@ export default function FormularioRapido({
   endpoint,
   atribucion = {},
   onLead,
+  onIntento,
   whatsappEmpresa,
   onPrivacidad,
 }: Props) {
@@ -72,6 +78,8 @@ export default function FormularioRapido({
   const [estado, setEstado] = useState<Estado>("idle");
   const [error, setError] = useState("");
   const campo = useRef<HTMLInputElement>(null);
+  /* Un ref y no un estado: avisar el intento no tiene que redibujar nada. */
+  const yaAviso = useRef(false);
 
   /* Colombia son 10 dígitos, celular o fijo (los fijos también migraron a 10
      con el indicativo 60X). Menos que eso no sirve para escribirle a nadie. */
@@ -156,6 +164,12 @@ export default function FormularioRapido({
             onChange={(e) => {
               setTelefono(e.target.value);
               setError("");
+              /* Al primer dígito, una sola vez: es "esta persona intentó
+                 dejarnos su número", no "tocó el campo sin querer". */
+              if (!yaAviso.current && normalizar(e.target.value).length > 0) {
+                yaAviso.current = true;
+                onIntento?.();
+              }
             }}
           />
         </div>

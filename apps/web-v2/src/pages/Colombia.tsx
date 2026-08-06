@@ -379,6 +379,9 @@ export default function Colombia() {
           atribucion={window.condorAtribucion?.() ?? {}}
           whatsappEmpresa={WSP_LINK}
           onPrivacidad={() => setPrivacidad(true)}
+          /* Mismo evento que antes disparaba "abrió el modal": así los
+             días son comparables en el administrador de anuncios. */
+          onIntento={() => track("ViewContent", { pais: "CO", extra: { formulario: "wsp" } })}
           onLead={(d) =>
             track("Lead", { telefono: d.whatsapp, pais: "CO" })
           }
@@ -552,6 +555,9 @@ export default function Colombia() {
             atribucion={window.condorAtribucion?.() ?? {}}
             whatsappEmpresa={WSP_LINK}
             onPrivacidad={() => setPrivacidad(true)}
+            /* Mismo evento que antes disparaba "abrió el modal": así los
+               días son comparables en el administrador de anuncios. */
+            onIntento={() => track("ViewContent", { pais: "CO", extra: { formulario: "wsp" } })}
             onLead={(d) =>
               track("Lead", { telefono: d.whatsapp, pais: "CO" })
             }
