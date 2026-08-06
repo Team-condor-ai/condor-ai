@@ -1,0 +1,43 @@
+name: Pulso de campaña (cada 6 h)
+
+# Números crudos del día en curso, 4 veces al día. NO reemplaza a
+# "Analizador de campaña Meta", que sigue corriendo 1 vez al día con el
+# análisis completo de Claude sobre toda la campaña.
+#
+# LOS CRON VAN ADELANTADOS A PROPÓSITO
+# ---------------------------------------------------------------------------
+# El cron de GitHub Actions no dispara a la hora: encola. Medido sobre los 12
+# últimos disparos de meta-analyzer.yml (cron '0 0 * * *'), las corridas
+# arrancaron entre las 01:19 y las 01:50 UTC — un atraso constante de 1 h 20 a
+# 1 h 50. Por eso cada cron va ~80 min antes de la hora a la que se quiere el
+# mensaje, y así el pulso llega cerca de las 05:00, 11:00, 17:00 y 23:00 de
+# Chile, que es la zona horaria de la cuenta publicitaria.
+#
+# El de las 23:00 es en la práctica el cierre del día.
+#
+# OJO en septiembre: Chile pasa a UTC-3 y estos horarios se corren una hora.
+# Si molesta, restarle 1 h a cada cron.
+
+on:
+  schedule:
+    - cron: '40 7 * * *'    # llega ~05:00 Chile
+    - cron: '40 13 * * *'   # llega ~11:00 Chile
+    - cron: '40 19 * * *'   # llega ~17:00 Chile
+    - cron: '40 1 * * *'    # llega ~23:00 Chile (cierre del día)
+  workflow_dispatch:        # botón para pedirlo cuando uno quiera
+
+jobs:
+  pulso:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Enviar pulso a Telegram
+        run: node services/meta-analyzer/pulso.mjs
+        env:
+          META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
+          META_AD_ACCOUNT_ID: ${{ secrets.META_AD_ACCOUNT_ID }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
