@@ -1969,8 +1969,8 @@ html.co-root body {
 .co-form-rapido {
   width: 100%;
   max-width: 34rem;
-  margin: 1.6rem auto 0.4rem;  /* auto: el cierre centra su contenido */
-  padding: 1.15rem 1.2rem 1rem;
+  margin: 1.3rem auto 0.4rem;  /* auto: el cierre centra su contenido */
+  padding: 1rem 1.05rem 0.85rem;
   border-radius: 18px;
   background: var(--co-mat-cta, rgba(255, 253, 251, 0.6));
   border: 1px solid var(--co-linea);
@@ -1981,31 +1981,66 @@ html.co-root body {
 }
 
 .co-form-titulo {
-  margin: 0 0 0.2rem;
+  margin: 0 0 0.7rem;
   font-size: 1.02rem;
   font-weight: 700;
   color: var(--co-tinta);
   letter-spacing: -0.01em;
 }
 
-.co-form-bajada {
-  margin: 0 0 0.9rem;
-  font-size: 0.86rem;
-  line-height: 1.4;
-  color: var(--co-tinta-2);
-}
-
-/* Una sola fila en escritorio; apilado en móvil, que es de donde viene la
-   mayoría del tráfico pago. */
+/* Un solo campo, así que la fila es campo + botón. En móvil se apila, que es
+   de donde viene la mayoría del tráfico pago. */
 .co-form-campos {
   display: grid;
-  grid-template-columns: 1fr 1fr auto;
+  grid-template-columns: 1fr auto;
   gap: 0.5rem;
 }
 
 @media (max-width: 34rem) {
   .co-form-campos { grid-template-columns: 1fr; }
 }
+
+/* El +57 va FUERA del input, pegado a su izquierda dentro del mismo marco:
+   escribir el indicativo en el celular es un paso más y un lugar más donde
+   equivocarse. El marco lo dibuja el contenedor, no el input. */
+.co-form-tel {
+  display: flex;
+  align-items: stretch;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid var(--co-linea);
+  border-radius: 11px;
+  overflow: hidden;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.co-form-tel:focus-within {
+  border-color: var(--co-verde);
+  box-shadow: 0 0 0 3px rgba(0, 201, 92, 0.18);
+}
+
+.co-form-prefijo {
+  display: flex;
+  align-items: center;
+  padding: 0 0.55rem 0 0.85rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--co-tinta-2);
+  border-right: 1px solid var(--co-linea);
+  user-select: none;
+}
+
+/* Dentro del marco compartido el input no dibuja el suyo. */
+.co-form-tel input {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: none;
+  border-radius: 0;
+  padding-left: 0.7rem;
+  letter-spacing: 0.02em;
+}
+
+.co-form-tel input:focus { box-shadow: none; }
 
 .co-form-rapido input {
   width: 100%;

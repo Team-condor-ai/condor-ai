@@ -11,7 +11,7 @@ import "./Colombia.css";
 
 /* =============================================================================
    Landing de campaña — Cóndor.ai × Colombia  (ruta /colombia)
-   Un solo objetivo: conseguir un nombre y un WhatsApp.
+   Un solo objetivo: conseguir un número de WhatsApp.
 
    REESCRITURA 2026-07-31 — "La página honesta"
    ---------------------------------------------------------------------------
@@ -53,10 +53,16 @@ import "./Colombia.css";
    modal que primero había que abrir. Las 43 tenían intención y se perdieron
    ahí.
 
-   Ahora hay un solo formulario, abierto, de dos campos —nombre y WhatsApp— en
-   el hero y repetido en el cierre. El calendario, el modal y el campo de correo
-   se eliminaron; el horario se acuerda por WhatsApp, que es lo que pasaba de
-   todos modos. Ver components/FormularioRapido.tsx.
+   Ahora hay un solo formulario, abierto, de UN campo —el WhatsApp, con el +57
+   fijo— en el hero y repetido en el cierre. El calendario, el modal, el correo
+   y hasta el nombre se eliminaron: el nombre se pregunta en el primer mensaje
+   de WhatsApp, que es gratis y no cuesta una conversión. El horario se acuerda
+   ahí mismo, que es lo que pasaba de todos modos.
+   Ver components/FormularioRapido.tsx.
+
+   La bajada del hero también se acortó a una línea: la versión larga empujaba
+   el formulario fuera de la primera pantalla en móvil, y en tráfico pagado lo
+   que no se ve al llegar no existe.
 
    Lo que SÍ dice: quiénes somos, con nuestras caras y nuestra oficina de
    verdad (fotos reales, no stock ni render), qué hemos hecho (sitios en vivo,
@@ -73,8 +79,10 @@ import "./Colombia.css";
        origen: { utm_source, utm_medium, utm_campaign, utm_content, fbclid, url },
        creativo?: string
      }
-   El Apps Script sigue esperando `correo` y `tipo`, así que se mandan igual:
-   `correo` vacío y `tipo` siempre "contacto". La hoja de cálculo no cambia.
+   El Apps Script valida que `nombre`, `whatsapp` y `tipo` vengan con algo
+   (devuelve {"ok":false} si falta uno). Como el formulario ya no pide nombre,
+   se manda el marcador "Sin nombre (form rápido)" y `correo` vacío; `tipo` va
+   siempre "contacto". Así la hoja de cálculo no cambia y Samuel no toca nada.
    Sin VITE_LEADS_API el envío falla a propósito (un "¡Listo!" sin backend =
    lead pagado perdido en silencio).
 
@@ -165,7 +173,8 @@ const SITIOS = [
    ============================================================================ */
 const SEÑALES = [
   "Desde $390.000 COP, sin mensualidad obligatoria",
-  "Reunión sin costo y sin compromiso",
+  "Cotización sin costo y sin compromiso",
+  "Más de 4 años haciendo sitios para empresas en Latinoamérica",
   "El dominio queda a tu nombre, no al nuestro",
   "Hablas siempre con quien construye tu página",
   "Puedes visitar los sitios que hicimos, están en vivo",
@@ -352,10 +361,12 @@ export default function Colombia() {
           Tu página web profesional
           <em>desde $390.000 COP</em>
         </h1>
+        {/* Una línea, no un párrafo. La versión larga (Google, WhatsApp, los 4
+            años) empujaba el formulario fuera de la primera pantalla en móvil:
+            en tráfico pagado, lo que no se ve al llegar no existe. Ese detalle
+            vive ahora en las señales de acá abajo y en "cómo trabajamos". */}
         <p className="co-lead">
-          Diseño propio, no una plantilla. Se ve bien en el celular, aparece en Google y tiene
-          el botón de WhatsApp donde tus clientes lo van a buscar. La hacemos nosotros, con
-          más de 4 años construyendo sitios para empresas en Latinoamérica.
+          Diseño propio, no una plantilla. Se ve bien en el celular y lleva a tus clientes a WhatsApp.
         </p>
 
         {/* El formulario va ABIERTO, no detrás de un botón.
@@ -369,7 +380,7 @@ export default function Colombia() {
           whatsappEmpresa={WSP_LINK}
           onPrivacidad={() => setPrivacidad(true)}
           onLead={(d) =>
-            track("Lead", { nombre: d.nombre, telefono: d.whatsapp, pais: "CO" })
+            track("Lead", { telefono: d.whatsapp, pais: "CO" })
           }
         />
 
@@ -531,7 +542,7 @@ export default function Colombia() {
         <div className="co-cierre-in co-glass-panel co-glint">
           <h2 className="co-h2">¿Conversamos?</h2>
           <p className="co-p">
-            Déjanos tu nombre y tu WhatsApp: te escribimos hoy para entender qué necesitas. Sin costo, y si no te
+            Déjanos tu WhatsApp: te escribimos hoy para entender qué necesitas. Sin costo, y si no te
             convence la propuesta no seguimos.
           </p>
           {/* El mismo formulario del hero, otra vez acá: quien llegó leyendo
@@ -542,7 +553,7 @@ export default function Colombia() {
             whatsappEmpresa={WSP_LINK}
             onPrivacidad={() => setPrivacidad(true)}
             onLead={(d) =>
-              track("Lead", { nombre: d.nombre, telefono: d.whatsapp, pais: "CO" })
+              track("Lead", { telefono: d.whatsapp, pais: "CO" })
             }
           />
         </div>

@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 
 /* =============================================================================
-   Formulario de contacto en 2 campos, siempre visible.
+   Un campo: el WhatsApp. Siempre visible.
 
    POR QUÉ EXISTE (datos del 5-ago-2026)
    ---------------------------------------------------------------------------
@@ -13,15 +13,18 @@ import { useRef, useState } from "react";
          0 lo completaron           (0%)
 
    Las 43 tenían intención: la perdieron los cinco campos y el calendario.
-   Este formulario deja solo lo indispensable para poder escribirle a alguien:
-   **nombre y WhatsApp**. Sin correo, sin elegir horario, sin modal.
+
+   Quedó en dos campos (nombre y WhatsApp) y después en uno solo: el número.
+   El nombre se pregunta en el primer mensaje de WhatsApp, que es gratis y no
+   cuesta una conversión. Lo único que hace falta para poder escribirle a
+   alguien es su número.
+
+   El +57 va fijo a la izquierda, fuera del campo: en móvil, escribir el
+   indicativo es un paso más y un lugar más donde equivocarse.
 
    Va abierto en la página, no detrás de un botón. Un clic menos es un punto
    menos donde perder a alguien que llegó hace cuarenta segundos desde un
    anuncio.
-
-   El envío usa el mismo contrato que ya espera el Apps Script, así que no hay
-   que tocar el backend ni la hoja de cálculo.
    ========================================================================== */
 
 type Estado = "idle" | "enviando" | "ok" | "error";
@@ -32,13 +35,31 @@ type Props = {
   /** Atribución de la campaña (utm_*, fbclid). */
   atribucion?: Record<string, string>;
   /** Para el Pixel: se avisa cuando el lead entra de verdad. */
-  onLead?: (datos: { nombre: string; whatsapp: string }) => void;
+  onLead?: (datos: { whatsapp: string }) => void;
   /** WhatsApp de la empresa, para el que prefiere escribir él. */
   whatsappEmpresa?: string;
   /** Abre la política de datos. Obligatorio en Colombia (Ley 1581 de 2012):
       quien entrega sus datos tiene que poder leer para qué se usan. */
   onPrivacidad?: () => void;
 };
+
+/* El Apps Script valida que `nombre` venga con algo y devuelve
+   {"ok":false} si llega vacío. No se toca el backend por esto: se manda este
+   marcador, que además deja claro en la hoja de dónde salió el lead. */
+const SIN_NOMBRE = "Sin nombre (form rápido)";
+
+/** Deja solo dígitos y saca el 57 del país si la persona lo pegó completo. */
+function normalizar(texto: string): string {
+  let d = texto.replace(/\D/g, "");
+  if (d.startsWith("57") && d.length > 10) d = d.slice(2);
+  return d.slice(0, 10);
+}
+
+/** 300 123 4567 — se muestra agrupado, se envía limpio. */
+function agrupar(d: string): string {
+  const p = [d.slice(0, 3), d.slice(3, 6), d.slice(6, 10)].filter(Boolean);
+  return p.join(" ");
+}
 
 export default function FormularioRapido({
   endpoint,
@@ -47,25 +68,26 @@ export default function FormularioRapido({
   whatsappEmpresa,
   onPrivacidad,
 }: Props) {
-  const [nombre, setNombre] = useState("");
   const [telefono, setTelefono] = useState("");
   const [estado, setEstado] = useState<Estado>("idle");
   const [error, setError] = useState("");
-  const campoNombre = useRef<HTMLInputElement>(null);
+  const campo = useRef<HTMLInputElement>(null);
 
-  /* Colombia usa 10 dígitos (300 000 0000). Se aceptan 7 o más para no
-     rechazar fijos ni números escritos con el +57 adelante. */
-  const soloDigitos = telefono.replace(/\D/g, "");
-  const telOk = soloDigitos.length >= 7;
-  const nombreOk = nombre.trim().length >= 2;
-  const puedeEnviar = nombreOk && telOk && estado !== "enviando";
+  /* Colombia son 10 dígitos, celular o fijo (los fijos también migraron a 10
+     con el indicativo 60X). Menos que eso no sirve para escribirle a nadie. */
+  const digitos = normalizar(telefono);
+  const puedeEnviar = digitos.length === 10 && estado !== "enviando";
 
   async function enviar(e: React.FormEvent) {
     e.preventDefault();
     if (!puedeEnviar) {
       /* Decir qué falta, no marcar en rojo y que el visitante adivine. */
-      setError(!nombreOk ? "Falta tu nombre" : "Revisa el número de WhatsApp");
-      (!nombreOk ? campoNombre.current : null)?.focus();
+      setError(
+        digitos.length === 0
+          ? "Escribe tu número de WhatsApp"
+          : "El número debe tener 10 dígitos",
+      );
+      campo.current?.focus();
       return;
     }
 
@@ -74,8 +96,8 @@ export default function FormularioRapido({
 
     const datos = {
       tipo: "contacto" as const,
-      nombre: nombre.trim(),
-      whatsapp: telefono.trim(),
+      nombre: SIN_NOMBRE,
+      whatsapp: "+57" + digitos,
       /* El Apps Script espera el campo; se manda vacío a propósito: pedir el
          correo era justo uno de los pasos que hacía abandonar. */
       correo: "",
@@ -96,10 +118,10 @@ export default function FormularioRapido({
       if (resp && resp.ok === false) throw new Error(resp.error || "backend");
 
       setEstado("ok");
-      onLead?.({ nombre: datos.nombre, whatsapp: datos.whatsapp });
+      onLead?.({ whatsapp: datos.whatsapp });
     } catch (err) {
       setEstado("error");
-      setError("No pudimos enviar tus datos.");
+      setError("No pudimos enviar tu número.");
       console.error("[lead rápido]", err);
     }
   }
@@ -107,49 +129,36 @@ export default function FormularioRapido({
   if (estado === "ok") {
     return (
       <div className="co-form-rapido co-form-ok" role="status">
-        <strong>¡Listo, {nombre.trim().split(" ")[0]}!</strong>
-        <p>Te escribimos por WhatsApp hoy mismo para conversar tu página.</p>
+        <strong>¡Listo!</strong>
+        <p>Te escribimos por WhatsApp hoy mismo.</p>
       </div>
     );
   }
 
   return (
     <form className="co-form-rapido" onSubmit={enviar} noValidate>
-      <p className="co-form-titulo">
-        Déjanos tu WhatsApp y te contactamos
-      </p>
-      <p className="co-form-bajada">
-        Te escribimos hoy para conversar qué necesita tu página. Sin costo y sin
-        compromiso.
-      </p>
+      <p className="co-form-titulo">Déjanos tu WhatsApp y te escribimos hoy</p>
 
       <div className="co-form-campos">
-        <input
-          ref={campoNombre}
-          type="text"
-          name="nombre"
-          autoComplete="given-name"
-          placeholder="Tu nombre"
-          aria-label="Tu nombre"
-          value={nombre}
-          onChange={(e) => {
-            setNombre(e.target.value);
-            setError("");
-          }}
-        />
-        <input
-          type="tel"
-          name="whatsapp"
-          autoComplete="tel"
-          inputMode="tel"
-          placeholder="Tu WhatsApp"
-          aria-label="Tu número de WhatsApp"
-          value={telefono}
-          onChange={(e) => {
-            setTelefono(e.target.value);
-            setError("");
-          }}
-        />
+        <div className="co-form-tel">
+          <span className="co-form-prefijo" aria-hidden="true">
+            +57
+          </span>
+          <input
+            ref={campo}
+            type="tel"
+            name="whatsapp"
+            autoComplete="tel-national"
+            inputMode="numeric"
+            placeholder="300 123 4567"
+            aria-label="Tu número de WhatsApp, sin el indicativo 57"
+            value={agrupar(digitos)}
+            onChange={(e) => {
+              setTelefono(e.target.value);
+              setError("");
+            }}
+          />
+        </div>
         <button type="submit" disabled={estado === "enviando"}>
           {estado === "enviando" ? "Enviando…" : "Quiero mi página"}
         </button>
@@ -170,14 +179,13 @@ export default function FormularioRapido({
       )}
 
       <p className="co-form-legal">
-        Solo usamos tus datos para contactarte por este servicio.
+        Solo para contactarte.
         {onPrivacidad && (
           <>
             {" "}
             <button type="button" className="co-form-link" onClick={onPrivacidad}>
-              Política de tratamiento de datos
+              Cómo tratamos tus datos
             </button>
-            .
           </>
         )}
       </p>
