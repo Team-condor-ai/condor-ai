@@ -22,5 +22,13 @@
     "costo": 9675,
     "gasto": 19350,
     "moneda": "CLP"
+  },
+  {
+    "fecha": "2026-08-08",
+    "dia": 1,
+    "resultados": 14,
+    "costo": 205,
+    "gasto": 2867,
+    "moneda": "CLP"
   }
 ]
