@@ -4,8 +4,11 @@ on:
   schedule:
     # Semanal: viernes a las 23:59 UTC
     - cron: '59 23 * * 5'
-    # Mensual: día 30 a las 23:00 UTC
-    - cron: '0 23 30 * *'
+    # Mensual: día 1 a las 06:00 UTC. NO día 30 — ese día no existe en
+    # febrero, así que el reporte mensual se saltaba ese mes entero. El día
+    # 1 siempre existe y ya cerró el mes anterior completo, que es lo que
+    # usa la sección F29 (mesCalendarioAnterior en nicolas.mjs).
+    - cron: '0 6 1 * *'
   workflow_dispatch:
     inputs:
       modo:
@@ -28,7 +31,7 @@ jobs:
       - name: Generar reporte
         run: node services/nicolas/nicolas.mjs
         env:
-          NICOLAS_MODO: ${{ github.event.inputs.modo || (github.event.schedule == '0 23 30 * *' && 'mensual' || 'semanal') }}
+          NICOLAS_MODO: ${{ github.event.inputs.modo || (github.event.schedule == '0 6 1 * *' && 'mensual' || 'semanal') }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}

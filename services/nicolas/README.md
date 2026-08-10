@@ -28,6 +28,21 @@ de la organización).
 - `NICOLAS_SHEETS_TOKEN` — el TOKEN que pusiste en el Apps Script
 - `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `ANTHROPIC_API_KEY` — ya existen
 
+## IVA / F29 (8-ago-2026)
+
+El reporte mensual ahora incluye una sección con el IVA débito del RUT de
+Cóndor.ai, sumando los clientes de la agencia (`pagos`, solo en CLP) con lo
+que cobra Rat.IA por Flow (tabla `ingresos_ratia` — ver
+`supabase/migrations/ingresos_ratia.sql` y el Worker en
+`vigia-precios/cobro/`). No necesita secrets nuevos: usa los mismos
+`SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` de siempre.
+
+Se calcula por **mes calendario** (el que ya cerró), no por la ventana
+rolling de 30 días que usa el resto del reporte — el F29 es así. **No
+incluye el crédito fiscal** (compras/gastos): eso sigue siendo manual, con
+el contador. Nicolás no declara ni paga nada — solo deja los números
+calculados.
+
 ## Correr manualmente
 
 En GitHub Actions → "Nicolás — Reportes de ingresos" → Run workflow → elegir modo

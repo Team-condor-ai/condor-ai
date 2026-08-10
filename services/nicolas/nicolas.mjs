@@ -1,6 +1,6 @@
 // condor.ai · Nicolás — Reportes de ingresos semanales y mensuales
 // Semanal (viernes): lee pagos de la semana → Google Sheets (Apps Script) → link a Telegram
-// Mensual (día 30): consolida el mes → análisis Claude → Telegram
+// Mensual (día 1): consolida el mes que cerró → análisis Claude → Telegram
 //
 // Escribe en Google Sheets vía un Apps Script Web App (sin claves de servicio,
 // evita la política iam.disableServiceAccountKeyCreation de la organización).
@@ -58,6 +58,91 @@ function rangoFechas(dias) {
     desde: desde.toISOString().slice(0, 10),
     hasta: hasta.toISOString().slice(0, 10),
   };
+}
+
+// ── Mes calendario anterior (para el F29) ──────────────────────────
+// El F29 es por mes calendario, no por ventana rolling de 30 días (que es
+// lo que usa el resto de este reporte). Se calcula el mes que ya cerró del
+// todo, sea cual sea el día en que este job corra.
+function mesCalendarioAnterior() {
+  const hoy = new Date();
+  const finMesAnterior = new Date(hoy.getFullYear(), hoy.getMonth(), 0);
+  const inicioMesAnterior = new Date(finMesAnterior.getFullYear(), finMesAnterior.getMonth(), 1);
+  return {
+    desde: inicioMesAnterior.toISOString().slice(0, 10),
+    hasta: finMesAnterior.toISOString().slice(0, 10),
+    etiqueta: inicioMesAnterior.toISOString().slice(0, 7),
+  };
+}
+
+// IVA chileno: los precios ya incluyen IVA, así que se saca con 19/119.
+function calcularIVA(montoBruto) {
+  const neto = Math.round(montoBruto / 1.19);
+  return { neto, iva: montoBruto - neto };
+}
+
+async function obtenerIngresosRatia(desde, hasta) {
+  return sget(
+    `ingresos_ratia?select=monto_bruto,tipo,plan,creado_en&creado_en=gte.${desde}T00:00:00&creado_en=lte.${hasta}T23:59:59`
+  );
+}
+
+// ── Sección F29: IVA débito consolidado del RUT de Cóndor.ai ──────
+// Rat.IA cobra por Flow a nombre de Cóndor.ai (mismo RUT), así que su IVA
+// se suma al de los clientes de la agencia — el F29 es por RUT, no por
+// producto. Ver docs/superpowers/specs/2026-08-08-ratia-cobro-onboarding-design.md
+// en el repo vigia-precios para el porqué de esa decisión.
+async function seccionF29() {
+  const { desde, hasta, etiqueta } = mesCalendarioAnterior();
+
+  const pagosCondor = (await obtenerPagos(desde, hasta)).filter(p => p.estado === "pagado");
+  // El IVA/F29 se calcula en CLP. Si hay pagos en otra moneda (ej. clientes
+  // de Colombia) NO se mezclan acá sin conversión — se excluyen y se
+  // avisan, para no ensuciar un número que va directo a una declaración de
+  // impuestos. Revisarlos con el contador aparte.
+  const pagosCondorCLP = pagosCondor.filter(p => (p.moneda || "CLP") === "CLP");
+  const excluidos = pagosCondor.length - pagosCondorCLP.length;
+
+  // Mientras la migración `supabase/migrations/ingresos_ratia.sql` no esté
+  // aplicada (o si Flow todavía no cobró nada), esta tabla no existe y
+  // Supabase responde con error. No puede tumbar toda la sección: sin esto,
+  // un F29 sin Rat.IA se convertiría en un F29 sin NADA, y el mes se pasa
+  // sin el número de la agencia tampoco.
+  let ingresosRatia = [];
+  let ratiaDisponible = true;
+  try {
+    ingresosRatia = await obtenerIngresosRatia(desde, hasta);
+  } catch (e) {
+    ratiaDisponible = false;
+    console.log("ingresos_ratia no disponible (¿migración sin aplicar?):", String(e).slice(0, 120));
+  }
+
+  const brutoCondor = pagosCondorCLP.reduce((s, p) => s + (p.monto || 0), 0);
+  const brutoRatia = ingresosRatia.reduce((s, p) => s + (p.monto_bruto || 0), 0);
+  const brutoTotal = brutoCondor + brutoRatia;
+  const { neto, iva } = calcularIVA(brutoTotal);
+
+  const filas = [
+    ["F29 — Cóndor.ai (incluye Rat.IA)", etiqueta],
+    [],
+    ["Origen", "Bruto (con IVA)"],
+    ["Clientes agencia (CLP)", String(brutoCondor)],
+    ["Rat.IA (Flow)", ratiaDisponible ? String(brutoRatia) : "sin datos"],
+    ["TOTAL BRUTO", String(brutoTotal)],
+    [],
+    ["Neto (bruto / 1.19)", String(neto)],
+    ["IVA débito fiscal (código 538 aprox.)", String(iva)],
+  ];
+  if (!ratiaDisponible) {
+    filas.push([], ["⚠️ No se pudo leer ingresos_ratia — el total NO incluye Rat.IA. Revisar que la migración esté aplicada antes de declarar."]);
+  }
+  if (excluidos) {
+    filas.push([], [`⚠️ ${excluidos} pago(s) en otra moneda excluidos del cálculo — revisar con el contador.`]);
+  }
+  filas.push([], ["⚠️ Falta el crédito fiscal (compras/gastos del mes) — no está en ninguna base de datos acá, agregarlo a mano o con el contador."]);
+
+  const url = await escribirReporte(`F29 ${etiqueta}`, filas);
+  return { etiqueta, brutoCondor, brutoRatia, brutoTotal, neto, iva, excluidos, ratiaDisponible, url };
 }
 
 async function obtenerPagos(desde, hasta) {
@@ -163,11 +248,28 @@ async function reporteMensual() {
     } catch (e) { console.log("Claude análisis falló:", String(e).slice(0, 80)); }
   }
 
+  // F29 del mes calendario que ya cerró (independiente de la ventana
+  // rolling de arriba, que es para el tablero de negocio, no para el SII).
+  let f29Msg = "";
+  try {
+    const f29 = await seccionF29();
+    f29Msg = `\n\n🧾 *Para el F29 de ${f29.etiqueta}*\n` +
+      `Bruto (agencia + Rat.IA): *${f29.brutoTotal.toLocaleString()}*\n` +
+      `Neto: ${f29.neto.toLocaleString()} · IVA débito: *${f29.iva.toLocaleString()}*\n` +
+      (f29.ratiaDisponible ? "" : "⚠️ Sin datos de Rat.IA — el total no la incluye.\n") +
+      (f29.excluidos ? `⚠️ ${f29.excluidos} pago(s) en otra moneda no incluidos — revisar aparte.\n` : "") +
+      `⚠️ Falta sumar el crédito fiscal (compras/gastos del mes).\n` +
+      `[Ver detalle →](${f29.url})`;
+  } catch (e) {
+    console.log("Sección F29 falló:", String(e).slice(0, 120));
+  }
+
   const msg = `📊 *Nicolás · Cierre del mes ${new Date().toISOString().slice(0, 7)}*\n\n` +
     (analisis ? analisis + "\n\n" : "") +
     `💰 Total cobrado: *${totalCobrado.toLocaleString()}*\n` +
     `⏳ Pendiente: ${totalPend.toLocaleString()}\n\n` +
-    `[Ver reporte completo →](${url})`;
+    `[Ver reporte completo →](${url})` +
+    f29Msg;
   await tg(msg);
 }
 
