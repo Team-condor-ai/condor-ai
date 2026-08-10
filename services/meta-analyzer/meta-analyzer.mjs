@@ -76,6 +76,20 @@ async function main() {
   const moneda = cuenta.currency || "?";
   const hoy = new Date();
 
+  // Memoria: reportes anteriores, cargada ANTES del loop porque cada
+  // campaña necesita filtrar su propia tendencia (ver más abajo).
+  //
+  // BUG corregido 10-ago-2026: el historial guardaba UNA sola entrada al día,
+  // sin decir de qué campaña era. Con más de una campaña activa a la vez (o
+  // una campaña vieja que quedó ACTIVE por error), las entradas se pisaban
+  // entre sí y la "tendencia" mezclaba días de campañas distintas — se veía
+  // saltar de "día 4" a "día 2" a "día 1" de una corrida a la siguiente, y
+  // hasta arrastraba una entrada de una campaña de junio ya pausada. Ahora
+  // cada entrada lleva `campana` y la tendencia se filtra a SOLO la campaña
+  // que se está analizando en cada iteración.
+  let historial = [];
+  try { historial = JSON.parse(readFileSync(LOG, "utf8")); } catch { /* */ }
+
   const resumen = [];
   for (const c of activas) {
     try {
@@ -118,25 +132,34 @@ async function main() {
         }).sort((x, y) => (y.resultados - x.resultados));
       } catch { /* */ }
 
+      // Tendencia SOLO de esta campaña: filtra el historial por nombre antes
+      // de armar la comparación, para no mezclar el "día 4" de esta campaña
+      // con el "día 2" de otra que también estuvo activa ese mismo día.
+      const propia = historial.filter(h => h.campana === c.name).slice(-6);
+      const tendencia_propia = propia.map(h => `- Día ${h.dia} (${h.fecha}): ${h.resultados} result. a ${h.moneda} ${h.costo}/u, gasto ${h.gasto}`).join("\n") || "(primer reporte de esta campaña)";
+
       resumen.push({
         campaña: c.name, dia_de_campaña: diaCampaña, fase_aprendizaje: resultados < 50 ? "EN APRENDIZAJE (no tocar aún)" : "fuera de aprendizaje",
         moneda, gasto: +spend.toFixed(0),
         frecuencia: +Number(d.frequency || 0).toFixed(2), cpm: +Number(d.cpm || 0).toFixed(0), ctr: +Number(d.ctr || 0).toFixed(2),
         resultados, tipo_resultado: convWA > 0 ? "conversaciones de WhatsApp" : "leads",
         costo_por_resultado: resultados > 0 ? +(spend / resultados).toFixed(0) : null,
-        anuncios,
+        anuncios, tendencia_propia,
       });
     } catch (e) { resumen.push({ campaña: c.name, error: String(e).slice(0, 120) }); }
   }
 
-  // Memoria: reportes anteriores (tendencia)
-  let historial = [];
-  try { historial = JSON.parse(readFileSync(LOG, "utf8")); } catch { /* */ }
-  const tendencia = historial.slice(-6).map(h => `- Día ${h.dia} (${h.fecha}): ${h.resultados} result. a ${h.moneda} ${h.costo}/u, gasto ${h.gasto}`).join("\n") || "(primer reporte)";
-
   // 2) Claude analiza como un socio cercano (humano, corto, sin tecnicismos)
   const horaCL = new Date(Date.now() - 4 * 3600000).toISOString().slice(11, 16); // UTC-4 Chile
-  const sys = `Eres el socio de marketing de condor.ai, agencia chilena que vende PÁGINAS WEB a dueños de negocio. La campaña que estás mirando apunta a COLOMBIA y manda a WhatsApp (Click-to-WhatsApp). Le escribes a Joaquín por Telegram para contarle cómo va. Hablas como una PERSONA REAL, cercano y simple, como un amigo que sabe de esto — NO como un robot ni un reporte corporativo.
+  // NO se hardcodea a "una campaña de WhatsApp a Colombia": puede haber más
+  // de una campaña activa a la vez, con objetivos distintos (leads a una
+  // landing, CTWA a WhatsApp, etc.) — cada objeto en `resumen` ya trae su
+  // propio `tipo_resultado` y `tendencia_propia`, así que el prompt describe
+  // el negocio en general y deja que los datos digan de qué es cada campaña.
+  // Corregido 10-ago-2026: el texto fijo asumía SIEMPRE la campaña CTWA de
+  // Colombia, y por eso el análisis quedaba mal cuando la campaña activa era
+  // en realidad la de leads a la landing (u otra distinta).
+  const sys = `Eres el socio de marketing de condor.ai, agencia chilena que vende PÁGINAS WEB a dueños de negocio, y a veces capta leads vía WhatsApp (Click-to-WhatsApp) en otras campañas. Le escribes a Joaquín por Telegram para contarle cómo va CADA campaña activa que te paso (mira "campaña" y "tipo_resultado" de cada una: dice si es leads a una landing o conversaciones de WhatsApp). Si hay más de una activa, sepáralas claramente en el mensaje — NUNCA mezcles sus números ni su tendencia. Hablas como una PERSONA REAL, cercano y simple, como un amigo que sabe de esto — NO como un robot ni un reporte corporativo.
 
 EL TIEMPO DE CAMPAÑA MANDA — LÉELO ANTES DE OPINAR:
 En los datos te llega "diaCampaña", que cuenta desde el PRIMER DÍA CON GASTO REAL (no desde que se creó). Tu diagnóstico depende completamente de ese número, así que dilo siempre y ajústate a él:
@@ -201,7 +224,7 @@ Felicita si va bien, no asustes.`;
     headers: { "x-api-key": AK, "anthropic-version": "2023-06-01", "content-type": "application/json" },
     body: JSON.stringify({
       model: "claude-haiku-4-5", max_tokens: 800, system: sys,
-      messages: [{ role: "user", content: `Datos de la campaña hoy:\n${JSON.stringify(resumen, null, 2)}\n\nTendencia de días anteriores (tu memoria):\n${tendencia}\n\nEscríbele a Joaquín el mensaje corto y humano por Telegram, con la decisión de qué hacer.` }],
+      messages: [{ role: "user", content: `Campañas activas hoy (cada una trae su propia "tendencia_propia" — es SU historial, no lo mezcles con el de otra):\n${JSON.stringify(resumen, null, 2)}\n\nEscríbele a Joaquín el mensaje corto y humano por Telegram, con la decisión de qué hacer en cada campaña.` }],
     }),
   });
   if (!resp.ok) { console.error("Claude HTTP", resp.status); return; }
@@ -211,11 +234,19 @@ Felicita si va bien, no asustes.`;
 
   await tg(`📊 *Campaña condor.ai* · ${horaCL} hrs\n\n${analisis}`);
 
-  // Guardar este reporte en la memoria (tendencia)
+  // Guardar UNA entrada POR CAMPAÑA (no solo la primera con resultados): así
+  // la tendencia de cada una se puede filtrar después por `campana` sin
+  // pisar la de las demás. `slice(-60)` ahora es por campaña en la práctica,
+  // porque el filtro de arriba (`h.campana === c.name`) ya descarta el resto.
   try {
-    const r0 = resumen.find(r => r.resultados != null) || resumen[0] || {};
-    historial.push({ fecha: hoy.toISOString().slice(0, 10), dia: r0.dia_de_campaña || null, resultados: r0.resultados || 0, costo: r0.costo_por_resultado || null, gasto: r0.gasto || 0, moneda: r0.moneda || "" });
-    writeFileSync(LOG, JSON.stringify(historial.slice(-60), null, 2) + "\n");
+    for (const r of resumen) {
+      if (r.error) continue;
+      historial.push({
+        campana: r.campaña, fecha: hoy.toISOString().slice(0, 10), dia: r.dia_de_campaña || null,
+        resultados: r.resultados || 0, costo: r.costo_por_resultado || null, gasto: r.gasto || 0, moneda: r.moneda || "",
+      });
+    }
+    writeFileSync(LOG, JSON.stringify(historial.slice(-200), null, 2) + "\n");
   } catch (e) { console.log("no se pudo guardar memoria:", String(e).slice(0, 80)); }
   console.log("OK análisis enviado");
 }

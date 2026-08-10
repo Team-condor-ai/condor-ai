@@ -56,7 +56,11 @@ const PLAN = {
   urlBase: "https://condorai.cl/colombia/",
   utm: { source: "meta", medium: "paid", campaign: "co_web_ago" },
   edadMin: 25,
-  edadMax: 60,
+  // Advantage+ no acepta un máximo bajo 65: con la audiencia automática, la
+  // edad es una sugerencia y Meta puede salirse si encuentra conversiones.
+  // Además conviene: muchos dueños de PYME pasan de los 60 y recortar ahí
+  // dejaba fuera a parte del público que mejor convierte.
+  edadMax: 65,
   // Colombia completo. Las ciudades grandes concentran el inventario igual, y
   // limitar a tres ciudades sube el CPM sin mejorar la calidad del lead.
   paises: ["CO"],
@@ -92,7 +96,17 @@ async function api(ruta, { metodo = "GET", campos, cuerpo } = {}) {
   }
   const r = await fetch(url, opciones);
   const j = await r.json();
-  if (j.error) throw new Error(`${ruta} → ${j.error.message}`);
+  if (j.error) {
+    // "Invalid parameter" a secas no sirve para nada: el detalle útil viene en
+    // error_user_msg y en error_data.blame_field_specs, que dice QUÉ campo.
+    const e = j.error;
+    const partes = [e.message];
+    if (e.error_user_title) partes.push(e.error_user_title);
+    if (e.error_user_msg) partes.push(e.error_user_msg);
+    const culpables = e.error_data?.blame_field_specs;
+    if (culpables) partes.push(`campo: ${JSON.stringify(culpables)}`);
+    throw new Error(`${ruta} → ${partes.join(" · ")}`);
+  }
   return j;
 }
 
@@ -250,14 +264,31 @@ async function main() {
     process.exit(1);
   }
 
+  /* Reutiliza lo que ya exista con el mismo nombre.
+     Crear anuncios falla por motivos ajenos al script (la app en modo
+     desarrollo, un creativo rechazado, la sesión caída a mitad de subida) y
+     sin esto cada reintento dejaba otra campaña vacía en la cuenta. */
+  const existentes = await api(`${AD_ACCOUNT}/campaigns`, {
+    campos: "id,name,status",
+  }).then((r) => (r.data ?? []).filter((c) => c.name === PLAN.nombre));
+
+  let campana = existentes[0];
+  if (campana) {
+    console.log(`\n· Reutilizando campaña ${campana.id} que ya existía`);
+  } else {
   // 1 · Campaña
-  const campana = await api(`${AD_ACCOUNT}/campaigns`, {
+  campana = await api(`${AD_ACCOUNT}/campaigns`, {
     cuerpo: {
       name: PLAN.nombre,
       objective: "OUTCOME_LEADS",
       status: "PAUSED",
       special_ad_categories: "[]",
       buying_type: "AUCTION",
+      // Obligatorio desde 2026 cuando el presupuesto vive en el conjunto y no
+      // en la campaña. En false: acá hay UN solo conjunto, así que no hay con
+      // quién compartir y activarlo solo abre la puerta a que Meta mueva plata
+      // si algún día se agrega otro.
+      is_adset_budget_sharing_enabled: "false",
     },
   });
   console.log(`\n✓ Campaña ${campana.id} (EN PAUSA)`);
@@ -282,10 +313,22 @@ async function main() {
     },
   });
   console.log(`✓ Conjunto ${conjunto.id} · ${diarioMinimo} ${cuenta.currency}/día · optimiza por Lead`);
+  }
+
+  // Anuncios que ya existen: no se repiten al reintentar.
+  const yaCreados = new Set(
+    await api(`${conjunto.id}/ads`, { campos: "name" })
+      .then((r) => (r.data ?? []).map((a) => a.name))
+      .catch(() => []),
+  );
 
   // 3 · Un anuncio por creativo, cada uno con SU url etiquetada.
   for (let i = 0; i < creativos.length; i++) {
     const c = creativos[i];
+    if (yaCreados.has(`${i + 1} · ${c.nombre}`)) {
+      console.log(`  · Anuncio ${i + 1} ya existía, se salta`);
+      continue;
+    }
     const link = urlDeCreativo(i + 1);
     const mensaje = COPY.cuerpos[i % COPY.cuerpos.length];
 
