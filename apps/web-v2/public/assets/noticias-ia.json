@@ -1,17 +1,17 @@
 {
-  "fecha": "2026-08-03",
+  "fecha": "2026-08-10",
   "noticias": [
     {
-      "titular": "IA rompe ecuaciones matemáticas que décadas de humanos no pudieron resolver",
-      "url": "/noticias-ia/el-avance-matematico-como-la-ia-acaba-de-cambiar-e/"
+      "titular": "Google Reorganiza Su Liderazgo en IA para Recuperar Ventaja Competitiva",
+      "url": "/noticias-ia/google-reorganiza-su-liderazgo-en-ia-y-centraliza-/"
     },
     {
-      "titular": "California obliga a IA a etiquetar contenido sintético o pagar $5k diarios",
-      "url": "/noticias-ia/nueva-ley-californiana-en-ia-transparencia-obligat/"
+      "titular": "La UE Activa Nuevas Reglas de Transparencia en IA: Lo Que Todo Dueño Debe Saber",
+      "url": "/noticias-ia/union-europea-obliga-a-sistemas-de-ia-a-identifica/"
     },
     {
-      "titular": "1,100 empleados de OpenAI, Google, Meta piden frenar la IA descontrolada",
-      "url": "/noticias-ia/la-rebelion-interna-como-los-mejores-talentos-de-i/"
+      "titular": "Meta Lanza Muse Code: Asistente de IA para Desarrolladores que Acelera Proyectos",
+      "url": "/noticias-ia/meta-libera-muse-code-su-herramienta-de-ia-para-au/"
     }
   ]
 }
