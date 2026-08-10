@@ -3,147 +3,189 @@
 <head>
   <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Portal de clientes · condor.ai</title>
-  <meta name="theme-color" content="#05081a" />
+  <meta name="theme-color" content="#071431" />
   <link rel="icon" type="image/png" href="/assets/favicon.png" /><link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     /* =====================================================================
-       Portal de clientes · condor.ai — rediseño "liquid glass" (premium).
-       Página autónoma: NO depende de /assets/styles.css. Tokens propios,
-       tema noche, sin emojis. Toda la lógica (IDs/clases) queda intacta.
+       Portal de clientes · condor.ai
+       Sistema visual portado del PANEL ADMIN DE VECI (tema navy):
+       apps/web-admin/app/globals.css → scope `.admin-theme`.
+       Los nombres de clase NO cambian: el JS de más abajo depende de ellos.
+
+       Qué se trajo tal cual de Veci: los tokens navy, el canvas de radiales
+       fijos, la tarjeta glass, el botón primario, el input con anillo azure,
+       los badges, la etiqueta micro en mayúsculas, el tracking por tamaño y
+       las curvas/duraciones de movimiento.
+
+       Qué se sacó del portal viejo, a propósito: las tres auroras animadas,
+       el barrido de luz de 7,5 s y el grano. Ninguno existe en el sistema de
+       Veci, y el barrido rompía su regla dura — una animación de UI se queda
+       bajo 300 ms.
        ===================================================================== */
     :root{
-      --bg:#05081a;
-      --ink:#eaf0ff; --ink-2:rgba(234,240,255,.62); --ink-3:rgba(234,240,255,.40);
-      --blue:#4f7cff; --indigo:#6b4bff;
-      --glass:rgba(255,255,255,.055); --glass-2:rgba(255,255,255,.09);
-      --bd:rgba(255,255,255,.13); --bd-2:rgba(255,255,255,.22);
-      --ok:#34d399; --warn:#fbbf24; --danger:#fb7185;
-      --r:22px; --r-lg:30px;
-      --sf:-apple-system,"SF Pro Display","SF Pro Text",BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-      --mono:"SF Mono",ui-monospace,"Cascadia Mono","Roboto Mono",Menlo,monospace;
-      --shadow:0 30px 80px -30px rgba(2,6,30,.85), 0 8px 30px -12px rgba(2,6,30,.6);
-      --ring:0 0 0 4px rgba(79,124,255,.22);
+      /* ── Tokens navy (Veci · .admin-theme) ── */
+      --navy-deepest:#03112e; --navy-deep:#0b1c43; --navy:#14264a;
+      --navy-mid:#253c72; --navy-bright:#3a5a97;
+      --azure:#6ea8f0; --azure-soft:#b8e4ff;
+
+      --ink:#eaf1fb; --body:#c2d0e6; --muted:#8ea3c4;
+      --line:rgba(255,255,255,.10);
+      --accent:#9cc7ff;
+
+      --brand:#2f6fd0; --brand-deep:#16408f; --brand-text:#9cc7ff;
+      --brand-tint:rgba(110,168,240,.16);
+      --brand-glow:0 12px 26px rgba(20,50,120,.5), inset 0 1px 0 rgba(255,255,255,.18);
+
+      --ok:#86e29a; --warn:#f2cd7a; --danger:#ff9d84;
+
+      /* ── Radios ── */
+      --r-card:22px; --r-tile:16px; --r-btn:14px;
+
+      /* ── Tracking óptico: es específico del tamaño. Un letter-spacing
+            fijo queda mal en algún tamaño. ── */
+      --tr-display:-.022em; --tr-title:-.014em; --tr-section:-.006em;
+      --tr-body:0; --tr-micro:.01em; --tr-eyebrow:.08em;
+
+      /* ── Tipografía Apple (dirección oficial de Veci: NO Inter/Nunito) ── */
+      --font-display:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI Variable Display','Segoe UI',system-ui,sans-serif;
+      --font-body:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI Variable Text','Segoe UI',system-ui,sans-serif;
+      --mono:'SF Mono',ui-monospace,'Cascadia Mono','Roboto Mono',Menlo,monospace;
+
+      /* ── Motion: las easings nativas son muy débiles para movimiento
+            deliberado. Toda transición usa un token de acá. ── */
+      --ease-out:cubic-bezier(.23,1,.32,1);
+      --dur-press:160ms; --dur-pop:180ms; --dur-panel:240ms;
     }
     *{box-sizing:border-box}
-    html,body{margin:0}
+    html{-webkit-text-size-adjust:100%; background:#071431}
     body{
-      font-family:var(--sf); color:var(--ink); background:var(--bg);
-      min-height:100vh; -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
-      position:relative; overflow-x:hidden;
-    }
-    /* Fondo: profundidad noche + aurora condor que deriva lento (firma) */
-    .bg{position:fixed; inset:0; z-index:-2; overflow:hidden;
+      margin:0; font-family:var(--font-body); color:var(--ink);
+      letter-spacing:-.011em; min-height:100vh;
+      -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+      /* Luz ambiental navy detrás del vidrio. Fija: no deriva ni respira. */
       background:
-        radial-gradient(120% 80% at 50% -20%, #142b6e 0%, #0a1740 38%, #05081a 78%),
-        var(--bg);
+        radial-gradient(52% 40% at 100% -4%, rgba(58,90,151,.55), transparent 60%),
+        radial-gradient(46% 34% at -6% 4%, rgba(37,60,114,.5), transparent 58%),
+        radial-gradient(60% 46% at 104% 104%, rgba(11,28,67,.6), transparent 62%),
+        linear-gradient(160deg,#0d1f47,#071431 62%,#050f26);
+      background-attachment:fixed;
     }
-    .aura{position:absolute; border-radius:50%; filter:blur(90px); opacity:.5; will-change:transform}
-    .aura-1{width:46vw; height:46vw; left:-8vw; top:-6vw; background:radial-gradient(circle,#2747ff,transparent 65%); animation:drift1 26s ease-in-out infinite}
-    .aura-2{width:40vw; height:40vw; right:-10vw; top:18vh; background:radial-gradient(circle,#6b4bff,transparent 65%); opacity:.4; animation:drift2 32s ease-in-out infinite}
-    .aura-3{width:38vw; height:38vw; left:24vw; bottom:-14vw; background:radial-gradient(circle,#0bb3ff,transparent 68%); opacity:.28; animation:drift1 30s ease-in-out infinite reverse}
-    .grain{position:fixed; inset:0; z-index:-1; pointer-events:none; opacity:.05; mix-blend-mode:overlay;
-      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
-    @keyframes drift1{0%,100%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(4vw,3vh,0) scale(1.08)}}
-    @keyframes drift2{0%,100%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(-3vw,-4vh,0) scale(1.1)}}
+    a{color:inherit; text-decoration:none}
+    h1,h2,h3{margin:0; font-family:var(--font-display); font-weight:700; color:var(--ink); text-wrap:balance}
+    h1{letter-spacing:var(--tr-display); line-height:1.08}
+    h3{letter-spacing:var(--tr-section); line-height:1.25}
+    ::selection{background:rgba(110,168,240,.35); color:#fff}
+    :where(a,button,input):focus-visible{outline:3px solid var(--azure); outline-offset:2px}
 
-    a{color:inherit}
-    .grad-tx{background:linear-gradient(120deg,#8aa6ff,#c4b4ff); -webkit-background-clip:text; background-clip:text; color:transparent}
-    .muted{color:var(--ink-2); font-size:.92rem; line-height:1.55}
-    .lnk{color:#9db4ff; text-decoration:none; font-weight:550; cursor:pointer; transition:color .2s}
-    .lnk:hover{color:#c4d2ff}
+    /* Scrollbars integrados al navy: el gris del tema claro se lee como una
+       franja pegada al borde y parece un fallo. */
+    *{scrollbar-width:thin; scrollbar-color:rgba(255,255,255,.16) transparent}
+    *::-webkit-scrollbar{width:10px; height:10px}
+    *::-webkit-scrollbar-thumb{background:rgba(255,255,255,.14); border:3px solid transparent; background-clip:content-box; border-radius:999px}
+    *::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.26); background-clip:content-box}
 
-    /* Topbar liquid glass */
+    .grad-tx{background:linear-gradient(135deg,var(--azure),var(--azure-soft)); -webkit-background-clip:text; background-clip:text; color:transparent}
+    .muted{color:var(--muted); font-size:.95rem; line-height:1.55}
+    .lnk{color:var(--brand-text); text-decoration:none; font-weight:600; cursor:pointer; transition:color var(--dur-press) var(--ease-out)}
+    .lnk:hover{color:var(--azure-soft)}
+
+    /* Topbar — calcada de .admin-topbar, fija para una página de una sola vista */
     .topbar{position:fixed; top:0; left:0; right:0; z-index:50;
-      background:rgba(10,16,38,.55); backdrop-filter:blur(22px) saturate(160%); -webkit-backdrop-filter:blur(22px) saturate(160%);
+      background:rgba(10,26,63,.72); backdrop-filter:blur(20px) saturate(1.6); -webkit-backdrop-filter:blur(20px) saturate(1.6);
       border-bottom:1px solid rgba(255,255,255,.08)}
-    .topbar-in{max-width:680px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; padding:15px 22px}
+    .topbar-in{max-width:680px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; padding:14px 22px}
     .topbar img{height:24px; filter:brightness(0) invert(1); opacity:.92}
 
-    .portal-wrap{max-width:680px; margin:0 auto; padding:128px 22px 80px}
+    .portal-wrap{max-width:680px; margin:0 auto; padding:112px 22px 72px}
+    h1{font-size:32px; margin:0 0 8px}
 
-    h1{font-size:2.1rem; line-height:1.08; letter-spacing:-.02em; font-weight:680; margin:0 0 8px}
+    /* ---- Tarjeta (Veci .admin-theme .card) ---- */
+    .pcard{position:relative;
+      background:rgba(21,38,74,.55);
+      backdrop-filter:blur(20px) saturate(1.5); -webkit-backdrop-filter:blur(20px) saturate(1.5);
+      border:1px solid rgba(255,255,255,.09); border-radius:var(--r-card);
+      box-shadow:0 2px 6px rgba(0,0,0,.25), 0 18px 40px rgba(0,8,24,.4), inset 0 1px 0 rgba(255,255,255,.06);
+      padding:24px; color:var(--ink)}
 
-    /* ---- Liquid glass card (firma visual) ---- */
-    .pcard{position:relative; overflow:hidden;
-      background:var(--glass); border:1px solid var(--bd); border-radius:var(--r-lg);
-      backdrop-filter:blur(40px) saturate(180%); -webkit-backdrop-filter:blur(40px) saturate(180%);
-      box-shadow:var(--shadow), inset 0 1px 0 rgba(255,255,255,.18), inset 0 0 0 1px rgba(255,255,255,.02);
-      padding:34px;}
-    /* Brillo especular fijo en la esquina superior */
-    .pcard::before{content:""; position:absolute; inset:0; pointer-events:none; border-radius:inherit;
-      background:linear-gradient(135deg, rgba(255,255,255,.16) 0%, rgba(255,255,255,.04) 22%, transparent 46%);}
-    /* Barrido de luz lento que recorre el vidrio (única animación compleja) */
-    .pcard::after{content:""; position:absolute; top:0; left:-60%; width:55%; height:100%; pointer-events:none;
-      background:linear-gradient(100deg, transparent, rgba(255,255,255,.10), transparent);
-      transform:skewX(-18deg); animation:sheen 7.5s ease-in-out infinite;}
-    @keyframes sheen{0%{left:-60%}38%,100%{left:130%}}
-    .pcard>*{position:relative; z-index:1}
+    /* ---- Badges navy: texto más brillante para AA sobre navy ---- */
+    .badge{display:inline-flex; align-items:center; gap:5px; padding:4px 12px; border-radius:999px;
+      font-family:var(--font-display); font-size:12.5px; font-weight:700; line-height:1.3; border:none}
+    .b-ok{background:rgba(110,205,120,.18); color:var(--ok)}
+    .b-aldia{background:rgba(110,168,240,.2); color:#9cc7ff}
+    .b-pend{background:rgba(255,122,96,.18); color:var(--danger)}
 
-    .badge{display:inline-flex; align-items:center; gap:6px; font-size:.76rem; font-weight:650; letter-spacing:.01em; padding:5px 12px; border-radius:999px; border:1px solid transparent}
-    .b-ok{background:rgba(52,211,153,.14); color:#7ff0c8; border-color:rgba(52,211,153,.35)}
-    .b-aldia{background:rgba(79,124,255,.16); color:#aebfff; border-color:rgba(79,124,255,.4)}
-    .b-pend{background:rgba(251,113,133,.14); color:#ffb0bd; border-color:rgba(251,113,133,.38)}
-
-    .frow{display:flex; justify-content:space-between; align-items:center; gap:12px; padding:16px 0; border-bottom:1px solid rgba(255,255,255,.08)}
+    /* Filas de datos: el mismo borde de .table td */
+    .frow{display:flex; justify-content:space-between; align-items:center; gap:12px;
+      padding:13px 0; border-bottom:1px solid rgba(255,255,255,.07)}
     .frow:last-child{border:none}
-    .frow b{font-weight:580; color:var(--ink)}
-    .frow span{color:var(--ink-2)}
+    .frow b{font-weight:600; color:var(--ink)}
+    .frow span{color:var(--body)}
 
-    label.muted{display:block; margin:2px 0 7px; font-weight:520}
-    .pinput{width:100%; border:1px solid var(--bd); border-radius:14px; padding:14px 16px;
-      font-family:var(--sf); font-size:1rem; margin:0 0 16px; color:var(--ink);
-      background:rgba(255,255,255,.045); transition:border-color .2s, box-shadow .2s, background .2s}
-    .pinput::placeholder{color:var(--ink-3)}
-    .pinput:focus{outline:none; border-color:var(--blue); background:rgba(255,255,255,.07); box-shadow:var(--ring)}
+    /* Etiqueta micro en mayúsculas (Veci .label) */
+    label.muted{display:block; margin:0 0 6px; font-family:var(--font-display);
+      font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:var(--tr-eyebrow); color:var(--muted)}
 
-    /* Botones */
-    .btn{display:inline-flex; align-items:center; justify-content:center; gap:9px;
-      min-height:52px; padding:0 24px; border:none; border-radius:16px; cursor:pointer;
-      font-family:var(--sf); font-size:1rem; font-weight:600; letter-spacing:-.01em;
-      transition:transform .18s ease, box-shadow .25s ease, background .25s, opacity .2s; text-decoration:none}
-    .btn:active{transform:translateY(0) scale(.99)}
-    .btn:disabled{opacity:.55; cursor:default}
-    .btn-grad{position:relative; color:#fff; overflow:hidden;
-      background:linear-gradient(135deg,#3b6cff 0%,#6b4bff 100%);
-      box-shadow:0 10px 26px -10px rgba(79,124,255,.7), inset 0 1px 0 rgba(255,255,255,.3)}
-    .btn-grad:hover:not(:disabled){transform:translateY(-2px); box-shadow:0 16px 34px -10px rgba(79,124,255,.85), inset 0 1px 0 rgba(255,255,255,.35)}
-    .btn-soft{background:var(--glass-2); border:1px solid var(--bd); color:var(--ink);
-      backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px)}
-    .btn-soft:hover:not(:disabled){background:rgba(255,255,255,.14); transform:translateY(-2px)}
-    .btn-wsp{background:rgba(37,211,102,.13); border:1px solid rgba(37,211,102,.42); color:#bff7d3}
-    .btn-wsp:hover:not(:disabled){background:rgba(37,211,102,.2); transform:translateY(-2px)}
+    .pinput{width:100%; background:rgba(255,255,255,.06); border:1.5px solid rgba(255,255,255,.14);
+      border-radius:12px; color:var(--ink); padding:12px 14px; font-size:15px; font-family:var(--font-body);
+      margin:0 0 14px; transition:border-color .14s var(--ease-out), box-shadow .14s var(--ease-out)}
+    .pinput::placeholder{color:#7d8fb0}
+    .pinput:focus{outline:none; border-color:var(--azure); box-shadow:0 0 0 4px rgba(110,168,240,.22)}
+
+    /* ---- Botones (Veci .admin-theme .btn / .btn-secondary) ---- */
+    .btn{display:inline-flex; align-items:center; justify-content:center; gap:8px;
+      border:none; border-radius:var(--r-btn); padding:12px 20px; cursor:pointer;
+      font-family:var(--font-display); font-size:14.5px; font-weight:700; letter-spacing:-.01em;
+      transition:transform var(--dur-press) var(--ease-out), box-shadow var(--dur-press) var(--ease-out), filter var(--dur-press) var(--ease-out)}
+    .btn:disabled{opacity:.5; cursor:not-allowed; box-shadow:none}
+    .btn-grad{background:linear-gradient(135deg,#3d80e6,var(--brand) 55%,var(--brand-deep)); color:#fff; box-shadow:var(--brand-glow)}
+    .btn-soft{background:rgba(255,255,255,.07); border:1.5px solid rgba(255,255,255,.16); color:var(--azure-soft); box-shadow:none}
+    /* Verde de WhatsApp: es de esa marca, no del sistema. Se queda. */
+    .btn-wsp{background:rgba(37,211,102,.13); border:1.5px solid rgba(37,211,102,.42); color:#bff7d3}
+    /* El movimiento de hover va SIEMPRE detrás de este media query: en táctil
+       el tap dispara :hover y el botón se queda levantado después de tocarlo. */
+    @media (hover:hover) and (pointer:fine){
+      .btn-grad:hover:not(:disabled){transform:translateY(-1px); filter:saturate(1.05) brightness(1.03);
+        box-shadow:0 16px 30px rgba(20,50,120,.55), inset 0 1px 0 rgba(255,255,255,.2)}
+      .btn-soft:hover:not(:disabled){background:rgba(255,255,255,.13); transform:translateY(-1px)}
+      .btn-wsp:hover:not(:disabled){background:rgba(37,211,102,.2); transform:translateY(-1px)}
+    }
+    .btn:active:not(:disabled){transform:translateY(0) scale(.98)}
 
     .icn{width:18px; height:18px; flex:none; stroke:currentColor; fill:none; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round}
 
-    /* Bloque "pago seguro" */
-    .seg-pay{display:flex; gap:14px; align-items:flex-start;
-      background:rgba(52,211,153,.07); border:1px solid rgba(52,211,153,.2); border-radius:16px; padding:15px 17px}
-    .seg-lock{flex:none; color:#7ff0c8; display:flex; align-items:center}
-    .seg-pay b{display:block; color:#9bf0d0; margin-bottom:3px; font-weight:600}
-    .seg-pay span{color:var(--ink-2); font-size:.9rem; line-height:1.5}
-    .trust-row{display:flex; flex-wrap:wrap; gap:7px 12px; align-items:center; justify-content:center; margin-top:16px; color:var(--ink-3); font-size:.8rem}
-    .trust-row b{font-weight:600; color:var(--ink-2)}
-    .seg-login{display:flex; align-items:center; gap:8px; justify-content:center; color:var(--ink-3); font-size:.82rem; margin-top:18px}
-    .seg-login svg{color:#9db4ff}
+    /* Bloque "pago seguro". El candado va en un tile de icono (Veci .tile-sky):
+       es el componente del sistema para esto, no un cuadro decorativo nuevo. */
+    .seg-pay{display:flex; gap:13px; align-items:flex-start;
+      background:rgba(110,168,240,.08); border:1px solid rgba(110,168,240,.22); border-radius:var(--r-tile); padding:14px 16px}
+    .seg-lock{width:44px; height:44px; flex:none; border-radius:var(--r-tile); display:grid; place-items:center;
+      background:rgba(110,168,240,.16); color:var(--azure-soft);
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.12), 0 4px 10px rgba(0,0,0,.25)}
+    .seg-pay b{display:block; color:var(--ink); margin-bottom:3px; font-family:var(--font-display); font-weight:700; font-size:15px}
+    .seg-pay span{color:var(--body); font-size:14px; line-height:1.5}
+    .trust-row{display:flex; flex-wrap:wrap; gap:6px 12px; align-items:center; justify-content:center;
+      margin-top:16px; color:var(--muted); font-size:12.5px}
+    .trust-row b{font-weight:700; color:var(--body)}
+    .seg-login{display:flex; align-items:center; gap:8px; justify-content:center; color:var(--muted); font-size:13px; margin-top:18px}
+    .seg-login svg{color:var(--azure)}
 
-    /* Spinner de carga (reemplaza "Cargando…") */
-    .loader{display:flex; flex-direction:column; align-items:center; gap:14px; padding:40px 0; color:var(--ink-3)}
-    .spinner{width:34px; height:34px; border-radius:50%; border:2.5px solid rgba(255,255,255,.14); border-top-color:var(--blue); animation:spin .8s linear infinite}
+    /* Cifras: columnas de plata que no "bailan" */
+    .num{font-variant-numeric:tabular-nums; letter-spacing:-.02em}
+
+    .loader{display:flex; flex-direction:column; align-items:center; gap:14px; padding:40px 0; color:var(--muted)}
+    .spinner{width:32px; height:32px; border-radius:50%; border:2.5px solid rgba(255,255,255,.12); border-top-color:var(--azure); animation:spin .8s linear infinite}
     @keyframes spin{to{transform:rotate(360deg)}}
 
     @media (max-width:560px){
-      .portal-wrap{padding:108px 16px 64px} h1{font-size:1.8rem} .pcard{padding:26px}
+      .portal-wrap{padding:96px 16px 56px} h1{font-size:26px} .pcard{padding:20px}
     }
     @media (prefers-reduced-motion:reduce){
-      .aura,.pcard::after,.spinner{animation:none}
+      .spinner{animation:none}
+      *{transition-duration:.01ms !important}
     }
   </style>
 </head>
 <body>
-  <div class="bg"><div class="aura aura-1"></div><div class="aura aura-2"></div><div class="aura aura-3"></div></div>
-  <div class="grain"></div>
-
   <div class="topbar"><div class="topbar-in">
     <a href="/"><img src="/assets/logo.png" alt="condor.ai" /></a>
     <a class="lnk" href="/">&larr; Volver al sitio</a>
@@ -167,7 +209,7 @@
         <!-- Paso 2: código de 6 dígitos -->
         <div id="step-code" style="display:none">
           <p class="muted">Te enviamos un código a <b id="codeEmail" style="color:var(--ink)"></b>. Escríbelo aquí:</p>
-          <input class="pinput" id="code" type="text" inputmode="numeric" maxlength="8" placeholder="________" style="letter-spacing:.4em;text-align:center;font-size:1.3rem" />
+          <input class="pinput num" id="code" type="text" inputmode="numeric" maxlength="8" placeholder="________" style="letter-spacing:.4em;text-align:center;font-size:1.3rem" />
           <button class="btn btn-grad" style="width:100%" id="btnCode">Verificar código</button>
           <p class="muted" style="margin-top:16px;text-align:center"><a class="lnk" id="lnkBack">&larr; Volver</a></p>
         </div>
@@ -189,8 +231,8 @@
     <!-- DASHBOARD -->
     <div id="dash" style="display:none">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:22px">
-        <h1 style="font-size:1.9rem;margin:0">Hola</h1>
-        <button class="btn btn-soft" style="min-height:44px;font-size:.9rem;padding:0 18px" id="btnOut">Salir</button>
+        <h1 style="font-size:26px;margin:0">Hola</h1>
+        <button class="btn btn-soft" style="padding:10px 16px;font-size:13.5px" id="btnOut">Salir</button>
       </div>
       <div id="dashBody"></div>
     </div>
@@ -205,7 +247,7 @@
     const FUNCTIONS = SUPABASE_URL + "/functions/v1";
 
     // Ícono de candado reutilizable (sin emojis)
-    const LOCK_SVG = '<svg class="icn" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
+    const LOCK_SVG = '<svg class="icn" style="width:22px;height:22px" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
 
     // Botón inteligente: crea el cobro con el monto exacto del cliente
     window.pagar = async function(tipo){
@@ -268,17 +310,17 @@
         <div class="pcard" style="margin-bottom:18px">
           <div class="frow"><b>Negocio</b><span>${esc(c.negocio)||"—"}</span></div>
           <div class="frow"><b>Plan</b><span>${esc(c.plan)||"—"}</span></div>
-          <div class="frow"><b>Setup ${c.setup_monto?`· ${mon} ${c.setup_monto.toLocaleString()}`:""}</b>${badge(c.setup_estado)}</div>
-          <div class="frow"><b>Mensualidad ${c.mensual_monto?`· ${mon} ${c.mensual_monto.toLocaleString()}/mes`:""}</b>${badge(c.mensual_estado)}</div>
-          ${c.proximo_cobro?`<div class="frow"><b>Próximo cobro</b><span>${esc(c.proximo_cobro)}</span></div>`:""}
+          <div class="frow"><b>Setup ${c.setup_monto?`· <span class="num">${mon} ${c.setup_monto.toLocaleString()}</span>`:""}</b>${badge(c.setup_estado)}</div>
+          <div class="frow"><b>Mensualidad ${c.mensual_monto?`· <span class="num">${mon} ${c.mensual_monto.toLocaleString()}</span>/mes`:""}</b>${badge(c.mensual_estado)}</div>
+          ${c.proximo_cobro?`<div class="frow"><b>Próximo cobro</b><span class="num">${esc(c.proximo_cobro)}</span></div>`:""}
           ${c.web_url?`<div class="frow"><b>Tu sitio</b><a class="lnk" href="${esc(c.web_url)}" target="_blank" rel="noopener">Ver web →</a></div>`:""}
         </div>
         ${(setupBtn||mensualBtn||paypalBtn)?`<div class="pcard">
           <div class="seg-pay"><span class="seg-lock">${LOCK_SVG}</span><div><b>Pago 100% seguro</b><span>Procesado por Mercado Pago. Los datos de tu tarjeta viajan cifrados — nosotros nunca los vemos ni los guardamos.</span></div></div>
           <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:16px">${setupBtn}${mensualBtn}${paypalBtn}</div>
           <div class="trust-row"><span>Cifrado SSL</span><span>·</span><span><b>Mercado Pago</b></span><span>·</span><span>Comprobante al instante</span></div>
-        </div>`:`<div class="pcard"><p>Estás al día. Gracias por confiar en condor.ai.</p></div>`}
-        <div class="pcard" id="histCard" style="margin-top:18px"><h3 style="font-size:1.05rem;margin:0 0 6px">Historial de pagos</h3><p class="muted" id="histBody">Cargando…</p></div>
+        </div>`:`<div class="pcard"><p style="margin:0">Estás al día. Gracias por confiar en condor.ai.</p></div>`}
+        <div class="pcard" id="histCard" style="margin-top:18px"><h3 style="font-size:18px;margin:0 0 6px">Historial de pagos</h3><p class="muted" id="histBody">Cargando…</p></div>
         <p class="muted" style="text-align:center;margin-top:18px">¿Dudas? <a class="lnk" href="https://wa.me/56988989824" target="_blank" rel="noopener">Escríbenos por WhatsApp</a></p>`;
 
       // Historial de pagos + comprobantes
@@ -288,7 +330,7 @@
       if(!pagos || !pagos.length){ hb.textContent = "Aún no tienes pagos registrados."; }
       else {
         window.__pagos = pagos;
-        hb.innerHTML = pagos.map(p=>`<div class="frow"><div><b>${p.tipo==="mensual"?"Mensualidad":"Setup"}</b> · ${mon} ${(p.monto||0).toLocaleString()}<br><span style="font-size:.82rem">${(p.creado_en||"").slice(0,10)}</span></div><div style="text-align:right">${badge(p.estado)}${p.estado==="pagado"?`<br><a class="lnk" style="font-size:.84rem" onclick="comprobante('${p.id}')">Descargar comprobante</a>`:""}</div></div>`).join("");
+        hb.innerHTML = pagos.map(p=>`<div class="frow"><div><b>${p.tipo==="mensual"?"Mensualidad":"Setup"}</b> · <span class="num">${mon} ${(p.monto||0).toLocaleString()}</span><br><span class="num" style="font-size:12.5px">${(p.creado_en||"").slice(0,10)}</span></div><div style="text-align:right">${badge(p.estado)}${p.estado==="pagado"?`<br><a class="lnk" style="font-size:13px" onclick="comprobante('${p.id}')">Descargar comprobante</a>`:""}</div></div>`).join("");
       }
     }
 
@@ -318,7 +360,7 @@
           <div class="row tot"><span>Total</span><span>${mon} ${(p.monto||0).toLocaleString()}</span></div>
         </div>
         <p class="muted" style="margin-top:30px">Gracias por confiar en condor.ai · contacto@teamcondorcl.com<br>Este documento es un comprobante interno de pago. La boleta/factura tributaria, si la requieres, se emite por separado.</p>
-        <button class="np" onclick="window.print()" style="margin-top:24px;padding:12px 22px;border:none;border-radius:10px;background:#2747ff;color:#fff;font-weight:700;cursor:pointer">Descargar / Imprimir PDF</button>
+        <button class="np" onclick="window.print()" style="margin-top:24px;padding:12px 22px;border:none;border-radius:10px;background:#2f6fd0;color:#fff;font-weight:700;cursor:pointer">Descargar / Imprimir PDF</button>
         </body></html>`);
       w.document.close();
     };
