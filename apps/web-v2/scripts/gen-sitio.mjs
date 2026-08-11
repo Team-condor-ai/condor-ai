@@ -264,14 +264,12 @@ const escribir = (ruta, html) => {
 console.log("Generando el sitio:");
 
 /* ── INICIO ─────────────────────────────────────────────────────────── */
-const VISTAZOS = [
-  ["01", "Productos", "Desarrollo de software a medida, agentes de inteligencia artificial y consultoría de implementación.", "/productos/"],
-  ["02", "Compañía", "Quiénes somos, cómo trabajamos y qué entregamos al terminar un proyecto.", "/compania/"],
-  ["03", "Equipo", "Las personas que van a trabajar en su proyecto, con nombre y responsabilidad.", "/equipo/"],
-  ["04", "Proceso", "Un método definido en tres etapas, con alcance escrito antes de comenzar.", "/proceso/"],
-  ["05", "Clientes", "Empresas que ya trabajaron con nosotros y qué dicen del resultado.", "/clientes/"],
-  ["06", "Contacto", "Reunión, correo o WhatsApp. Respondemos el mismo día hábil.", "/contacto/"],
-];
+/* El inicio muestra cada sección DE VERDAD —las fotos, los productos, las
+   personas— pero en versión corta, y cada una con su "Ver más". La idea es
+   que alguien que solo mira el inicio ya entienda qué hacemos y con quién
+   va a trabajar; la subpágina es para quien quiere el detalle. */
+const verMas = (url, texto) =>
+  `<a class="btn btn-linea" href="${url}">${texto}</a>`;
 
 escribir("rediseno/inicio.html", cab({
   titulo: "condor.ai — Software, agentes de IA y consultoría para empresas",
@@ -317,11 +315,100 @@ escribir("rediseno/inicio.html", cab({
 
 ${carrusel}
 
+<!-- COMPAÑÍA (resumen) -->
+<section class="seccion"><div class="wrap dos-col">
+  <div>
+    <div class="rotulo">01 — Compañía</div>
+    <h2 style="margin-top:20px">Construimos software que entra en operación</h2>
+  </div>
+  <div>
+    <p>Empresa chilena de servicios de software, fundada en 2024 y con operación en Chile y Colombia. Desarrollamos sistemas a medida, agentes de inteligencia artificial y acompañamos su adopción dentro de los procesos.</p>
+    <div class="hechos">
+      <div class="hecho"><b>2024</b><span>Año de fundación</span></div>
+      <div class="hecho"><b>Chile y Colombia</b><span>Operación regional</span></div>
+      <div class="hecho"><b>Equipo propio</b><span>Sin subcontratación</span></div>
+      <div class="hecho"><b>Soporte continuo</b><span>Posterior a la entrega</span></div>
+    </div>
+    <div class="hero-cta">${verMas("/compania/", "Ver más sobre la compañía")}</div>
+  </div>
+</div></section>
+
+<!-- PRODUCTOS (resumen) -->
 <section class="seccion"><div class="wrap">
-  <div class="rotulo">El sitio en seis páginas</div>
-  <h2 style="margin-top:20px;font-size:clamp(28px,4vw,48px);max-width:22ch">Cada sección tiene su propia página, con el detalle completo</h2>
+  <div class="cab">
+    <div><div class="rotulo">02 — Productos</div>
+      <h2 style="margin-top:20px">Tres líneas de servicio, cada una con equipo dedicado</h2></div>
+    ${verMas("/productos/", "Ver todos los productos")}
+  </div>
   <div class="vistazo">
-${VISTAZOS.map(([n, t, d, u]) => `    <a class="vista" href="${u}"><span class="n">${n}</span><h3>${t}</h3><p>${d}</p><span class="ir">Ver ${t.toLowerCase()}</span></a>`).join("\n")}
+${PRODUCTOS.map((p) => `    <a class="vista" href="/productos/"><span class="n">${p.n}</span><h3>${p.tit}</h3><p>${p.intro}</p><span class="ir">Ver detalle</span></a>`).join("\n")}
+  </div>
+</div></section>
+
+<!-- EQUIPO (resumen, con las fotos y las personas) -->
+<section class="seccion oscura"><div class="wrap">
+  <div class="cab">
+    <div><div class="rotulo">03 — Equipo</div>
+      <h2 style="margin-top:20px">Las personas responsables de su proyecto</h2></div>
+    ${verMas("/equipo/", "Ver el equipo completo")}
+  </div>
+${OFICINA}
+  <div class="equipo-grid">
+${tarjetasEquipo}
+  </div>
+</div></section>
+
+<!-- PROCESO (resumen) -->
+<section class="seccion"><div class="wrap">
+  <div class="cab">
+    <div><div class="rotulo">04 — Proceso</div>
+      <h2 style="margin-top:20px">Un método definido, sin sorpresas de alcance</h2></div>
+    ${verMas("/proceso/", "Ver el proceso completo")}
+  </div>
+  <div class="pasos" style="margin-top:0">
+    <div class="paso"><div class="n">ETAPA 01</div><h3>Levantamiento</h3>
+      <p>Una reunión inicial para entender el proceso. Se entrega un alcance escrito con supuestos, plazos y costo antes de comenzar.</p></div>
+    <div class="paso"><div class="n">ETAPA 02</div><h3>Desarrollo</h3>
+      <p>Avances revisables sobre el sistema real, no sobre maquetas. Las correcciones se incorporan antes de que sean costosas.</p></div>
+    <div class="paso"><div class="n">ETAPA 03</div><h3>Entrega y soporte</h3>
+      <p>Puesta en producción, documentación y capacitación. La propiedad y los accesos quedan a nombre del cliente.</p></div>
+  </div>
+</div></section>
+
+<!-- CLIENTES (resumen) -->
+<section class="seccion oscura"><div class="wrap">
+  <div class="cab">
+    <div><div class="rotulo">05 — Clientes</div>
+      <h2 style="margin-top:20px">Lo que dicen quienes ya trabajaron con nosotros</h2></div>
+    ${verMas("/clientes/", "Ver todas las referencias")}
+  </div>
+  <div class="testis">
+    <div class="testi"><p>“Entendieron el proceso antes de proponer una solución. El alcance quedó por escrito y se cumplió.”</p>
+      <div class="quien"><b>Gerencia de Operaciones</b><span>Distribución</span></div></div>
+    <div class="testi"><p>“El sistema entró en producción en el plazo comprometido y la transferencia al equipo interno fue ordenada.”</p>
+      <div class="quien"><b>Dirección</b><span>Retail</span></div></div>
+    <div class="testi"><p>“Nos indicaron qué procesos no convenía automatizar todavía. Esa recomendación evitó una inversión innecesaria.”</p>
+      <div class="quien"><b>Administración</b><span>Servicios inmobiliarios</span></div></div>
+  </div>
+</div></section>
+
+<!-- CONTACTO (resumen) -->
+<section class="seccion"><div class="wrap">
+  <div class="cab">
+    <div><div class="rotulo">06 — Contacto</div>
+      <h2 style="margin-top:20px">Tres formas de llegar a nosotros</h2></div>
+    ${verMas("/contacto/", "Ver todas las vías")}
+  </div>
+  <div class="vias">
+    <div class="via"><span class="n">VÍA 01</span><h3>Reunión</h3>
+      <p>Treinta minutos, por videollamada o presencial en Santiago. La forma más rápida de saber si podemos ayudar.</p>
+      <a class="btn btn-primario" href="/agendar" style="align-self:flex-start">Agendar una reunión</a></div>
+    <div class="via"><span class="n">VÍA 02</span><h3>Correo</h3>
+      <p>Para propuestas formales, bases de licitación o consultas con adjuntos. Respondemos el mismo día hábil.</p>
+      <a class="valor" href="mailto:${CORREO}">${CORREO}</a></div>
+    <div class="via"><span class="n">VÍA 03</span><h3>WhatsApp</h3>
+      <p>Para consultas breves. Es el mismo número de atención comercial de nuestras campañas.</p>
+      <a class="valor" href="https://wa.me/${WSP}" target="_blank" rel="noopener">${WSP_VISIBLE}</a></div>
   </div>
 </div></section>
 ` + cierre() + pie.replace("</body>", JS_COMUN + "</body>"));
