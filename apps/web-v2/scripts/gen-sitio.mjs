@@ -316,20 +316,18 @@ escribir("rediseno/inicio.html", cab({
 ${carrusel}
 
 <!-- COMPAÑÍA (resumen) -->
-<section class="seccion"><div class="wrap dos-col">
-  <div>
-    <div class="rotulo">01 — Compañía</div>
-    <h2 style="margin-top:20px">Construimos software que entra en operación</h2>
+<section class="seccion"><div class="wrap">
+  <div class="cab">
+    <div><div class="rotulo">01 — Compañía</div>
+      <h2 style="margin-top:20px">Construimos software que entra en operación</h2></div>
+    ${verMas("/compania/", "Ver más sobre la compañía")}
   </div>
-  <div>
-    <p>Empresa chilena de servicios de software, fundada en 2024 y con operación en Chile y Colombia. Desarrollamos sistemas a medida, agentes de inteligencia artificial y acompañamos su adopción dentro de los procesos.</p>
-    <div class="hechos">
-      <div class="hecho"><b>2024</b><span>Año de fundación</span></div>
-      <div class="hecho"><b>Chile y Colombia</b><span>Operación regional</span></div>
-      <div class="hecho"><b>Equipo propio</b><span>Sin subcontratación</span></div>
-      <div class="hecho"><b>Soporte continuo</b><span>Posterior a la entrega</span></div>
-    </div>
-    <div class="hero-cta">${verMas("/compania/", "Ver más sobre la compañía")}</div>
+  <p style="font-size:clamp(16px,1.6vw,19px);max-width:70ch">Empresa chilena de servicios de software, fundada en 2024 y con operación en Chile y Colombia. Desarrollamos sistemas a medida, agentes de inteligencia artificial y acompañamos su adopción dentro de los procesos de cada organización.</p>
+  <div class="cifras">
+    <div class="cifra"><b>2024</b><span>Año de fundación</span></div>
+    <div class="cifra"><b>Chile y Colombia</b><span>Operación regional</span></div>
+    <div class="cifra"><b>Equipo propio</b><span>Sin subcontratación</span></div>
+    <div class="cifra"><b>Soporte continuo</b><span>Posterior a la entrega</span></div>
   </div>
 </div></section>
 
@@ -340,8 +338,11 @@ ${carrusel}
       <h2 style="margin-top:20px">Tres líneas de servicio, cada una con equipo dedicado</h2></div>
     ${verMas("/productos/", "Ver todos los productos")}
   </div>
-  <div class="vistazo">
-${PRODUCTOS.map((p) => `    <a class="vista" href="/productos/"><span class="n">${p.n}</span><h3>${p.tit}</h3><p>${p.intro}</p><span class="ir">Ver detalle</span></a>`).join("\n")}
+  <div class="lista">
+${PRODUCTOS.map((p) => `    <article class="fila">
+      <div class="n">${p.n}</div>
+      <div><h3>${p.tit}</h3><p class="desc">${p.intro}</p></div>
+    </article>`).join("\n")}
   </div>
 </div></section>
 
@@ -353,8 +354,13 @@ ${PRODUCTOS.map((p) => `    <a class="vista" href="/productos/"><span class="n">
     ${verMas("/equipo/", "Ver el equipo completo")}
   </div>
 ${OFICINA}
-  <div class="equipo-grid">
-${tarjetasEquipo}
+  <div class="lista">
+${PERSONAS.map((p) => `    <article class="fila-persona">
+      <div class="retrato-s"><img src="/assets/${p.foto}" alt="${p.nombre}" loading="lazy" /></div>
+      <div><h3>${p.nombre}</h3><div class="rol">${p.rol}</div>
+        <p>${p.resumen}</p>
+        <a class="ver" href="/equipo/${p.slug}.html">Ver más</a></div>
+    </article>`).join("\n")}
   </div>
 </div></section>
 
@@ -365,13 +371,13 @@ ${tarjetasEquipo}
       <h2 style="margin-top:20px">Un método definido, sin sorpresas de alcance</h2></div>
     ${verMas("/proceso/", "Ver el proceso completo")}
   </div>
-  <div class="pasos" style="margin-top:0">
-    <div class="paso"><div class="n">ETAPA 01</div><h3>Levantamiento</h3>
-      <p>Una reunión inicial para entender el proceso. Se entrega un alcance escrito con supuestos, plazos y costo antes de comenzar.</p></div>
-    <div class="paso"><div class="n">ETAPA 02</div><h3>Desarrollo</h3>
-      <p>Avances revisables sobre el sistema real, no sobre maquetas. Las correcciones se incorporan antes de que sean costosas.</p></div>
-    <div class="paso"><div class="n">ETAPA 03</div><h3>Entrega y soporte</h3>
-      <p>Puesta en producción, documentación y capacitación. La propiedad y los accesos quedan a nombre del cliente.</p></div>
+  <div class="lista">
+    <article class="fila"><div class="n">01</div>
+      <div><h3>Levantamiento</h3><p class="desc">Una reunión inicial para entender el proceso y su contexto. Se entrega un alcance escrito con supuestos, plazos y costo antes de comenzar.</p></div></article>
+    <article class="fila"><div class="n">02</div>
+      <div><h3>Desarrollo</h3><p class="desc">Avances revisables de forma periódica sobre el sistema real, no sobre maquetas. Las correcciones se incorporan antes de que sean costosas.</p></div></article>
+    <article class="fila"><div class="n">03</div>
+      <div><h3>Entrega y soporte</h3><p class="desc">Puesta en producción, documentación y capacitación. La propiedad y los accesos quedan a nombre del cliente, con soporte posterior acordado.</p></div></article>
   </div>
 </div></section>
 
@@ -382,12 +388,12 @@ ${tarjetasEquipo}
       <h2 style="margin-top:20px">Lo que dicen quienes ya trabajaron con nosotros</h2></div>
     ${verMas("/clientes/", "Ver todas las referencias")}
   </div>
-  <div class="testis">
-    <div class="testi"><p>“Entendieron el proceso antes de proponer una solución. El alcance quedó por escrito y se cumplió.”</p>
+  <div class="citas">
+    <div class="cita"><p>“Entendieron el proceso antes de proponer una solución. El alcance quedó por escrito y se cumplió.”</p>
       <div class="quien"><b>Gerencia de Operaciones</b><span>Distribución</span></div></div>
-    <div class="testi"><p>“El sistema entró en producción en el plazo comprometido y la transferencia al equipo interno fue ordenada.”</p>
+    <div class="cita"><p>“El sistema entró en producción en el plazo comprometido y la transferencia al equipo interno fue ordenada.”</p>
       <div class="quien"><b>Dirección</b><span>Retail</span></div></div>
-    <div class="testi"><p>“Nos indicaron qué procesos no convenía automatizar todavía. Esa recomendación evitó una inversión innecesaria.”</p>
+    <div class="cita"><p>“Nos indicaron qué procesos no convenía automatizar todavía. Esa recomendación evitó una inversión innecesaria.”</p>
       <div class="quien"><b>Administración</b><span>Servicios inmobiliarios</span></div></div>
   </div>
 </div></section>
@@ -399,16 +405,16 @@ ${tarjetasEquipo}
       <h2 style="margin-top:20px">Tres formas de llegar a nosotros</h2></div>
     ${verMas("/contacto/", "Ver todas las vías")}
   </div>
-  <div class="vias">
-    <div class="via"><span class="n">VÍA 01</span><h3>Reunión</h3>
-      <p>Treinta minutos, por videollamada o presencial en Santiago. La forma más rápida de saber si podemos ayudar.</p>
-      <a class="btn btn-primario" href="/agendar" style="align-self:flex-start">Agendar una reunión</a></div>
-    <div class="via"><span class="n">VÍA 02</span><h3>Correo</h3>
-      <p>Para propuestas formales, bases de licitación o consultas con adjuntos. Respondemos el mismo día hábil.</p>
-      <a class="valor" href="mailto:${CORREO}">${CORREO}</a></div>
-    <div class="via"><span class="n">VÍA 03</span><h3>WhatsApp</h3>
-      <p>Para consultas breves. Es el mismo número de atención comercial de nuestras campañas.</p>
-      <a class="valor" href="https://wa.me/${WSP}" target="_blank" rel="noopener">${WSP_VISIBLE}</a></div>
+  <div class="lista">
+    <article class="fila"><div class="n">01</div>
+      <div><h3>Reunión</h3><p class="desc">Treinta minutos, por videollamada o presencial en nuestra oficina en Santiago. Es la forma más rápida de saber si podemos ayudar.</p>
+      <a class="btn btn-primario" href="/agendar" style="margin-top:16px">Agendar una reunión</a></div></article>
+    <article class="fila"><div class="n">02</div>
+      <div><h3>Correo</h3><p class="desc">Para propuestas formales, bases de licitación o consultas que requieran adjuntos. Respondemos el mismo día hábil.</p>
+      <a class="valor" href="mailto:${CORREO}">${CORREO}</a></div></article>
+    <article class="fila"><div class="n">03</div>
+      <div><h3>WhatsApp</h3><p class="desc">Para consultas breves. Es el mismo número de atención comercial que usamos en nuestras campañas.</p>
+      <a class="valor" href="https://wa.me/${WSP}" target="_blank" rel="noopener">${WSP_VISIBLE}</a></div></article>
   </div>
 </div></section>
 ` + cierre() + pie.replace("</body>", JS_COMUN + "</body>"));

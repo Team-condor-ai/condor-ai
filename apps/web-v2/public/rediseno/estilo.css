@@ -293,3 +293,152 @@ p{margin:0;line-height:1.65;color:var(--ink-2)}
   :root{--linea:#b9c2d4;--linea-2:#8f9ab3;--ink-2:#26314f;--ink-3:#525e7d;--on-navy-2:#d3ddf7}
   .persona,.testi{border-color:rgba(255,255,255,.32)}
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   Filas verticales — el patrón del INICIO
+   ──────────────────────────────────────────────────────────────────────
+   El inicio es un resumen que se lee de arriba abajo, así que su contenido
+   va en filas a ancho completo separadas por una regla de 1px, no en
+   tarjetas dentro de una cuadrícula. Con cuadrícula, tres columnas de
+   texto corto se leen como una tabla y obligan al ojo a saltar en zigzag;
+   en fila, cada ítem tiene el ancho que necesita y el orden es evidente.
+
+   Las cuadrículas siguen usándose en las SUBPÁGINAS, donde el contenido es
+   comparable entre sí y sí conviene verlo en paralelo.
+   ══════════════════════════════════════════════════════════════════════ */
+.lista{border-top:1px solid var(--linea);margin-top:34px}
+.oscura .lista{border-top-color:rgba(255,255,255,.12)}
+.fila{display:grid;grid-template-columns:56px minmax(0,1fr) minmax(0,300px);
+  gap:clamp(18px,3vw,44px);align-items:start;padding:clamp(24px,3.2vw,38px) 0;
+  border-bottom:1px solid var(--linea)}
+.oscura .fila{border-bottom-color:rgba(255,255,255,.12)}
+.fila .n{font-family:var(--display);font-size:13px;font-weight:700;letter-spacing:.08em;
+  color:var(--ink-3);padding-top:6px}
+.oscura .fila .n{color:var(--on-navy-3)}
+.fila h3{font-size:clamp(19px,2.1vw,24px)}
+.fila .desc{margin-top:10px;font-size:15.5px;max-width:62ch}
+.fila .lado{font-size:14.5px;color:var(--ink-3);padding-top:6px}
+.oscura .fila .lado{color:var(--on-navy-2)}
+.fila .lado b{display:block;font-family:var(--display);font-size:11.5px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--ink-3);margin-bottom:6px}
+.oscura .fila .lado b{color:var(--on-navy-3)}
+.fila .valor{font-family:var(--display);font-weight:700;font-size:17px;letter-spacing:-.02em;
+  word-break:break-word;display:inline-block;margin-top:10px}
+@media(max-width:860px){
+  .fila{grid-template-columns:1fr;gap:10px}
+  .fila .n{padding-top:0}
+  .fila .lado{padding-top:4px}
+}
+
+/* Fila de persona: retrato chico a la izquierda, en la misma vertical. */
+.fila-persona{display:grid;grid-template-columns:96px minmax(0,1fr) minmax(0,300px);
+  gap:clamp(18px,3vw,44px);align-items:start;padding:clamp(22px,3vw,34px) 0;
+  border-bottom:1px solid rgba(255,255,255,.12)}
+.fila-persona .retrato-s{width:96px;height:96px;border-radius:var(--r-lg);overflow:hidden;
+  background:var(--navy-3);border:1px solid rgba(255,255,255,.12)}
+.fila-persona .retrato-s img{width:100%;height:100%;object-fit:cover;object-position:center 20%}
+.fila-persona .rol{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--on-navy-3);margin-top:6px}
+.fila-persona p{margin-top:10px;font-size:15px}
+.fila-persona .ver{display:inline-flex;align-items:center;gap:8px;margin-top:12px;font-size:14px;
+  font-weight:700;color:#fff}
+.fila-persona .ver::after{content:"→"}
+@media(max-width:860px){
+  .fila-persona{grid-template-columns:72px minmax(0,1fr)}
+  .fila-persona .retrato-s{width:72px;height:72px}
+  .fila-persona .lado{grid-column:1/-1}
+}
+
+/* Cifras de la compañía, en línea y sin cajas. */
+.cifras{display:flex;flex-wrap:wrap;gap:clamp(24px,5vw,64px);margin-top:30px;
+  padding-top:26px;border-top:1px solid var(--linea)}
+.cifra b{display:block;font-family:var(--display);font-size:clamp(22px,2.6vw,30px);font-weight:800;
+  letter-spacing:-.03em;line-height:1.1}
+.cifra span{font-size:13.5px;color:var(--ink-3)}
+
+/* Citas del inicio: una debajo de otra, sin recuadro. */
+.citas{margin-top:34px;border-top:1px solid rgba(255,255,255,.12)}
+.cita{padding:clamp(22px,3vw,32px) 0;border-bottom:1px solid rgba(255,255,255,.12);
+  display:grid;grid-template-columns:minmax(0,1fr) minmax(0,260px);gap:clamp(18px,3vw,44px);
+  align-items:start}
+.cita p{font-size:clamp(16px,1.7vw,19px);color:#fff;line-height:1.55;max-width:60ch}
+.cita .quien b{display:block;font-size:14px;color:#fff;font-weight:700}
+.cita .quien span{font-size:12.5px;color:var(--on-navy-3)}
+@media(max-width:860px){.cita{grid-template-columns:1fr;gap:12px}}
+
+/* ══════════════════════════════════════════════════════════════════════
+   NADA TABULADO — corrección del 11-ago-2026
+   ──────────────────────────────────────────────────────────────────────
+   Todos los bloques que eran cuadrículas con celdas y bordes de 1px se
+   leían como una tabla. Acá pasan a ser listas verticales: cada ítem a
+   ancho completo, separado del siguiente por una sola regla horizontal.
+   Se sobreescriben las reglas de más arriba a propósito, para no tener que
+   tocar el marcado de las diez páginas.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* Filas del inicio: número + contenido, sin columna lateral. */
+.fila{grid-template-columns:56px minmax(0,1fr)}
+.fila-persona{grid-template-columns:96px minmax(0,1fr)}
+@media(max-width:860px){.fila{grid-template-columns:1fr}}
+
+/* Cifras del hero: una línea, sin celdas ni marco. */
+.datos{display:flex;flex-wrap:wrap;gap:clamp(20px,4vw,44px);background:none;border:0;
+  border-top:1px solid var(--linea);border-radius:0;padding-top:20px;margin-top:20px}
+.dato{background:none;padding:0}
+
+/* Hechos de la compañía: lista vertical con una regla entre cada uno. */
+.hechos{display:block;background:none;border:0;border-top:1px solid var(--linea);
+  border-radius:0;margin-top:30px}
+.hecho{background:none;padding:18px 0;border-bottom:1px solid var(--linea);
+  display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 18px}
+.hecho b{font-size:clamp(18px,2vw,22px)}
+.hecho span{margin-top:0}
+
+/* Etapas del proceso: una debajo de otra. */
+.pasos{display:block;background:none;border:0;border-top:1px solid var(--linea);
+  border-radius:0;margin-top:34px}
+.paso{background:none !important;padding:clamp(22px,3vw,32px) 0;
+  border-bottom:1px solid var(--linea)}
+.oscura .pasos{border-top-color:rgba(255,255,255,.12)}
+.oscura .paso{border-bottom-color:rgba(255,255,255,.12)}
+.paso h3{margin:10px 0 8px}
+.paso p{max-width:70ch}
+
+/* Referencias: citas apiladas, sin recuadro. */
+.testis{display:block;border-top:1px solid rgba(255,255,255,.12);margin-top:34px}
+.testi{background:none;border:0;border-bottom:1px solid rgba(255,255,255,.12);
+  border-radius:0;padding:clamp(22px,3vw,32px) 0}
+.testi p{font-size:clamp(16px,1.7vw,19px);max-width:62ch}
+.testi .quien{border-top:0;padding-top:12px;margin-top:12px}
+
+/* Vías de contacto: una debajo de otra. */
+.vias{display:block;background:none;border:0;border-top:1px solid var(--linea);
+  border-radius:0;margin-top:8px}
+.via{background:none;padding:clamp(22px,3vw,32px) 0;border-bottom:1px solid var(--linea);
+  display:block}
+.via p{max-width:70ch;margin-top:10px}
+.via .valor,.via .btn{margin-top:16px}
+
+/* Tarjetas de personas en la subpágina: fila con retrato a la izquierda,
+   no una cuadrícula de tres columnas. */
+.equipo-grid{display:block;border-top:1px solid rgba(255,255,255,.12)}
+.persona{background:none;border:0;border-bottom:1px solid rgba(255,255,255,.12);
+  border-radius:0;display:grid;grid-template-columns:120px minmax(0,1fr);
+  gap:clamp(18px,3vw,36px);align-items:start;padding:clamp(22px,3vw,32px) 0}
+.persona .retrato{aspect-ratio:1/1;width:120px;border-radius:var(--r-lg);
+  border:1px solid rgba(255,255,255,.12)}
+.persona .txt{padding:0}
+.persona .mas{grid-template-rows:1fr}   /* en fila ya no hace falta ocultarlo */
+@media(hover:hover) and (pointer:fine){
+  .persona:hover{background:none;border-color:rgba(255,255,255,.24)}
+  .persona:hover .retrato img{transform:none}
+}
+@media(max-width:860px){
+  .persona{grid-template-columns:84px minmax(0,1fr)}
+  .persona .retrato{width:84px}
+}
+
+/* La cuadrícula de vistazo ya no se usa en el inicio; se neutraliza por si
+   quedara alguna referencia. */
+.vistazo{display:block;background:none;border:0;border-radius:0}
+.vista{background:none;padding:22px 0;border-bottom:1px solid var(--linea)}
