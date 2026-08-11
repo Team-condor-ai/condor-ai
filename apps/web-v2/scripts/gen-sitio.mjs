@@ -24,12 +24,31 @@ const WSP = "56988989824";                     // WhatsApp Business de las campa
 const WSP_VISIBLE = "+56 9 8898 9824";
 const CORREO = "contacto@teamcondorcl.com";
 
+
+/* Iconos de línea, en el propio archivo. Trazo de 1.5 y esquinas redondas:
+   a este tamaño, un icono relleno se convierte en una mancha y compite con
+   el titular en vez de acompañarlo. `currentColor` para que hereden el
+   color del bloque y funcionen igual sobre claro y sobre navy. */
+const ICO = {
+  codigo: '<path d="m8 6-6 6 6 6M16 6l6 6-6 6"/>',
+  agente: '<path d="M12 3a4 4 0 0 1 4 4v1h1a3 3 0 0 1 0 6h-1v1a4 4 0 0 1-4 4 4 4 0 0 1-4-4v-1H7a3 3 0 0 1 0-6h1V7a4 4 0 0 1 4-4Z"/><path d="M9.5 10.5h.01M14.5 10.5h.01"/>',
+  brujula: '<circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5.5-5.5 2 2-5.5 5.5-2Z"/>',
+  lupa: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
+  martillo: '<path d="M14 4 20 10 17 13 11 7 14 4Z"/><path d="m11 7-8 8v4h4l8-8"/>',
+  entrega: '<path d="M20 7 9 18l-5-5"/>',
+  calendario: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+  correo: '<rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>',
+  whatsapp: '<path d="M3.5 20.5 5 16a8 8 0 1 1 3 3l-4.5 1.5Z"/>',
+};
+const icono = (n, clase = "ico") =>
+  `<svg class="${clase}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICO[n]}</svg>`;
+
 const NAV = [
-  ["/productos/", "Productos"],
   ["/compania/", "Compañía"],
   ["/equipo/", "Equipo"],
-  ["/proceso/", "Proceso"],
   ["/clientes/", "Clientes"],
+  ["/proceso/", "Proceso"],
+  ["/productos/", "Productos"],
   ["/contacto/", "Contacto"],
 ];
 
@@ -139,15 +158,48 @@ const JS_COMUN = `
     });
   });
 
-  // Entrada al entrar en pantalla.
-  const piezas = document.querySelectorAll(".dos-col > *, .prod, .oficina-dos figure, .persona, .paso, .testi, .vista, .via, .cierre, .pie-cols");
-  if (quieto) { piezas.forEach(p => p.classList.add("vis")); }
-  else {
-    piezas.forEach(p => p.classList.add("rv"));
+  // Entrada al entrar en pantalla, ESCALONADA dentro de cada bloque.
+  // El retardo se calcula por posición dentro del grupo, no por posición en
+  // la página: si fuera global, el último bloque esperaría varios segundos.
+  // Tope de 3 pasos — más allá se percibe como lentitud, no como ritmo.
+  const grupos = document.querySelectorAll(".lista, .oficina-dos, .pasos, .testis, .citas, .vias, .equipo-grid, .cifras, .pie-cols");
+  const sueltos = document.querySelectorAll(".dos-col > *, .cierre");
+  const marcar = (el, i) => {
+    el.classList.add("rv");
+    el.style.transitionDelay = Math.min(i, 3) * 80 + "ms";
+  };
+  if (quieto) {
+    document.querySelectorAll(".rv").forEach(p => p.classList.add("vis"));
+  } else {
+    grupos.forEach(g => [...g.children].forEach(marcar));
+    sueltos.forEach(el => marcar(el, 0));
     const io = new IntersectionObserver((es) => {
       for (const e of es) if (e.isIntersecting) { e.target.classList.add("vis"); io.unobserve(e.target); }
     }, { rootMargin: "0px 0px -10% 0px", threshold: .08 });
-    piezas.forEach(p => io.observe(p));
+    document.querySelectorAll(".rv").forEach(p => io.observe(p));
+  }
+
+  // Las cifras cuentan hacia arriba al aparecer. Con movimiento reducido se
+  // muestran ya en su valor final: el número es el dato, la animación no.
+  const cifras = document.querySelectorAll("[data-contar]");
+  if (cifras.length && !quieto) {
+    const ioc = new IntersectionObserver((es) => {
+      for (const e of es) {
+        if (!e.isIntersecting) continue;
+        const el = e.target, fin = +el.dataset.contar;
+        const pre = el.dataset.pre || "", post = el.dataset.post || "";
+        const t0 = performance.now(), dur = 900;
+        const paso = (ahora) => {
+          const t = Math.min((ahora - t0) / dur, 1);
+          const suave = 1 - Math.pow(1 - t, 3);          // desacelera al final
+          el.textContent = pre + Math.round(fin * suave) + post;
+          if (t < 1) requestAnimationFrame(paso);
+        };
+        requestAnimationFrame(paso);
+        ioc.unobserve(el);
+      }
+    }, { threshold: .6 });
+    cifras.forEach(c => ioc.observe(c));
   }
 
   // Hero rotativo (solo en el inicio). Se detiene al pasar el ratón y al
@@ -187,17 +239,17 @@ const carrusel = `
 `;
 
 const PRODUCTOS = [
-  { n: "01", tit: "Desarrollo de software y sitios web",
+  { n: "01", ico: "codigo", tit: "Desarrollo de software y sitios web",
     intro: "Plataformas, portales y sitios corporativos desarrollados a medida, con foco en rendimiento, mantenibilidad y medición.",
     puntos: ["Análisis funcional y definición de arquitectura", "Desarrollo, pruebas y puesta en producción",
              "Dominio, código y accesos a nombre del cliente", "Instrumentación y métricas desde el primer día"],
     aplica: "Empresas que necesitan un sistema propio, no una plantilla configurada." },
-  { n: "02", tit: "Asistentes y agentes de IA",
+  { n: "02", ico: "agente", tit: "Asistentes y agentes de IA",
     intro: "Agentes conectados a los canales y sistemas que la empresa ya utiliza, capaces de atender, clasificar y ejecutar tareas de forma autónoma.",
     puntos: ["Atención continua en WhatsApp y canales web", "Integración con CRM, bases de datos y ERP",
              "Derivación a una persona cuando corresponde", "Registro auditable de cada interacción"],
     aplica: "Operaciones con alto volumen de consultas repetitivas." },
-  { n: "03", tit: "Consultoría e implementación de IA",
+  { n: "03", ico: "brujula", tit: "Consultoría e implementación de IA",
     intro: "Diagnóstico de procesos, definición de casos de uso con retorno medible e implementación efectiva. No entregamos un informe y nos retiramos.",
     puntos: ["Levantamiento y priorización de procesos", "Estimación de impacto antes de desarrollar",
              "Implementación y puesta en marcha", "Capacitación y transferencia al equipo interno"],
@@ -209,7 +261,7 @@ const PRODUCTOS = [
    clics para leer tres párrafos. Si el contenido cabe, se muestra. */
 const bloquesProducto = () => PRODUCTOS.map((p) => `
   <article class="fila">
-    <div class="n">${p.n}</div>
+    <div class="marca-fila">${icono(p.ico)}<span class="n">${p.n}</span></div>
     <div>
       <h3>${p.tit}</h3>
       <p class="desc">${p.intro}</p>
@@ -312,9 +364,9 @@ escribir("rediseno/inicio.html", cab({
   <div>
     <div class="hero-marco"><img src="/assets/oficina/oficina.webp" alt="Oficina de condor.ai" /></div>
     <div class="datos">
-      <div class="dato"><b>+40</b><span>proyectos entregados</span></div>
-      <div class="dato"><b>2</b><span>países en operación</span></div>
-      <div class="dato"><b>98%</b><span>entregas en plazo</span></div>
+      <div class="dato"><b data-contar="40" data-pre="+">+40</b><span>proyectos entregados</span></div>
+      <div class="dato"><b data-contar="2">2</b><span>países en operación</span></div>
+      <div class="dato"><b data-contar="98" data-post="%">98%</b><span>entregas en plazo</span></div>
     </div>
   </div>
 </div></section>
@@ -337,25 +389,10 @@ ${carrusel}
   </div>
 </div></section>
 
-<!-- PRODUCTOS (resumen) -->
-<section class="seccion"><div class="wrap">
-  <div class="cab">
-    <div><div class="rotulo">02 — Productos</div>
-      <h2 style="margin-top:20px">Tres líneas de servicio, cada una con equipo dedicado</h2></div>
-    ${verMas("/productos/", "Ver todos los productos")}
-  </div>
-  <div class="lista">
-${PRODUCTOS.map((p) => `    <article class="fila">
-      <div class="n">${p.n}</div>
-      <div><h3>${p.tit}</h3><p class="desc">${p.intro}</p></div>
-    </article>`).join("\n")}
-  </div>
-</div></section>
-
 <!-- EQUIPO (resumen, con las fotos y las personas) -->
 <section class="seccion oscura"><div class="wrap">
   <div class="cab">
-    <div><div class="rotulo">03 — Equipo</div>
+    <div><div class="rotulo">02 — Equipo</div>
       <h2 style="margin-top:20px">Las personas responsables de su proyecto</h2></div>
     ${verMas("/equipo/", "Ver el equipo completo")}
   </div>
@@ -370,27 +407,10 @@ ${PERSONAS.map((p) => `    <article class="fila-persona">
   </div>
 </div></section>
 
-<!-- PROCESO (resumen) -->
-<section class="seccion"><div class="wrap">
-  <div class="cab">
-    <div><div class="rotulo">04 — Proceso</div>
-      <h2 style="margin-top:20px">Un método definido, sin sorpresas de alcance</h2></div>
-    ${verMas("/proceso/", "Ver el proceso completo")}
-  </div>
-  <div class="lista">
-    <article class="fila"><div class="n">01</div>
-      <div><h3>Levantamiento</h3><p class="desc">Una reunión inicial para entender el proceso y su contexto. Se entrega un alcance escrito con supuestos, plazos y costo antes de comenzar.</p></div></article>
-    <article class="fila"><div class="n">02</div>
-      <div><h3>Desarrollo</h3><p class="desc">Avances revisables de forma periódica sobre el sistema real, no sobre maquetas. Las correcciones se incorporan antes de que sean costosas.</p></div></article>
-    <article class="fila"><div class="n">03</div>
-      <div><h3>Entrega y soporte</h3><p class="desc">Puesta en producción, documentación y capacitación. La propiedad y los accesos quedan a nombre del cliente, con soporte posterior acordado.</p></div></article>
-  </div>
-</div></section>
-
 <!-- CLIENTES (resumen) -->
 <section class="seccion oscura"><div class="wrap">
   <div class="cab">
-    <div><div class="rotulo">05 — Clientes</div>
+    <div><div class="rotulo">03 — Clientes</div>
       <h2 style="margin-top:20px">Lo que dicen quienes ya trabajaron con nosotros</h2></div>
     ${verMas("/clientes/", "Ver todas las referencias")}
   </div>
@@ -404,6 +424,38 @@ ${PERSONAS.map((p) => `    <article class="fila-persona">
   </div>
 </div></section>
 
+<!-- PROCESO (resumen) -->
+<section class="seccion"><div class="wrap">
+  <div class="cab">
+    <div><div class="rotulo">04 — Proceso</div>
+      <h2 style="margin-top:20px">Un método definido, sin sorpresas de alcance</h2></div>
+    ${verMas("/proceso/", "Ver el proceso completo")}
+  </div>
+  <div class="lista">
+    <article class="fila"><div class="marca-fila">${icono("lupa")}<span class="n">01</span></div>
+      <div><h3>Levantamiento</h3><p class="desc">Una reunión inicial para entender el proceso y su contexto. Se entrega un alcance escrito con supuestos, plazos y costo antes de comenzar.</p></div></article>
+    <article class="fila"><div class="marca-fila">${icono("martillo")}<span class="n">02</span></div>
+      <div><h3>Desarrollo</h3><p class="desc">Avances revisables de forma periódica sobre el sistema real, no sobre maquetas. Las correcciones se incorporan antes de que sean costosas.</p></div></article>
+    <article class="fila"><div class="marca-fila">${icono("entrega")}<span class="n">03</span></div>
+      <div><h3>Entrega y soporte</h3><p class="desc">Puesta en producción, documentación y capacitación. La propiedad y los accesos quedan a nombre del cliente, con soporte posterior acordado.</p></div></article>
+  </div>
+</div></section>
+
+<!-- PRODUCTOS (resumen) -->
+<section class="seccion"><div class="wrap">
+  <div class="cab">
+    <div><div class="rotulo">05 — Productos</div>
+      <h2 style="margin-top:20px">Tres líneas de servicio, cada una con equipo dedicado</h2></div>
+    ${verMas("/productos/", "Ver todos los productos")}
+  </div>
+  <div class="lista">
+${PRODUCTOS.map((p) => `    <article class="fila">
+      <div class="marca-fila">${icono(p.ico)}<span class="n">${p.n}</span></div>
+      <div><h3>${p.tit}</h3><p class="desc">${p.intro}</p></div>
+    </article>`).join("\n")}
+  </div>
+</div></section>
+
 <!-- CONTACTO (resumen) -->
 <section class="seccion"><div class="wrap">
   <div class="cab">
@@ -412,13 +464,13 @@ ${PERSONAS.map((p) => `    <article class="fila-persona">
     ${verMas("/contacto/", "Ver todas las vías")}
   </div>
   <div class="lista">
-    <article class="fila"><div class="n">01</div>
+    <article class="fila"><div class="marca-fila">${icono("calendario")}<span class="n">01</span></div>
       <div><h3>Reunión</h3><p class="desc">Treinta minutos, por videollamada o presencial en nuestra oficina en Santiago. Es la forma más rápida de saber si podemos ayudar.</p>
       <a class="btn btn-primario" href="/agendar" style="margin-top:16px">Agendar una reunión</a></div></article>
-    <article class="fila"><div class="n">02</div>
+    <article class="fila"><div class="marca-fila">${icono("correo")}<span class="n">02</span></div>
       <div><h3>Correo</h3><p class="desc">Para propuestas formales, bases de licitación o consultas que requieran adjuntos. Respondemos el mismo día hábil.</p>
       <a class="valor" href="mailto:${CORREO}">${CORREO}</a></div></article>
-    <article class="fila"><div class="n">03</div>
+    <article class="fila"><div class="marca-fila">${icono("whatsapp")}<span class="n">03</span></div>
       <div><h3>WhatsApp</h3><p class="desc">Para consultas breves. Es el mismo número de atención comercial que usamos en nuestras campañas.</p>
       <a class="valor" href="https://wa.me/${WSP}" target="_blank" rel="noopener">${WSP_VISIBLE}</a></div></article>
   </div>

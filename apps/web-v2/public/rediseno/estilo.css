@@ -537,3 +537,31 @@ p{margin:0;line-height:1.65;color:var(--ink-2)}
 .aplica{margin-top:16px;font-size:15px;color:var(--ink-3);max-width:62ch}
 .aplica b{font-family:var(--display);font-size:11.5px;letter-spacing:.12em;
   text-transform:uppercase;color:var(--ink-3);margin-right:8px}
+
+/* ── Iconos y marca de fila ─────────────────────────────────────────── */
+/* El icono va junto al número, en la misma columna: acompaña al bloque sin
+   pelearle el peso al titular. Hereda `currentColor`, así funciona igual
+   sobre papel y sobre navy sin una variante por tema. */
+.marca-fila{display:flex;flex-direction:column;gap:12px;align-items:flex-start}
+.ico{width:clamp(26px,2.6vw,34px);height:clamp(26px,2.6vw,34px);color:var(--azul);
+  flex:none;transition:transform .4s var(--ease)}
+.oscura .ico{color:var(--on-navy-2)}
+.marca-fila .n{font-family:var(--display);font-size:clamp(30px,4.2vw,54px);font-weight:800;
+  letter-spacing:-.05em;line-height:.9;color:transparent;
+  background:var(--grad);-webkit-background-clip:text;background-clip:text;opacity:.9}
+/* El icono entra dibujándose: llega un poco girado y se endereza. Es el
+   único movimiento que no es opacidad, y dura menos de 400 ms. */
+.rv .ico{transform:rotate(-8deg) scale(.86)}
+.rv.vis .ico{transform:none}
+@media(max-width:860px){
+  .marca-fila{flex-direction:row;align-items:center;gap:14px}
+}
+
+/* La cifra que cuenta necesita ancho estable, o el bloque salta mientras
+   sube el número. */
+.dato b[data-contar]{font-variant-numeric:tabular-nums}
+
+@media(prefers-reduced-motion:reduce){
+  .rv .ico,.rv.vis .ico{transform:none !important}
+  .rv{transition-delay:0ms !important}
+}

@@ -21,11 +21,11 @@
 <header class="topbar"><div class="wrap">
   <a href="/"><img class="logo" src="/assets/logo.png" alt="condor.ai" /></a>
   <nav class="menu">
-    <a href="/productos/">Productos</a>
     <a href="/compania/">Compañía</a>
     <a href="/equipo/">Equipo</a>
-    <a href="/proceso/">Proceso</a>
     <a href="/clientes/">Clientes</a>
+    <a href="/proceso/">Proceso</a>
+    <a href="/productos/">Productos</a>
     <a href="/contacto/" aria-current="page">Contacto</a>
   </nav>
   <a class="btn btn-primario" href="/agendar">Agendar una reunión</a>
@@ -119,15 +119,48 @@
     });
   });
 
-  // Entrada al entrar en pantalla.
-  const piezas = document.querySelectorAll(".dos-col > *, .prod, .oficina-dos figure, .persona, .paso, .testi, .vista, .via, .cierre, .pie-cols");
-  if (quieto) { piezas.forEach(p => p.classList.add("vis")); }
-  else {
-    piezas.forEach(p => p.classList.add("rv"));
+  // Entrada al entrar en pantalla, ESCALONADA dentro de cada bloque.
+  // El retardo se calcula por posición dentro del grupo, no por posición en
+  // la página: si fuera global, el último bloque esperaría varios segundos.
+  // Tope de 3 pasos — más allá se percibe como lentitud, no como ritmo.
+  const grupos = document.querySelectorAll(".lista, .oficina-dos, .pasos, .testis, .citas, .vias, .equipo-grid, .cifras, .pie-cols");
+  const sueltos = document.querySelectorAll(".dos-col > *, .cierre");
+  const marcar = (el, i) => {
+    el.classList.add("rv");
+    el.style.transitionDelay = Math.min(i, 3) * 80 + "ms";
+  };
+  if (quieto) {
+    document.querySelectorAll(".rv").forEach(p => p.classList.add("vis"));
+  } else {
+    grupos.forEach(g => [...g.children].forEach(marcar));
+    sueltos.forEach(el => marcar(el, 0));
     const io = new IntersectionObserver((es) => {
       for (const e of es) if (e.isIntersecting) { e.target.classList.add("vis"); io.unobserve(e.target); }
     }, { rootMargin: "0px 0px -10% 0px", threshold: .08 });
-    piezas.forEach(p => io.observe(p));
+    document.querySelectorAll(".rv").forEach(p => io.observe(p));
+  }
+
+  // Las cifras cuentan hacia arriba al aparecer. Con movimiento reducido se
+  // muestran ya en su valor final: el número es el dato, la animación no.
+  const cifras = document.querySelectorAll("[data-contar]");
+  if (cifras.length && !quieto) {
+    const ioc = new IntersectionObserver((es) => {
+      for (const e of es) {
+        if (!e.isIntersecting) continue;
+        const el = e.target, fin = +el.dataset.contar;
+        const pre = el.dataset.pre || "", post = el.dataset.post || "";
+        const t0 = performance.now(), dur = 900;
+        const paso = (ahora) => {
+          const t = Math.min((ahora - t0) / dur, 1);
+          const suave = 1 - Math.pow(1 - t, 3);          // desacelera al final
+          el.textContent = pre + Math.round(fin * suave) + post;
+          if (t < 1) requestAnimationFrame(paso);
+        };
+        requestAnimationFrame(paso);
+        ioc.unobserve(el);
+      }
+    }, { threshold: .6 });
+    cifras.forEach(c => ioc.observe(c));
   }
 
   // Hero rotativo (solo en el inicio). Se detiene al pasar el ratón y al
