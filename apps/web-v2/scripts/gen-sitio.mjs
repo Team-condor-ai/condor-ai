@@ -277,37 +277,79 @@ const carrusel = `
 `;
 
 
-/* Carrusel de sitios entregados, en coverflow.
-   Las capturas son de sitios reales que están en línea: se muestran en vez
-   de describirse, porque una captura convence más que un adjetivo. La
-   tarjeta del centro manda y las laterales se inclinan y se atenúan, así el
-   ojo sabe dónde mirar sin que haga falta ponerle un borde. */
+/* Carrusel por producto, en coverflow.
+   La tarjeta del centro manda y las laterales se alejan en Z, se inclinan y
+   se atenúan: la profundidad ordena la lectura sin necesidad de un marco que
+   grite cuál es la activa.
+
+   DISTINCIÓN QUE IMPORTA Y NO ES ESTÉTICA:
+   · SITIOS son capturas de sitios REALES que entregamos y están en línea. Se
+     presentan como trabajo propio porque lo son.
+   · CASOS_AGENTES y CASOS_CONSULTORIA usan fotos de Unsplash (licencia libre
+     para uso comercial). NO son capturas de nuestro trabajo, así que se
+     presentan como CASOS DE USO, no como entregas. Poner una foto de banco
+     de imágenes bajo el rótulo "lo que hemos hecho" sería mentir. */
 const SITIOS = [
-  { img: "ecommerce.webp",    nombre: "Tienda en línea",      tipo: "Comercio",
+  { img: "/assets/sitios/ecommerce.webp",    nombre: "Tienda en línea",      tipo: "Comercio",
     desc: "Catálogo, carro y pago en línea. Pensada para vender desde el teléfono." },
-  { img: "inmobiliario.webp", nombre: "Portal inmobiliario",  tipo: "Propiedades",
+  { img: "/assets/sitios/inmobiliario.webp", nombre: "Portal inmobiliario",  tipo: "Propiedades",
     desc: "Buscador con filtros, fichas de propiedad y contacto directo con el corredor." },
-  { img: "restaurante.webp",  nombre: "Sitio de restaurante", tipo: "Gastronomía",
+  { img: "/assets/sitios/restaurante.webp",  nombre: "Sitio de restaurante", tipo: "Gastronomía",
     desc: "Carta, reservas y ubicación. Carga rápido incluso con fotos grandes." },
-  { img: "servicios.webp",    nombre: "Sitio de servicios",   tipo: "Salud",
+  { img: "/assets/sitios/servicios.webp",    nombre: "Sitio de servicios",   tipo: "Salud",
     desc: "Servicios, equipo y agenda de horas. Diseñado para generar confianza." },
-  { img: "esencial.webp",     nombre: "Sitio esencial",       tipo: "Empresa",
+  { img: "/assets/sitios/esencial.webp",     nombre: "Sitio esencial",       tipo: "Empresa",
     desc: "La versión directa: quiénes son, qué hacen y cómo contactarlos." },
 ];
 
-const carruselSitios = () =>
-  '<div class="sitios" aria-label="Sitios que hemos entregado"><div class="sitios-pista">' +
-  SITIOS.map((x, i) =>
-    '<article class="sitio" data-i="' + i + '">' +
-      '<div class="captura"><img src="/assets/sitios/' + x.img + '" alt="' + x.nombre + '" loading="lazy" /></div>' +
-      '<div class="sitio-txt"><span class="sitio-tipo">' + x.tipo + '</span>' +
-      '<h4>' + x.nombre + '</h4><p>' + x.desc + '</p></div>' +
-    '</article>').join("") +
-  '</div><div class="sitios-puntos" role="tablist" aria-label="Elegir sitio">' +
-  SITIOS.map((x, i) =>
-    '<button class="s-punto" role="tab" aria-selected="' + (i === 0) + '" aria-label="' + x.nombre + '"></button>'
-  ).join("") +
-  '</div></div>';
+const CASOS_AGENTES = [
+  { img: "/assets/casos/agentes-1.jpg", nombre: "Atención en WhatsApp",     tipo: "Caso de uso",
+    desc: "El agente responde consultas frecuentes a cualquier hora y deriva a una persona cuando hace falta." },
+  { img: "/assets/casos/agentes-2.jpg", nombre: "Clasificación de entrada", tipo: "Caso de uso",
+    desc: "Cada mensaje se etiqueta por tipo y urgencia antes de llegar al equipo, sin lectura manual." },
+  { img: "/assets/casos/agentes-3.jpg", nombre: "Seguimiento automático",   tipo: "Caso de uso",
+    desc: "El agente retoma conversaciones que quedaron sin respuesta y avisa cuando alguien vuelve a escribir." },
+  { img: "/assets/casos/agentes-4.jpg", nombre: "Agenda de reuniones",      tipo: "Caso de uso",
+    desc: "Propone horarios disponibles, confirma y deja la reunión creada en el calendario del equipo." },
+  { img: "/assets/casos/agentes-5.jpg", nombre: "Integración con sistemas", tipo: "Caso de uso",
+    desc: "Consulta el CRM o el ERP en la misma conversación para responder con datos reales, no genéricos." },
+];
+
+const CASOS_CONSULTORIA = [
+  { img: "/assets/casos/consul-1.jpg", nombre: "Levantamiento de procesos", tipo: "Etapa",
+    desc: "Sesiones con quienes ejecutan el proceso todos los días, no solo con la gerencia." },
+  { img: "/assets/casos/consul-2.jpg", nombre: "Priorización con el cliente", tipo: "Etapa",
+    desc: "Se ordenan los casos por impacto y esfuerzo, y se decide en conjunto por dónde partir." },
+  { img: "/assets/casos/consul-3.jpg", nombre: "Estimación de impacto",     tipo: "Etapa",
+    desc: "Cuánto tiempo o costo libera cada caso, calculado antes de escribir una línea de código." },
+  { img: "/assets/casos/consul-4.jpg", nombre: "Implementación",            tipo: "Etapa",
+    desc: "No entregamos un informe y nos retiramos: dejamos el caso funcionando en la operación." },
+  { img: "/assets/casos/consul-5.jpg", nombre: "Capacitación del equipo",   tipo: "Etapa",
+    desc: "Transferencia al equipo interno para que pueda operar y ajustar sin depender de nosotros." },
+];
+
+const CARRUSELES = { codigo: SITIOS, agente: CASOS_AGENTES, brujula: CASOS_CONSULTORIA };
+const ETIQUETA = {
+  codigo: "Sitios que hemos entregado",
+  agente: "Casos de uso de agentes de IA",
+  brujula: "Etapas de una consultoría",
+};
+
+const carruselProducto = (clave) => {
+  const datos = CARRUSELES[clave];
+  return '<div class="sitios" aria-label="' + ETIQUETA[clave] + '"><div class="sitios-pista">' +
+    datos.map((x, i) =>
+      '<article class="sitio" data-i="' + i + '">' +
+        '<div class="captura"><img src="' + x.img + '" alt="' + x.nombre + '" loading="lazy" /></div>' +
+        '<div class="sitio-txt"><span class="sitio-tipo">' + x.tipo + '</span>' +
+        '<h4>' + x.nombre + '</h4><p>' + x.desc + '</p></div>' +
+      '</article>').join("") +
+    '</div><div class="sitios-puntos" role="tablist" aria-label="Elegir">' +
+    datos.map((x, i) =>
+      '<button class="s-punto" role="tab" aria-selected="' + (i === 0) + '" aria-label="' + x.nombre + '"></button>'
+    ).join("") +
+    '</div></div>';
+};
 
 const PRODUCTOS = [
   { n: "01", ico: "codigo", tit: "Desarrollo de software y sitios web",
@@ -337,7 +379,7 @@ const bloquesProducto = () => PRODUCTOS.map((p) => `
       <h3>${p.tit}</h3>
       <p class="desc">${p.intro}</p>
       <ul class="puntos-lista">${p.puntos.map((x) => `<li>${x}</li>`).join("")}</ul>
-      ${p.ico === "codigo" ? carruselSitios() : ""}
+      ${carruselProducto(p.ico)}
       <p class="aplica"><b>Aplica a</b> ${p.aplica}</p>
     </div>
   </article>`).join("");
@@ -523,7 +565,7 @@ ${PERSONAS.map((p) => `    <article class="fila-persona">
   <div class="lista">
 ${PRODUCTOS.map((p) => `    <article class="fila">
       <div class="marca-fila">${icono(p.ico)}<span class="n">${p.n}</span></div>
-      <div><h3>${p.tit}</h3><p class="desc">${p.intro}</p>${p.ico === "codigo" ? carruselSitios() : ""}</div>
+      <div><h3>${p.tit}</h3><p class="desc">${p.intro}</p>${carruselProducto(p.ico)}</div>
     </article>`).join("\n")}
   </div>
 </div></section>
