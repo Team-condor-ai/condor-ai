@@ -760,3 +760,23 @@ h1,h2{font-weight:800}
   .hero-grid > div:last-child .datos{margin-top:14px;padding-top:14px}
   .hero .rotulo{margin-top:4px}
 }
+
+/* ── Acceso al portal de clientes ───────────────────────────────────── */
+/* Va en la barra, antes del CTA, y también en el pie. Es un enlace de
+   servicio para quien YA es cliente: por eso no compite con "Agendar una
+   reunión" — texto, no botón. Se mantiene visible en teléfono, donde el
+   menú se oculta: si desapareciera ahí, un cliente que entra desde el
+   celular no tendría por dónde. */
+.portal-acceso{margin-left:auto;font-size:14px;font-weight:600;color:var(--ink-2);
+  white-space:nowrap;padding:9px 12px;border-radius:999px;
+  transition:color .16s var(--ease),background .16s var(--ease)}
+.menu ~ .portal-acceso{margin-left:0}
+.portal-acceso:hover{color:var(--ink);background:var(--papel-2)}
+@media(max-width:700px){
+  .portal-acceso{font-size:12.5px;padding:8px 6px;min-height:40px;display:flex;
+    align-items:center}
+}
+@media(max-width:380px){
+  /* A este ancho el botón manda: el portal se conserva en el pie. */
+  .portal-acceso{display:none}
+}

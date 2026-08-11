@@ -90,6 +90,7 @@ const cab = (t) => `<!DOCTYPE html>
   <nav class="menu">
 ${NAV.map(([u, n]) => `    <a href="${u}"${t.ruta === u ? ' aria-current="page"' : ""}>${n}</a>`).join("\n")}
   </nav>
+  <a class="portal-acceso" href="/portal.html">Portal clientes</a>
   <a class="btn btn-primario" href="/agendar">Agendar una reunión</a>
 </div></header>
 `;
@@ -121,7 +122,8 @@ const pie = `
     <div><h4>Contacto</h4>
       <a href="/agendar">Agendar una reunión</a>
       <a href="mailto:${CORREO}">${CORREO}</a>
-      <a href="https://wa.me/${WSP}" target="_blank" rel="noopener">WhatsApp ${WSP_VISIBLE}</a></div>
+      <a href="https://wa.me/${WSP}" target="_blank" rel="noopener">WhatsApp ${WSP_VISIBLE}</a>
+      <a href="/portal.html">Portal de clientes</a></div>
   </div>
   <div class="legal"><span>© 2026 condor.ai · Santiago, Chile</span><span>Todos los derechos reservados</span></div>
 </div></footer>
