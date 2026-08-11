@@ -204,13 +204,19 @@ const PRODUCTOS = [
     aplica: "Organizaciones que necesitan decidir dónde invertir en IA." },
 ];
 
-const acordeon = (abierto = 0) => PRODUCTOS.map((p, k) => `
-  <details class="prod"${k === abierto ? " open" : ""}><summary><span class="num">${p.n}</span><span class="tit">${p.tit}</span></summary>
-    <div class="cuerpo"><div class="interior">
-      <div><p>${p.intro}</p>
-      <ul>${p.puntos.map((x) => `<li>${x}</li>`).join("")}</ul></div>
-      <div class="marca-lat"><b>Aplica a</b><p>${p.aplica}</p></div>
-    </div></div></details>`).join("");
+/* Los productos se muestran ABIERTOS, no en acordeón.
+   Un acordeón esconde justo lo que la página vino a contar, y obliga a tres
+   clics para leer tres párrafos. Si el contenido cabe, se muestra. */
+const bloquesProducto = () => PRODUCTOS.map((p) => `
+  <article class="fila">
+    <div class="n">${p.n}</div>
+    <div>
+      <h3>${p.tit}</h3>
+      <p class="desc">${p.intro}</p>
+      <ul class="puntos-lista">${p.puntos.map((x) => `<li>${x}</li>`).join("")}</ul>
+      <p class="aplica"><b>Aplica a</b> ${p.aplica}</p>
+    </div>
+  </article>`).join("");
 
 const PERSONAS = [
   { slug: "joaquin", nombre: "Joaquín Muñoz", rol: "Fundador", foto: "joaquin.jpg",
@@ -432,7 +438,7 @@ escribir("productos/index.html", cab({
 </div></section>
 
 <section style="padding-bottom:clamp(56px,7vw,96px)"><div class="wrap">
-${acordeon(0)}
+<div class="lista">${bloquesProducto()}</div>
 </div></section>
 
 <section class="seccion oscura"><div class="wrap">

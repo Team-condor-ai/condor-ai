@@ -530,3 +530,10 @@ p{margin:0;line-height:1.65;color:var(--ink-2)}
 
 /* La foto del hero deja de tener marco y se une a las cifras. */
 .hero-marco{border:0;border-radius:var(--r-lg);background:none}
+
+/* Listas de puntos dentro de un producto, ya sin acordeón. */
+.puntos-lista{margin:18px 0 0;padding-left:20px;color:var(--ink-2);
+  font-size:clamp(15px,1.5vw,16.5px);line-height:1.9;max-width:62ch}
+.aplica{margin-top:16px;font-size:15px;color:var(--ink-3);max-width:62ch}
+.aplica b{font-family:var(--display);font-size:11.5px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--ink-3);margin-right:8px}
