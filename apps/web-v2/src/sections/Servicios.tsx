@@ -4,7 +4,7 @@ const SERVICIOS = [
     alt: "+1200m",
     titulo: "Páginas web profesionales",
     desc: "Un sitio veloz y claro que convierte visitas en clientes: agenda, vende y atiende por WhatsApp 24/7. Tu negocio se ve serio y trabaja incluso mientras duermes.",
-    href: "/paginas-web/",
+    href: "/productos/",
   },
   {
     n: "02",
@@ -18,7 +18,7 @@ const SERVICIOS = [
     alt: "+3600m",
     titulo: "Automatizaciones y Agentes IA",
     desc: "Empleados digitales que responden, hacen seguimiento y crean contenido solos. Eliminas tareas repetitivas y dejas de perder clientes por no contestar a tiempo.",
-    href: "/automatizacion/",
+    href: "/productos/",
   },
 ];
 

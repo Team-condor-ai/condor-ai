@@ -565,3 +565,62 @@ p{margin:0;line-height:1.65;color:var(--ink-2)}
   .rv .ico,.rv.vis .ico{transform:none !important}
   .rv{transition-delay:0ms !important}
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   Carrusel de sitios entregados (coverflow)
+   ──────────────────────────────────────────────────────────────────────
+   La tarjeta central manda; las laterales se alejan en Z, se inclinan y se
+   atenúan. La profundidad es lo que ordena la lectura, así no hace falta un
+   marco que grite cuál es la activa.
+
+   Se anima solo `transform` y `opacity`, que son las dos propiedades que el
+   compositor puede mover sin recalcular diseño. Con `left` o `width` esto
+   iría a tirones en un teléfono.
+   ══════════════════════════════════════════════════════════════════════ */
+.sitios{margin-top:clamp(28px,4vw,44px);position:relative}
+.sitios-pista{position:relative;height:clamp(310px,34vw,400px);perspective:1400px;
+  transform-style:preserve-3d}
+.sitio{position:absolute;top:0;left:50%;width:min(290px,74vw);
+  background:var(--papel);border:1px solid var(--linea);border-radius:var(--r-lg);
+  overflow:hidden;box-shadow:0 24px 60px -28px rgba(11,20,55,.42);
+  transition:transform .55s var(--ease),opacity .55s var(--ease),filter .55s var(--ease);
+  will-change:transform,opacity}
+.oscura .sitio{background:var(--navy-3);border-color:rgba(255,255,255,.12)}
+.sitio .captura{aspect-ratio:16/10;overflow:hidden;background:var(--papel-2)}
+.sitio .captura img{width:100%;height:100%;object-fit:cover;object-position:top center}
+.sitio-txt{padding:16px 18px 20px}
+.sitio-tipo{font-family:var(--display);font-size:11px;font-weight:700;letter-spacing:.12em;
+  text-transform:uppercase;color:transparent;background:var(--grad);
+  -webkit-background-clip:text;background-clip:text}
+.sitio h4{font-size:17px;margin:7px 0 6px}
+.sitio p{font-size:13.5px;line-height:1.5}
+
+/* Posición respecto de la tarjeta activa. El JS pone data-pos. */
+.sitio[data-pos="0"]{transform:translateX(-50%) translateZ(0) scale(1);opacity:1;z-index:5}
+.sitio[data-pos="1"],.sitio[data-pos="-1"]{opacity:.62;z-index:4;filter:saturate(.8)}
+.sitio[data-pos="1"]{transform:translateX(-2%) translateZ(-150px) rotateY(-16deg) scale(.94)}
+.sitio[data-pos="-1"]{transform:translateX(-98%) translateZ(-150px) rotateY(16deg) scale(.94)}
+.sitio[data-pos="2"],.sitio[data-pos="-2"]{opacity:.3;z-index:3;filter:saturate(.6)}
+.sitio[data-pos="2"]{transform:translateX(38%) translateZ(-300px) rotateY(-22deg) scale(.88)}
+.sitio[data-pos="-2"]{transform:translateX(-138%) translateZ(-300px) rotateY(22deg) scale(.88)}
+.sitio[data-pos="lejos"]{opacity:0;transform:translateX(-50%) translateZ(-420px) scale(.8);
+  z-index:1;pointer-events:none}
+
+.sitios-puntos{display:flex;gap:8px;justify-content:center;margin-top:20px}
+.s-punto{width:26px;height:3px;border-radius:2px;border:none;padding:0;cursor:pointer;
+  background:var(--linea-2);transition:background .25s var(--ease)}
+.oscura .s-punto{background:rgba(255,255,255,.22)}
+.s-punto[aria-selected="true"]{background:var(--grad)}
+
+@media(max-width:640px){
+  .sitios-pista{height:clamp(300px,88vw,360px)}
+  .sitio[data-pos="2"],.sitio[data-pos="-2"]{opacity:0;pointer-events:none}
+}
+@media(prefers-reduced-motion:reduce){
+  /* Sin coverflow ni giro automático: las tarjetas se apilan y se ven todas. */
+  .sitios-pista{height:auto;perspective:none;display:grid;gap:18px;
+    grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+  .sitio{position:static;width:auto;transform:none !important;opacity:1 !important;
+    filter:none !important;transition:none}
+  .sitios-puntos{display:none}
+}

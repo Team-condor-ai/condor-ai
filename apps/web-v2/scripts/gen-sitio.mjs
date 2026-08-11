@@ -202,6 +202,44 @@ const JS_COMUN = `
     cifras.forEach(c => ioc.observe(c));
   }
 
+  // Carrusel de sitios: coverflow que avanza solo.
+  // La posición de cada tarjeta se calcula respecto de la activa y se pone en
+  // data-pos; el CSS hace el resto. Se guarda la distancia MÁS CORTA en el
+  // anillo (por eso el ajuste con la mitad del total), o al pasar del último
+  // al primero las tarjetas cruzarían toda la pantalla en vez de girar.
+  document.querySelectorAll(".sitios").forEach((car) => {
+    const tarjetas = [...car.querySelectorAll(".sitio")];
+    const puntos = [...car.querySelectorAll(".s-punto")];
+    if (!tarjetas.length) return;
+    const total = tarjetas.length;
+    let act = 0, reloj = 0;
+
+    const pintar = () => {
+      tarjetas.forEach((t, i) => {
+        let d = i - act;
+        if (d > total / 2) d -= total;
+        if (d < -total / 2) d += total;
+        t.dataset.pos = Math.abs(d) > 2 ? "lejos" : String(d);
+        t.setAttribute("aria-hidden", String(d !== 0));
+      });
+      puntos.forEach((p, i) => p.setAttribute("aria-selected", String(i === act)));
+    };
+    const ir = (n) => { act = (n + total) % total; pintar(); };
+    const andar = () => { if (!quieto) { clearInterval(reloj); reloj = setInterval(() => ir(act + 1), 3800); } };
+    const frenar = () => clearInterval(reloj);
+
+    puntos.forEach((p, i) => p.addEventListener("click", () => { frenar(); ir(i); andar(); }));
+    // Tocar una tarjeta lateral la trae al centro: es lo que uno espera al
+    // hacer clic en algo que se ve a medias.
+    tarjetas.forEach((t, i) => t.addEventListener("click", () => { frenar(); ir(i); andar(); }));
+    car.addEventListener("pointerenter", frenar);
+    car.addEventListener("pointerleave", andar);
+    car.addEventListener("focusin", frenar);
+
+    pintar();
+    andar();
+  });
+
   // Hero rotativo (solo en el inicio). Se detiene al pasar el ratón y al
   // enfocar con teclado: un titular que cambia mientras alguien lo lee es una
   // molestia, no una gracia.
@@ -238,6 +276,39 @@ const carrusel = `
 </section>
 `;
 
+
+/* Carrusel de sitios entregados, en coverflow.
+   Las capturas son de sitios reales que están en línea: se muestran en vez
+   de describirse, porque una captura convence más que un adjetivo. La
+   tarjeta del centro manda y las laterales se inclinan y se atenúan, así el
+   ojo sabe dónde mirar sin que haga falta ponerle un borde. */
+const SITIOS = [
+  { img: "ecommerce.webp",    nombre: "Tienda en línea",      tipo: "Comercio",
+    desc: "Catálogo, carro y pago en línea. Pensada para vender desde el teléfono." },
+  { img: "inmobiliario.webp", nombre: "Portal inmobiliario",  tipo: "Propiedades",
+    desc: "Buscador con filtros, fichas de propiedad y contacto directo con el corredor." },
+  { img: "restaurante.webp",  nombre: "Sitio de restaurante", tipo: "Gastronomía",
+    desc: "Carta, reservas y ubicación. Carga rápido incluso con fotos grandes." },
+  { img: "servicios.webp",    nombre: "Sitio de servicios",   tipo: "Salud",
+    desc: "Servicios, equipo y agenda de horas. Diseñado para generar confianza." },
+  { img: "esencial.webp",     nombre: "Sitio esencial",       tipo: "Empresa",
+    desc: "La versión directa: quiénes son, qué hacen y cómo contactarlos." },
+];
+
+const carruselSitios = () =>
+  '<div class="sitios" aria-label="Sitios que hemos entregado"><div class="sitios-pista">' +
+  SITIOS.map((x, i) =>
+    '<article class="sitio" data-i="' + i + '">' +
+      '<div class="captura"><img src="/assets/sitios/' + x.img + '" alt="' + x.nombre + '" loading="lazy" /></div>' +
+      '<div class="sitio-txt"><span class="sitio-tipo">' + x.tipo + '</span>' +
+      '<h4>' + x.nombre + '</h4><p>' + x.desc + '</p></div>' +
+    '</article>').join("") +
+  '</div><div class="sitios-puntos" role="tablist" aria-label="Elegir sitio">' +
+  SITIOS.map((x, i) =>
+    '<button class="s-punto" role="tab" aria-selected="' + (i === 0) + '" aria-label="' + x.nombre + '"></button>'
+  ).join("") +
+  '</div></div>';
+
 const PRODUCTOS = [
   { n: "01", ico: "codigo", tit: "Desarrollo de software y sitios web",
     intro: "Plataformas, portales y sitios corporativos desarrollados a medida, con foco en rendimiento, mantenibilidad y medición.",
@@ -266,6 +337,7 @@ const bloquesProducto = () => PRODUCTOS.map((p) => `
       <h3>${p.tit}</h3>
       <p class="desc">${p.intro}</p>
       <ul class="puntos-lista">${p.puntos.map((x) => `<li>${x}</li>`).join("")}</ul>
+      ${p.ico === "codigo" ? carruselSitios() : ""}
       <p class="aplica"><b>Aplica a</b> ${p.aplica}</p>
     </div>
   </article>`).join("");
@@ -451,7 +523,7 @@ ${PERSONAS.map((p) => `    <article class="fila-persona">
   <div class="lista">
 ${PRODUCTOS.map((p) => `    <article class="fila">
       <div class="marca-fila">${icono(p.ico)}<span class="n">${p.n}</span></div>
-      <div><h3>${p.tit}</h3><p class="desc">${p.intro}</p></div>
+      <div><h3>${p.tit}</h3><p class="desc">${p.intro}</p>${p.ico === "codigo" ? carruselSitios() : ""}</div>
     </article>`).join("\n")}
   </div>
 </div></section>

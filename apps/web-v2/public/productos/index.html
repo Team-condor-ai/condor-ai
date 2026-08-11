@@ -45,6 +45,7 @@
       <h3>Desarrollo de software y sitios web</h3>
       <p class="desc">Plataformas, portales y sitios corporativos desarrollados a medida, con foco en rendimiento, mantenibilidad y medición.</p>
       <ul class="puntos-lista"><li>Análisis funcional y definición de arquitectura</li><li>Desarrollo, pruebas y puesta en producción</li><li>Dominio, código y accesos a nombre del cliente</li><li>Instrumentación y métricas desde el primer día</li></ul>
+      <div class="sitios" aria-label="Sitios que hemos entregado"><div class="sitios-pista"><article class="sitio" data-i="0"><div class="captura"><img src="/assets/sitios/ecommerce.webp" alt="Tienda en línea" loading="lazy" /></div><div class="sitio-txt"><span class="sitio-tipo">Comercio</span><h4>Tienda en línea</h4><p>Catálogo, carro y pago en línea. Pensada para vender desde el teléfono.</p></div></article><article class="sitio" data-i="1"><div class="captura"><img src="/assets/sitios/inmobiliario.webp" alt="Portal inmobiliario" loading="lazy" /></div><div class="sitio-txt"><span class="sitio-tipo">Propiedades</span><h4>Portal inmobiliario</h4><p>Buscador con filtros, fichas de propiedad y contacto directo con el corredor.</p></div></article><article class="sitio" data-i="2"><div class="captura"><img src="/assets/sitios/restaurante.webp" alt="Sitio de restaurante" loading="lazy" /></div><div class="sitio-txt"><span class="sitio-tipo">Gastronomía</span><h4>Sitio de restaurante</h4><p>Carta, reservas y ubicación. Carga rápido incluso con fotos grandes.</p></div></article><article class="sitio" data-i="3"><div class="captura"><img src="/assets/sitios/servicios.webp" alt="Sitio de servicios" loading="lazy" /></div><div class="sitio-txt"><span class="sitio-tipo">Salud</span><h4>Sitio de servicios</h4><p>Servicios, equipo y agenda de horas. Diseñado para generar confianza.</p></div></article><article class="sitio" data-i="4"><div class="captura"><img src="/assets/sitios/esencial.webp" alt="Sitio esencial" loading="lazy" /></div><div class="sitio-txt"><span class="sitio-tipo">Empresa</span><h4>Sitio esencial</h4><p>La versión directa: quiénes son, qué hacen y cómo contactarlos.</p></div></article></div><div class="sitios-puntos" role="tablist" aria-label="Elegir sitio"><button class="s-punto" role="tab" aria-selected="true" aria-label="Tienda en línea"></button><button class="s-punto" role="tab" aria-selected="false" aria-label="Portal inmobiliario"></button><button class="s-punto" role="tab" aria-selected="false" aria-label="Sitio de restaurante"></button><button class="s-punto" role="tab" aria-selected="false" aria-label="Sitio de servicios"></button><button class="s-punto" role="tab" aria-selected="false" aria-label="Sitio esencial"></button></div></div>
       <p class="aplica"><b>Aplica a</b> Empresas que necesitan un sistema propio, no una plantilla configurada.</p>
     </div>
   </article>
@@ -54,6 +55,7 @@
       <h3>Asistentes y agentes de IA</h3>
       <p class="desc">Agentes conectados a los canales y sistemas que la empresa ya utiliza, capaces de atender, clasificar y ejecutar tareas de forma autónoma.</p>
       <ul class="puntos-lista"><li>Atención continua en WhatsApp y canales web</li><li>Integración con CRM, bases de datos y ERP</li><li>Derivación a una persona cuando corresponde</li><li>Registro auditable de cada interacción</li></ul>
+      
       <p class="aplica"><b>Aplica a</b> Operaciones con alto volumen de consultas repetitivas.</p>
     </div>
   </article>
@@ -63,6 +65,7 @@
       <h3>Consultoría e implementación de IA</h3>
       <p class="desc">Diagnóstico de procesos, definición de casos de uso con retorno medible e implementación efectiva. No entregamos un informe y nos retiramos.</p>
       <ul class="puntos-lista"><li>Levantamiento y priorización de procesos</li><li>Estimación de impacto antes de desarrollar</li><li>Implementación y puesta en marcha</li><li>Capacitación y transferencia al equipo interno</li></ul>
+      
       <p class="aplica"><b>Aplica a</b> Organizaciones que necesitan decidir dónde invertir en IA.</p>
     </div>
   </article></div>
@@ -194,6 +197,44 @@
     }, { threshold: .6 });
     cifras.forEach(c => ioc.observe(c));
   }
+
+  // Carrusel de sitios: coverflow que avanza solo.
+  // La posición de cada tarjeta se calcula respecto de la activa y se pone en
+  // data-pos; el CSS hace el resto. Se guarda la distancia MÁS CORTA en el
+  // anillo (por eso el ajuste con la mitad del total), o al pasar del último
+  // al primero las tarjetas cruzarían toda la pantalla en vez de girar.
+  document.querySelectorAll(".sitios").forEach((car) => {
+    const tarjetas = [...car.querySelectorAll(".sitio")];
+    const puntos = [...car.querySelectorAll(".s-punto")];
+    if (!tarjetas.length) return;
+    const total = tarjetas.length;
+    let act = 0, reloj = 0;
+
+    const pintar = () => {
+      tarjetas.forEach((t, i) => {
+        let d = i - act;
+        if (d > total / 2) d -= total;
+        if (d < -total / 2) d += total;
+        t.dataset.pos = Math.abs(d) > 2 ? "lejos" : String(d);
+        t.setAttribute("aria-hidden", String(d !== 0));
+      });
+      puntos.forEach((p, i) => p.setAttribute("aria-selected", String(i === act)));
+    };
+    const ir = (n) => { act = (n + total) % total; pintar(); };
+    const andar = () => { if (!quieto) { clearInterval(reloj); reloj = setInterval(() => ir(act + 1), 3800); } };
+    const frenar = () => clearInterval(reloj);
+
+    puntos.forEach((p, i) => p.addEventListener("click", () => { frenar(); ir(i); andar(); }));
+    // Tocar una tarjeta lateral la trae al centro: es lo que uno espera al
+    // hacer clic en algo que se ve a medias.
+    tarjetas.forEach((t, i) => t.addEventListener("click", () => { frenar(); ir(i); andar(); }));
+    car.addEventListener("pointerenter", frenar);
+    car.addEventListener("pointerleave", andar);
+    car.addEventListener("focusin", frenar);
+
+    pintar();
+    andar();
+  });
 
   // Hero rotativo (solo en el inicio). Se detiene al pasar el ratón y al
   // enfocar con teclado: un titular que cambia mientras alguien lo lee es una

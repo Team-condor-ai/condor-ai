@@ -88,7 +88,7 @@ export default function Equipo() {
           ))}
         </div>
         <div className="equipo-cta reveal">
-          <a className="btn-ghost" href="/nosotros/">Conoce al equipo →</a>
+          <a className="btn-ghost" href="/inicio/">Conoce al equipo →</a>
         </div>
       </div>
 

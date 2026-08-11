@@ -17,15 +17,15 @@ export default function Footer() {
 
         <div className="footer-col">
           <h5>Servicios</h5>
-          <a href="/paginas-web/">Páginas web</a>
-          <a href="/automatizacion/">Automatización</a>
-          <a href="/diagnostico/">Diagnóstico</a>
+          <a href="/productos/">Páginas web</a>
+          <a href="/productos/">Automatización</a>
+          <a href="/contacto/">Diagnóstico</a>
         </div>
 
         <div className="footer-col">
           <h5>Empresa</h5>
-          <a href="/nosotros/">Nosotros</a>
-          <a href="/portafolio/">Portafolio</a>
+          <a href="/inicio/">Nosotros</a>
+          <a href="/clientes/">Portafolio</a>
           <a href="/blog/">Blog</a>
           <a href="/contacto/">Contacto</a>
         </div>

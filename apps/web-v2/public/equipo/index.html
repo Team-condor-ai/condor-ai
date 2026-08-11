@@ -192,6 +192,44 @@
     cifras.forEach(c => ioc.observe(c));
   }
 
+  // Carrusel de sitios: coverflow que avanza solo.
+  // La posición de cada tarjeta se calcula respecto de la activa y se pone en
+  // data-pos; el CSS hace el resto. Se guarda la distancia MÁS CORTA en el
+  // anillo (por eso el ajuste con la mitad del total), o al pasar del último
+  // al primero las tarjetas cruzarían toda la pantalla en vez de girar.
+  document.querySelectorAll(".sitios").forEach((car) => {
+    const tarjetas = [...car.querySelectorAll(".sitio")];
+    const puntos = [...car.querySelectorAll(".s-punto")];
+    if (!tarjetas.length) return;
+    const total = tarjetas.length;
+    let act = 0, reloj = 0;
+
+    const pintar = () => {
+      tarjetas.forEach((t, i) => {
+        let d = i - act;
+        if (d > total / 2) d -= total;
+        if (d < -total / 2) d += total;
+        t.dataset.pos = Math.abs(d) > 2 ? "lejos" : String(d);
+        t.setAttribute("aria-hidden", String(d !== 0));
+      });
+      puntos.forEach((p, i) => p.setAttribute("aria-selected", String(i === act)));
+    };
+    const ir = (n) => { act = (n + total) % total; pintar(); };
+    const andar = () => { if (!quieto) { clearInterval(reloj); reloj = setInterval(() => ir(act + 1), 3800); } };
+    const frenar = () => clearInterval(reloj);
+
+    puntos.forEach((p, i) => p.addEventListener("click", () => { frenar(); ir(i); andar(); }));
+    // Tocar una tarjeta lateral la trae al centro: es lo que uno espera al
+    // hacer clic en algo que se ve a medias.
+    tarjetas.forEach((t, i) => t.addEventListener("click", () => { frenar(); ir(i); andar(); }));
+    car.addEventListener("pointerenter", frenar);
+    car.addEventListener("pointerleave", andar);
+    car.addEventListener("focusin", frenar);
+
+    pintar();
+    andar();
+  });
+
   // Hero rotativo (solo en el inicio). Se detiene al pasar el ratón y al
   // enfocar con teclado: un titular que cambia mientras alguien lo lee es una
   // molestia, no una gracia.

@@ -54,7 +54,7 @@ export default function Portafolio() {
               Trabajo real, <span className="grad-tx">resultados reales</span>.
             </h2>
           </div>
-          <a className="btn-ghost reveal" href="/portafolio/">
+          <a className="btn-ghost reveal" href="/clientes/">
             Ver todo el portafolio →
           </a>
         </div>
@@ -63,7 +63,7 @@ export default function Portafolio() {
             <a
               className="port-tile reveal"
               key={t.tag}
-              href="/portafolio/"
+              href="/clientes/"
               style={{ transitionDelay: `${i * 0.08}s` }}
             >
               <AutoVideo src={t.v} />
