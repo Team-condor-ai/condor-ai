@@ -61,8 +61,21 @@ jobs:
           [ -n "${{ secrets.VITE_LEADS_API }}" ] || echo "::warning::VITE_LEADS_API vacío — el formulario de /colombia fallará y no guardará leads."
           test -f dist/colombia/index.html || { echo "::error::No se generó dist/colombia/index.html — /colombia volvería a responder 404."; exit 1; }
 
-      - name: Fallback SPA (404 = index)
-        run: cp dist/index.html dist/404.html
+      # El 404.html lo escribe `scripts/prerender.mjs`, NO este paso.
+      #
+      # Antes acá se hacía `cp dist/index.html dist/404.html`. Desde que la
+      # home es el sitio corporativo estático, esa copia dejaría a /planes
+      # con la home como fallback y su router de React nunca montaría. El
+      # prerender guarda la cáscara del SPA en 404.html ANTES de pisar el
+      # index, que es el único orden que funciona.
+      - name: Verificar el fallback del SPA y la home
+        run: |
+          test -f dist/404.html || { echo "::error::Falta dist/404.html — /planes respondería 404."; exit 1; }
+          grep -q "root" dist/404.html || { echo "::error::dist/404.html no es la cáscara del SPA — /planes no montaría."; exit 1; }
+          grep -q "rediseno/estilo.css" dist/index.html || { echo "::error::dist/index.html no es el sitio corporativo."; exit 1; }
+          for r in productos compania equipo proceso clientes contacto; do
+            test -f "dist/$r/index.html" || { echo "::error::Falta dist/$r/index.html"; exit 1; }
+          done
 
       - uses: actions/configure-pages@v5
 
