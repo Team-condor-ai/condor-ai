@@ -13,12 +13,25 @@
  *
  * El CSS NO se duplica: vive en /rediseno/estilo.css y todas lo enlazan.
  */
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const raiz = join(dirname(fileURLToPath(import.meta.url)), "..");
 const PUB = join(raiz, "public");
+
+/* Versión del CSS, calculada de su contenido.
+   Sin esto, /rediseno/estilo.css es una URL fija que GitHub Pages sirve con
+   Cache-Control: max-age=600. Resultado: se publica un cambio de estilo y
+   durante diez minutos el navegador sigue mostrando el anterior — y si ya
+   tenía la página abierta, más todavía. Con el hash en la consulta, cada
+   cambio del archivo cambia la URL y el navegador lo pide de nuevo al
+   instante. */
+const VER = createHash("sha1")
+  .update(readFileSync(join(PUB, "rediseno", "estilo.css")))
+  .digest("hex")
+  .slice(0, 8);
 
 const WSP = "56988989824";                     // WhatsApp Business de las campañas
 const WSP_VISIBLE = "+56 9 8898 9824";
@@ -69,7 +82,7 @@ const cab = (t) => `<!DOCTYPE html>
 <link rel="preconnect" href="https://api.fontshare.com" />
 <link rel="preconnect" href="https://cdn.fontshare.com" crossorigin />
 <link href="https://api.fontshare.com/v2/css?f[]=switzer@400,500,600,700,800&f[]=satoshi@400,500,700&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="/rediseno/estilo.css" />
+<link rel="stylesheet" href="/rediseno/estilo.css?v=${VER}" />
 </head>
 <body>
 <header class="topbar"><div class="wrap">
