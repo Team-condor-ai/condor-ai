@@ -490,11 +490,7 @@ escribir("rediseno/inicio.html", cab({
   </div>
   <div>
     <div class="hero-marco"><img src="/assets/oficina/oficina.webp" alt="Oficina de condor.ai" /></div>
-    <div class="datos">
-      <div class="dato"><b data-contar="40" data-pre="+">+40</b><span>proyectos entregados</span></div>
-      <div class="dato"><b data-contar="2">2</b><span>países en operación</span></div>
-      <div class="dato"><b data-contar="98" data-post="%">98%</b><span>entregas en plazo</span></div>
-    </div>
+
   </div>
 </div></section>
 
