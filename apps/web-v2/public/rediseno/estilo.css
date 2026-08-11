@@ -624,3 +624,111 @@ p{margin:0;line-height:1.65;color:var(--ink-2)}
     filter:none !important;transition:none}
   .sitios-puntos{display:none}
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   Pasada de estilo — referencia getnexor.ai (11-ago-2026)
+   ──────────────────────────────────────────────────────────────────────
+   Lo que se toma de ellos, sin cambiar nuestro embudo ni el contenido:
+   · fondo claro con dos tonos alternados en vez de bandas oscuras pesadas
+   · tarjetas de borde suave y sombra baja, no cajas de retícula
+   · titulares más marcados (800) y más grandes
+   · rótulos como píldora, no como texto suelto
+   · botones sólidos de esquina más redonda
+
+   La prioridad declarada fue el MÓVIL. Todo lo de abajo se probó pensando
+   en una pantalla de 360-390px, que es donde llega la mayoría del tráfico
+   de una campaña de Meta.
+   ══════════════════════════════════════════════════════════════════════ */
+:root{
+  --papel-2:#f7f8fa;
+  --r:10px; --r-lg:16px;
+  --sombra-suave:0 1px 2px rgba(11,20,55,.05), 0 8px 24px -12px rgba(11,20,55,.14);
+}
+
+/* Las secciones oscuras se aclaran a un navy mucho más suave: sobre móvil,
+   dos bandas negras de pantalla completa seguidas se leen como un muro. */
+.oscura{background:#0e1734}
+
+/* Rótulo como píldora. */
+.rotulo{background:var(--papel-2);border:1px solid var(--linea);border-radius:999px;
+  padding:7px 14px 7px 10px;width:fit-content;font-size:11.5px}
+.oscura .rotulo{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.14)}
+
+/* Titulares más marcados y algo más grandes, como en la referencia. */
+h1,h2{font-weight:800}
+.hero h1{font-size:clamp(33px,5.6vw,66px);letter-spacing:-.04em}
+.cab h2,.dos-col h2{letter-spacing:-.032em}
+
+/* Botones de esquina más redonda y con sombra baja. */
+.btn{border-radius:999px;padding:14px 24px}
+.btn-primario{box-shadow:0 8px 20px -10px rgba(11,20,55,.5)}
+
+/* Tarjetas del carrusel con el borde suave y la sombra baja de la referencia. */
+.sitio{border-radius:var(--r-lg);box-shadow:var(--sombra-suave)}
+
+/* ── MÓVIL ─────────────────────────────────────────────────────────────
+   Es donde llega el tráfico de las campañas, así que manda. */
+@media(max-width:700px){
+  .seccion{padding:56px 0}
+  :root{--gutter:18px}
+
+  /* El hero deja de competir consigo mismo: titular, texto, botones a ancho
+     completo y recién después la foto. */
+  .hero{padding:28px 0 40px}
+  .hero-grid{gap:32px}
+  .hero h1{font-size:31px;line-height:1.12}
+  .hero .bajada{font-size:16px;margin-top:16px}
+  .hero-cta{gap:10px;margin-top:24px}
+  .hero-cta .btn{flex:1 1 100%;justify-content:center}
+  .puntos{margin-top:26px}
+
+  /* Las cifras del hero en una línea de tres, que caben. */
+  .datos{gap:0;display:grid;grid-template-columns:repeat(3,1fr);padding-top:18px}
+  .dato b{font-size:21px}
+  .dato span{font-size:11px;line-height:1.3;display:block}
+
+  /* Filas: el icono y el número se van arriba, en horizontal, y el texto
+     ocupa todo el ancho. Con dos columnas a 360px el texto queda en una
+     tira de 40 caracteres y se lee pésimo. */
+  .fila{gap:12px}
+  .fila .n,.marca-fila .n{font-size:30px}
+  .fila h3{font-size:21px}
+  .fila .desc{font-size:15.5px;margin-top:8px}
+  .lista{gap:44px}
+
+  /* Carrusel: una tarjeta a la vez, sin laterales asomando. En una pantalla
+     angosta, las laterales recortadas se ven como un error de maquetación. */
+  .sitios-pista{height:auto;min-height:0;perspective:none}
+  .sitio{width:100%;position:relative;left:0;display:none}
+  .sitio[data-pos="0"]{display:block;transform:none;opacity:1}
+  .sitio[data-pos]{transform:none}
+  .sitio[data-pos="1"],.sitio[data-pos="-1"],
+  .sitio[data-pos="2"],.sitio[data-pos="-2"],
+  .sitio[data-pos="lejos"]{display:none}
+  .sitios-puntos{margin-top:16px}
+  .s-punto{width:22px;height:4px}     /* objetivo táctil más cómodo */
+
+  /* Equipo: una foto de oficina bajo la otra, con su pie. */
+  .oficina-dos{gap:22px}
+  .oficina-dos figure .marco{aspect-ratio:4/3}
+  .lista:has(.fila-persona){gap:34px}
+  .fila-persona .retrato-s{aspect-ratio:4/3}
+
+  /* Citas: la tipografía baja lo justo para no partir palabras. */
+  .testi p,.cita p{font-size:19px;line-height:1.4}
+
+  /* Pie: dos columnas se aprietan; una sola se lee. */
+  .pie-cols{grid-template-columns:1fr;gap:26px}
+  .legal{flex-direction:column;gap:8px}
+
+  /* Ningún botón por debajo del objetivo táctil recomendado. */
+  .btn{min-height:48px;padding:13px 22px}
+  .menu a,.pie a{min-height:44px;display:flex;align-items:center}
+}
+
+/* Pantallas muy angostas (360px y menos). */
+@media(max-width:380px){
+  .hero h1{font-size:28px}
+  .dato b{font-size:19px}
+  .fila h3{font-size:19.5px}
+}
