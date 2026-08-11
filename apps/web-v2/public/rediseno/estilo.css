@@ -732,3 +732,31 @@ h1,h2{font-weight:800}
   .dato b{font-size:19px}
   .fila h3{font-size:19.5px}
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   Ajustes de móvil pedidos el 11-ago-2026
+   ══════════════════════════════════════════════════════════════════════ */
+@media(max-width:700px){
+  /* 1 · El botón de la barra, chico y en UNA línea.
+     `nowrap` es la parte que importa: sin él, "Agendar una reunión" se parte
+     en dos y la barra crece de alto en cuanto el logo y el botón compiten
+     por el ancho. Baja a 40px de alto, por debajo de los 48px del resto de
+     los botones: es un elemento de barra, no la acción principal de la
+     página, y esa sigue estando a ancho completo dentro del hero. */
+  .topbar .btn{white-space:nowrap;font-size:13px;padding:0 14px;min-height:40px;
+    border-radius:999px}
+  .topbar .wrap{gap:12px;padding-block:11px}
+  .topbar img.logo{height:24px}
+
+  /* 2 · La foto de la oficina va ARRIBA del texto, y el titular queda
+     debajo funcionando como su título. Es solo un cambio de orden visual:
+     en el HTML el texto sigue primero, que es el orden correcto para un
+     lector de pantalla y para quien navega con teclado. */
+  .hero-grid > div:last-child{order:-1}
+  .hero{padding-top:16px}
+  .hero-marco{border-radius:var(--r-lg)}
+  .hero-marco img{aspect-ratio:16/10}
+  /* Las cifras se despegan de la foto y quedan bajo el bloque de texto. */
+  .hero-grid > div:last-child .datos{margin-top:14px;padding-top:14px}
+  .hero .rotulo{margin-top:4px}
+}
