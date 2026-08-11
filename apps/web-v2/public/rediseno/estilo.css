@@ -824,3 +824,65 @@ body.cajon-abierto .cajon{transform:none}
 @media(prefers-reduced-motion:reduce){
   .cajon,.cortina,.burger span{transition:none}
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   Correcciones del 11-ago-2026
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* El botón del cajón era azul con el texto gris del resto de los enlaces:
+   contraste malo. Va blanco con texto navy, que sobre el papel del cajón
+   se lee sin esfuerzo. */
+.cajon .btn{background:#fff;color:var(--navy);border:1.5px solid var(--linea-2);
+  box-shadow:none;font-weight:700}
+.cajon .btn:hover{background:var(--papel-2);border-color:var(--ink)}
+
+/* Portal de clientes: botón chico y delgado, también blanco. Es acceso de
+   servicio, no la acción principal — por eso más liviano que el de agendar. */
+.cajon a[href="/portal.html"]{margin-top:12px;border:1px solid var(--linea);
+  border-radius:999px;background:#fff;color:var(--ink-2);font-size:13.5px;
+  font-weight:600;min-height:38px;padding:0 16px;justify-content:center}
+.cajon a[href="/portal.html"]:hover{background:var(--papel-2);color:var(--ink)}
+
+/* ── Carrusel en móvil: deslizamiento continuo ──────────────────────────
+   Antes las tarjetas no activas se ocultaban con display:none, así que el
+   cambio era un corte seco. Ahora todas siguen en su capa y se mueven en X:
+   la que sale se va por la izquierda mientras la siguiente entra por la
+   derecha. Es la misma idea del coverflow de escritorio, sin la rotación,
+   que en una pantalla angosta solo estorba. */
+@media(max-width:700px){
+  .sitios-pista{height:auto;min-height:0;perspective:none;position:relative;
+    overflow:hidden}
+  .sitio{position:absolute;top:0;left:0;width:100%;display:block;
+    transition:transform .45s var(--ease),opacity .45s var(--ease)}
+  .sitio[data-pos="0"]{position:relative;transform:translateX(0);opacity:1;z-index:3}
+  .sitio[data-pos="1"],.sitio[data-pos="2"]{transform:translateX(102%);opacity:0;z-index:1}
+  .sitio[data-pos="-1"],.sitio[data-pos="-2"]{transform:translateX(-102%);opacity:0;z-index:1}
+  .sitio[data-pos="lejos"]{transform:translateX(102%);opacity:0;z-index:0}
+}
+@media(prefers-reduced-motion:reduce){
+  .sitios-pista{overflow:visible}
+  .sitio{transition:none}
+}
+
+/* ── Ficha de persona ───────────────────────────────────────────────── */
+.ficha-cab{display:grid;grid-template-columns:200px minmax(0,1fr);
+  gap:clamp(22px,4vw,44px);align-items:start;margin-top:26px}
+.ficha-foto{border-radius:var(--r-lg);overflow:hidden;aspect-ratio:4/5;background:var(--papel-2);
+  box-shadow:var(--sombra-suave)}
+.ficha-foto img{width:100%;height:100%;object-fit:cover;object-position:center 20%}
+.ficha-rol{display:inline-block;font-size:11.5px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--ink-3);background:var(--papel-2);
+  border:1px solid var(--linea);border-radius:999px;padding:6px 13px;margin-bottom:14px}
+.ficha-cab h1{font-size:clamp(30px,4.4vw,52px)}
+.ficha-cab .bajada{margin-top:16px}
+.ico-btn{width:17px;height:17px}
+/* La frase va grande y sin comillas dibujadas: el tamaño ya dice que es una
+   cita, y unas comillas gigantes son justo el adorno que sobra. */
+.frase{margin:0 0 clamp(20px,3vw,36px);padding:0 0 0 20px;border-left:3px solid var(--azul);
+  font-family:var(--display);font-weight:600;font-size:clamp(19px,2.4vw,27px);
+  line-height:1.35;letter-spacing:-.022em;color:var(--ink);max-width:34ch}
+@media(max-width:760px){
+  .ficha-cab{grid-template-columns:1fr;gap:18px}
+  .ficha-foto{aspect-ratio:4/3;max-width:100%}
+  .ficha-cab .hero-cta .btn{flex:1 1 100%;justify-content:center}
+}

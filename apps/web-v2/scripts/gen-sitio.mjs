@@ -111,7 +111,6 @@ ${NAV.map(([u, n]) => `  <a href="${u}"${t.ruta === u ? ' aria-current="page"' :
 
 const cierre = (titulo = "Conversemos sobre su proyecto") => `
 <section class="seccion"><div class="wrap cierre">
-  <div class="rotulo">Contacto</div>
   <h2 style="margin-top:20px">${titulo}</h2>
   <p>Agende una reunión de treinta minutos. Al terminar tendrá un diagnóstico del problema y una propuesta de alcance, sin compromiso.</p>
   <div class="btns">
@@ -450,19 +449,36 @@ const bloquesProducto = () => PRODUCTOS.map((p) => `
 const PERSONAS = [
   { slug: "joaquin", nombre: "Joaquín Muñoz", rol: "Fundador", foto: "joaquin.jpg",
     resumen: "Dirige la relación con cada cliente y participa en la definición de todos los proyectos. Responsable de la estrategia técnica y comercial de la compañía.",
-    bloques: [["Responsabilidad", "Conduce el levantamiento inicial de cada proyecto y define el alcance junto al cliente. Es la contraparte permanente durante toda la ejecución."],
-              ["Enfoque", "Traducir un problema de operación a una solución acotada y medible. Cuando un proceso todavía no conviene automatizar, prefiere decirlo antes de que el cliente invierta."],
-              ["Alcance", "Estrategia técnica, relación comercial y decisiones de arquitectura de producto."]] },
+    frase: "Si un proceso todavía no conviene automatizar, prefiero decirlo antes de que el cliente invierta.",
+    bloques: [
+      ["lupa",     "Responsabilidad", "Conduce el levantamiento inicial de cada proyecto y define el alcance junto al cliente. Es la contraparte permanente durante toda la ejecución, no solo en la venta."],
+      ["brujula",  "Enfoque",         "Traducir un problema de operación a una solución acotada y medible. Antes de proponer un desarrollo, estima cuánto tiempo o costo libera."],
+      ["martillo", "En qué participa","Está en la primera reunión de todos los proyectos y en las revisiones de avance. Toma las decisiones de arquitectura de producto junto al equipo técnico."],
+      ["entrega",  "Alcance",         "Estrategia técnica, relación comercial y definición de producto."],
+    ],
+    contacto: [["calendario", "Agendar con Joaquín", "/agendar"], ["correo", CORREO, "mailto:" + CORREO]] },
+
   { slug: "alejandro", nombre: "Alejandro Tobar", rol: "Backend e infraestructura", foto: "alejandro.jpg",
     resumen: "A cargo de bases de datos, integraciones y despliegue. Responsable de que los sistemas se mantengan estables a medida que crece el volumen.",
-    bloques: [["Responsabilidad", "Diseño del modelo de datos, integraciones con sistemas externos y puesta en producción. Define cómo se migra un esquema sin detener la operación."],
-              ["Enfoque", "Sistemas que aguantan crecimiento sin reescribirse. Las decisiones de base de datos se toman pensando en el volumen del año siguiente, no en el de la demostración."],
-              ["Alcance", "Backend, bases de datos, integraciones, despliegue e infraestructura."]] },
+    frase: "Las decisiones de base de datos se toman pensando en el volumen del año siguiente, no en el de la demostración.",
+    bloques: [
+      ["codigo",   "Responsabilidad", "Diseño del modelo de datos, integraciones con sistemas externos y puesta en producción. Define cómo se migra un esquema sin detener la operación."],
+      ["brujula",  "Enfoque",         "Sistemas que aguantan crecimiento sin reescribirse. Prefiere una solución aburrida que lleva años funcionando antes que una novedad sin rodaje."],
+      ["martillo", "En qué participa","Toda integración con CRM, ERP o pasarelas de pago, y cada despliegue a producción. Es quien responde cuando algo falla fuera de horario."],
+      ["entrega",  "Alcance",         "Backend, bases de datos, integraciones, despliegue e infraestructura."],
+    ],
+    contacto: [["calendario", "Agendar una reunión", "/agendar"], ["correo", CORREO, "mailto:" + CORREO]] },
+
   { slug: "maximiliano", nombre: "Maximiliano Pino", rol: "Frontend y producto", foto: "maximiliano.jpg",
     resumen: "Responsable de las interfaces y de la experiencia de uso: que el sistema se entienda sin manual y funcione en cualquier dispositivo.",
-    bloques: [["Responsabilidad", "Construcción de las interfaces con las que trabaja el usuario final, y de que el sistema se comporte igual en escritorio y en teléfono."],
-              ["Enfoque", "Una interfaz que necesita capacitación para usarse está mal diseñada. El objetivo es que el equipo del cliente la entienda el primer día."],
-              ["Alcance", "Frontend, diseño de interacción y calidad de la experiencia de uso."]] },
+    frase: "Una interfaz que necesita capacitación para usarse está mal diseñada.",
+    bloques: [
+      ["codigo",   "Responsabilidad", "Construcción de las interfaces con las que trabaja el usuario final, y de que el sistema se comporte igual en escritorio y en teléfono."],
+      ["brujula",  "Enfoque",         "Que el equipo del cliente entienda el sistema el primer día. La capacitación debería confirmar lo que ya se intuye, no enseñarlo desde cero."],
+      ["martillo", "En qué participa","Diseño de interacción, desarrollo de la interfaz y las revisiones de avance donde el cliente ve el sistema real por primera vez."],
+      ["entrega",  "Alcance",         "Frontend, diseño de interacción y calidad de la experiencia de uso."],
+    ],
+    contacto: [["calendario", "Agendar una reunión", "/agendar"], ["correo", CORREO, "mailto:" + CORREO]] },
 ];
 
 // Las dos fotos de oficina, cada una con su pie. Sin pie, dos imágenes
@@ -515,7 +531,7 @@ escribir("rediseno/inicio.html", cab({
   <div>
     <div class="slides" id="slides">
       <article class="slide on">
-        <h1>Software a medida para operaciones que no pueden fallar</h1>
+        <h1>Soluciones inteligentes para tu empresa</h1>
         <p class="bajada">Diseñamos, construimos y mantenemos los sistemas que sostienen procesos críticos de empresas en Chile y la región.</p>
       </article>
       <article class="slide">
@@ -548,23 +564,18 @@ ${carrusel}
 <!-- COMPAÑÍA (resumen) -->
 <section class="seccion"><div class="wrap">
   <div class="cab">
-    <div><div class="rotulo">01 — Inicio</div>
-      <h2 style="margin-top:20px">Construimos software que entra en operación</h2></div>
+    <div>
+      <h2 style="margin-top:20px">Optimizamos procesos de empresas con inteligencia artificial</h2></div>
     ${verMas("/inicio/", "Ver más")}
   </div>
-  <p style="font-size:clamp(16px,1.6vw,19px);max-width:70ch">Empresa chilena de servicios de software, fundada en 2024 y con operación en Chile y Colombia. Desarrollamos sistemas a medida, agentes de inteligencia artificial y acompañamos su adopción dentro de los procesos de cada organización.</p>
-  <div class="cifras">
-    <div class="cifra"><b>2024</b><span>Año de fundación</span></div>
-    <div class="cifra"><b>Chile y Colombia</b><span>Operación regional</span></div>
-    <div class="cifra"><b>Equipo propio</b><span>Sin subcontratación</span></div>
-    <div class="cifra"><b>Soporte continuo</b><span>Posterior a la entrega</span></div>
+  <p style="font-size:clamp(16px,1.6vw,19px);max-width:70ch">Ayudamos a empresas a automatizar sus procesos con inteligencia artificial: desde un emprendedor que quiere dejar de perder horas en tareas repetitivas, hasta compañías que ahorran miles de dólares al año en operación. Fundada en 2025, con operación en Chile, Perú y Colombia.</p>
   </div>
 </div></section>
 
 <!-- EQUIPO (resumen, con las fotos y las personas) -->
 <section class="seccion oscura"><div class="wrap">
   <div class="cab">
-    <div><div class="rotulo">02 — Equipo</div>
+    <div>
       <h2 style="margin-top:20px">Las personas responsables de su proyecto</h2></div>
     ${verMas("/equipo/", "Ver el equipo completo")}
   </div>
@@ -579,27 +590,12 @@ ${PERSONAS.map((p) => `    <article class="fila-persona">
   </div>
 </div></section>
 
-<!-- CLIENTES (resumen) -->
-<section class="seccion oscura"><div class="wrap">
-  <div class="cab">
-    <div><div class="rotulo">03 — Clientes</div>
-      <h2 style="margin-top:20px">Lo que dicen quienes ya trabajaron con nosotros</h2></div>
-    ${verMas("/clientes/", "Ver todas las referencias")}
-  </div>
-  <div class="citas">
-    <div class="cita"><p>“Entendieron el proceso antes de proponer una solución. El alcance quedó por escrito y se cumplió.”</p>
-      <div class="quien"><b>Gerencia de Operaciones</b><span>Distribución</span></div></div>
-    <div class="cita"><p>“El sistema entró en producción en el plazo comprometido y la transferencia al equipo interno fue ordenada.”</p>
-      <div class="quien"><b>Dirección</b><span>Retail</span></div></div>
-    <div class="cita"><p>“Nos indicaron qué procesos no convenía automatizar todavía. Esa recomendación evitó una inversión innecesaria.”</p>
-      <div class="quien"><b>Administración</b><span>Servicios inmobiliarios</span></div></div>
-  </div>
-</div></section>
+
 
 <!-- PROCESO (resumen) -->
 <section class="seccion"><div class="wrap">
   <div class="cab">
-    <div><div class="rotulo">04 — Proceso</div>
+    <div>
       <h2 style="margin-top:20px">Un método definido, sin sorpresas de alcance</h2></div>
     ${verMas("/proceso/", "Ver el proceso completo")}
   </div>
@@ -616,7 +612,7 @@ ${PERSONAS.map((p) => `    <article class="fila-persona">
 <!-- PRODUCTOS (resumen) -->
 <section class="seccion"><div class="wrap">
   <div class="cab">
-    <div><div class="rotulo">05 — Productos</div>
+    <div>
       <h2 style="margin-top:20px">Tres líneas de servicio, cada una con equipo dedicado</h2></div>
     ${verMas("/productos/", "Ver todos los productos")}
   </div>
@@ -631,7 +627,7 @@ ${PRODUCTOS.map((p) => `    <article class="fila">
 <!-- CONTACTO (resumen) -->
 <section class="seccion"><div class="wrap">
   <div class="cab">
-    <div><div class="rotulo">06 — Contacto</div>
+    <div>
       <h2 style="margin-top:20px">Tres formas de llegar a nosotros</h2></div>
     ${verMas("/contacto/", "Ver todas las vías")}
   </div>
@@ -656,7 +652,6 @@ escribir("productos/index.html", cab({
   ruta: "/productos/",
 }) + `
 <section class="cabecera"><div class="wrap">
-  <div class="rotulo">01 — Productos</div>
   <h1>Tres líneas de servicio, cada una con equipo dedicado</h1>
   <p class="bajada">No trabajamos por horas ni revendemos licencias. Cada línea tiene un responsable técnico y un alcance escrito antes de comenzar.</p>
 </div></section>
@@ -666,7 +661,6 @@ escribir("productos/index.html", cab({
 </div></section>
 
 <section class="seccion oscura"><div class="wrap">
-  <div class="rotulo">Qué recibe al terminar</div>
   <h2 style="margin-top:20px;max-width:20ch">La entrega incluye más que el sistema funcionando</h2>
   <div class="pasos" style="margin-top:34px;background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.1)">
     <div class="paso" style="background:var(--navy-3)"><div class="n">ENTREGA 01</div><h3>Propiedad completa</h3>
@@ -689,19 +683,16 @@ const paginaInicio = cab({
   ruta: "/inicio/",
 }) + `
 <section class="cabecera"><div class="wrap">
-  <div class="rotulo">Inicio</div>
-  <h1>Construimos software que entra en operación</h1>
-  <p class="bajada">condor.ai es una empresa de servicios de software fundada en 2024, con operación en Chile y Colombia.</p>
+  <h1>Optimizamos procesos de empresas con inteligencia artificial</h1>
+  <p class="bajada">condor.ai automatiza procesos de empresas con inteligencia artificial. Fundada en 2025, con operación en Chile, Perú y Colombia.</p>
 </div></section>
 
 <section style="padding-bottom:clamp(56px,7vw,96px)"><div class="wrap dos-col">
   <div><h2>Cómo trabajamos</h2></div>
   <div>
-    <p>Desarrollamos sistemas a medida, asistentes y agentes de inteligencia artificial, y acompañamos a organizaciones en la adopción de IA dentro de sus procesos.</p>
+    <p>Ayudamos a empresas a automatizar sus procesos con inteligencia artificial: desde un emprendedor que quiere dejar de perder horas en tareas repetitivas, hasta compañías que ahorran miles de dólares al año en operación. Fundada en 2025, con operación en Chile, Perú y Colombia.</p>
     <p>Trabajamos con empresas que ya tienen operación y necesitan que la tecnología reduzca carga, no que agregue otro sistema sin uso. Antes de proponer un desarrollo estimamos su impacto; cuando un proceso todavía no conviene automatizar, lo decimos.</p>
     <p>Cada proyecto se entrega documentado, con la propiedad intelectual y los accesos a nombre del cliente. No usamos la dependencia técnica como forma de retención.</p>
-    <div class="hechos">
-      <div class="hecho"><b>2024</b><span>Año de fundación</span></div>
       <div class="hecho"><b>Chile y Colombia</b><span>Operación regional</span></div>
       <div class="hecho"><b>Equipo propio</b><span>Sin subcontratación</span></div>
       <div class="hecho"><b>Soporte continuo</b><span>Posterior a la entrega</span></div>
@@ -721,7 +712,6 @@ escribir("equipo/index.html", cab({
   ruta: "/equipo/",
 }) + `
 <section class="cabecera"><div class="wrap">
-  <div class="rotulo">03 — Equipo</div>
   <h1>Las personas responsables de su proyecto</h1>
   <p class="bajada">Sabrá desde la primera reunión quién construye qué. No hay equipos rotativos ni recursos anónimos asignados por disponibilidad.</p>
 </div></section>
@@ -741,7 +731,6 @@ escribir("proceso/index.html", cab({
   ruta: "/proceso/",
 }) + `
 <section class="cabecera"><div class="wrap">
-  <div class="rotulo">04 — Proceso</div>
   <h1>Un método definido, sin sorpresas de alcance</h1>
   <p class="bajada">El costo y el plazo se acuerdan por escrito antes de escribir la primera línea de código. Si el alcance cambia, se vuelve a acordar.</p>
 </div></section>
@@ -774,7 +763,6 @@ escribir("clientes/index.html", cab({
   ruta: "/clientes/",
 }) + `
 <section class="cabecera"><div class="wrap">
-  <div class="rotulo">05 — Clientes</div>
   <h1>Empresas que han confiado en nosotros</h1>
   <p class="bajada">Trabajamos con compañías de comercio, servicios y administración de propiedades en Chile y Colombia.</p>
 </div></section>
@@ -782,11 +770,8 @@ escribir("clientes/index.html", cab({
 ${carrusel}
 
 <section class="seccion oscura" style="border-top:0"><div class="wrap">
-  <div class="cab"><div><div class="rotulo">Referencias</div>
-    <h2 style="margin-top:20px">Lo que dicen quienes ya trabajaron con nosotros</h2></div></div>
-  <div class="testis">
-    <div class="testi"><p>“Entendieron el proceso antes de proponer una solución. El alcance quedó por escrito y se cumplió.”</p>
-      <div class="quien"><b>Gerencia de Operaciones</b><span>Distribución</span></div></div>
+  <div class="cab"><div>
+    <h2 style="margin-top:20px">Empresas que trabajan con nosotros</h2></div></div>
     <div class="testi"><p>“El sistema entró en producción en el plazo comprometido y la transferencia al equipo interno fue ordenada.”</p>
       <div class="quien"><b>Dirección</b><span>Retail</span></div></div>
     <div class="testi"><p>“Nos indicaron qué procesos no convenía automatizar todavía. Esa recomendación evitó una inversión innecesaria.”</p>
@@ -802,7 +787,6 @@ escribir("contacto/index.html", cab({
   ruta: "/contacto/",
 }) + `
 <section class="cabecera"><div class="wrap">
-  <div class="rotulo">06 — Contacto</div>
   <h1>Conversemos sobre su proyecto</h1>
   <p class="bajada">La vía más directa es agendar una reunión de treinta minutos. Al terminar tendrá un diagnóstico del problema y una propuesta de alcance, sin compromiso.</p>
 </div></section>
@@ -837,23 +821,39 @@ for (const p of PERSONAS) {
     desc: `${p.rol} en condor.ai. ${p.resumen}`,
     ruta: `/equipo/${p.slug}.html`,
   }) + `
-<section class="cabecera"><div class="wrap estrecho">
+<section class="cabecera"><div class="wrap">
   <a class="volver" href="/equipo/">Volver al equipo</a>
-  <div class="rotulo" style="margin-top:26px">${p.rol}</div>
-  <h1>${p.nombre}</h1>
-  <p class="bajada">${p.resumen}</p>
+  <div class="ficha-cab">
+    <div class="ficha-foto"><img src="/assets/${p.foto}" alt="${p.nombre}" /></div>
+    <div>
+      <div class="ficha-rol">${p.rol}</div>
+      <h1>${p.nombre}</h1>
+      <p class="bajada">${p.resumen}</p>
+      <div class="hero-cta">
+${p.contacto.map(([ic, txt, url]) => `        <a class="btn ${ic === "calendario" ? "btn-primario" : "btn-linea"}" href="${url}">${icono(ic, "ico-btn")}${txt}</a>`).join("\n")}
+      </div>
+    </div>
+  </div>
 </div></section>
 
-<section style="padding-bottom:clamp(56px,7vw,96px)"><div class="wrap estrecho">
-  <div class="dos-col" style="grid-template-columns:320px 1fr;align-items:start">
-    <div style="border:1px solid var(--linea);border-radius:var(--r-lg);overflow:hidden;aspect-ratio:4/5;background:var(--papel-2)">
-      <img src="/assets/${p.foto}" alt="${p.nombre}" style="width:100%;height:100%;object-fit:cover;object-position:center 20%" />
-    </div>
-    <div style="border-top:1px solid var(--linea)">
-${p.bloques.map(([t, c]) => `      <div style="padding:24px 0;border-bottom:1px solid var(--linea)">
-        <h4 style="font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);font-family:var(--body);margin-bottom:8px">${t}</h4>
-        <p>${c}</p></div>`).join("\n")}
-    </div>
+<section class="seccion"><div class="wrap">
+  <blockquote class="frase">${p.frase}</blockquote>
+  <div class="lista">
+${p.bloques.map(([ic, titulo, texto]) => `    <article class="fila">
+      <div class="marca-fila">${icono(ic)}</div>
+      <div><h3>${titulo}</h3><p class="desc">${texto}</p></div>
+    </article>`).join("\n")}
+  </div>
+</div></section>
+
+<section class="seccion oscura"><div class="wrap">
+  <h2 style="max-width:20ch">El resto del equipo</h2>
+  <div class="lista">
+${PERSONAS.filter((o) => o.slug !== p.slug).map((o) => `    <article class="fila-persona">
+      <div class="retrato-s"><img src="/assets/${o.foto}" alt="${o.nombre}" loading="lazy" /></div>
+      <div><h3>${o.nombre}</h3><div class="rol">${o.rol}</div>
+        <a class="ver" href="/equipo/${o.slug}.html">Ver ficha</a></div>
+    </article>`).join("\n")}
   </div>
 </div></section>
 ` + cierre(`¿Quiere conversar con ${p.nombre.split(" ")[0]}?`) + pie.replace("</body>", JS_COMUN + "</body>"));
