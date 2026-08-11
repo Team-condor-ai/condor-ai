@@ -64,12 +64,28 @@ async function main() {
   const cuenta = await metaGet(`${AD_ACCOUNT}`, { fields: "currency,name" });
 
   // 1) Campañas activas (+ fecha de lanzamiento para saber el "día de campaña")
-  const camps = await metaGet(`${AD_ACCOUNT}/campaigns`, { fields: "name,status,objective,created_time,start_time", limit: 25 });
-  const activas = (camps.data || []).filter(c => c.status === "ACTIVE");
+  const camps = await metaGet(`${AD_ACCOUNT}/campaigns`, { fields: "name,status,effective_status,objective,created_time,start_time", limit: 25 });
+
+  // Se filtra por `effective_status`, no por `status`. `status` es solo lo que
+  // dice la campaña de sí misma: puede decir ACTIVE con todos sus conjuntos y
+  // anuncios pausados, o con la cuenta frenada por saldo, y Barbara seguiría
+  // analizando algo que no entrega nada. `effective_status` es lo que Meta
+  // considera de verdad, mirando también los niveles de abajo.
+  //
+  // Esto es lo que hace que al pausar una campaña, Barbara deje de analizarla
+  // sola en la corrida siguiente. No hay lista que mantener a mano.
+  const activas = (camps.data || []).filter(c => c.effective_status === "ACTIVE");
+
+  const dormidas = (camps.data || []).filter(c => c.effective_status !== "ACTIVE");
+  if (dormidas.length) {
+    console.log(`Fuera del análisis (${dormidas.length}): ` +
+      dormidas.map(c => `${c.name} [${c.effective_status}]`).join(" · "));
+  }
 
   if (!activas.length) {
     console.log("Sin campañas activas — no se envía nada"); return;
   }
+  console.log(`Analizando ${activas.length}: ` + activas.map(c => c.name).join(" · "));
 
   const getAcc = (acc, t) => Number((acc.find(a => a.action_type === t) || {}).value || 0);
   const convDe = (acc) => getAcc(acc, "onsite_conversion.messaging_conversation_started_7d") + getAcc(acc, "onsite_conversion.total_messaging_connection");
