@@ -64,16 +64,16 @@ jobs:
       # El 404.html lo escribe `scripts/prerender.mjs`, NO este paso.
       #
       # Antes acá se hacía `cp dist/index.html dist/404.html`. Desde que la
-      # home es el sitio corporativo estático, esa copia dejaría a /planes
+      # home es el sitio corporativo estático, esa copia dejaría a las rutas
       # con la home como fallback y su router de React nunca montaría. El
       # prerender guarda la cáscara del SPA en 404.html ANTES de pisar el
       # index, que es el único orden que funciona.
       - name: Verificar el fallback del SPA y la home
         run: |
-          test -f dist/404.html || { echo "::error::Falta dist/404.html — /planes respondería 404."; exit 1; }
-          grep -q "root" dist/404.html || { echo "::error::dist/404.html no es la cáscara del SPA — /planes no montaría."; exit 1; }
+          test -f dist/404.html || { echo "::error::Falta dist/404.html — las rutas del router responderían 404."; exit 1; }
+          grep -q "root" dist/404.html || { echo "::error::dist/404.html no es la cáscara del SPA — el router nunca montaría."; exit 1; }
           grep -q "rediseno/estilo.css" dist/index.html || { echo "::error::dist/index.html no es el sitio corporativo."; exit 1; }
-          for r in productos compania equipo proceso clientes contacto; do
+          for r in inicio compania productos equipo proceso clientes contacto; do
             test -f "dist/$r/index.html" || { echo "::error::Falta dist/$r/index.html"; exit 1; }
           done
 

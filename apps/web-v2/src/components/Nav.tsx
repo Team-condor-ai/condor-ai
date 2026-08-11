@@ -13,7 +13,6 @@ const LINKS: NavItem[] = [
   { label: "Portafolio", href: "/portafolio/", type: "ext" },
   { label: "Blog", href: "/blog/", type: "ext" },
   { label: "Nosotros", href: "/nosotros/", type: "ext" },
-  { label: "Planes", href: "/planes", type: "route" },
   { label: "Acceso clientes", href: "/portal.html", type: "ext" },
 ];
 

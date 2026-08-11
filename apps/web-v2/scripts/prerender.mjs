@@ -97,14 +97,14 @@ for (const r of RUTAS) {
 
    EL ORDEN IMPORTA, y es la parte fácil de romper: `404.html` tiene que
    quedar con la cáscara del SPA, NO con la home estática. GitHub Pages
-   sirve 404.html a toda ruta que no exista como archivo, y `/planes` vive
-   solo dentro del router de React. Si 404.html fuera la página estática,
-   /planes mostraría la home y el router nunca montaría.
+   sirve 404.html a toda ruta que no exista como archivo, y el router de
+   React depende de eso para poder montar en cualquier ruta futura. Si
+   404.html fuera la página estática, el router nunca montaría.
    Por eso se escribe 404.html ANTES de pisar index.html, y el workflow ya
    no lo copia después (ver deploy-web.yml). */
 const cascaraSPA = readFileSync(join(dist, "index.html"), "utf8");
 writeFileSync(join(dist, "404.html"), cascaraSPA, "utf8");
-console.log("prerender: /404.html  ← cáscara del SPA (fallback de /planes)");
+console.log("prerender: /404.html  ← cáscara del SPA (fallback de rutas del router)");
 
 const homeEstatica = readFileSync(join(dist, "rediseno", "inicio.html"), "utf8");
 writeFileSync(join(dist, "index.html"), homeEstatica, "utf8");

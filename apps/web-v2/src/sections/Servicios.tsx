@@ -11,7 +11,7 @@ const SERVICIOS = [
     alt: "+2400m",
     titulo: "Videos con IA profesionales",
     desc: "Videos 4K de tus productos y anuncios con presentadores realistas, sin grabar ni contratar producción. Más alcance y más ventas a una fracción del costo y el tiempo.",
-    href: "/videos-ia/",
+    href: "/productos/",
   },
   {
     n: "03",
