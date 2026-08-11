@@ -327,6 +327,64 @@ const JS_COMUN = `
 </script>
 `;
 
+
+/* Lógica del formulario de agenda. Se conserva tal cual estaba: la única
+   diferencia son los colores del mensaje de error, que ahora usan los tokens
+   de esta hoja en vez de los de la plantilla anterior. */
+const JS_AGENDA = `
+<script>
+(() => {
+  const FN = "https://ogmvdthxwcmvqjlxhpsr.supabase.co/functions/v1/agendar-publico";
+  const ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9nbXZkdGh4d2NtdnFqbHhocHNyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE2NDEwMTksImV4cCI6MjA5NzIxNzAxOX0.wo6zSUlMejjYu1hSweZcWEBBdCvBgVNWg3xtLzFTIrI";
+  const sel = document.getElementById("ag_hora");
+  if (!sel) return;
+  // Tramos de 30 min, de 09:00 a 20:30.
+  for (let h = 9; h <= 20; h++) for (const m of [0, 30]) {
+    const v = String(h).padStart(2, "0") + ":" + String(m).padStart(2, "0");
+    const o = document.createElement("option"); o.value = v; o.textContent = v; sel.appendChild(o);
+  }
+  const fIn = document.getElementById("ag_fecha");
+  fIn.min = new Date().toISOString().slice(0, 10);
+  fIn.max = new Date(Date.now() + 60 * 86400000).toISOString().slice(0, 10);
+
+  const $ = (id) => document.getElementById(id);
+  const msg = $("agMsg");
+  document.getElementById("agForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    msg.className = "ag-msg"; msg.textContent = "";
+    const fecha = fIn.value;
+    if (new Date(fecha + "T12:00:00").getDay() === 0) {
+      msg.className = "ag-msg mal"; msg.textContent = "Atendemos de lunes a sábado. Elija otro día."; return;
+    }
+    const body = {
+      nombre: $("ag_nombre").value, whatsapp: $("ag_wsp").value, email: $("ag_email").value,
+      mensaje: $("ag_msg").value, fecha, hora: $("ag_hora").value, website: $("ag_web").value,
+    };
+    $("agBtn").disabled = true; msg.textContent = "Agendando…";
+    try {
+      const r = await fetch(FN, { method: "POST",
+        headers: { "Content-Type": "application/json", apikey: ANON, Authorization: "Bearer " + ANON },
+        body: JSON.stringify(body) });
+      const j = await r.json();
+      if (r.ok && j.ok) {
+        document.getElementById("agForm").outerHTML =
+          '<div class="ag-ok"><h3>Reunión agendada</h3>' +
+          '<p>Le confirmamos por WhatsApp en breve.</p>' +
+          '<a class="btn btn-linea" href="/">Volver al inicio</a></div>';
+      } else {
+        msg.className = "ag-msg mal"; msg.textContent = j.error || "No se pudo agendar. Intente de nuevo.";
+        $("agBtn").disabled = false;
+      }
+    } catch (_e) {
+      msg.className = "ag-msg mal"; msg.textContent = "Error de conexión. Intente de nuevo.";
+      $("agBtn").disabled = false;
+    }
+  });
+})();
+</script>
+`;
+
+
 const CLIENTES = ["PlanetaShop", "Vitalen", "Smartech", "Veci", "Rat.IA"];
 const carrusel = `
 <section class="clientes">
@@ -858,5 +916,76 @@ ${PERSONAS.filter((o) => o.slug !== p.slug).map((o) => `    <article class="fila
 </div></section>
 ` + cierre(`¿Quiere conversar con ${p.nombre.split(" ")[0]}?`) + pie.replace("</body>", JS_COMUN + "</body>"));
 }
+
+
+/* ── AGENDAR ────────────────────────────────────────────────────────────
+   La página a la que apuntan TODOS los CTA del sitio. Se rehace con la
+   misma barra, el mismo pie y la misma hoja de estilos que el resto: antes
+   era la única con otra tipografía, otros colores y otro menú, y eso en la
+   página donde se cierra la conversión se lee como si el enlace te hubiera
+   sacado a otro sitio.
+
+   LO QUE NO SE TOCA: la Edge Function, la anon key, los identificadores de
+   cada campo, el honeypot, los tramos de 30 minutos, el bloqueo de domingos
+   y el estado de éxito. Es un cambio de cáscara, no de comportamiento —
+   este formulario es el que genera las reuniones. */
+escribir("agendar/index.html", cab({
+  titulo: "Agendar una reunión — condor.ai",
+  desc: "Agende una reunión de treinta minutos con condor.ai. Al terminar tendrá un diagnóstico del problema y una propuesta de alcance, sin compromiso.",
+  ruta: "/agendar",
+}) + `
+<section class="cabecera"><div class="wrap">
+  <h1>Agende una reunión</h1>
+  <p class="bajada">Treinta minutos, por videollamada o presencial en nuestra oficina en Santiago. Al terminar tendrá un diagnóstico del problema y una propuesta de alcance, sin compromiso.</p>
+</div></section>
+
+<section style="padding-bottom:clamp(56px,7vw,96px)"><div class="wrap ag-grid">
+  <form id="agForm" class="ag-form" autocomplete="on">
+    <div class="ag-campo">
+      <label for="ag_nombre">Nombre y apellido</label>
+      <input id="ag_nombre" name="nombre" type="text" maxlength="80" required placeholder="Nombre y apellido" />
+    </div>
+    <div class="ag-campo">
+      <label for="ag_wsp">WhatsApp</label>
+      <input id="ag_wsp" name="whatsapp" type="tel" maxlength="20" required placeholder="+56 9 1234 5678" />
+    </div>
+    <div class="ag-campo">
+      <label for="ag_email">Correo</label>
+      <input id="ag_email" name="email" type="email" maxlength="120" required placeholder="tucorreo@empresa.cl" />
+    </div>
+    <div class="ag-dos">
+      <div class="ag-campo">
+        <label for="ag_fecha">Fecha</label>
+        <input id="ag_fecha" name="fecha" type="date" required />
+      </div>
+      <div class="ag-campo">
+        <label for="ag_hora">Hora</label>
+        <select id="ag_hora" name="hora" required></select>
+      </div>
+    </div>
+    <div class="ag-campo">
+      <label for="ag_msg">Cuéntenos brevemente sobre su empresa <span>(opcional)</span></label>
+      <textarea id="ag_msg" name="mensaje" maxlength="600" rows="4" placeholder="Qué proceso le está costando tiempo o dinero"></textarea>
+    </div>
+    <input id="ag_web" name="website" type="text" tabindex="-1" autocomplete="off" aria-hidden="true" />
+    <button class="btn btn-primario" type="submit" id="agBtn">Agendar la reunión</button>
+    <p id="agMsg" class="ag-msg" role="status" aria-live="polite"></p>
+  </form>
+
+  <aside class="ag-lado">
+    <h3>Qué pasa después</h3>
+    <div class="ag-pasos">
+      <div><b>01</b><span>Recibe la confirmación por WhatsApp, normalmente el mismo día.</span></div>
+      <div><b>02</b><span>En la reunión revisamos el proceso que quiere resolver, sin presentación de ventas.</span></div>
+      <div><b>03</b><span>Al terminar le enviamos un alcance escrito con plazos y costo.</span></div>
+    </div>
+    <h3 style="margin-top:26px">Otras vías</h3>
+    <a class="ag-via" href="mailto:${CORREO}">${icono("correo")}${CORREO}</a>
+    <a class="ag-via" href="https://wa.me/${WSP}" target="_blank" rel="noopener">${icono("whatsapp")}${WSP_VISIBLE}</a>
+    <p class="ag-nota">Atendemos de lunes a sábado, entre 09:00 y 20:30.</p>
+  </aside>
+</div></section>
+` + pie.replace("</body>", JS_COMUN + JS_AGENDA + "</body>"));
+
 
 console.log("Listo.");

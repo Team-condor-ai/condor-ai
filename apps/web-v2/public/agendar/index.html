@@ -1,133 +1,358 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Agenda tu reunión · condor.ai</title>
-  <meta name="description" content="Agenda una reunión con condor.ai. Lunes a sábado, 9:00 a 21:00 (hora Chile). Hablemos de tu negocio." />
-  <link rel="icon" type="image/png" href="/assets/favicon.png" /><link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" />
-  <link rel="stylesheet" href="/assets/styles.css" /><script src="/assets/app.js" defer></script>
-  <style>
-    .agendar-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:42px;align-items:start}
-    @media(max-width:860px){.agendar-grid{grid-template-columns:1fr;gap:28px}}
-    .ag-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.09);border-radius:22px;padding:30px;backdrop-filter:blur(10px)}
-    .ag-card h3{font-size:1.15rem;margin-bottom:18px}
-    .ag-field{margin-bottom:15px}
-    .ag-field label{display:block;font-size:.82rem;font-weight:600;color:var(--tx-2);margin-bottom:6px}
-    .ag-field input,.ag-field select,.ag-field textarea{width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:13px 14px;color:var(--tx);font-family:inherit;font-size:.95rem;transition:border-color .2s,background .2s}
-    .ag-field input:focus,.ag-field select:focus,.ag-field textarea:focus{outline:none;border-color:#5b86ff;background:rgba(91,134,255,.06)}
-    .ag-field textarea{min-height:84px;resize:vertical}
-    .ag-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-    .ag-hp{position:absolute;left:-9999px;opacity:0;height:0;overflow:hidden}
-    .ag-msg{font-size:.88rem;margin-top:12px;min-height:20px}
-    .ag-ok{text-align:center;padding:24px 10px}
-    .ag-ok .big{font-size:2.6rem}
-    .ag-list li{display:flex;gap:12px;align-items:flex-start;margin-bottom:16px;color:var(--tx-2)}
-    .ag-list .ic{flex:none;width:40px;height:40px;border-radius:11px;background:rgba(91,134,255,.14);display:grid;place-items:center;font-size:1.1rem}
-    .ag-list b{color:var(--tx);display:block;font-size:.96rem}
-    .ag-when{display:inline-flex;align-items:center;gap:8px;background:rgba(91,134,255,.12);border:1px solid rgba(91,134,255,.3);color:#9bb4ff;font-weight:600;font-size:.82rem;padding:7px 14px;border-radius:999px;margin-top:14px}
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Agendar una reunión — condor.ai</title>
+<meta name="description" content="Agende una reunión de treinta minutos con condor.ai. Al terminar tendrá un diagnóstico del problema y una propuesta de alcance, sin compromiso." />
+<meta name="theme-color" content="#ffffff" />
+<meta property="og:title" content="Agendar una reunión — condor.ai" />
+<meta property="og:description" content="Agende una reunión de treinta minutos con condor.ai. Al terminar tendrá un diagnóstico del problema y una propuesta de alcance, sin compromiso." />
+<meta property="og:type" content="website" />
+<meta property="og:locale" content="es_CL" />
+<link rel="canonical" href="https://condorai.cl/agendar" />
+<link rel="icon" type="image/png" href="/assets/favicon.png" />
+<link rel="preconnect" href="https://api.fontshare.com" />
+<link rel="preconnect" href="https://cdn.fontshare.com" crossorigin />
+<link href="https://api.fontshare.com/v2/css?f[]=switzer@400,500,600,700,800&f[]=satoshi@400,500,700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/rediseno/estilo.css?v=0be8ef09" />
 </head>
-<body id="top">
-  <nav id="nav"><div class="nav-in">
-    <a class="brand" href="/"><img src="/assets/logo.png" alt="condor.ai" /></a>
-    <div class="nav-links"><a class="lk" href="/">Inicio</a><a class="lk" href="/productos/">Servicios</a><a class="lk" href="/clientes/">Portafolio</a><a class="lk" href="/productos/">Productos</a><a class="lk" href="/inicio/">Nosotros</a>
-      <a class="lk" href="/portal.html">Acceso clientes</a><a class="btn btn-grad" style="min-height:38px;padding:0 18px;font-size:.86rem" href="/agendar/">Agendar reunión</a></div>
-    <button class="hamb" id="hamb" aria-label="Menú"><span></span><span></span><span></span></button>
-  </div></nav>
-  <div class="overlay" id="ov"></div>
-  <aside class="drawer" id="drawer"><a href="/">Inicio</a><a href="/productos/">Servicios</a><a href="/clientes/">Portafolio</a><a href="/productos/">Productos</a><a href="/inicio/">Nosotros</a><a href="/portal.html">Acceso clientes</a><a class="btn btn-grad" style="margin-top:20px" href="/agendar/">Agendar reunión</a></aside>
+<body>
+<header class="topbar"><div class="wrap">
+  <button class="burger" aria-label="Abrir menú" aria-expanded="false" aria-controls="cajon">
+    <span></span><span></span><span></span>
+  </button>
+  <a href="/"><img class="logo" src="/assets/logo.png" alt="condor.ai" /></a>
+  <nav class="menu">
+    <a href="/inicio/">Inicio</a>
+    <a href="/equipo/">Equipo</a>
+    <a href="/clientes/">Clientes</a>
+    <a href="/proceso/">Proceso</a>
+    <a href="/productos/">Productos</a>
+    <a href="/contacto/">Contacto</a>
+  </nav>
+  <a class="portal-acceso" href="/portal.html">Portal clientes</a>
+  <a class="btn btn-primario" href="/agendar">Agendar una reunión</a>
+</div></header>
 
-  <header class="pg-hero">
-    <div class="orb orb-1" data-par=".05"></div>
-    <div class="wrap hero-in"><p class="crumbs"><a href="/">Inicio</a> / Agendar reunión</p><p class="eyebrow">Hablemos</p><h1>Agenda tu <span class="grad-tx">reunión</span></h1><p>Conversemos sobre tu negocio y cómo la IA puede hacerlo crecer. Sin costo y sin compromiso.</p>
-      <div class="ag-when">📅 Lunes a sábado · 9:00 a 21:00 · hora Chile</div></div>
-  </header>
+<div class="cortina" hidden></div>
+<nav class="cajon" id="cajon" aria-label="Menú" hidden>
+  <div class="cajon-cab">
+    <img class="logo" src="/assets/logo.png" alt="condor.ai" />
+    <button class="cerrar" aria-label="Cerrar menú">&times;</button>
+  </div>
+  <a href="/inicio/">Inicio</a>
+  <a href="/equipo/">Equipo</a>
+  <a href="/clientes/">Clientes</a>
+  <a href="/proceso/">Proceso</a>
+  <a href="/productos/">Productos</a>
+  <a href="/contacto/">Contacto</a>
+  <a href="/portal.html">Portal de clientes</a>
+  <a class="btn btn-primario" href="/agendar">Agendar una reunión</a>
+</nav>
 
-  <section style="padding-top:10px"><div class="wrap">
-    <div class="agendar-grid">
-      <!-- Formulario -->
-      <div class="ag-card">
-        <h3>Elige día y hora</h3>
-        <form id="agForm" autocomplete="on">
-          <div class="ag-field"><label for="ag_nombre">Tu nombre</label><input id="ag_nombre" name="nombre" type="text" maxlength="80" required placeholder="Nombre y apellido" /></div>
-          <div class="ag-row">
-            <div class="ag-field"><label for="ag_wsp">WhatsApp</label><input id="ag_wsp" name="whatsapp" type="tel" maxlength="20" required placeholder="+56 9 1234 5678" /></div>
-            <div class="ag-field"><label for="ag_email">Email</label><input id="ag_email" name="email" type="email" maxlength="120" required placeholder="tucorreo@ejemplo.com" /></div>
-          </div>
-          <div class="ag-row">
-            <div class="ag-field"><label for="ag_fecha">Día</label><input id="ag_fecha" name="fecha" type="date" required /></div>
-            <div class="ag-field"><label for="ag_hora">Hora (Chile)</label><select id="ag_hora" name="hora" required></select></div>
-          </div>
-          <div class="ag-field"><label for="ag_msg">¿De qué quieres hablar? (opcional)</label><textarea id="ag_msg" name="mensaje" maxlength="600" placeholder="Cuéntanos brevemente sobre tu negocio…"></textarea></div>
-          <!-- honeypot anti-bots -->
-          <div class="ag-hp" aria-hidden="true"><label>No llenar<input id="ag_web" name="website" type="text" tabindex="-1" autocomplete="off" /></label></div>
-          <button class="btn btn-grad" type="submit" id="agBtn" style="width:100%;margin-top:6px">Agendar mi reunión</button>
-          <p class="ag-msg" id="agMsg"></p>
-        </form>
+<section class="cabecera"><div class="wrap">
+  <h1>Agende una reunión</h1>
+  <p class="bajada">Treinta minutos, por videollamada o presencial en nuestra oficina en Santiago. Al terminar tendrá un diagnóstico del problema y una propuesta de alcance, sin compromiso.</p>
+</div></section>
+
+<section style="padding-bottom:clamp(56px,7vw,96px)"><div class="wrap ag-grid">
+  <form id="agForm" class="ag-form" autocomplete="on">
+    <div class="ag-campo">
+      <label for="ag_nombre">Nombre y apellido</label>
+      <input id="ag_nombre" name="nombre" type="text" maxlength="80" required placeholder="Nombre y apellido" />
+    </div>
+    <div class="ag-campo">
+      <label for="ag_wsp">WhatsApp</label>
+      <input id="ag_wsp" name="whatsapp" type="tel" maxlength="20" required placeholder="+56 9 1234 5678" />
+    </div>
+    <div class="ag-campo">
+      <label for="ag_email">Correo</label>
+      <input id="ag_email" name="email" type="email" maxlength="120" required placeholder="tucorreo@empresa.cl" />
+    </div>
+    <div class="ag-dos">
+      <div class="ag-campo">
+        <label for="ag_fecha">Fecha</label>
+        <input id="ag_fecha" name="fecha" type="date" required />
       </div>
-
-      <!-- Lateral -->
-      <div>
-        <ul class="ag-list" style="list-style:none;padding:0;margin:0">
-          <li><span class="ic">⚡</span><div><b>Respuesta rápida</b>Te confirmamos por WhatsApp apenas agendas.</div></li>
-          <li><span class="ic">🎯</span><div><b>100% enfocada en ti</b>Revisamos tu caso y te decimos qué conviene, sin tecnicismos.</div></li>
-          <li><span class="ic">💬</span><div><b>Sin compromiso</b>Es una conversación, no una venta a presión.</div></li>
-          <li><span class="ic">🦅</span><div><b>Por videollamada</b>30 minutos, desde donde estés.</div></li>
-        </ul>
-        <div class="ag-card" style="margin-top:20px;padding:22px">
-          <p style="color:var(--tx-2);font-size:.92rem;margin:0">¿Prefieres escribirnos directo?</p>
-          <a class="btn btn-soft" style="margin-top:12px;width:100%" href="https://wa.me/56988989824?text=Hola%20condor.ai,%20quiero%20agendar%20una%20reuni%C3%B3n" target="_blank" rel="noopener">Hablar por WhatsApp</a>
-        </div>
+      <div class="ag-campo">
+        <label for="ag_hora">Hora</label>
+        <select id="ag_hora" name="hora" required></select>
       </div>
     </div>
-  </div></section>
+    <div class="ag-campo">
+      <label for="ag_msg">Cuéntenos brevemente sobre su empresa <span>(opcional)</span></label>
+      <textarea id="ag_msg" name="mensaje" maxlength="600" rows="4" placeholder="Qué proceso le está costando tiempo o dinero"></textarea>
+    </div>
+    <input id="ag_web" name="website" type="text" tabindex="-1" autocomplete="off" aria-hidden="true" />
+    <button class="btn btn-primario" type="submit" id="agBtn">Agendar la reunión</button>
+    <p id="agMsg" class="ag-msg" role="status" aria-live="polite"></p>
+  </form>
 
-  <footer><div class="wrap"><div class="foot-grid">
-    <div><div class="brand"><img src="/assets/logo.png" alt="condor.ai" /></div><p style="color:var(--tx-2);font-size:.94rem;max-width:320px">Inteligencia artificial para hacer crecer tu negocio.</p></div>
-    <div><h5>Servicios</h5><ul><li><a href="/productos/">Páginas web</a></li><li><a href="/productos/">Productos</a></li><li><a href="/productos/">Automatización</a></li></ul></div>
-    <div><h5>Empresa</h5><ul><li><a href="/inicio/">Nosotros</a></li><li><a href="/clientes/">Portafolio</a></li><li><a href="/productos/">Productos</a></li><li><a href="/agendar/">Agendar reunión</a></li></ul></div>
-    <div><h5>Contacto</h5><ul><li>WhatsApp +56 9 8898 9824</li><li><a href="/agendar/">Agenda una reunión</a></li></ul></div>
-  </div><div class="foot-bottom">© <span id="anio"></span> condor.ai · Inteligencia Artificial para tu negocio</div></div></footer>
+  <aside class="ag-lado">
+    <h3>Qué pasa después</h3>
+    <div class="ag-pasos">
+      <div><b>01</b><span>Recibe la confirmación por WhatsApp, normalmente el mismo día.</span></div>
+      <div><b>02</b><span>En la reunión revisamos el proceso que quiere resolver, sin presentación de ventas.</span></div>
+      <div><b>03</b><span>Al terminar le enviamos un alcance escrito con plazos y costo.</span></div>
+    </div>
+    <h3 style="margin-top:26px">Otras vías</h3>
+    <a class="ag-via" href="mailto:contacto@teamcondorcl.com"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>contacto@teamcondorcl.com</a>
+    <a class="ag-via" href="https://wa.me/56988989824" target="_blank" rel="noopener"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 20.5 5 16a8 8 0 1 1 3 3l-4.5 1.5Z"/></svg>+56 9 8898 9824</a>
+    <p class="ag-nota">Atendemos de lunes a sábado, entre 09:00 y 20:30.</p>
+  </aside>
+</div></section>
 
-  <script>
-    const FN = "https://ogmvdthxwcmvqjlxhpsr.supabase.co/functions/v1/agendar-publico";
-    const ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9nbXZkdGh4d2NtdnFqbHhocHNyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE2NDEwMTksImV4cCI6MjA5NzIxNzAxOX0.wo6zSUlMejjYu1hSweZcWEBBdCvBgVNWg3xtLzFTIrI";
-    // Slots de 30 min, 09:00 a 20:30
-    const sel = document.getElementById("ag_hora");
-    for (let h = 9; h <= 20; h++) for (const m of [0, 30]) {
-      if (h === 20 && m === 30) { /* último a las 20:30 */ }
-      const v = String(h).padStart(2,"0") + ":" + String(m).padStart(2,"0");
-      const o = document.createElement("option"); o.value = v; o.textContent = v; sel.appendChild(o);
-    }
-    // Fecha: hoy a +60 días
-    const fIn = document.getElementById("ag_fecha");
-    const hoy = new Date(); const max = new Date(Date.now() + 60*86400000);
-    fIn.min = hoy.toISOString().slice(0,10); fIn.max = max.toISOString().slice(0,10);
-    const $ = (id) => document.getElementById(id);
-    const msg = $("agMsg");
-    document.getElementById("agForm").addEventListener("submit", async (e) => {
-      e.preventDefault(); msg.style.color = "var(--tx-2)"; msg.textContent = "";
-      const fecha = fIn.value;
-      // Domingo no
-      const dow = new Date(fecha + "T12:00:00").getDay();
-      if (dow === 0) { msg.style.color = "#ff8a8a"; msg.textContent = "Atendemos de lunes a sábado. Elige otro día."; return; }
-      const body = {
-        nombre: $("ag_nombre").value, whatsapp: $("ag_wsp").value, email: $("ag_email").value,
-        mensaje: $("ag_msg").value, fecha, hora: $("ag_hora").value, website: $("ag_web").value,
-      };
-      $("agBtn").disabled = true; msg.textContent = "Agendando…";
-      try {
-        const r = await fetch(FN, { method: "POST", headers: { "Content-Type": "application/json", "apikey": ANON, "Authorization": "Bearer " + ANON }, body: JSON.stringify(body) });
-        const j = await r.json();
-        if (r.ok && j.ok) {
-          document.getElementById("agForm").outerHTML =
-            '<div class="ag-ok"><div class="big">✅</div><h3 style="margin:10px 0 6px">¡Reunión agendada!</h3><p style="color:var(--tx-2)">Te confirmamos por WhatsApp en breve. ¡Nos vemos pronto! 🦅</p></div>';
-        } else {
-          msg.style.color = "#ff8a8a"; msg.textContent = j.error || "No se pudo agendar. Intenta de nuevo.";
-          $("agBtn").disabled = false;
+<footer class="pie"><div class="wrap">
+  <div class="pie-cols">
+    <div>
+      <img class="logo" src="/assets/logo.png" alt="condor.ai" />
+      <p style="color:var(--on-navy-2);font-size:14.5px;margin-top:16px;max-width:34ch">
+        Desarrollo de software, agentes de inteligencia artificial y consultoría de IA para empresas.</p>
+    </div>
+    <div><h4>Productos</h4>
+      <a href="/productos/">Desarrollo de software</a><a href="/productos/">Asistentes y agentes de IA</a><a href="/productos/">Consultoría e implementación</a></div>
+    <div><h4>La empresa</h4>
+      <a href="/inicio/">Quiénes somos</a><a href="/equipo/">Equipo</a><a href="/proceso/">Proceso</a><a href="/clientes/">Clientes</a></div>
+    <div><h4>Contacto</h4>
+      <a href="/agendar">Agendar una reunión</a>
+      <a href="mailto:contacto@teamcondorcl.com">contacto@teamcondorcl.com</a>
+      <a href="https://wa.me/56988989824" target="_blank" rel="noopener">WhatsApp +56 9 8898 9824</a>
+      <a href="/portal.html">Portal de clientes</a></div>
+  </div>
+  <div class="legal"><span>© 2026 condor.ai · Santiago, Chile</span><span>Todos los derechos reservados</span></div>
+</div></footer>
+
+<script>
+(() => {
+  const quieto = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // Acordeón de productos: muelle críticamente amortiguado, e interrumpible.
+  // Arranca siempre desde la altura que hay EN PANTALLA, así se puede hacer
+  // clic a mitad de la apertura y sigue desde ahí sin saltar.
+  const RESPUESTA = 0.32;
+  document.querySelectorAll(".prod").forEach((det) => {
+    const cuerpo = det.querySelector(".cuerpo"), resumen = det.querySelector("summary");
+    let raf = 0, alto = 0, vel = 0, meta = det.open ? -1 : 0;
+    if (!det.open) cuerpo.style.height = "0px";
+    function correr() {
+      if (quieto) { cuerpo.style.height = meta < 0 ? "auto" : "0px"; if (meta >= 0) det.open = false; return; }
+      cancelAnimationFrame(raf);
+      let previo = performance.now();
+      const paso = (ahora) => {
+        const dt = Math.min((ahora - previo) / 1000, 0.05); previo = ahora;
+        const destino = meta < 0 ? cuerpo.scrollHeight : 0;
+        const w = 2 * Math.PI / RESPUESTA, k = w * w, c = 2 * w;
+        vel += (-k * (alto - destino) - c * vel) * dt;
+        alto += vel * dt;
+        if (Math.abs(alto - destino) < 0.5 && Math.abs(vel) < 2) {
+          cuerpo.style.height = meta < 0 ? "auto" : "0px";
+          if (meta >= 0) det.open = false;
+          return;
         }
-      } catch (_e) { msg.style.color = "#ff8a8a"; msg.textContent = "Error de conexión. Intenta de nuevo."; $("agBtn").disabled = false; }
+        cuerpo.style.height = Math.max(0, alto) + "px";
+        raf = requestAnimationFrame(paso);
+      };
+      raf = requestAnimationFrame(paso);
+    }
+    resumen.addEventListener("click", (ev) => {
+      ev.preventDefault();
+      alto = cuerpo.getBoundingClientRect().height;
+      cuerpo.style.height = alto + "px";
+      if (det.open) meta = 0; else { det.open = true; meta = -1; }
+      correr();
     });
-  </script>
+  });
+
+  // Entrada al entrar en pantalla, ESCALONADA dentro de cada bloque.
+  // El retardo se calcula por posición dentro del grupo, no por posición en
+  // la página: si fuera global, el último bloque esperaría varios segundos.
+  // Tope de 3 pasos — más allá se percibe como lentitud, no como ritmo.
+  const grupos = document.querySelectorAll(".lista, .oficina-dos, .pasos, .testis, .citas, .vias, .equipo-grid, .cifras, .pie-cols");
+  const sueltos = document.querySelectorAll(".dos-col > *, .cierre");
+  const marcar = (el, i) => {
+    el.classList.add("rv");
+    el.style.transitionDelay = Math.min(i, 3) * 80 + "ms";
+  };
+  if (quieto) {
+    document.querySelectorAll(".rv").forEach(p => p.classList.add("vis"));
+  } else {
+    grupos.forEach(g => [...g.children].forEach(marcar));
+    sueltos.forEach(el => marcar(el, 0));
+    const io = new IntersectionObserver((es) => {
+      for (const e of es) if (e.isIntersecting) { e.target.classList.add("vis"); io.unobserve(e.target); }
+    }, { rootMargin: "0px 0px -10% 0px", threshold: .08 });
+    document.querySelectorAll(".rv").forEach(p => io.observe(p));
+  }
+
+  // Las cifras cuentan hacia arriba al aparecer. Con movimiento reducido se
+  // muestran ya en su valor final: el número es el dato, la animación no.
+  const cifras = document.querySelectorAll("[data-contar]");
+  if (cifras.length && !quieto) {
+    const ioc = new IntersectionObserver((es) => {
+      for (const e of es) {
+        if (!e.isIntersecting) continue;
+        const el = e.target, fin = +el.dataset.contar;
+        const pre = el.dataset.pre || "", post = el.dataset.post || "";
+        const t0 = performance.now(), dur = 900;
+        const paso = (ahora) => {
+          const t = Math.min((ahora - t0) / dur, 1);
+          const suave = 1 - Math.pow(1 - t, 3);          // desacelera al final
+          el.textContent = pre + Math.round(fin * suave) + post;
+          if (t < 1) requestAnimationFrame(paso);
+        };
+        requestAnimationFrame(paso);
+        ioc.unobserve(el);
+      }
+    }, { threshold: .6 });
+    cifras.forEach(c => ioc.observe(c));
+  }
+
+  // Cajón lateral (solo teléfono).
+  // El atributo hidden se quita al abrir y se vuelve a poner al terminar de cerrar: si
+  // quedara siempre en el DOM visible, sus enlaces seguirían siendo
+  // enfocables con el tabulador por detrás de la página.
+  const burger = document.querySelector(".burger");
+  const cajon = document.getElementById("cajon");
+  const cortina = document.querySelector(".cortina");
+  if (burger && cajon && cortina) {
+    let abierto = false;
+    const abrir = () => {
+      abierto = true;
+      cajon.hidden = false; cortina.hidden = false;
+      requestAnimationFrame(() => document.body.classList.add("cajon-abierto"));
+      burger.setAttribute("aria-expanded", "true");
+      document.body.style.overflow = "hidden";   // que no scrollee lo de atrás
+      cajon.querySelector("a").focus();
+    };
+    const cerrar = () => {
+      if (!abierto) return;
+      abierto = false;
+      document.body.classList.remove("cajon-abierto");
+      burger.setAttribute("aria-expanded", "false");
+      document.body.style.overflow = "";
+      const fin = () => { if (!abierto) { cajon.hidden = true; cortina.hidden = true; } };
+      quieto ? fin() : setTimeout(fin, 280);
+      burger.focus();
+    };
+    burger.addEventListener("click", () => (abierto ? cerrar() : abrir()));
+    cortina.addEventListener("click", cerrar);
+    cajon.querySelector(".cerrar").addEventListener("click", cerrar);
+    cajon.querySelectorAll("a").forEach((a) => a.addEventListener("click", cerrar));
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape") cerrar(); });
+  }
+
+  // Carrusel de sitios: coverflow que avanza solo.
+  // La posición de cada tarjeta se calcula respecto de la activa y se pone en
+  // data-pos; el CSS hace el resto. Se guarda la distancia MÁS CORTA en el
+  // anillo (por eso el ajuste con la mitad del total), o al pasar del último
+  // al primero las tarjetas cruzarían toda la pantalla en vez de girar.
+  document.querySelectorAll(".sitios").forEach((car) => {
+    const tarjetas = [...car.querySelectorAll(".sitio")];
+    const puntos = [...car.querySelectorAll(".s-punto")];
+    if (!tarjetas.length) return;
+    const total = tarjetas.length;
+    let act = 0, reloj = 0;
+
+    const pintar = () => {
+      tarjetas.forEach((t, i) => {
+        let d = i - act;
+        if (d > total / 2) d -= total;
+        if (d < -total / 2) d += total;
+        t.dataset.pos = Math.abs(d) > 2 ? "lejos" : String(d);
+        t.setAttribute("aria-hidden", String(d !== 0));
+      });
+      puntos.forEach((p, i) => p.setAttribute("aria-selected", String(i === act)));
+    };
+    const ir = (n) => { act = (n + total) % total; pintar(); };
+    const andar = () => { if (!quieto) { clearInterval(reloj); reloj = setInterval(() => ir(act + 1), 3800); } };
+    const frenar = () => clearInterval(reloj);
+
+    puntos.forEach((p, i) => p.addEventListener("click", () => { frenar(); ir(i); andar(); }));
+    // Tocar una tarjeta lateral la trae al centro: es lo que uno espera al
+    // hacer clic en algo que se ve a medias.
+    tarjetas.forEach((t, i) => t.addEventListener("click", () => { frenar(); ir(i); andar(); }));
+    car.addEventListener("pointerenter", frenar);
+    car.addEventListener("pointerleave", andar);
+    car.addEventListener("focusin", frenar);
+
+    pintar();
+    andar();
+  });
+
+  // Hero rotativo (solo en el inicio). Se detiene al pasar el ratón y al
+  // enfocar con teclado: un titular que cambia mientras alguien lo lee es una
+  // molestia, no una gracia.
+  const slides = [...document.querySelectorAll("#slides .slide")];
+  if (slides.length) {
+    const puntos = [...document.querySelectorAll(".punto")];
+    let i = 0, timer = 0;
+    const mostrar = (n) => {
+      i = (n + slides.length) % slides.length;
+      slides.forEach((s, k) => s.classList.toggle("on", k === i));
+      puntos.forEach((p, k) => p.setAttribute("aria-selected", String(k === i)));
+    };
+    const arrancar = () => { if (!quieto) { clearInterval(timer); timer = setInterval(() => mostrar(i + 1), 6500); } };
+    const parar = () => clearInterval(timer);
+    puntos.forEach((p, k) => p.addEventListener("click", () => { parar(); mostrar(k); arrancar(); }));
+    const zona = document.querySelector(".hero");
+    zona.addEventListener("pointerenter", parar);
+    zona.addEventListener("pointerleave", arrancar);
+    zona.addEventListener("focusin", parar);
+    arrancar();
+  }
+})();
+</script>
+
+<script>
+(() => {
+  const FN = "https://ogmvdthxwcmvqjlxhpsr.supabase.co/functions/v1/agendar-publico";
+  const ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9nbXZkdGh4d2NtdnFqbHhocHNyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE2NDEwMTksImV4cCI6MjA5NzIxNzAxOX0.wo6zSUlMejjYu1hSweZcWEBBdCvBgVNWg3xtLzFTIrI";
+  const sel = document.getElementById("ag_hora");
+  if (!sel) return;
+  // Tramos de 30 min, de 09:00 a 20:30.
+  for (let h = 9; h <= 20; h++) for (const m of [0, 30]) {
+    const v = String(h).padStart(2, "0") + ":" + String(m).padStart(2, "0");
+    const o = document.createElement("option"); o.value = v; o.textContent = v; sel.appendChild(o);
+  }
+  const fIn = document.getElementById("ag_fecha");
+  fIn.min = new Date().toISOString().slice(0, 10);
+  fIn.max = new Date(Date.now() + 60 * 86400000).toISOString().slice(0, 10);
+
+  const $ = (id) => document.getElementById(id);
+  const msg = $("agMsg");
+  document.getElementById("agForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    msg.className = "ag-msg"; msg.textContent = "";
+    const fecha = fIn.value;
+    if (new Date(fecha + "T12:00:00").getDay() === 0) {
+      msg.className = "ag-msg mal"; msg.textContent = "Atendemos de lunes a sábado. Elija otro día."; return;
+    }
+    const body = {
+      nombre: $("ag_nombre").value, whatsapp: $("ag_wsp").value, email: $("ag_email").value,
+      mensaje: $("ag_msg").value, fecha, hora: $("ag_hora").value, website: $("ag_web").value,
+    };
+    $("agBtn").disabled = true; msg.textContent = "Agendando…";
+    try {
+      const r = await fetch(FN, { method: "POST",
+        headers: { "Content-Type": "application/json", apikey: ANON, Authorization: "Bearer " + ANON },
+        body: JSON.stringify(body) });
+      const j = await r.json();
+      if (r.ok && j.ok) {
+        document.getElementById("agForm").outerHTML =
+          '<div class="ag-ok"><h3>Reunión agendada</h3>' +
+          '<p>Le confirmamos por WhatsApp en breve.</p>' +
+          '<a class="btn btn-linea" href="/">Volver al inicio</a></div>';
+      } else {
+        msg.className = "ag-msg mal"; msg.textContent = j.error || "No se pudo agendar. Intente de nuevo.";
+        $("agBtn").disabled = false;
+      }
+    } catch (_e) {
+      msg.className = "ag-msg mal"; msg.textContent = "Error de conexión. Intente de nuevo.";
+      $("agBtn").disabled = false;
+    }
+  });
+})();
+</script>
 </body>
 </html>
