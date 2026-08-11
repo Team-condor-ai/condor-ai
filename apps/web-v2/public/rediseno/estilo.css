@@ -981,3 +981,29 @@ body.cajon-abierto .cajon{transform:none}
   .sitio h4{font-size:15px}
   .sitio p{font-size:12.5px}
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   Desbordamiento horizontal en teléfono — corrección
+   ──────────────────────────────────────────────────────────────────────
+   La pista es un flex con 5 tarjetas al 100% cada una: 500% de ancho. Los
+   ítems de grid y de flex traen `min-width:auto`, así que NO se encogen por
+   debajo del ancho de su contenido — el bloque entero crecía a 500% y
+   arrastraba la página, cortando el texto contra el borde derecho.
+   `min-width:0` es lo que les permite encogerse; sin eso, cualquier
+   overflow:hidden solo esconde el síntoma.
+   ══════════════════════════════════════════════════════════════════════ */
+.fila,.fila-persona,.dos-col,.lista,.pasos,.vias,.hero-grid,.ag-grid{min-width:0}
+.fila > *,.fila-persona > *,.dos-col > *,.hero-grid > *,.ag-grid > *{min-width:0}
+.sitios{width:100%;max-width:100%;overflow:hidden}
+.sitios-pista{width:100%;max-width:100%}
+.sitio{min-width:0}
+
+@media(max-width:700px){
+  .sitios-pista{flex-wrap:nowrap}
+  .sitio{flex:0 0 100%;width:100%;max-width:100%;min-width:0}
+  .sitio .captura{aspect-ratio:16/10}
+  .sitio .captura img{object-position:top left}
+  /* Las capturas son de sitios de escritorio: encajadas a lo ancho quedan
+     ilegibles. Se muestra la esquina superior izquierda, que es donde está
+     el encabezado y donde se reconoce el sitio. */
+}
