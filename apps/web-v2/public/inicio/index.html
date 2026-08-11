@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://api.fontshare.com" />
 <link rel="preconnect" href="https://cdn.fontshare.com" crossorigin />
 <link href="https://api.fontshare.com/v2/css?f[]=switzer@400,500,600,700,800&f[]=satoshi@400,500,700&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="/rediseno/estilo.css?v=0be8ef09" />
+<link rel="stylesheet" href="/rediseno/estilo.css?v=cd65f035" />
 </head>
 <body>
 <header class="topbar"><div class="wrap">
@@ -227,26 +227,48 @@
     document.addEventListener("keydown", (e) => { if (e.key === "Escape") cerrar(); });
   }
 
-  // Carrusel de sitios: coverflow que avanza solo.
-  // La posición de cada tarjeta se calcula respecto de la activa y se pone en
-  // data-pos; el CSS hace el resto. Se guarda la distancia MÁS CORTA en el
-  // anillo (por eso el ajuste con la mitad del total), o al pasar del último
-  // al primero las tarjetas cruzarían toda la pantalla en vez de girar.
+  // ── Carrusel ────────────────────────────────────────────────────────
+  // Dos comportamientos según el ancho:
+  //
+  // ESCRITORIO — coverflow: cada tarjeta se coloca por su distancia a la
+  //   activa (data-pos) y el CSS la aleja en Z, la inclina y la atenúa.
+  //
+  // TELÉFONO — pista deslizante: TODAS las tarjetas viven en una fila y lo
+  //   que se mueve es la fila entera. Esto es lo que arregla el salto: antes
+  //   la activa era position:relative y las demás absolute, y "position" no
+  //   se puede animar — el navegador cambiaba de golpe. Moviendo la pista,
+  //   la transición es una sola propiedad y sí se anima.
+  //   Además permite arrastrar con el dedo, como una historia de Instagram:
+  //   la tarjeta sigue al dedo y al soltar decide por distancia Y velocidad.
+  const MOVIL = () => matchMedia("(max-width: 700px)").matches;
+
   document.querySelectorAll(".sitios").forEach((car) => {
+    const pista = car.querySelector(".sitios-pista");
     const tarjetas = [...car.querySelectorAll(".sitio")];
     const puntos = [...car.querySelectorAll(".s-punto")];
     if (!tarjetas.length) return;
     const total = tarjetas.length;
     let act = 0, reloj = 0;
 
-    const pintar = () => {
-      tarjetas.forEach((t, i) => {
-        let d = i - act;
-        if (d > total / 2) d -= total;
-        if (d < -total / 2) d += total;
-        t.dataset.pos = Math.abs(d) > 2 ? "lejos" : String(d);
-        t.setAttribute("aria-hidden", String(d !== 0));
-      });
+    const pintar = (sinAnimar) => {
+      if (MOVIL()) {
+        pista.style.transition = sinAnimar ? "none" : "";
+        pista.style.transform = "translate3d(" + (-act * 100) + "%,0,0)";
+        tarjetas.forEach((t, i) => {
+          t.dataset.pos = i === act ? "0" : "fuera";
+          t.setAttribute("aria-hidden", String(i !== act));
+        });
+      } else {
+        pista.style.transform = "";
+        pista.style.transition = "";
+        tarjetas.forEach((t, i) => {
+          let d = i - act;
+          if (d > total / 2) d -= total;
+          if (d < -total / 2) d += total;
+          t.dataset.pos = Math.abs(d) > 2 ? "lejos" : String(d);
+          t.setAttribute("aria-hidden", String(d !== 0));
+        });
+      }
       puntos.forEach((p, i) => p.setAttribute("aria-selected", String(i === act)));
     };
     const ir = (n) => { act = (n + total) % total; pintar(); };
@@ -254,14 +276,72 @@
     const frenar = () => clearInterval(reloj);
 
     puntos.forEach((p, i) => p.addEventListener("click", () => { frenar(); ir(i); andar(); }));
-    // Tocar una tarjeta lateral la trae al centro: es lo que uno espera al
-    // hacer clic en algo que se ve a medias.
-    tarjetas.forEach((t, i) => t.addEventListener("click", () => { frenar(); ir(i); andar(); }));
+    tarjetas.forEach((t, i) => t.addEventListener("click", () => {
+      if (!MOVIL()) { frenar(); ir(i); andar(); }
+    }));
     car.addEventListener("pointerenter", frenar);
     car.addEventListener("pointerleave", andar);
     car.addEventListener("focusin", frenar);
 
-    pintar();
+    // ── Arrastre con el dedo (solo en la pista deslizante) ──────────────
+    let x0 = 0, y0 = 0, t0 = 0, dx = 0, arrastrando = false, decidido = false;
+    const ancho = () => car.getBoundingClientRect().width || 1;
+
+    pista.addEventListener("pointerdown", (e) => {
+      if (!MOVIL() || e.pointerType === "mouse") return;
+      frenar();
+      x0 = e.clientX; y0 = e.clientY; t0 = performance.now();
+      dx = 0; arrastrando = true; decidido = false;
+      pista.style.transition = "none";
+    });
+
+    pista.addEventListener("pointermove", (e) => {
+      if (!arrastrando) return;
+      const ex = e.clientX - x0, ey = e.clientY - y0;
+      // Hasta saber si el gesto es horizontal o vertical NO se toma ninguno:
+      // robarle el gesto al scroll vertical es la forma más rápida de que la
+      // página se sienta trabada.
+      if (!decidido) {
+        if (Math.abs(ex) < 8 && Math.abs(ey) < 8) return;
+        decidido = true;
+        if (Math.abs(ey) > Math.abs(ex)) { arrastrando = false; pista.style.transition = ""; return; }
+        pista.setPointerCapture(e.pointerId);
+      }
+      dx = ex;
+      // Resistencia en los extremos: en la primera y la última, el dedo
+      // avanza menos que el dedo. Un tope seco se siente como un error.
+      if ((act === 0 && dx > 0) || (act === total - 1 && dx < 0)) dx *= 0.35;
+      pista.style.transform = "translate3d(calc(" + (-act * 100) + "% + " + dx + "px),0,0)";
+    });
+
+    const soltar = () => {
+      if (!arrastrando) return;
+      arrastrando = false;
+      pista.style.transition = "";
+      const v = dx / Math.max(performance.now() - t0, 1);   // px por ms
+      // Cambia de tarjeta si se arrastró más de un tercio del ancho O si el
+      // gesto fue rápido. Lo segundo es lo que permite pasar de un flick
+      // corto, sin tener que recorrer media pantalla.
+      const salta = Math.abs(dx) > ancho() / 3 || Math.abs(v) > 0.45;
+      if (salta && dx < 0) ir(Math.min(act + 1, total - 1));
+      else if (salta && dx > 0) ir(Math.max(act - 1, 0));
+      else pintar();
+      dx = 0;
+      andar();
+    };
+    pista.addEventListener("pointerup", soltar);
+    pista.addEventListener("pointercancel", soltar);
+
+    // Al girar el teléfono o cambiar de ancho, se recoloca sin animación:
+    // animar un cambio de modo se ve como un salto, no como una transición.
+    let modo = MOVIL();
+    addEventListener("resize", () => {
+      const ahora = MOVIL();
+      if (ahora !== modo) { modo = ahora; pintar(true); }
+      else if (ahora) pintar(true);
+    });
+
+    pintar(true);
     andar();
   });
 

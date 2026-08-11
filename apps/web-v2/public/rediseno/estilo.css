@@ -929,3 +929,33 @@ body.cajon-abierto .cajon{transform:none}
   .ag-grid{grid-template-columns:1fr;gap:34px}
   .ag-lado{order:-1}   /* qué pasa después, ANTES de pedir los datos */
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   Carrusel en teléfono: pista deslizante
+   ──────────────────────────────────────────────────────────────────────
+   Antes la tarjeta activa era position:relative y las demás absolute. El
+   navegador no puede animar un cambio de `position`, así que el cambio se
+   veía instantáneo. Ahora TODAS son hermanas en una fila y lo que se mueve
+   es la fila entera: una sola propiedad, y esa sí se anima.
+   ══════════════════════════════════════════════════════════════════════ */
+@media(max-width:700px){
+  .sitios{overflow:hidden;border-radius:var(--r-lg)}
+  .sitios-pista{display:flex;height:auto;min-height:0;perspective:none;position:relative;
+    overflow:visible;will-change:transform;
+    transition:transform .42s cubic-bezier(.22,.61,.36,1);
+    /* pan-y deja pasar el scroll vertical al navegador y nos quedamos solo
+       con el horizontal. Sin esto, arrastrar dentro del carrusel traba la
+       página. */
+    touch-action:pan-y}
+  .sitio{position:relative;top:auto;left:auto;flex:0 0 100%;width:100%;max-width:100%;
+    display:block;transform:none !important;opacity:1 !important;filter:none;
+    transition:none;box-shadow:var(--sombra-suave)}
+  .sitio[data-pos]{transform:none !important;opacity:1 !important}
+  /* La que no está al centro se atenúa apenas: da sensación de foco sin
+     hacerla desaparecer mientras el dedo la arrastra. */
+  .sitio[data-pos="fuera"]{opacity:.55 !important}
+  .sitios-puntos{margin-top:16px}
+}
+@media(prefers-reduced-motion:reduce){
+  .sitios-pista{transition:none}
+}
