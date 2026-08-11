@@ -126,20 +126,51 @@ async function main() {
 
   const FIELDS = "campaign_name,ad_name,spend,impressions,clicks,ctr,actions";
 
-  const [hoy, ayer, cuenta] = await Promise.all([
+  const [hoy, ayer, cuenta, camps] = await Promise.all([
     metaGet(`${AD_ACCOUNT}/insights`, { level: "ad", fields: FIELDS, date_preset: "today", limit: 100 }),
     metaGet(`${AD_ACCOUNT}/insights`, { level: "account", fields: "spend,actions", date_preset: "yesterday" }),
     metaGet(AD_ACCOUNT, { fields: "timezone_name,currency" }),
+    metaGet(`${AD_ACCOUNT}/campaigns`, { fields: "name,effective_status", limit: 100 }),
   ]);
 
-  const filas = (hoy.data || []).filter((f) => +f.spend > 0);
+  // Solo se reportan campañas VIVAS.
+  //
+  // Sin esto, el pulso informaba de campañas ya apagadas (pasó el 11-ago-2026
+  // a las 03:21 UTC). No era un error de datos: `date_preset: "today"` usa el
+  // huso de la CUENTA, que es Chile. A las 03:21 UTC en Chile todavía era el
+  // día anterior, así que "hoy" devolvía el gasto de una campaña que se pausó
+  // durante esa jornada — real, pero ya no accionable. Un reporte de algo
+  // apagado hace dudar de todos los demás.
+  //
+  // Se mira `effective_status` y no `status`, igual que en meta-analyzer.mjs:
+  // `status` es lo que la campaña dice de sí misma y puede decir ACTIVE con
+  // todos sus conjuntos pausados o con la cuenta frenada por saldo.
+  const vivas = new Set((camps.data || [])
+    .filter((c) => c.effective_status === "ACTIVE")
+    .map((c) => c.name));
+
+  const conGasto = (hoy.data || []).filter((f) => +f.spend > 0);
+  const filas = conGasto.filter((f) => vivas.has(f.campaign_name));
+
+  const apagadas = [...new Set(conGasto
+    .filter((f) => !vivas.has(f.campaign_name))
+    .map((f) => f.campaign_name))];
+  if (apagadas.length) {
+    console.log(`Fuera del pulso, ya no están activas: ${apagadas.join(" · ")}`);
+  }
   const ahora = new Date().toLocaleString("es-CL", {
     timeZone: cuenta.timezone_name || "Chile/Continental",
     day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false,
   });
 
   if (!filas.length) {
-    await tg(`📊 <b>Pulso de campaña</b> · ${esc(ahora)}\n\nHoy todavía no hay gasto registrado.`);
+    // Se distinguen los dos casos a propósito: "no hay campañas activas" y
+    // "hay activas pero todavía no gastan" son situaciones muy distintas, y
+    // el mismo mensaje para ambas es cómo uno deja de leer los avisos.
+    const nota = apagadas.length
+      ? "No hay campañas activas. El gasto de hoy corresponde a campañas ya pausadas."
+      : "Hoy todavía no hay gasto registrado.";
+    await tg(`📊 <b>Pulso de campaña</b> · ${esc(ahora)}\n\n${esc(nota)}`);
     return;
   }
 
