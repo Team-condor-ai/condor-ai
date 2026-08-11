@@ -959,3 +959,25 @@ body.cajon-abierto .cajon{transform:none}
 @media(prefers-reduced-motion:reduce){
   .sitios-pista{transition:none}
 }
+
+/* ── Carrusel en teléfono: tarjeta compacta ─────────────────────────────
+   Al pasar a pista deslizante, la tarjeta quedó al 100% del ancho con la
+   captura a 16/10 más el bloque de texto completo: una sola tarjeta se
+   comía casi toda la pantalla. Acá se baja la imagen a 16/9 y el texto a
+   tamaños de lista, para que la tarjeta entre entera sin empujar el resto
+   de la página fuera de vista. */
+@media(max-width:700px){
+  .sitio .captura{aspect-ratio:16/9}
+  .sitio-txt{padding:12px 14px 15px}
+  .sitio-tipo{font-size:10px;letter-spacing:.1em}
+  .sitio h4{font-size:15.5px;margin:6px 0 5px}
+  .sitio p{font-size:13px;line-height:1.45}
+  .sitios{margin-top:20px}
+  .sitios-puntos{margin-top:12px}
+  .s-punto{width:18px;height:3px}
+}
+@media(max-width:380px){
+  .sitio .captura{aspect-ratio:2/1}
+  .sitio h4{font-size:15px}
+  .sitio p{font-size:12.5px}
+}
