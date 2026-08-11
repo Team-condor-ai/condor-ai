@@ -44,7 +44,7 @@ const icono = (n, clase = "ico") =>
   `<svg class="${clase}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICO[n]}</svg>`;
 
 const NAV = [
-  ["/compania/", "Compañía"],
+  ["/inicio/", "Inicio"],
   ["/equipo/", "Equipo"],
   ["/clientes/", "Clientes"],
   ["/proceso/", "Proceso"],
@@ -103,8 +103,8 @@ const pie = `
     </div>
     <div><h4>Productos</h4>
       <a href="/productos/">Desarrollo de software</a><a href="/productos/">Asistentes y agentes de IA</a><a href="/productos/">Consultoría e implementación</a></div>
-    <div><h4>Compañía</h4>
-      <a href="/compania/">Quiénes somos</a><a href="/equipo/">Equipo</a><a href="/proceso/">Proceso</a><a href="/clientes/">Clientes</a></div>
+    <div><h4>La empresa</h4>
+      <a href="/inicio/">Quiénes somos</a><a href="/equipo/">Equipo</a><a href="/proceso/">Proceso</a><a href="/clientes/">Clientes</a></div>
     <div><h4>Contacto</h4>
       <a href="/agendar">Agendar una reunión</a>
       <a href="mailto:${CORREO}">${CORREO}</a>
@@ -376,9 +376,9 @@ ${carrusel}
 <!-- COMPAÑÍA (resumen) -->
 <section class="seccion"><div class="wrap">
   <div class="cab">
-    <div><div class="rotulo">01 — Compañía</div>
+    <div><div class="rotulo">01 — Inicio</div>
       <h2 style="margin-top:20px">Construimos software que entra en operación</h2></div>
-    ${verMas("/compania/", "Ver más sobre la compañía")}
+    ${verMas("/inicio/", "Ver más")}
   </div>
   <p style="font-size:clamp(16px,1.6vw,19px);max-width:70ch">Empresa chilena de servicios de software, fundada en 2024 y con operación en Chile y Colombia. Desarrollamos sistemas a medida, agentes de inteligencia artificial y acompañamos su adopción dentro de los procesos de cada organización.</p>
   <div class="cifras">
@@ -508,13 +508,16 @@ escribir("productos/index.html", cab({
 ` + cierre("¿Cuál de las tres necesita?") + pie.replace("</body>", JS_COMUN + "</body>"));
 
 /* ── COMPAÑÍA ───────────────────────────────────────────────────────── */
-escribir("compania/index.html", cab({
-  titulo: "Compañía — condor.ai",
+/* La página se llama Inicio. Se escribe DOS veces: en /inicio/, que es su
+   dirección, y en /compania/, que queda como copia para que cualquier enlace
+   antiguo siga respondiendo 200 en vez de caer al 404. */
+const paginaInicio = cab({
+  titulo: "Inicio — condor.ai",
   desc: "condor.ai es una empresa chilena de servicios de software con operación en Chile y Colombia.",
-  ruta: "/compania/",
+  ruta: "/inicio/",
 }) + `
 <section class="cabecera"><div class="wrap">
-  <div class="rotulo">02 — Compañía</div>
+  <div class="rotulo">Inicio</div>
   <h1>Construimos software que entra en operación</h1>
   <p class="bajada">condor.ai es una empresa de servicios de software fundada en 2024, con operación en Chile y Colombia.</p>
 </div></section>
@@ -535,7 +538,9 @@ escribir("compania/index.html", cab({
 </div></section>
 
 ${carrusel}
-` + cierre() + pie.replace("</body>", JS_COMUN + "</body>"));
+` + cierre() + pie.replace("</body>", JS_COMUN + "</body>");
+escribir("inicio/index.html", paginaInicio);
+escribir("compania/index.html", paginaInicio);
 
 /* ── EQUIPO ─────────────────────────────────────────────────────────── */
 escribir("equipo/index.html", cab({
