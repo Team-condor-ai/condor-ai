@@ -442,3 +442,91 @@ p{margin:0;line-height:1.65;color:var(--ink-2)}
    quedara alguna referencia. */
 .vistazo{display:block;background:none;border:0;border-radius:0}
 .vista{background:none;padding:22px 0;border-bottom:1px solid var(--linea)}
+
+/* ══════════════════════════════════════════════════════════════════════
+   ESTILO LANDING — corrección final del 11-ago-2026
+   ──────────────────────────────────────────────────────────────────────
+   Ni celdas ni listas con reglas. Lo que separa un bloque del siguiente es
+   el AIRE y el salto de escala, no una línea. Es la diferencia entre un
+   documento y una landing: el documento usa reglas porque su contenido es
+   comparable; una landing usa espacio porque su contenido se lee de corrido.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* Fuera todas las reglas horizontales de los bloques del inicio. */
+.lista,.fila,.fila-persona,.hechos,.hecho,.pasos,.paso,.testis,.testi,.vias,.via,.cifras,.citas,.cita,.datos{
+  border:0 !important;background:none !important}
+
+.seccion{padding:clamp(80px,11vw,164px) 0}
+
+/* Productos y proceso: bloques grandes, con el número como cifra fantasma. */
+.lista{margin-top:clamp(36px,5vw,64px);display:grid;gap:clamp(40px,6vw,84px)}
+.fila{display:grid;grid-template-columns:clamp(64px,7vw,104px) minmax(0,1fr);
+  gap:clamp(20px,3vw,40px);align-items:start;padding:0}
+.fila .n{font-family:var(--display);font-size:clamp(38px,5.5vw,72px);font-weight:800;
+  letter-spacing:-.05em;line-height:.9;color:transparent;padding:0;
+  background:var(--grad);-webkit-background-clip:text;background-clip:text;opacity:.9}
+.fila h3{font-size:clamp(23px,3vw,36px);letter-spacing:-.028em}
+.fila .desc{margin-top:14px;font-size:clamp(16px,1.6vw,18.5px);max-width:64ch}
+.fila .valor{font-size:19px;margin-top:14px}
+@media(max-width:860px){
+  .fila{grid-template-columns:1fr;gap:8px}
+  .fila .n{font-size:44px}
+}
+
+/* Equipo: retratos grandes uno junto a otro, sin marco ni regla. Es una
+   galería de fotos, no una tabla de datos. */
+.lista:has(.fila-persona){display:grid;grid-template-columns:repeat(3,1fr);
+  gap:clamp(24px,3.5vw,44px)}
+.fila-persona{display:block;padding:0}
+.fila-persona .retrato-s{width:100%;height:auto;aspect-ratio:4/5;border-radius:var(--r-lg);
+  overflow:hidden;border:0}
+.fila-persona h3{font-size:clamp(19px,2vw,23px);margin-top:18px}
+.fila-persona p{font-size:15px;margin-top:10px}
+@media(max-width:860px){.lista:has(.fila-persona){grid-template-columns:1fr;gap:36px}}
+
+/* Cifras del hero y hechos: en línea, con aire, sin marco. */
+.datos{padding-top:26px;margin-top:24px;gap:clamp(26px,5vw,56px)}
+.hechos{display:flex;flex-wrap:wrap;gap:clamp(26px,5vw,56px);margin-top:34px}
+.hecho{padding:0;display:block}
+.cifras{padding-top:0;margin-top:clamp(32px,4vw,52px)}
+
+/* Etapas: el mismo bloque grande que los productos. */
+.pasos{display:grid;gap:clamp(40px,6vw,84px);margin-top:clamp(36px,5vw,64px)}
+.paso{padding:0 !important;max-width:68ch}
+.paso .n{font-family:var(--display);font-size:clamp(34px,5vw,64px);font-weight:800;
+  letter-spacing:-.05em;line-height:.9;color:transparent;display:block;margin-bottom:14px;
+  background:var(--grad);-webkit-background-clip:text;background-clip:text;opacity:.9}
+.paso h3{font-size:clamp(22px,2.8vw,32px);margin:0 0 12px}
+.paso p{font-size:clamp(15.5px,1.5vw,17.5px)}
+
+/* Referencias: la cita manda, grande y con aire. */
+.testis,.citas{display:grid;gap:clamp(36px,5vw,68px);margin-top:clamp(36px,5vw,64px)}
+.testi,.cita{padding:0}
+.testi p,.cita p{font-size:clamp(19px,2.4vw,28px);line-height:1.4;letter-spacing:-.02em;
+  max-width:26ch;font-family:var(--display);font-weight:500}
+.cita{grid-template-columns:minmax(0,1fr)}
+.testi .quien,.cita .quien{margin-top:16px;padding-top:0}
+@media(min-width:900px){
+  .testis,.citas{grid-template-columns:repeat(3,1fr)}
+  .testi p,.cita p{max-width:none}
+}
+
+/* Vías de contacto: bloques con aire, el número como cifra fantasma. */
+.vias{display:grid;gap:clamp(36px,5vw,64px);margin-top:clamp(32px,4vw,52px)}
+.via{padding:0 !important}
+.via .n{font-family:var(--display);font-size:clamp(30px,4vw,52px);font-weight:800;
+  letter-spacing:-.05em;color:transparent;display:block;margin-bottom:12px;
+  background:var(--grad);-webkit-background-clip:text;background-clip:text;opacity:.9}
+.via h3{font-size:clamp(21px,2.4vw,28px)}
+@media(min-width:900px){.vias{grid-template-columns:repeat(3,1fr)}}
+
+/* Personas de la subpágina: retrato grande arriba, texto debajo. */
+.equipo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(24px,3.5vw,44px);
+  border:0}
+.persona{display:block;padding:0;border:0 !important;background:none !important}
+.persona .retrato{width:100%;aspect-ratio:4/5;border:0;border-radius:var(--r-lg)}
+.persona .txt{padding:18px 0 0}
+@media(max-width:860px){.equipo-grid{grid-template-columns:1fr;gap:36px}}
+
+/* La foto del hero deja de tener marco y se une a las cifras. */
+.hero-marco{border:0;border-radius:var(--r-lg);background:none}
