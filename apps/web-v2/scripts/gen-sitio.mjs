@@ -86,6 +86,9 @@ const cab = (t) => `<!DOCTYPE html>
 </head>
 <body>
 <header class="topbar"><div class="wrap">
+  <button class="burger" aria-label="Abrir menú" aria-expanded="false" aria-controls="cajon">
+    <span></span><span></span><span></span>
+  </button>
   <a href="/"><img class="logo" src="/assets/logo.png" alt="condor.ai" /></a>
   <nav class="menu">
 ${NAV.map(([u, n]) => `    <a href="${u}"${t.ruta === u ? ' aria-current="page"' : ""}>${n}</a>`).join("\n")}
@@ -93,6 +96,17 @@ ${NAV.map(([u, n]) => `    <a href="${u}"${t.ruta === u ? ' aria-current="page"'
   <a class="portal-acceso" href="/portal.html">Portal clientes</a>
   <a class="btn btn-primario" href="/agendar">Agendar una reunión</a>
 </div></header>
+
+<div class="cortina" hidden></div>
+<nav class="cajon" id="cajon" aria-label="Menú" hidden>
+  <div class="cajon-cab">
+    <img class="logo" src="/assets/logo.png" alt="condor.ai" />
+    <button class="cerrar" aria-label="Cerrar menú">&times;</button>
+  </div>
+${NAV.map(([u, n]) => `  <a href="${u}"${t.ruta === u ? ' aria-current="page"' : ""}>${n}</a>`).join("\n")}
+  <a href="/portal.html">Portal de clientes</a>
+  <a class="btn btn-primario" href="/agendar">Agendar una reunión</a>
+</nav>
 `;
 
 const cierre = (titulo = "Conversemos sobre su proyecto") => `
@@ -215,6 +229,40 @@ const JS_COMUN = `
       }
     }, { threshold: .6 });
     cifras.forEach(c => ioc.observe(c));
+  }
+
+  // Cajón lateral (solo teléfono).
+  // El atributo hidden se quita al abrir y se vuelve a poner al terminar de cerrar: si
+  // quedara siempre en el DOM visible, sus enlaces seguirían siendo
+  // enfocables con el tabulador por detrás de la página.
+  const burger = document.querySelector(".burger");
+  const cajon = document.getElementById("cajon");
+  const cortina = document.querySelector(".cortina");
+  if (burger && cajon && cortina) {
+    let abierto = false;
+    const abrir = () => {
+      abierto = true;
+      cajon.hidden = false; cortina.hidden = false;
+      requestAnimationFrame(() => document.body.classList.add("cajon-abierto"));
+      burger.setAttribute("aria-expanded", "true");
+      document.body.style.overflow = "hidden";   // que no scrollee lo de atrás
+      cajon.querySelector("a").focus();
+    };
+    const cerrar = () => {
+      if (!abierto) return;
+      abierto = false;
+      document.body.classList.remove("cajon-abierto");
+      burger.setAttribute("aria-expanded", "false");
+      document.body.style.overflow = "";
+      const fin = () => { if (!abierto) { cajon.hidden = true; cortina.hidden = true; } };
+      quieto ? fin() : setTimeout(fin, 280);
+      burger.focus();
+    };
+    burger.addEventListener("click", () => (abierto ? cerrar() : abrir()));
+    cortina.addEventListener("click", cerrar);
+    cajon.querySelector(".cerrar").addEventListener("click", cerrar);
+    cajon.querySelectorAll("a").forEach((a) => a.addEventListener("click", cerrar));
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape") cerrar(); });
   }
 
   // Carrusel de sitios: coverflow que avanza solo.
@@ -465,8 +513,7 @@ escribir("rediseno/inicio.html", cab({
 }) + `
 <section class="hero"><div class="wrap hero-grid">
   <div>
-    <div class="rotulo">condor.ai</div>
-    <div class="slides" id="slides" style="margin-top:22px">
+    <div class="slides" id="slides">
       <article class="slide on">
         <h1>Software a medida para operaciones que no pueden fallar</h1>
         <p class="bajada">Diseñamos, construimos y mantenemos los sistemas que sostienen procesos críticos de empresas en Chile y la región.</p>

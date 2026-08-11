@@ -780,3 +780,47 @@ h1,h2{font-weight:800}
   /* A este ancho el botón manda: el portal se conserva en el pie. */
   .portal-acceso{display:none}
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   Cajón lateral — SOLO teléfono
+   ──────────────────────────────────────────────────────────────────────
+   En móvil el menú de secciones estaba simplemente oculto: no había forma
+   de llegar a las subpáginas salvo bajando hasta el pie. Ahora hay un
+   cajón que entra desde la izquierda.
+   ══════════════════════════════════════════════════════════════════════ */
+.burger{display:none;width:42px;height:42px;border:0;background:none;padding:0;cursor:pointer;
+  flex-direction:column;justify-content:center;gap:5px;align-items:center;border-radius:10px}
+.burger span{display:block;width:20px;height:2px;background:var(--ink);border-radius:2px;
+  transition:transform .24s var(--ease),opacity .18s var(--ease)}
+body.cajon-abierto .burger span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+body.cajon-abierto .burger span:nth-child(2){opacity:0}
+body.cajon-abierto .burger span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+
+.cortina{position:fixed;inset:0;z-index:80;background:rgba(11,20,55,.45);
+  opacity:0;transition:opacity .28s var(--ease)}
+body.cajon-abierto .cortina{opacity:1}
+
+.cajon{position:fixed;top:0;left:0;bottom:0;z-index:90;width:min(300px,84vw);
+  background:var(--papel);padding:16px 18px 28px;display:flex;flex-direction:column;gap:2px;
+  box-shadow:0 30px 80px rgba(11,20,55,.34);overflow-y:auto;
+  transform:translateX(-100%);transition:transform .28s var(--ease)}
+body.cajon-abierto .cajon{transform:none}
+.cajon-cab{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.cajon-cab .logo{height:26px}
+.cajon .cerrar{border:0;background:none;font-size:30px;line-height:1;color:var(--ink-3);
+  cursor:pointer;width:44px;height:44px;border-radius:10px}
+.cajon .cerrar:hover{color:var(--ink);background:var(--papel-2)}
+.cajon a{padding:14px 12px;border-radius:10px;font-size:16.5px;font-weight:600;color:var(--ink-2);
+  min-height:48px;display:flex;align-items:center}
+.cajon a:hover{background:var(--papel-2);color:var(--ink)}
+.cajon a[aria-current]{color:var(--ink);background:var(--papel-3)}
+.cajon a[href="/portal.html"]{margin-top:10px;border-top:1px solid var(--linea);
+  border-radius:0;color:var(--ink-3);font-size:15px}
+.cajon .btn{margin-top:14px;justify-content:center}
+
+@media(max-width:1040px){.burger{display:flex}}
+/* En escritorio el cajón no existe, aunque el marcado esté. */
+@media(min-width:1041px){.cajon,.cortina{display:none !important}}
+@media(prefers-reduced-motion:reduce){
+  .cajon,.cortina,.burger span{transition:none}
+}
