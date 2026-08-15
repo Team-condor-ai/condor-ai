@@ -1,223 +1,350 @@
 /* ═══════════════════ PANTALLA DE ACCESO ═══════════════════
-   Hoja propia y no dentro de portal.css: esta pantalla no comparte casi nada
-   con el resto del portal —no tiene menú, ni lienzo, ni tablas— y mezclarlas
-   obliga a leer 400 líneas para cambiar un botón del login. */
+   Reconstruida midiendo la referencia, no a ojo.
 
-:root{--acceso-fondo:#F1F0FE}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--acceso-fondo:#0B0D14}}
-:root[data-theme="dark"]{--acceso-fondo:#0B0D14}
+   PROPORCIONES DEL ORIGINAL (imagen de 735 px de ancho)
+     tarjeta ......... 659 × 425  → relación 1,55
+     panel de color .. 297 × 403  → 45 % del ancho de la tarjeta
+     margen del panel  12 px arriba, izquierda y abajo; a la derecha NO
+     formulario ...... 200 px de contenido en un panel de 350 → 57 %
+
+   Todo lo de abajo sale de esas medidas escaladas a 880 px, que es donde la
+   tarjeta se ve del mismo tamaño relativo en una pantalla de escritorio.
+
+   TIPOGRAFÍA: San Francisco. `-apple-system` la toma del sistema en Mac y
+   iPhone; en Windows y Android cae a la del sistema, que es lo correcto —
+   cargar una tipografía de 300 kB para un login es cobrarle al usuario el
+   capricho. */
+
+:root{
+  --ac-fondo:#F1F0FE;
+  --ac-tarjeta:#FFFFFF;
+  --ac-tinta:#0B0B0F;
+  --ac-tinta-2:#6B6B76;
+  --ac-tinta-3:#9A9AA6;
+  --ac-borde:#E8E8EF;
+  --ac-campo:#FCFCFD;
+  --ac-azul:#4F39F6;
+  --ac-azul-2:#3D28D9;
+  --ac-halo:rgba(79,57,246,.16);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --ac-fondo:#08080C; --ac-tarjeta:#121218; --ac-tinta:#F2F2F6;
+  --ac-tinta-2:#9B9BA8; --ac-tinta-3:#6E6E7C; --ac-borde:#26262F;
+  --ac-campo:#17171E; --ac-azul:#7C6BFF; --ac-azul-2:#9384FF;
+  --ac-halo:rgba(124,107,255,.24);
+}}
+:root[data-theme="dark"]{
+  --ac-fondo:#08080C; --ac-tarjeta:#121218; --ac-tinta:#F2F2F6;
+  --ac-tinta-2:#9B9BA8; --ac-tinta-3:#6E6E7C; --ac-borde:#26262F;
+  --ac-campo:#17171E; --ac-azul:#7C6BFF; --ac-azul-2:#9384FF;
+  --ac-halo:rgba(124,107,255,.24);
+}
 
 .acceso{
   min-height:100vh;min-height:100dvh;
-  display:grid;place-items:center;padding:26px;
-  background:var(--acceso-fondo);
+  display:grid;place-items:center;padding:28px;
+  background:var(--ac-fondo);
+  color:var(--ac-tinta);
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text",
+              "Segoe UI",system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
 }
 
 .acceso-tarjeta{
-  width:100%;max-width:940px;
-  display:grid;grid-template-columns:minmax(0,.86fr) minmax(0,1fr);
-  background:var(--panel);border-radius:24px;overflow:hidden;
-  box-shadow:0 30px 70px -30px rgba(23,25,60,.34), 0 2px 8px rgba(23,25,60,.06);
-  animation:acceso-entra .55s cubic-bezier(.22,1,.36,1) both;
+  width:100%;max-width:880px;
+  display:grid;grid-template-columns:45% 1fr;
+  min-height:568px;                  /* 880 / 1,55 — la proporción del original */
+  background:var(--ac-tarjeta);
+  border-radius:22px;
+  padding:14px 0 14px 14px;          /* el panel respira a la izquierda y no a la derecha, como el original */
+  box-shadow:0 24px 60px -24px rgba(28,25,80,.28), 0 1px 3px rgba(28,25,80,.05);
+  animation:ac-entra .55s cubic-bezier(.22,1,.36,1) both;
 }
-@keyframes acceso-entra{
-  from{opacity:0;transform:translateY(16px) scale(.99)}
+@keyframes ac-entra{
+  from{opacity:0;transform:translateY(14px) scale(.992)}
   to{opacity:1;transform:none}
 }
 
-/* ───── PANEL DE MARCA ───── */
-.acceso-marca{
+/* ───────────── PANEL DE COLOR ───────────── */
+.acceso .acceso-marca{
+  width:auto;flex:initial;           /* anula `aside{width:220px}` del ERP */
   position:relative;isolation:isolate;overflow:hidden;
-  margin:14px;border-radius:18px;min-height:430px;padding:26px;
+  border-radius:14px;
+  height:100%;                      /* se estira con la tarjeta; la proporción
+                                       la fija `min-height` de la tarjeta */
+  padding:26px;
   display:flex;flex-direction:column;justify-content:space-between;
-  color:#fff;background:#2B1B6B;
+  color:#fff;background:#2A1CA8;
 }
-.acceso-marca-top{position:relative;z-index:2;opacity:.95}
+.acceso-marca-top{position:relative;z-index:2}
 .acceso-marca-pie{position:relative;z-index:2}
 .acceso-marca .chico{
-  font-size:12.5px;opacity:.82;margin:0 0 8px;font-weight:500;
+  font-size:13px;font-weight:450;margin:0 0 9px;opacity:.94;
+  letter-spacing:-.005em;
 }
 .acceso-marca h2{
-  font-size:25px;line-height:1.24;font-weight:680;letter-spacing:-.03em;margin:0;
-  text-shadow:0 2px 18px rgba(0,0,0,.22);
+  margin:0;font-size:21px;line-height:1.32;font-weight:700;text-wrap:balance;
+  letter-spacing:normal;
+  text-shadow:0 1px 14px rgba(20,10,60,.2);
 }
 
-/* ───── AURORA EN VIVO ─────
-   Auroras de verdad, no un degradado quieto.
+/* ── LA AURORA ──
+   Cinco lavados de color que se mueven, se escalan y rotan. El blur alto y
+   `screen` los funden: no se ven cinco manchas, se ve una sola luz que
+   cambia.
 
-   POR QUÉ CSS Y NO UN SHADER WEBGL
-   Un shader daría más detalle, pero hay que cargarlo, puede fallar donde no
-   haya WebGL, y en un teléfono mantiene la GPU trabajando y se come la
-   batería en una pantalla donde la gente pasa quince segundos.
+   ES CSS Y NO UN SHADER WEBGL, A PROPÓSITO. Un shader daría más detalle,
+   pero hay que cargarlo, puede fallar donde no haya WebGL, y en un teléfono
+   deja la GPU trabajando y se come la batería en una pantalla donde nadie
+   pasa más de quince segundos. Estas capas se animan solo con `transform` y
+   `opacity`, que el navegador resuelve en el compositor —sin repintar—, así
+   que van a 60 fps. Y al ser vectoriales se ven nítidas en 4K: no hay
+   píxeles que estirar, se dibujan al tamaño de la pantalla.
 
-   Estas capas se animan solo con `transform` y `opacity`, que el navegador
-   resuelve en el compositor —sin repintar—, así que corren a 60 fps. Y al ser
-   vectoriales se ven nítidas en cualquier resolución, 4K incluido: no hay
-   píxeles que estirar.
-
-   EL TRUCO PARA QUE NO SE NOTE EL BUCLE: cinco duraciones que no son
-   múltiplos entre sí (17, 23, 29, 31 y 37 segundos, todos primos). El patrón
-   completo recién se repite a las ~5 horas. */
-.acceso-lienzo{position:absolute;inset:-25%;z-index:0;filter:blur(46px) saturate(1.5)}
-.acceso-lienzo .mancha{
-  position:absolute;border-radius:46% 54% 60% 40% / 55% 45% 55% 45%;
-  mix-blend-mode:screen;will-change:transform,opacity;
+   PARA QUE NO SE NOTE EL BUCLE: las cinco duraciones son números primos
+   (17, 23, 29, 31, 37 s). Como no son múltiplos entre sí, el patrón completo
+   recién se repite a las ~5 horas. */
+.acceso-lienzo{position:absolute;inset:-30%;z-index:0;filter:blur(54px) saturate(1.45)}
+.acceso-lienzo span{
+  position:absolute;border-radius:50%;mix-blend-mode:screen;
+  will-change:transform,opacity;
 }
-.acceso-lienzo .m1{
-  width:70%;height:66%;top:2%;left:-8%;
-  background:radial-gradient(closest-side,#3E5BFF 0%,rgba(62,91,255,0) 74%);
-  animation:aurora-1 23s ease-in-out infinite;
+.acceso-lienzo .m1{                    /* índigo profundo, el peso de abajo-izquierda */
+  width:88%;height:78%;bottom:-6%;left:-16%;
+  background:radial-gradient(closest-side,#1B10A8 0%,rgba(27,16,168,0) 70%);
+  animation:ac-1 23s ease-in-out infinite;
 }
-.acceso-lienzo .m2{
-  width:74%;height:60%;top:24%;left:22%;
-  background:radial-gradient(closest-side,#12D8E8 0%,rgba(18,216,232,0) 72%);
-  animation:aurora-2 31s ease-in-out infinite;
+.acceso-lienzo .m2{                    /* violeta de arriba a la derecha */
+  width:82%;height:74%;top:-12%;right:-14%;
+  background:radial-gradient(closest-side,#C79BFF 0%,rgba(199,155,255,0) 72%);
+  animation:ac-2 31s ease-in-out infinite;
 }
-.acceso-lienzo .m3{
-  width:66%;height:70%;top:-6%;left:34%;
-  background:radial-gradient(closest-side,#A855F7 0%,rgba(168,85,247,0) 74%);
-  animation:aurora-3 17s ease-in-out infinite;
+.acceso-lienzo .m3{                    /* celeste que abre el centro */
+  width:78%;height:66%;top:34%;right:-18%;
+  background:radial-gradient(closest-side,#9FD4FF 0%,rgba(159,212,255,0) 72%);
+  animation:ac-3 17s ease-in-out infinite;
 }
-/* Dos velos más en los pseudo-elementos: más movimiento sin más nodos. */
-.acceso-lienzo::before,.acceso-lienzo::after{
+.acceso-lienzo::before{                /* azul eléctrico, el que da la vibración */
   content:"";position:absolute;border-radius:50%;mix-blend-mode:screen;
-  will-change:transform;
+  width:70%;height:70%;top:18%;left:6%;
+  background:radial-gradient(closest-side,#4667FF 0%,rgba(70,103,255,0) 70%);
+  animation:ac-4 29s ease-in-out infinite;
 }
-.acceso-lienzo::before{
-  width:64%;height:64%;bottom:-10%;left:6%;
-  background:radial-gradient(closest-side,#6D28D9 0%,rgba(109,40,217,0) 72%);
-  animation:aurora-4 29s ease-in-out infinite;
+.acceso-lienzo::after{                 /* el claro casi blanco de abajo-derecha */
+  content:"";position:absolute;border-radius:50%;mix-blend-mode:screen;
+  width:62%;height:56%;bottom:-8%;right:-10%;
+  background:radial-gradient(closest-side,#EAF3FF 0%,rgba(234,243,255,0) 68%);
+  animation:ac-5 37s ease-in-out infinite;
 }
-.acceso-lienzo::after{
-  width:58%;height:58%;bottom:4%;right:-6%;
-  background:radial-gradient(closest-side,#22D3EE 0%,rgba(34,211,238,0) 70%);
-  animation:aurora-5 37s ease-in-out infinite;
+@keyframes ac-1{
+  0%,100%{transform:translate3d(0,0,0) scale(1) rotate(0deg);opacity:.95}
+  38%{transform:translate3d(12%,-10%,0) scale(1.18) rotate(24deg);opacity:.78}
+  70%{transform:translate3d(-6%,8%,0) scale(1.06) rotate(-14deg);opacity:1}
 }
-
-@keyframes aurora-1{
-  0%,100%{transform:translate3d(0,0,0) scale(1) rotate(0deg);opacity:.92}
-  33%{transform:translate3d(16%,10%,0) scale(1.22) rotate(28deg);opacity:.72}
-  66%{transform:translate3d(-8%,18%,0) scale(1.08) rotate(-16deg);opacity:1}
+@keyframes ac-2{
+  0%,100%{transform:translate3d(0,0,0) scale(1.04) rotate(0deg);opacity:.82}
+  44%{transform:translate3d(-16%,14%,0) scale(1.24) rotate(-26deg);opacity:1}
+  76%{transform:translate3d(9%,-7%,0) scale(.95) rotate(15deg);opacity:.7}
 }
-@keyframes aurora-2{
-  0%,100%{transform:translate3d(0,0,0) scale(1.06) rotate(0deg);opacity:.70}
-  40%{transform:translate3d(-20%,-14%,0) scale(1.3) rotate(-30deg);opacity:.95}
-  75%{transform:translate3d(12%,8%,0) scale(.96) rotate(18deg);opacity:.60}
+@keyframes ac-3{
+  0%,100%{transform:translate3d(0,0,0) scale(1) rotate(0deg);opacity:.9}
+  50%{transform:translate3d(-14%,-16%,0) scale(1.22) rotate(30deg);opacity:.62}
 }
-@keyframes aurora-3{
+@keyframes ac-4{
+  0%,100%{transform:translate3d(0,0,0) scale(1.08) rotate(0deg);opacity:.9}
+  46%{transform:translate3d(16%,12%,0) scale(.9) rotate(-20deg);opacity:.66}
+}
+@keyframes ac-5{
   0%,100%{transform:translate3d(0,0,0) scale(1) rotate(0deg);opacity:.85}
-  50%{transform:translate3d(-14%,22%,0) scale(1.26) rotate(34deg);opacity:.60}
-}
-@keyframes aurora-4{
-  0%,100%{transform:translate3d(0,0,0) scale(1.1) rotate(0deg)}
-  45%{transform:translate3d(20%,-16%,0) scale(.92) rotate(-24deg)}
-}
-@keyframes aurora-5{
-  0%,100%{transform:translate3d(0,0,0) scale(1) rotate(0deg)}
-  55%{transform:translate3d(-18%,-12%,0) scale(1.24) rotate(22deg)}
+  55%{transform:translate3d(-12%,-14%,0) scale(1.2) rotate(18deg);opacity:.6}
 }
 
-/* ───── FORMULARIO ───── */
+/* ───────────── FORMULARIO ───────────── */
 .acceso-forma{
-  padding:44px 46px 34px;display:flex;align-items:center;background:var(--panel);
+  display:flex;align-items:center;justify-content:center;
+  padding:24px 0;
 }
-.acceso-forma form{width:100%;max-width:340px;margin:0 auto}
-.acceso-logo{display:inline-flex;color:var(--azul);margin-bottom:14px}
-.acceso-forma h1{
-  font-size:29px;line-height:1.15;font-weight:700;letter-spacing:-.035em;margin:0 0 8px;
-}
-.acceso-bajada{font-size:13px;color:var(--texto-2);line-height:1.55;margin:0 0 20px}
+.acceso-forma form{width:100%;max-width:268px}   /* 57 % del panel, como el original */
 
-.rotulo{display:block;font-size:12.5px;font-weight:600;color:var(--texto);margin:14px 0 6px}
-.paso > .rotulo:first-child{margin-top:0}
+.acceso-logo{display:block;color:var(--ac-azul);margin-bottom:13px;line-height:0}
+
+.acceso-forma h1{
+  margin:0 0 9px;
+  font-size:28px;line-height:1.18;font-weight:700;letter-spacing:normal;
+  word-spacing:.02em;
+  text-wrap:balance;
+  color:var(--ac-tinta);
+}
+.acceso-bajada{
+  margin:0 0 22px;
+  font-size:13px;line-height:1.5;color:var(--ac-tinta-2);letter-spacing:-.003em;
+  text-wrap:pretty;
+}
+
+.acceso .rotulo{
+  display:block;margin:0 0 6px;
+  font-size:13px;font-weight:600;letter-spacing:-.008em;color:var(--ac-tinta);
+}
+.campo-grupo + .campo-grupo{margin-top:14px}
 
 .acceso .campo{
-  width:100%;padding:11px 13px;border:1px solid var(--borde);border-radius:9px;
-  background:var(--panel);color:var(--texto);font:inherit;font-size:13.5px;outline:none;
-  transition:border-color .16s, box-shadow .16s;
+  width:100%;height:40px;padding:0 13px;
+  border:1px solid var(--ac-borde);border-radius:8px;
+  background:var(--ac-campo);color:var(--ac-tinta);
+  font:inherit;font-size:13px;letter-spacing:-.005em;outline:none;
+  transition:border-color .16s ease, box-shadow .16s ease, background .16s ease;
 }
-.acceso .campo:focus{border-color:var(--azul);box-shadow:0 0 0 3px var(--azul-suave)}
-.acceso .campo::placeholder{color:var(--texto-3)}
+.acceso .campo::placeholder{color:var(--ac-tinta-3)}
+.acceso .campo:hover{border-color:#DADAE4}
+.acceso .campo:focus{
+  border-color:var(--ac-azul);background:var(--ac-tarjeta);
+  box-shadow:0 0 0 3.5px var(--ac-halo);
+}
 
 .campo-ojo{position:relative}
-.campo-ojo .campo{padding-right:40px}
-.ojo{
-  position:absolute;right:6px;top:50%;transform:translateY(-50%);
-  width:30px;height:30px;display:grid;place-items:center;border:0;background:none;
-  color:var(--texto-3);cursor:pointer;border-radius:7px;
+.campo-ojo .campo{padding-right:38px}
+.acceso .ojo{
+  position:absolute;right:5px;top:50%;transform:translateY(-50%);
+  width:30px;height:30px;display:grid;place-items:center;
+  border:0;background:none;color:var(--ac-tinta-3);cursor:pointer;border-radius:6px;
+  transition:color .15s;
 }
-.ojo:hover{color:var(--texto);background:var(--hover)}
+.acceso .ojo:hover{color:var(--ac-tinta-2)}
 
-.btn-acceso{
-  width:100%;margin-top:20px;padding:12px 16px;border:0;border-radius:9px;
-  background:var(--azul);color:#fff;font:inherit;font-size:13.5px;font-weight:600;
-  cursor:pointer;box-shadow:0 8px 20px -10px var(--azul-sombra);
-  transition:transform .16s cubic-bezier(.32,.72,0,1), box-shadow .2s, background .16s;
+.acceso .btn-acceso{
+  width:100%;height:40px;margin-top:20px;
+  border:0;border-radius:8px;
+  background:var(--ac-azul);color:#fff;
+  font:inherit;font-size:13px;font-weight:600;letter-spacing:-.005em;
+  cursor:pointer;
+  box-shadow:0 6px 16px -8px var(--ac-halo);
+  transition:transform .16s cubic-bezier(.32,.72,0,1), background .16s, box-shadow .2s;
 }
-.btn-acceso:hover{
-  background:var(--azul-fuerte);transform:translateY(-1px);
-  box-shadow:0 12px 26px -10px var(--azul-sombra);
+.acceso .btn-acceso:hover{
+  background:var(--ac-azul-2);transform:translateY(-1px);
+  box-shadow:0 10px 22px -8px var(--ac-halo);
 }
-.btn-acceso:active{transform:translateY(0) scale(.99)}
-.btn-acceso:disabled{opacity:.6;cursor:progress;transform:none;box-shadow:none}
+.acceso .btn-acceso:active{transform:translateY(0) scale(.99)}
+.acceso .btn-acceso:disabled{opacity:.55;cursor:progress;transform:none;box-shadow:none}
 
-.acceso-pie{text-align:center;font-size:12.5px;color:var(--texto-2);margin:18px 0 0}
-.enlace-fuerte{
-  border:0;background:none;font:inherit;font-weight:650;color:var(--azul);
-  cursor:pointer;padding:0;text-decoration:none;
+/* El separador con la línea a cada lado, igual que en la referencia. */
+/* GRID Y NO FLEX: con `flex:1` las líneas quedaban en ancho 0 y la "o" se
+   pegaba al borde izquierdo — se vio al renderizar, en el código parecía
+   correcto. `1fr auto 1fr` reparte el sobrante sin depender de cómo se
+   resuelva el flex-basis de un elemento vacío. */
+.acceso .separador{
+  display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;
+  margin:18px 0 12px;
+  font-size:11px;color:var(--ac-tinta-3);letter-spacing:.01em;
 }
-.enlace-fuerte:hover{text-decoration:underline;text-underline-offset:3px}
+.acceso .separador i{display:block;width:100%;height:1px;background:#DFDFEA}
+.acceso .separador span{white-space:nowrap}
 
-/* Código o contraseña, nunca las dos mezcladas. */
-.acceso .pestanas{
-  display:flex;gap:3px;padding:3px;border-radius:10px;margin-bottom:4px;
-  background:var(--panel-2);border:1px solid var(--borde);
+/* Donde el original pone los botones sociales, va la otra forma de entrar.
+   Cóndor no tiene login social: el acceso es por invitación. */
+.acceso .btn-alterno{
+  width:100%;height:38px;
+  border:1px solid var(--ac-borde);border-radius:8px;
+  background:var(--ac-tarjeta);color:var(--ac-tinta);
+  font:inherit;font-size:13px;font-weight:550;letter-spacing:-.005em;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;
+  transition:background .15s, border-color .15s, transform .16s cubic-bezier(.32,.72,0,1);
 }
-.acceso .pestana{
-  flex:1;padding:8px 10px;border:0;background:none;border-radius:7px;
-  font:inherit;font-size:12.5px;font-weight:560;color:var(--texto-2);cursor:pointer;
-  transition:color .18s, background .18s;
+.acceso .btn-alterno:hover{background:var(--ac-campo);border-color:#DADAE4}
+.acceso .btn-alterno:active{transform:scale(.99)}
+
+.acceso .acceso-pie{
+  margin:18px 0 0;text-align:center;
+  font-size:13px;color:var(--ac-tinta-2);letter-spacing:-.005em;
 }
-.acceso .pestana.on{
-  background:var(--panel);color:var(--azul);box-shadow:0 1px 2px rgba(0,0,0,.07);
+.acceso .enlace-fuerte{
+  border:0;background:none;padding:0;font:inherit;font-weight:650;
+  color:var(--ac-azul);cursor:pointer;text-decoration:none;
 }
+.acceso .enlace-fuerte:hover{text-decoration:underline;text-underline-offset:3px}
 
 .acceso .campo.codigo{
-  font-size:23px;letter-spacing:.3em;font-weight:600;text-align:center;
-  padding-left:calc(13px + .3em);
+  height:48px;text-align:center;
+  font-size:20px;font-weight:600;letter-spacing:.32em;
+  padding-left:calc(13px + .32em);
 }
-.acceso .campo.codigo::placeholder{letter-spacing:.2em;opacity:.35}
+.acceso .campo.codigo::placeholder{letter-spacing:.24em;opacity:.3}
 
-/* Cada paso entra desde la derecha: se siente avanzar, como en iOS. La `key`
-   del JSX es lo que hace que la animación vuelva a correr al cambiar. */
-.paso{animation:paso-entra .34s cubic-bezier(.22,1,.36,1) both}
-@keyframes paso-entra{
-  from{opacity:0;transform:translateX(13px)}
+/* Cada paso entra desde la derecha: se siente avanzar. La `key` del JSX es
+   lo que hace que la animación vuelva a correr al cambiar de paso. */
+.acceso .paso{
+  /* BLOCK Y NO FLEX. Heredaba `display:flex; align-items:flex-start` de
+     portal.css, y con eso los hijos NO se estiran: toman su ancho de
+     contenido. Medido en el navegador, el separador quedaba en 26 px en vez
+     de 268 y sus líneas en 0 — por eso la "o" aparecía pegada a la
+     izquierda. El espaciado ya lo dan los márgenes, no hacía falta flex. */
+  display:block;
+  animation:ac-paso .32s cubic-bezier(.22,1,.36,1) both;
+}
+@keyframes ac-paso{
+  from{opacity:0;transform:translateX(11px)}
   to{opacity:1;transform:none}
 }
-.acceso .error{margin-top:14px}
 
-/* ───── MÓVIL ─────
-   El panel de marca se va: en un teléfono robaría la mitad del alto, y lo
-   que se necesita ahí es el formulario, no la decoración. */
-@media(max-width:820px){
-  .acceso{padding:0;align-items:stretch}
+.acceso .error{
+  margin-top:14px;font-size:13px;
+  background:#FDECEB;color:#B3261E;border:1px solid #F6C9C5;
+  border-radius:8px;padding:8px 11px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .acceso .error{
+  background:#2B1512;color:#F0897C;border-color:#4E2621;
+}}
+
+.acceso :is(button,input):focus-visible{
+  outline:2px solid var(--ac-azul);outline-offset:2px;
+}
+
+/* ───────────── MÓVIL ─────────────
+   El panel de color se va: en un teléfono robaría medio alto de pantalla, y
+   ahí lo que se necesita es el formulario. */
+@media(max-width:860px){
+  /* BLOCK Y NO GRID. `place-items:center` del bloque de escritorio fija
+     align- y justify-items a la vez; anular solo `align-items` dejaba el
+     centrado vertical actuando y el formulario arrancaba a ~200 px del borde.
+     Sin grid no hay nada que centrar. */
+  .acceso{display:block;padding:0}
   .acceso-tarjeta{
-    max-width:none;grid-template-columns:1fr;border-radius:0;
-    min-height:100vh;min-height:100dvh;box-shadow:none;
+    /* BLOCK Y NO GRID. Con el panel de color oculto queda una sola fila, y
+       el grid la centraba verticalmente: el formulario arrancaba a ~220 px
+       del borde en un teléfono. Sin grid, el contenido fluye desde arriba y
+       no hay nada que centrar. */
+    display:block;
+    max-width:none;border-radius:0;padding:0;box-shadow:none;
+    min-height:100vh;min-height:100dvh;
   }
-  .acceso-marca{display:none}
-  .acceso-forma{padding:11vh 22px 28px;align-items:flex-start}
-  .acceso-forma h1{font-size:26px}
+  /* `.acceso .acceso-marca` (0,2,0) — la regla que anula el `aside` del ERP —
+     le ganaba a `.acceso-marca{display:none}` (0,1,0) y el panel seguía
+     ocupando 174 px en el teléfono, invisible pero empujando el formulario
+     hacia abajo. Al subir la especificidad de una regla base hay que subir
+     también la de los media queries que la anulan. */
+  .acceso .acceso-marca{display:none}
+  /* `align-content` y no `align-items`: el contenedor es flex y lo que hay
+     que anclar arriba es la línea entera, no cada hijo. Con 12vh el contenido
+     arrancaba a ~290 px del borde en un teléfono; 44 px fijos dejan el título
+     a la vista apenas se abre. */
+  /* `align-self` sobre el item y no `align-content` sobre el grid: con el
+     panel de color en display:none la tarjeta queda con UNA fila de 548 px en
+     un alto de 844, y el grid la centraba — el formulario arrancaba a 218 px
+     del borde. Anclar el item arriba es lo que de verdad manda. */
+  .acceso-forma{display:block;padding:44px 24px 32px}
+  .acceso-forma form{margin:0 auto}
+  .acceso-forma form{max-width:360px}
+  .acceso-forma h1{font-size:28px}
+  .acceso-bajada{font-size:13px;margin-bottom:24px}
+  .rotulo{font-size:13px}
   /* 16px o más: bajo eso iOS hace zoom al enfocar y descuadra la pantalla. */
-  .acceso .campo{font-size:16px;padding:13px}
-  .acceso .campo.codigo{font-size:22px;letter-spacing:.24em;padding-left:calc(13px + .24em)}
-  .btn-acceso{padding:14px 16px;font-size:15px}
+  .acceso .campo{height:46px;font-size:16px}
+  .acceso .campo.codigo{height:56px;font-size:24px;letter-spacing:.26em}
+  .btn-acceso,.btn-alterno{height:46px;font-size:15px}
 }
 
 @media(prefers-reduced-motion:reduce){
   .acceso-tarjeta,.paso{animation:none}
-  .acceso-lienzo .mancha,
-  .acceso-lienzo::before,.acceso-lienzo::after{animation:none}
-  .btn-acceso:hover{transform:none}
+  .acceso-lienzo span,.acceso-lienzo::before,.acceso-lienzo::after{animation:none}
+  .btn-acceso:hover,.btn-alterno:active{transform:none}
 }
