@@ -16,7 +16,7 @@ on:
   workflow_dispatch:
     inputs:
       tipo:
-        description: 'carrusel | historia (default carrusel)'
+        description: 'carrusel | historia | ugc (default carrusel)'
         required: false
         default: ''
       cliente_id:
@@ -25,6 +25,10 @@ on:
         default: ''
       test:
         description: 'poner 1 para solo validar conexión, sin generar nada'
+        required: false
+        default: ''
+      retry:
+        description: 'poner 1 cuando un cliente pidió una corrección (lo dispara el webhook de Telegram)'
         required: false
         default: ''
 
@@ -67,6 +71,7 @@ jobs:
           TIPO: ${{ github.event.inputs.tipo }}
           CLIENTE_ID: ${{ github.event.inputs.cliente_id }}
           TEST: ${{ github.event.inputs.test }}
+          RETRY: ${{ github.event.inputs.retry }}
       - name: Persistir credenciales de Higgsfield si rotaron
         if: always()
         env:

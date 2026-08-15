@@ -8,7 +8,8 @@
 // beneficio nuevo — puro riesgo. Unificar esto es una mejora segura para
 // después, cuando clientes.mjs ya esté probado.
 
-import { execFileSync } from "node:child_process";
+import { execFileSync, execSync } from "node:child_process";
+import { writeFileSync, readFileSync } from "node:fs";
 
 export async function tg(token, method, payload, isForm = false) {
   const opt = { method: "POST" };
@@ -60,6 +61,57 @@ export function genImagen(prompt, idx) {
     }
   }
   throw new Error("Higgsfield no devolvió URL (slide " + (idx + 1) + ") tras 3 intentos: " + ultimo);
+}
+
+// ---- Higgsfield: video sin vocera fija (UGC de cliente, seedance1_5 en
+// 720p — motor recomendado en docs/motores-higgsfield.md del repo `barbara`:
+// ~4x más barato que seedance_2_0, calidad "amateur" suficiente para UGC).
+// Mismo patrón de reintentos que genImagen. `extraArgs` permite pasar
+// `--image <ref>` si algún día el cliente sube una foto de referencia.
+export function genVideo(prompt, dur, idx, extraArgs = []) {
+  const safe = prompt.replace(/\s+/g, " ").trim().slice(0, 1500);
+  const args = [
+    "generate", "create", "seedance1_5", "--prompt", safe,
+    "--aspect_ratio", "9:16", "--duration", String(dur), "--resolution", "720p",
+    ...extraArgs, "--wait", "--wait-timeout", "14m",
+  ];
+  let ultimo = "";
+  for (let intento = 1; intento <= 3; intento++) {
+    try {
+      const out = execFileSync("higgsfield", args, { encoding: "utf8", timeout: 15 * 60 * 1000, stdio: ["ignore", "pipe", "pipe"] });
+      const url = (out.trim().split("\n").pop() || "").trim();
+      if (/^https?:\/\//.test(url)) return url;
+      ultimo = out.slice(-160);
+    } catch (e) {
+      ultimo = String(e.stderr || e.message || e).slice(-300);
+    }
+    if (/no workspace|session expired|unauthor|forbidden|invalid.*(token|credential)|\b(401|403)\b|auth login/i.test(ultimo)) {
+      const err = new Error("Higgsfield config/auth (no reintentable): " + ultimo.slice(-160));
+      err.permanent = true;
+      throw err;
+    }
+    if (intento < 3) {
+      console.log(`clip ${idx + 1}: intento ${intento}/3 falló (${ultimo.slice(-60)}), esperando 45s…`);
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 45000);
+    }
+  }
+  throw new Error("Higgsfield sin URL (clip " + (idx + 1) + ") tras 3 intentos: " + ultimo);
+}
+
+// ---- Unir N clips en un solo vertical 9:16 (mismo enfoque que reels.mjs) ----
+export async function unirClips(urls) {
+  if (urls.length === 1) return Buffer.from(await (await fetch(urls[0])).arrayBuffer());
+  for (let i = 0; i < urls.length; i++) {
+    writeFileSync(`/tmp/bc${i}.mp4`, Buffer.from(await (await fetch(urls[i])).arrayBuffer()));
+  }
+  const inputs = urls.map((_, i) => `-i /tmp/bc${i}.mp4`).join(" ");
+  const parts = urls.map((_, i) => `[${i}:v]scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,setsar=1[v${i}];`).join("");
+  const concat = urls.map((_, i) => `[v${i}][${i}:a]`).join("") + `concat=n=${urls.length}:v=1:a=1[v][a]`;
+  execSync(
+    `ffmpeg -y ${inputs} -filter_complex "${parts}${concat}" -map "[v]" -map "[a]" -c:v libx264 -pix_fmt yuv420p -c:a aac /tmp/bfinal.mp4`,
+    { stdio: "ignore" }
+  );
+  return readFileSync("/tmp/bfinal.mp4");
 }
 
 // ---- Supabase: REST plano (mismo estilo que services/seguimiento/seguimiento.mjs,

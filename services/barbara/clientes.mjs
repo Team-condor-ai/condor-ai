@@ -3,22 +3,25 @@
 // y SU formulario de entrada (no las plantillas fijas de barbara.mjs, que
 // son el contenido propio de Cóndor y siguen intactas y separadas).
 //
-// Primera versión: genera carruseles e historias (imagen, nano_banana_2).
-// Video UGC queda documentado pero SIN CONECTAR todavía — ver el aviso más
-// abajo antes de la sección de video.
+// Genera carruseles, historias (imagen, nano_banana_2) y video UGC de
+// producto sin vocera fija (seedance1_5, ver motor.mjs).
 //
 // Secrets: ANTHROPIC_API_KEY, TELEGRAM_BOT_TOKEN, SUPABASE_URL,
 //          SUPABASE_SERVICE_ROLE_KEY
-// Variables: TIPO (carrusel|historia, default carrusel) · CLIENTE_ID (forzar
-//            un solo cliente, para probar) · TEST=1 (solo valida conexión)
+// Variables: TIPO (carrusel|historia|ugc, default carrusel) · CLIENTE_ID
+//            (forzar un solo cliente, para probar) · TEST=1 (solo valida
+//            conexión) · RETRY=1 (el webhook de Telegram lo dispara cuando
+//            el cliente pide una corrección — salta el candado de "ya se
+//            publicó hoy" y le pide a Bárbara una versión claramente mejor)
 
-import { tg, claude, textOf, genImagen, REGLA_TEXTO, supabase } from "./motor.mjs";
+import { tg, claude, textOf, genImagen, genVideo, unirClips, REGLA_TEXTO, supabase } from "./motor.mjs";
 
 const AK = process.env.ANTHROPIC_API_KEY;
 const TG_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const SB_URL = process.env.SUPABASE_URL;
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const isTest = process.env.TEST === "1";
+const isRetry = process.env.RETRY === "1";
 const TIPO = (process.env.TIPO || "carrusel").trim().toLowerCase();
 const SOLO_CLIENTE = (process.env.CLIENTE_ID || "").trim();
 
@@ -41,6 +44,29 @@ const schema = {
   required: ["angulo", "slides", "caption"],
 };
 
+// UGC de producto SIN vocera fija: a diferencia del UGC de Cóndor
+// (reels.mjs, Veo 3.1 + avatar.png de la misma mujer siempre), un cliente
+// nuevo no tiene una vocera propia todavía — así que esto son clips
+// "amateur" de producto/negocio (uso, detalle, ambiente), no un monólogo
+// hablado a cámara. Si algún día el cliente sube su propia vocera, se
+// puede sumar `--image <referencia>` a genVideo() sin tocar este esquema.
+const schemaUGC = {
+  type: "object", additionalProperties: false,
+  properties: {
+    angulo: { type: "string", description: "Ángulo/idea ÚNICO de este UGC en una frase (para no repetir)." },
+    clips: {
+      type: "array", description: "2 o 3 tomas de 4-6s, en orden, estilo UGC amateur grabado con celular (nada de look publicitario pulido).",
+      items: { type: "object", additionalProperties: false, properties: {
+        escena: { type: "string", description: "Prompt EN INGLÉS de la toma: producto/servicio/ambiente del negocio, estilo grabado a mano con celular, luz natural, sin actores hablando a cámara." },
+        duracion: { type: "number", description: "Duración en segundos, entre 4 y 6." },
+      }, required: ["escena", "duracion"] },
+    },
+    texto_en_pantalla: { type: "string", description: "Frase corta en español para sobreimprimir (hook o dato del producto), fiel al tono de marca." },
+    caption: { type: "string", description: "Caption para Instagram/TikTok, tono UGC auténtico, con hook + valor + CTA + 5-8 hashtags relevantes al rubro." },
+  },
+  required: ["angulo", "clips", "texto_en_pantalla", "caption"],
+};
+
 async function generarPara(cliente) {
   const { id: barbaraId, plan, rubro, telegram_chat_id, cliente_id } = cliente;
   const negocio = cliente.clientes?.negocio || cliente.clientes?.[0]?.negocio || "el negocio";
@@ -56,14 +82,18 @@ async function generarPara(cliente) {
     return;
   }
 
-  // Candado: no publicar dos veces el mismo tipo el mismo día para este cliente.
+  // Candado: no publicar dos veces el mismo tipo el mismo día para este
+  // cliente — salvo RETRY=1 (el webhook lo pone cuando el cliente pidió
+  // una corrección; ahí SÍ hay que regenerar aunque ya se haya publicado).
   const hoyISO = new Date().toISOString().slice(0, 10);
-  const memoriaHoy = await db.get(
-    `barbara_memoria?barbara_cliente_id=eq.${barbaraId}&fecha=eq.${hoyISO}&tipo=eq.${TIPO}&select=id`
-  );
-  if (memoriaHoy.length) {
-    console.log(`[${negocio}] ya se publicó "${TIPO}" hoy. Nada que hacer.`);
-    return;
+  if (!isRetry) {
+    const memoriaHoy = await db.get(
+      `barbara_memoria?barbara_cliente_id=eq.${barbaraId}&fecha=eq.${hoyISO}&tipo=eq.${TIPO}&select=id`
+    );
+    if (memoriaHoy.length) {
+      console.log(`[${negocio}] ya se publicó "${TIPO}" hoy. Nada que hacer.`);
+      return;
+    }
   }
 
   // Bloqueo por 3 reintentos de corrección: si está bloqueado, no se genera
@@ -79,16 +109,10 @@ async function generarPara(cliente) {
   );
   const recientes = recientesRaw.map(e => `- [${e.fecha} ${e.tipo}] ${e.angulo}`).join("\n") || "(sin historial)";
 
-  const nSlides = TIPO === "historia" ? 1 : 6;
   const paleta = (bb.paleta_colores || []).map(c => `${c.hex}${c.uso ? ` (${c.uso})` : ""}`).join(", ") || "a criterio, coherente con el rubro";
   const tipos = (form.tipo_contenido || []).join(", ") || "contenido general para redes";
-
-  const dir = await claude(AK, {
-    model: "claude-sonnet-4-6", max_tokens: 4000,
-    system: `Eres Bárbara, directora creativa de "${negocio}" (rubro: ${rubro || "no especificado"}). Diseñas ${TIPO === "historia" ? "una historia de Instagram (1 imagen)" : `un carrusel de Instagram (${nSlides} slides)`} de nivel agencia. Sigues la identidad de marca del cliente al pie de la letra. Incluyes el texto exacto a renderizar en cada imagen COMO COPY FINAL: en la imagen SOLO aparece lo que lee la persona, JAMÁS palabras estructurales ni rótulos con dos puntos. NUNCA repites ángulos de las piezas recientes (te las paso). Responde SOLO con el JSON.`,
-    output_config: { format: { type: "json_schema", schema } },
-    messages: [{ role: "user", content:
-`Marca: ${negocio} (rubro: ${rubro || "no especificado"})
+  const extraRetry = isRetry ? "\n\n⚠️ ESTE ES UN REINTENTO: el cliente pidió una corrección sobre la versión anterior. Genera una versión CLARAMENTE MEJOR y distinta (mejor diseño, mejor texto, otro enfoque del mismo tema)." : "";
+  const contexto = `Marca: ${negocio} (rubro: ${rubro || "no especificado"})
 Paleta de marca: ${paleta}
 Tipografía de marca: ${bb.tipografia || "a criterio, legible y editorial"}
 Detalles a considerar (restricciones/gustos del dueño): ${bb.detalles || "ninguno registrado"}
@@ -101,37 +125,76 @@ Ejemplos de referencia que le gustan: ${form.ejemplos_referencia || "ninguno"}
 Producto/servicio a destacar hoy: ${form.producto_destacar || "el negocio en general"}
 
 PIEZAS RECIENTES DE ESTE CLIENTE (NO repitas estos ángulos, innova):
-${recientes}
+${recientes}${extraRetry}`;
 
-Crea ${TIPO === "historia" ? "la historia" : `el carrusel de ${nSlides} slides`} con un ángulo NUEVO, fiel a la marca.` }],
-  });
-  const plan_contenido = JSON.parse(textOf(dir));
-  const slides = (plan_contenido.slides || []).slice(0, nSlides);
+  let plan_contenido, mediaCaption;
 
-  const imgs = [];
-  for (let i = 0; i < slides.length; i++) {
-    try {
-      const url = genImagen(slides[i].prompt + "\n\n" + REGLA_TEXTO, i);
-      const buf = Buffer.from(await (await fetch(url)).arrayBuffer());
-      imgs.push(buf);
-    } catch (e) {
-      if (e.permanent) throw e;
-      console.log(`[${negocio}] slide ${i + 1} falló:`, String(e).slice(0, 140));
+  if (TIPO === "ugc") {
+    const dir = await claude(AK, {
+      model: "claude-sonnet-4-6", max_tokens: 2500,
+      system: `Eres Bárbara, directora creativa de "${negocio}" (rubro: ${rubro || "no especificado"}). Diriges un video UGC vertical 9:16 (2-3 tomas de 4-6s, grabado estilo amateur con celular, SIN vocera hablando a cámara — son tomas de producto/negocio/ambiente). Sigues la identidad de marca del cliente. NUNCA repites ángulos de las piezas recientes. Responde SOLO con el JSON.`,
+      output_config: { format: { type: "json_schema", schema: schemaUGC } },
+      messages: [{ role: "user", content: `${contexto}\n\nCrea el UGC con un ángulo NUEVO, fiel a la marca.` }],
+    });
+    plan_contenido = JSON.parse(textOf(dir));
+    const clips = (plan_contenido.clips || []).slice(0, 3);
+    const urls = [];
+    for (let i = 0; i < clips.length; i++) {
+      try {
+        urls.push(genVideo(clips[i].escena + "\n\n" + REGLA_TEXTO, Math.min(Math.max(clips[i].duracion || 5, 4), 6), i));
+      } catch (e) {
+        if (e.permanent) throw e;
+        console.log(`[${negocio}] clip ${i + 1} falló:`, String(e).slice(0, 140));
+      }
     }
-  }
-  if (!imgs.length) throw new Error(`[${negocio}] no se generó ninguna imagen`);
+    if (!urls.length) throw new Error(`[${negocio}] no se generó ningún clip UGC`);
+    const videoBuf = await unirClips(urls);
 
-  for (let i = 0; i < imgs.length; i++) {
     const fd = new FormData();
     fd.append("chat_id", telegram_chat_id);
-    fd.append("caption", `${TIPO === "historia" ? "📱 Historia" : "🖼️ Carrusel"} · ${negocio}${imgs.length > 1 ? ` · ${i + 1}/${imgs.length}` : ""}`);
-    fd.append("photo", new Blob([imgs[i]], { type: "image/png" }), `slide_${i + 1}.png`);
-    const j = await (await tg(TG_TOKEN, "sendPhoto", fd, true)).json();
-    if (!j.ok) throw new Error(`[${negocio}] Telegram sendPhoto: ` + (j.description || ""));
+    fd.append("caption", `🎬 UGC · ${negocio}\n\n💬 Texto en pantalla: ${plan_contenido.texto_en_pantalla || ""}`);
+    fd.append("video", new Blob([videoBuf], { type: "video/mp4" }), "ugc.mp4");
+    const j = await (await tg(TG_TOKEN, "sendVideo", fd, true)).json();
+    if (!j.ok) throw new Error(`[${negocio}] Telegram sendVideo: ` + (j.description || ""));
+    mediaCaption = plan_contenido.caption;
+  } else {
+    const nSlides = TIPO === "historia" ? 1 : 6;
+    const dir = await claude(AK, {
+      model: "claude-sonnet-4-6", max_tokens: 4000,
+      system: `Eres Bárbara, directora creativa de "${negocio}" (rubro: ${rubro || "no especificado"}). Diseñas ${TIPO === "historia" ? "una historia de Instagram (1 imagen)" : `un carrusel de Instagram (${nSlides} slides)`} de nivel agencia. Sigues la identidad de marca del cliente al pie de la letra. Incluyes el texto exacto a renderizar en cada imagen COMO COPY FINAL: en la imagen SOLO aparece lo que lee la persona, JAMÁS palabras estructurales ni rótulos con dos puntos. NUNCA repites ángulos de las piezas recientes. Responde SOLO con el JSON.`,
+      output_config: { format: { type: "json_schema", schema } },
+      messages: [{ role: "user", content: `${contexto}\n\nCrea ${TIPO === "historia" ? "la historia" : `el carrusel de ${nSlides} slides`} con un ángulo NUEVO, fiel a la marca.` }],
+    });
+    plan_contenido = JSON.parse(textOf(dir));
+    const slides = (plan_contenido.slides || []).slice(0, nSlides);
+
+    const imgs = [];
+    for (let i = 0; i < slides.length; i++) {
+      try {
+        const url = genImagen(slides[i].prompt + "\n\n" + REGLA_TEXTO, i);
+        const buf = Buffer.from(await (await fetch(url)).arrayBuffer());
+        imgs.push(buf);
+      } catch (e) {
+        if (e.permanent) throw e;
+        console.log(`[${negocio}] slide ${i + 1} falló:`, String(e).slice(0, 140));
+      }
+    }
+    if (!imgs.length) throw new Error(`[${negocio}] no se generó ninguna imagen`);
+
+    for (let i = 0; i < imgs.length; i++) {
+      const fd = new FormData();
+      fd.append("chat_id", telegram_chat_id);
+      fd.append("caption", `${TIPO === "historia" ? "📱 Historia" : "🖼️ Carrusel"} · ${negocio}${imgs.length > 1 ? ` · ${i + 1}/${imgs.length}` : ""}`);
+      fd.append("photo", new Blob([imgs[i]], { type: "image/png" }), `slide_${i + 1}.png`);
+      const j = await (await tg(TG_TOKEN, "sendPhoto", fd, true)).json();
+      if (!j.ok) throw new Error(`[${negocio}] Telegram sendPhoto: ` + (j.description || ""));
+    }
+    mediaCaption = plan_contenido.caption;
   }
+
   await tg(TG_TOKEN, "sendMessage", {
     chat_id: telegram_chat_id,
-    text: `🤖 *Bárbara* — contenido listo para revisar y aprobar.\n\n📝 *Caption:*\n\n${plan_contenido.caption || ""}\n\n_Si quieres cambios, responde a este mensaje describiéndolos (máximo 3 correcciones antes de derivar a soporte)._`,
+    text: `🤖 *Bárbara* — contenido listo para revisar y aprobar.\n\n📝 *Caption:*\n\n${mediaCaption || ""}\n\n_Si quieres cambios, responde a este mensaje describiéndolos (máximo 3 correcciones antes de derivar a soporte)._`,
     parse_mode: "Markdown",
   });
 
@@ -139,7 +202,7 @@ Crea ${TIPO === "historia" ? "la historia" : `el carrusel de ${nSlides} slides`}
     barbara_cliente_id: barbaraId,
     fecha: hoyISO,
     tipo: TIPO,
-    angulo: plan_contenido.angulo || slides[0]?.titulo || "",
+    angulo: plan_contenido.angulo || "",
     titulo: negocio,
   });
   console.log(`[${negocio}] OK — ${TIPO} generado, ángulo: ${plan_contenido.angulo}`);
@@ -182,14 +245,3 @@ main().catch((e) => {
   console.error(e);
   process.exit(1);
 });
-
-// ── VIDEO UGC: pendiente de conectar ──────────────────────────────────────
-// El motor de reels.mjs para UGC usa Veo 3.1 con un avatar fijo (la misma
-// vocera en cada clip) — eso es específico de Cóndor, no sirve tal cual para
-// clientes que no tienen una vocera propia. Para UGC de cliente conviene
-// `seedance1_5` en 720p (motor recomendado en docs/motores-higgsfield.md del
-// repo `barbara`, ~4x más barato que seedance_2_0 y suficiente para el
-// formato "amateur" del UGC) generando clips de producto/negocio sin
-// vocera fija, no una adaptación directa del script de Cóndor. Se deja fuera
-// de esta primera versión a propósito — no vale la pena escribir esa lógica
-// sin poder probarla contra un cliente real todavía.
