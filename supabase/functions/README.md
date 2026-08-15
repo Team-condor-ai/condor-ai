@@ -7,6 +7,7 @@
 | `mp-webhook` | Confirma pagos, actualiza estados, limpia alertas, avisa por correo. |
 | `solicitar-acceso` | Login: envía código SOLO a correos registrados. Rate limit. Envía el código con Resend. |
 | `telegram-barbara` | Webhook de Telegram: comando "Denuevo barbara" → re-dispara contenido. |
+| `telegram-barbara-clientes` | Webhook de Telegram del módulo multi-cliente de Bárbara: correcciones de cada cliente (máx. 3) → re-dispara `barbara-clientes.yml`, o bloquea y deriva a soporte. |
 | `sofia` | (En desarrollo) Agente de email marketing. |
 | `contenido` | (En desarrollo) Generador de posts para la base. |
 

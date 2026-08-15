@@ -33,6 +33,7 @@ supabase functions deploy crear-pago --project-ref ogmvdthxwcmvqjlxhpsr
 supabase functions deploy mp-webhook --project-ref ogmvdthxwcmvqjlxhpsr --no-verify-jwt
 supabase functions deploy solicitar-acceso --project-ref ogmvdthxwcmvqjlxhpsr --no-verify-jwt
 supabase functions deploy telegram-barbara --project-ref ogmvdthxwcmvqjlxhpsr --no-verify-jwt
+supabase functions deploy telegram-barbara-clientes --project-ref ogmvdthxwcmvqjlxhpsr --no-verify-jwt
 ```
 
 ## 3. Secretos
@@ -47,6 +48,9 @@ supabase functions deploy telegram-barbara --project-ref ogmvdthxwcmvqjlxhpsr --
 | `RESEND_API_KEY` | Correos (cobros, códigos) |
 | `EMAIL_FROM` | Remitente, ej. `condor AI <contacto@teamcondorcl.com>` |
 | `GH_TOKEN` | (telegram-barbara) PAT con permiso Actions:write |
+| `TELEGRAM_WEBHOOK_SECRET` | (telegram-barbara-clientes) valida que el webhook venga de Telegram |
+| `GITHUB_DISPATCH_TOKEN` | (telegram-barbara-clientes) PAT con permiso Actions:write, para re-disparar `barbara-clientes.yml` |
+| `TELEGRAM_BOT_TOKEN` | (telegram-barbara-clientes) responder al cliente en su chat |
 
 ### GitHub → repo → Settings → Secrets → Actions
 | Secret | Para qué |
