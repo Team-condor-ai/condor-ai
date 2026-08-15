@@ -75,6 +75,13 @@ const LANDING = "landing_page_view";                               // la página
 const INTENTO = "offsite_conversion.fb_pixel_view_content";        // escribió el 1er dígito
 const LEAD = "offsite_conversion.fb_pixel_lead";                   // dejó el número
 
+/* Mismo criterio que meta-analyzer.mjs (corregido 10-ago-2026 para el mismo
+   tipo de error): un "link_click" en una campaña Click-to-WhatsApp abre el
+   chat, no una página web. Sin esto el pulso decía "Clics a la web" incluso
+   cuando el CTA del anuncio era WhatsApp. */
+const CONV_WA_1 = "onsite_conversion.messaging_conversation_started_7d";
+const CONV_WA_2 = "onsite_conversion.total_messaging_connection";
+
 const plata = (n) => "$" + Math.round(n).toLocaleString("es-CL");
 const pct = (n) => n.toFixed(1).replace(".", ",") + "%";
 
@@ -84,12 +91,14 @@ function medir(fila) {
   const gasto = +fila.spend || 0;
   const clics = a[CLICS_WEB] ?? +fila.clicks ?? 0;
   const landing = a[LANDING] || 0;
+  const convWA = (a[CONV_WA_1] || 0) + (a[CONV_WA_2] || 0);
   return {
     gasto,
     impresiones: +fila.impressions || 0,
     clics,
     ctr: +fila.ctr || 0,
     landing,
+    convWA,
     intentos: a[INTENTO] || 0,
     leads: a[LEAD] || 0,
     /* Cuánto cuesta poner UNA persona en la página. Es la vara honesta
@@ -104,9 +113,10 @@ const sumar = (xs) =>
     impresiones: t.impresiones + m.impresiones,
     clics: t.clics + m.clics,
     landing: t.landing + m.landing,
+    convWA: t.convWA + m.convWA,
     intentos: t.intentos + m.intentos,
     leads: t.leads + m.leads,
-  }), { gasto: 0, impresiones: 0, clics: 0, landing: 0, intentos: 0, leads: 0 });
+  }), { gasto: 0, impresiones: 0, clics: 0, landing: 0, convWA: 0, intentos: 0, leads: 0 });
 
 /* Ranking: primero por leads (que es el objetivo), y mientras no haya ninguno,
    por lo que cuesta traer a una persona a la página. Ordenar por CTR sería
@@ -182,7 +192,8 @@ async function main() {
   l.push(`📊 <b>Pulso de campaña</b> · hoy hasta las ${esc(ahora)}`);
   l.push("");
   l.push(`💸 Quemado hoy: <b>${plata(t.gasto)}</b>`);
-  l.push(`👆 Clics a la web: <b>${t.clics}</b>  ·  CTR ${pct(ctr)}`);
+  const destino = t.convWA > 0 ? "a WhatsApp" : "a la web";
+  l.push(`👆 Clics ${destino}: <b>${t.clics}</b>  ·  CTR ${pct(ctr)}`);
   l.push(`🌐 Llegaron a la página: <b>${t.landing}</b>` +
          (t.landing ? `  (${plata(t.gasto / t.landing)} c/u)` : ""));
   l.push(`✍️ Empezaron a escribir el número: <b>${t.intentos}</b>`);
