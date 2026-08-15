@@ -57,11 +57,20 @@ total al staff, `cliente_ve_lo_suyo` limita al cliente a su propia fila.
 
 `condorai.cl` lo publica el workflow `deploy-web.yml` del monorepo, que
 construye **`apps/web-v2`** con Vite y sube `dist` a Pages. El portal vive
-**dentro de esa app**, montado en la ruta `/portal`:
+**dentro de esa app**, montado en la ruta **`/acceso`**.
+
+> ⚠️ **No en `/portal`.** GitHub Pages resuelve `/portal` como `/portal.html`
+> ("pretty URLs"), y ese archivo sigue en `public/` — es el portal viejo.
+> Con la ruta ahí, Pages servía el HTML antiguo y la ruta del router no se
+> alcanzaba nunca. Se detectó en producción: `/portal` devolvía un HTML que
+> carga `supabase-js` desde CDN, o sea el portal de antes.
+>
+> `/acceso` además calza con el nombre del botón del menú y deja el portal
+> viejo intacto mientras se verifica el nuevo.
 
 ```
 apps/web-v2/src/
-  main.tsx              ← ruta "portal/*" añadida
+  main.tsx              ← ruta "acceso/*" añadida
   portal/
     Portal.tsx          menú, rol y rutas internas
     auth/  disenio/  staff/  cliente/  lib/
