@@ -1,28 +1,46 @@
 import { useState } from "react";
 import { entrarConClave, entrarConCodigo, fijarClave, pedirCodigo } from "./sesion";
 
-type Paso = "correo" | "codigo" | "clave" | "crear";
+type Metodo = "codigo" | "clave";
+type Paso = "entrar" | "verificar" | "crear";
 
 /**
  * La única puerta del portal.
  *
+ * SE ELIGE EL MÉTODO, NO SE MEZCLAN
+ * ---------------------------------------------------------------------------
+ * La primera versión ponía "Enviar código" y abajo un enlace "Ya tengo
+ * contraseña". Confundía: parecía que había que hacer las dos cosas. Ahora
+ * son dos pestañas y el formulario es uno solo — o código, o contraseña.
+ *
+ * EL CÓDIGO NO SIEMPRE ES DE 6 DÍGITOS
+ * ---------------------------------------------------------------------------
+ * Supabase permite configurar el largo del OTP entre 6 y 10, y este proyecto
+ * lo tiene en 8. El campo estaba fijo en 6 y truncaba el código: llegaba uno
+ * válido al correo y era imposible escribirlo entero.
+ *
+ * Por eso no se asume el largo: se aceptan hasta `MAX_CODIGO` dígitos y el
+ * botón se habilita desde `MIN_CODIGO`. Si mañana cambian la configuración,
+ * esto sigue funcionando.
+ *
  * NO SE DICE SI EL CORREO EXISTE
  * ---------------------------------------------------------------------------
- * El mensaje después de pedir el código es siempre el mismo, exista o no el
- * correo. Decir "ese correo no está registrado" convierte el login en un
- * verificador de cartera: cualquiera podría probar correos y averiguar quién
- * es cliente de Cóndor. La Edge Function `solicitar-acceso` ya responde
- * genérico por el mismo motivo; acá no se puede arruinar eso en el front.
+ * El mensaje tras pedir el código es el mismo exista o no el correo. Decir
+ * "ese correo no está registrado" convierte el login en un verificador de
+ * cartera: cualquiera podría averiguar quién es cliente de Cóndor.
  */
+const MIN_CODIGO = 6;
+const MAX_CODIGO = 10;
+
 export function Login() {
-  const [paso, setPaso] = useState<Paso>("correo");
+  const [metodo, setMetodo] = useState<Metodo>("codigo");
+  const [paso, setPaso] = useState<Paso>("entrar");
   const [email, setEmail] = useState("");
   const [codigo, setCodigo] = useState("");
   const [clave, setClave] = useState("");
   const [clave2, setClave2] = useState("");
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState("");
-  const [aviso, setAviso] = useState("");
 
   async function envolver(fn: () => Promise<void>) {
     setCargando(true);
@@ -36,37 +54,31 @@ export function Login() {
     }
   }
 
+  function enviar(ev: React.FormEvent) {
+    ev.preventDefault();
+    if (paso === "entrar" && metodo === "codigo")
+      return envolver(async () => {
+        await pedirCodigo(email);
+        setPaso("verificar");
+      });
+    if (paso === "entrar")
+      return envolver(() => entrarConClave(email, clave));
+    if (paso === "verificar")
+      return envolver(async () => {
+        await entrarConCodigo(email, codigo);
+        setPaso("crear");
+      });
+    return envolver(async () => {
+      if (clave.length < 8)
+        throw new Error("La contraseña necesita al menos 8 caracteres.");
+      if (clave !== clave2) throw new Error("Las dos contraseñas no coinciden.");
+      await fijarClave(clave);
+    });
+  }
+
   return (
     <div className="entrada-portal">
-      <form
-        className="tarjeta-entrada-portal"
-        onSubmit={(ev) => {
-          ev.preventDefault();
-          if (paso === "correo")
-            envolver(async () => {
-              await pedirCodigo(email);
-              setAviso(
-                "Si ese correo tiene acceso, le llegó un código de 6 dígitos.",
-              );
-              setPaso("codigo");
-            });
-          else if (paso === "codigo")
-            envolver(async () => {
-              await entrarConCodigo(email, codigo);
-              setPaso("crear");
-            });
-          else if (paso === "clave")
-            envolver(() => entrarConClave(email, clave));
-          else
-            envolver(async () => {
-              if (clave.length < 8)
-                throw new Error("La contraseña necesita al menos 8 caracteres.");
-              if (clave !== clave2)
-                throw new Error("Las dos contraseñas no coinciden.");
-              await fijarClave(clave);
-            });
-        }}
-      >
+      <form className="tarjeta-entrada-portal" onSubmit={enviar}>
         <div className="marca-portal">
           <span className="punto" aria-hidden="true" />
           <span>
@@ -75,92 +87,108 @@ export function Login() {
           </span>
         </div>
 
-        {paso === "correo" && (
-          <div key="correo" className="paso">
+        {paso === "entrar" && (
+          <div key="entrar" className="paso">
             <h1>Acceso</h1>
+
+            <div className="pestanas" role="tablist">
+              {(
+                [
+                  ["codigo", "Con código"],
+                  ["clave", "Con contraseña"],
+                ] as const
+              ).map(([id, txt]) => (
+                <button
+                  key={id}
+                  type="button"
+                  role="tab"
+                  aria-selected={metodo === id}
+                  className={"pestana" + (metodo === id ? " on" : "")}
+                  onClick={() => {
+                    setMetodo(id);
+                    setError("");
+                  }}
+                >
+                  {txt}
+                </button>
+              ))}
+            </div>
+
             <p className="bajada">
-              Clientes y equipo entran por acá. Te enviamos un código a tu
-              correo.
+              {metodo === "codigo"
+                ? "Te enviamos un código a tu correo. No necesitas recordar nada."
+                : "Entra con la contraseña que creaste la primera vez."}
             </p>
+
             <input
               className="campo"
               type="email"
               required
               autoFocus
+              autoComplete="email"
               placeholder="tu@correo.cl"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
+
+            {metodo === "clave" && (
+              <input
+                className="campo"
+                type="password"
+                required
+                autoComplete="current-password"
+                placeholder="Tu contraseña"
+                value={clave}
+                onChange={(e) => setClave(e.target.value)}
+              />
+            )}
+
             <button className="btn solido ancho" disabled={cargando}>
-              {cargando ? "Enviando…" : "Enviar código"}
-            </button>
-            <button
-              type="button"
-              className="enlace"
-              onClick={() => setPaso("clave")}
-            >
-              Ya tengo contraseña
+              {cargando
+                ? metodo === "codigo"
+                  ? "Enviando…"
+                  : "Entrando…"
+                : metodo === "codigo"
+                  ? "Enviarme el código"
+                  : "Entrar"}
             </button>
           </div>
         )}
 
-        {paso === "codigo" && (
-          <div key="codigo" className="paso">
+        {paso === "verificar" && (
+          <div key="verificar" className="paso">
             <h1>Revisa tu correo</h1>
-            <p className="bajada">{aviso}</p>
+            <p className="bajada">
+              Si <b>{email}</b> tiene acceso, le llegó un código. Escríbelo acá.
+            </p>
             <input
               className="campo codigo"
               inputMode="numeric"
               autoComplete="one-time-code"
-              maxLength={6}
-              required
               autoFocus
-              placeholder="000000"
+              maxLength={MAX_CODIGO}
+              placeholder="••••••"
               value={codigo}
-              onChange={(e) => setCodigo(e.target.value.replace(/\D/g, ""))}
+              onChange={(e) =>
+                setCodigo(e.target.value.replace(/\D/g, "").slice(0, MAX_CODIGO))
+              }
             />
-            <button className="btn solido ancho" disabled={cargando}>
+            <button
+              className="btn solido ancho"
+              disabled={cargando || codigo.length < MIN_CODIGO}
+            >
               {cargando ? "Entrando…" : "Entrar"}
             </button>
             <button
               type="button"
               className="enlace"
-              onClick={() => setPaso("correo")}
+              onClick={() => {
+                setPaso("entrar");
+                setCodigo("");
+                setError("");
+              }}
             >
               Usar otro correo
-            </button>
-          </div>
-        )}
-
-        {paso === "clave" && (
-          <div key="clave" className="paso">
-            <h1>Entrar</h1>
-            <p className="bajada">Con tu correo y tu contraseña.</p>
-            <input
-              className="campo"
-              type="email"
-              required
-              placeholder="tu@correo.cl"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-            <input
-              className="campo"
-              type="password"
-              required
-              placeholder="Tu contraseña"
-              value={clave}
-              onChange={(e) => setClave(e.target.value)}
-            />
-            <button className="btn solido ancho" disabled={cargando}>
-              {cargando ? "Entrando…" : "Entrar"}
-            </button>
-            <button
-              type="button"
-              className="enlace"
-              onClick={() => setPaso("correo")}
-            >
-              Prefiero un código
             </button>
           </div>
         )}
@@ -169,14 +197,15 @@ export function Login() {
           <div key="crear" className="paso">
             <h1>Crea tu contraseña</h1>
             <p className="bajada">
-              Para que la próxima vez entres directo, sin esperar el correo.
+              Para entrar directo la próxima vez, sin esperar el correo.
             </p>
             <input
               className="campo"
               type="password"
               required
               autoFocus
-              placeholder="Nueva contraseña"
+              autoComplete="new-password"
+              placeholder="Nueva contraseña (mínimo 8)"
               value={clave}
               onChange={(e) => setClave(e.target.value)}
             />
@@ -184,6 +213,7 @@ export function Login() {
               className="campo"
               type="password"
               required
+              autoComplete="new-password"
               placeholder="Repítela"
               value={clave2}
               onChange={(e) => setClave2(e.target.value)}

@@ -356,3 +356,34 @@ textarea.campo{resize:vertical;min-height:56px}
 @keyframes paso-entra{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}
 .marca-portal .punto + span{line-height:1.1}
 @media(prefers-reduced-motion:reduce){.paso{animation:none}}
+
+/* ───── PESTAÑAS DEL LOGIN ─────
+   Código o contraseña, no las dos. La versión anterior ponía el botón de
+   código arriba y un enlace "ya tengo contraseña" abajo, y se leía como si
+   hubiera que hacer ambas cosas. */
+.pestanas{
+  display:flex;gap:3px;padding:3px;border-radius:11px;
+  background:var(--panel-2);border:1px solid var(--borde);position:relative;
+}
+.pestana{
+  flex:1;padding:8px 10px;border:0;background:none;border-radius:8px;
+  font:inherit;font-size:12.5px;font-weight:560;color:var(--texto-2);
+  cursor:pointer;transition:color .18s, background .18s;
+}
+.pestana:hover{color:var(--texto)}
+.pestana.on{background:var(--panel);color:var(--azul);
+  box-shadow:0 1px 2px rgba(0,0,0,.06)}
+
+/* El campo del código se adapta a lo que se escribe: con 6 dígitos se ve
+   holgado y con 10 no se desborda. `ch` mide en anchos de carácter, que es
+   justo lo que hace falta acá. */
+.campo.codigo{
+  font-size:23px;letter-spacing:.30em;font-weight:600;text-align:center;
+  padding-left:calc(12px + .30em);
+}
+.campo.codigo::placeholder{letter-spacing:.22em;opacity:.35}
+
+@media(max-width:560px){
+  .pestana{font-size:12px;padding:9px 6px}
+  .campo.codigo{font-size:22px;letter-spacing:.22em;padding-left:calc(13px + .22em)}
+}
