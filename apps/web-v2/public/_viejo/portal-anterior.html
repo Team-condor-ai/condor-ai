@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Portal de clientes · condor.ai</title>
+  <meta name="theme-color" content="#071431" />
+  <link rel="icon" type="image/png" href="/assets/favicon.png" /><link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    /* =====================================================================
+       Portal de clientes · condor.ai
+       Sistema visual portado del PANEL ADMIN DE VECI (tema navy):
+       apps/web-admin/app/globals.css → scope `.admin-theme`.
+       Los nombres de clase NO cambian: el JS de más abajo depende de ellos.
+
+       Qué se trajo tal cual de Veci: los tokens navy, el canvas de radiales
+       fijos, la tarjeta glass, el botón primario, el input con anillo azure,
+       los badges, la etiqueta micro en mayúsculas, el tracking por tamaño y
+       las curvas/duraciones de movimiento.
+
+       Qué se sacó del portal viejo, a propósito: las tres auroras animadas,
+       el barrido de luz de 7,5 s y el grano. Ninguno existe en el sistema de
+       Veci, y el barrido rompía su regla dura — una animación de UI se queda
+       bajo 300 ms.
+       ===================================================================== */
+    :root{
+      /* ── Tokens navy (Veci · .admin-theme) ── */
+      --navy-deepest:#03112e; --navy-deep:#0b1c43; --navy:#14264a;
+      --navy-mid:#253c72; --navy-bright:#3a5a97;
+      --azure:#6ea8f0; --azure-soft:#b8e4ff;
+
+      --ink:#eaf1fb; --body:#c2d0e6; --muted:#8ea3c4;
+      --line:rgba(255,255,255,.10);
+      --accent:#9cc7ff;
+
+      --brand:#2f6fd0; --brand-deep:#16408f; --brand-text:#9cc7ff;
+      --brand-tint:rgba(110,168,240,.16);
+      --brand-glow:0 12px 26px rgba(20,50,120,.5), inset 0 1px 0 rgba(255,255,255,.18);
+
+      --ok:#86e29a; --warn:#f2cd7a; --danger:#ff9d84;
+
+      /* ── Radios ── */
+      --r-card:22px; --r-tile:16px; --r-btn:14px;
+
+      /* ── Tracking óptico: es específico del tamaño. Un letter-spacing
+            fijo queda mal en algún tamaño. ── */
+      --tr-display:-.022em; --tr-title:-.014em; --tr-section:-.006em;
+      --tr-body:0; --tr-micro:.01em; --tr-eyebrow:.08em;
+
+      /* ── Tipografía Apple (dirección oficial de Veci: NO Inter/Nunito) ── */
+      --font-display:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI Variable Display','Segoe UI',system-ui,sans-serif;
+      --font-body:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI Variable Text','Segoe UI',system-ui,sans-serif;
+      --mono:'SF Mono',ui-monospace,'Cascadia Mono','Roboto Mono',Menlo,monospace;
+
+      /* ── Motion: las easings nativas son muy débiles para movimiento
+            deliberado. Toda transición usa un token de acá. ── */
+      --ease-out:cubic-bezier(.23,1,.32,1);
+      --dur-press:160ms; --dur-pop:180ms; --dur-panel:240ms;
+    }
+    *{box-sizing:border-box}
+    html{-webkit-text-size-adjust:100%; background:#071431}
+    body{
+      margin:0; font-family:var(--font-body); color:var(--ink);
+      letter-spacing:-.011em; min-height:100vh;
+      -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+      /* Luz ambiental navy detrás del vidrio. Fija: no deriva ni respira. */
+      background:
+        radial-gradient(52% 40% at 100% -4%, rgba(58,90,151,.55), transparent 60%),
+        radial-gradient(46% 34% at -6% 4%, rgba(37,60,114,.5), transparent 58%),
+        radial-gradient(60% 46% at 104% 104%, rgba(11,28,67,.6), transparent 62%),
+        linear-gradient(160deg,#0d1f47,#071431 62%,#050f26);
+      background-attachment:fixed;
+    }
+    a{color:inherit; text-decoration:none}
+    h1,h2,h3{margin:0; font-family:var(--font-display); font-weight:700; color:var(--ink); text-wrap:balance}
+    h1{letter-spacing:var(--tr-display); line-height:1.08}
+    h3{letter-spacing:var(--tr-section); line-height:1.25}
+    ::selection{background:rgba(110,168,240,.35); color:#fff}
+    :where(a,button,input):focus-visible{outline:3px solid var(--azure); outline-offset:2px}
+
+    /* Scrollbars integrados al navy: el gris del tema claro se lee como una
+       franja pegada al borde y parece un fallo. */
+    *{scrollbar-width:thin; scrollbar-color:rgba(255,255,255,.16) transparent}
+    *::-webkit-scrollbar{width:10px; height:10px}
+    *::-webkit-scrollbar-thumb{background:rgba(255,255,255,.14); border:3px solid transparent; background-clip:content-box; border-radius:999px}
+    *::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.26); background-clip:content-box}
+
+    .grad-tx{background:linear-gradient(135deg,var(--azure),var(--azure-soft)); -webkit-background-clip:text; background-clip:text; color:transparent}
+    .muted{color:var(--muted); font-size:.95rem; line-height:1.55}
+    .lnk{color:var(--brand-text); text-decoration:none; font-weight:600; cursor:pointer; transition:color var(--dur-press) var(--ease-out)}
+    .lnk:hover{color:var(--azure-soft)}
+
+    /* Topbar — calcada de .admin-topbar, fija para una página de una sola vista */
+    .topbar{position:fixed; top:0; left:0; right:0; z-index:50;
+      background:rgba(10,26,63,.72); backdrop-filter:blur(20px) saturate(1.6); -webkit-backdrop-filter:blur(20px) saturate(1.6);
+      border-bottom:1px solid rgba(255,255,255,.08)}
+    .topbar-in{max-width:680px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; padding:14px 22px}
+    .topbar img{height:24px; filter:brightness(0) invert(1); opacity:.92}
+
+    .portal-wrap{max-width:680px; margin:0 auto; padding:112px 22px 72px}
+    h1{font-size:32px; margin:0 0 8px}
+
+    /* ---- Tarjeta (Veci .admin-theme .card) ---- */
+    .pcard{position:relative;
+      background:rgba(21,38,74,.55);
+      backdrop-filter:blur(20px) saturate(1.5); -webkit-backdrop-filter:blur(20px) saturate(1.5);
+      border:1px solid rgba(255,255,255,.09); border-radius:var(--r-card);
+      box-shadow:0 2px 6px rgba(0,0,0,.25), 0 18px 40px rgba(0,8,24,.4), inset 0 1px 0 rgba(255,255,255,.06);
+      padding:24px; color:var(--ink)}
+
+    /* ---- Badges navy: texto más brillante para AA sobre navy ---- */
+    .badge{display:inline-flex; align-items:center; gap:5px; padding:4px 12px; border-radius:999px;
+      font-family:var(--font-display); font-size:12.5px; font-weight:700; line-height:1.3; border:none}
+    .b-ok{background:rgba(110,205,120,.18); color:var(--ok)}
+    .b-aldia{background:rgba(110,168,240,.2); color:#9cc7ff}
+    .b-pend{background:rgba(255,122,96,.18); color:var(--danger)}
+
+    /* Filas de datos: el mismo borde de .table td */
+    .frow{display:flex; justify-content:space-between; align-items:center; gap:12px;
+      padding:13px 0; border-bottom:1px solid rgba(255,255,255,.07)}
+    .frow:last-child{border:none}
+    .frow b{font-weight:600; color:var(--ink)}
+    .frow span{color:var(--body)}
+
+    /* Etiqueta micro en mayúsculas (Veci .label) */
+    label.muted{display:block; margin:0 0 6px; font-family:var(--font-display);
+      font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:var(--tr-eyebrow); color:var(--muted)}
+
+    .pinput{width:100%; background:rgba(255,255,255,.06); border:1.5px solid rgba(255,255,255,.14);
+      border-radius:12px; color:var(--ink); padding:12px 14px; font-size:15px; font-family:var(--font-body);
+      margin:0 0 14px; transition:border-color .14s var(--ease-out), box-shadow .14s var(--ease-out)}
+    .pinput::placeholder{color:#7d8fb0}
+    .pinput:focus{outline:none; border-color:var(--azure); box-shadow:0 0 0 4px rgba(110,168,240,.22)}
+
+    /* ---- Botones (Veci .admin-theme .btn / .btn-secondary) ---- */
+    .btn{display:inline-flex; align-items:center; justify-content:center; gap:8px;
+      border:none; border-radius:var(--r-btn); padding:12px 20px; cursor:pointer;
+      font-family:var(--font-display); font-size:14.5px; font-weight:700; letter-spacing:-.01em;
+      transition:transform var(--dur-press) var(--ease-out), box-shadow var(--dur-press) var(--ease-out), filter var(--dur-press) var(--ease-out)}
+    .btn:disabled{opacity:.5; cursor:not-allowed; box-shadow:none}
+    .btn-grad{background:linear-gradient(135deg,#3d80e6,var(--brand) 55%,var(--brand-deep)); color:#fff; box-shadow:var(--brand-glow)}
+    .btn-soft{background:rgba(255,255,255,.07); border:1.5px solid rgba(255,255,255,.16); color:var(--azure-soft); box-shadow:none}
+    /* Verde de WhatsApp: es de esa marca, no del sistema. Se queda. */
+    .btn-wsp{background:rgba(37,211,102,.13); border:1.5px solid rgba(37,211,102,.42); color:#bff7d3}
+    /* El movimiento de hover va SIEMPRE detrás de este media query: en táctil
+       el tap dispara :hover y el botón se queda levantado después de tocarlo. */
+    @media (hover:hover) and (pointer:fine){
+      .btn-grad:hover:not(:disabled){transform:translateY(-1px); filter:saturate(1.05) brightness(1.03);
+        box-shadow:0 16px 30px rgba(20,50,120,.55), inset 0 1px 0 rgba(255,255,255,.2)}
+      .btn-soft:hover:not(:disabled){background:rgba(255,255,255,.13); transform:translateY(-1px)}
+      .btn-wsp:hover:not(:disabled){background:rgba(37,211,102,.2); transform:translateY(-1px)}
+    }
+    .btn:active:not(:disabled){transform:translateY(0) scale(.98)}
+
+    .icn{width:18px; height:18px; flex:none; stroke:currentColor; fill:none; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round}
+
+    /* Bloque "pago seguro". El candado va en un tile de icono (Veci .tile-sky):
+       es el componente del sistema para esto, no un cuadro decorativo nuevo. */
+    .seg-pay{display:flex; gap:13px; align-items:flex-start;
+      background:rgba(110,168,240,.08); border:1px solid rgba(110,168,240,.22); border-radius:var(--r-tile); padding:14px 16px}
+    .seg-lock{width:44px; height:44px; flex:none; border-radius:var(--r-tile); display:grid; place-items:center;
+      background:rgba(110,168,240,.16); color:var(--azure-soft);
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.12), 0 4px 10px rgba(0,0,0,.25)}
+    .seg-pay b{display:block; color:var(--ink); margin-bottom:3px; font-family:var(--font-display); font-weight:700; font-size:15px}
+    .seg-pay span{color:var(--body); font-size:14px; line-height:1.5}
+    .trust-row{display:flex; flex-wrap:wrap; gap:6px 12px; align-items:center; justify-content:center;
+      margin-top:16px; color:var(--muted); font-size:12.5px}
+    .trust-row b{font-weight:700; color:var(--body)}
+    .seg-login{display:flex; align-items:center; gap:8px; justify-content:center; color:var(--muted); font-size:13px; margin-top:18px}
+    .seg-login svg{color:var(--azure)}
+
+    /* Cifras: columnas de plata que no "bailan" */
+    .num{font-variant-numeric:tabular-nums; letter-spacing:-.02em}
+
+    .loader{display:flex; flex-direction:column; align-items:center; gap:14px; padding:40px 0; color:var(--muted)}
+    .spinner{width:32px; height:32px; border-radius:50%; border:2.5px solid rgba(255,255,255,.12); border-top-color:var(--azure); animation:spin .8s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    @media (max-width:560px){
+      .portal-wrap{padding:96px 16px 56px} h1{font-size:26px} .pcard{padding:20px}
+    }
+    @media (prefers-reduced-motion:reduce){
+      .spinner{animation:none}
+      *{transition-duration:.01ms !important}
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar"><div class="topbar-in">
+    <a href="/"><img src="/assets/logo.png" alt="condor.ai" /></a>
+    <a class="lnk" href="/">&larr; Volver al sitio</a>
+  </div></div>
+
+  <div class="portal-wrap">
+    <!-- LOGIN -->
+    <div id="login" style="display:none">
+      <h1>Portal de <span class="grad-tx">clientes</span></h1>
+      <p class="muted" style="margin-bottom:22px">Acceso exclusivo para clientes de condor.ai.</p>
+      <div class="pcard">
+        <!-- Paso 1: correo + contraseña -->
+        <div id="step-pass">
+          <label class="muted">Tu correo</label>
+          <input class="pinput" id="email" type="email" placeholder="tucorreo@ejemplo.com" autocomplete="email" />
+          <label class="muted">Contraseña</label>
+          <input class="pinput" id="pass" type="password" placeholder="Tu contraseña" autocomplete="current-password" />
+          <button class="btn btn-grad" style="width:100%" id="btnPass">Entrar</button>
+          <p class="muted" style="margin-top:16px;text-align:center"><a class="lnk" id="lnkCode">Entrar con código / Olvidé mi contraseña</a></p>
+        </div>
+        <!-- Paso 2: código de 6 dígitos -->
+        <div id="step-code" style="display:none">
+          <p class="muted">Te enviamos un código a <b id="codeEmail" style="color:var(--ink)"></b>. Escríbelo aquí:</p>
+          <input class="pinput num" id="code" type="text" inputmode="numeric" maxlength="8" placeholder="________" style="letter-spacing:.4em;text-align:center;font-size:1.3rem" />
+          <button class="btn btn-grad" style="width:100%" id="btnCode">Verificar código</button>
+          <p class="muted" style="margin-top:16px;text-align:center"><a class="lnk" id="lnkBack">&larr; Volver</a></p>
+        </div>
+        <!-- Paso 3: crear contraseña (primer ingreso) -->
+        <div id="step-newpass" style="display:none">
+          <p class="muted">Crea una contraseña para tu cuenta. La usarás para entrar siempre.</p>
+          <input class="pinput" id="np1" type="password" placeholder="Nueva contraseña (mín. 8)" autocomplete="new-password" />
+          <input class="pinput" id="np2" type="password" placeholder="Repite la contraseña" autocomplete="new-password" />
+          <button class="btn btn-grad" style="width:100%" id="btnNewPass">Guardar contraseña</button>
+        </div>
+        <p class="muted" id="loginMsg" style="margin-top:16px;text-align:center"></p>
+      </div>
+      <p class="seg-login">
+        <svg class="icn" style="width:15px;height:15px" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+        Acceso seguro y cifrado, exclusivo para clientes de condor.ai
+      </p>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div id="dash" style="display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:22px">
+        <h1 style="font-size:26px;margin:0">Hola</h1>
+        <button class="btn btn-soft" style="padding:10px 16px;font-size:13.5px" id="btnOut">Salir</button>
+      </div>
+      <div id="dashBody"></div>
+    </div>
+
+    <div id="cargando" class="loader"><div class="spinner"></div><span>Cargando tu portal…</span></div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = "https://ogmvdthxwcmvqjlxhpsr.supabase.co";
+    const ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9nbXZkdGh4d2NtdnFqbHhocHNyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE2NDEwMTksImV4cCI6MjA5NzIxNzAxOX0.wo6zSUlMejjYu1hSweZcWEBBdCvBgVNWg3xtLzFTIrI";
+    const sb = supabase.createClient(SUPABASE_URL, ANON_KEY);
+    const FUNCTIONS = SUPABASE_URL + "/functions/v1";
+
+    // Ícono de candado reutilizable (sin emojis)
+    const LOCK_SVG = '<svg class="icn" style="width:22px;height:22px" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
+
+    // Botón inteligente: crea el cobro con el monto exacto del cliente
+    window.pagar = async function(tipo){
+      const { data:{ session } } = await sb.auth.getSession();
+      if(!session){ alert("Inicia sesión primero."); return; }
+      try{
+        const r = await fetch(FUNCTIONS + "/crear-pago", { method:"POST",
+          headers:{ "Content-Type":"application/json", "Authorization":"Bearer "+session.access_token, "apikey":ANON_KEY },
+          body: JSON.stringify({ tipo }) });
+        const j = await r.json();
+        if(j.init_point) location.href = j.init_point;
+        else alert("No se pudo iniciar el pago: " + (j.error||"intenta de nuevo"));
+      }catch(e){ alert("Error de conexión. Intenta de nuevo."); }
+    };
+
+    const $ = id => document.getElementById(id);
+    const esc = s => String(s||"").replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+    const badge = (estado) => {
+      const m = {pagado:["b-ok","Pagado"], al_dia:["b-aldia","Al día"], vencido:["b-pend","Vencido"], pendiente:["b-pend","Pendiente"]};
+      const [c,t] = m[estado] || ["b-pend", estado||"—"]; return `<span class="badge ${c}">${t}</span>`;
+    };
+
+    const show = (s) => ["step-pass","step-code","step-newpass"].forEach(x=>$(x).style.display = x===s?"block":"none");
+
+    // Tras autenticarse: si aún no tiene contraseña, forzar crearla; si no, al dashboard
+    async function afterAuth(){
+      const { data:{ user } } = await sb.auth.getUser();
+      if(!user) return;
+      if(!user.user_metadata || user.user_metadata.password_set !== true){
+        $("cargando").style.display="none"; $("dash").style.display="none";
+        $("login").style.display="block"; show("step-newpass"); return;
+      }
+      await cargarDash();
+    }
+
+    async function init(){
+      const { data:{ session } } = await sb.auth.getSession();
+      $("cargando").style.display="none";
+      if(!session){ $("login").style.display="block"; show("step-pass"); return; }
+      await afterAuth();
+    }
+
+    async function cargarDash(){
+      $("login").style.display="none"; $("dash").style.display="block";
+      // Si es admin, al panel
+      const { data:adm0 } = await sb.rpc("es_admin");
+      if(adm0){ location.replace("admin.html"); return; }
+      const { data, error } = await sb.from("clientes").select("*").limit(1).maybeSingle();
+      const b = $("dashBody");
+      if(error || !data){
+        b.innerHTML = `<div class="pcard"><p>Tu cuenta aún no está configurada. Escríbenos por WhatsApp y la activamos.</p>
+          <a class="btn btn-wsp" style="margin-top:16px" href="https://wa.me/56988989824?text=Hola,%20activé%20mi%20portal%20pero%20no%20veo%20mi%20cuenta" target="_blank" rel="noopener">Escribir por WhatsApp</a></div>`;
+        return;
+      }
+      const c = data, mon = c.moneda || "CLP";
+      const setupBtn = c.setup_estado!=="pagado" && c.setup_monto ? `<button class="btn btn-grad" onclick="pagar('setup')">Pagar setup</button>` : "";
+      const mensualBtn = c.mensual_monto ? `<button class="btn btn-grad" onclick="pagar('mensual')">${c.mensual_estado==="al_dia"?"Gestionar mensualidad":"Activar mensualidad"}</button>` : "";
+      const paypalBtn = c.link_paypal ? `<a class="btn" style="background:#ffc439;color:#003087;font-weight:700" href="${esc(c.link_paypal)}" target="_blank" rel="noopener">Pagar con PayPal</a>` : "";
+      b.innerHTML = `
+        <div class="pcard" style="margin-bottom:18px">
+          <div class="frow"><b>Negocio</b><span>${esc(c.negocio)||"—"}</span></div>
+          <div class="frow"><b>Plan</b><span>${esc(c.plan)||"—"}</span></div>
+          <div class="frow"><b>Setup ${c.setup_monto?`· <span class="num">${mon} ${c.setup_monto.toLocaleString()}</span>`:""}</b>${badge(c.setup_estado)}</div>
+          <div class="frow"><b>Mensualidad ${c.mensual_monto?`· <span class="num">${mon} ${c.mensual_monto.toLocaleString()}</span>/mes`:""}</b>${badge(c.mensual_estado)}</div>
+          ${c.proximo_cobro?`<div class="frow"><b>Próximo cobro</b><span class="num">${esc(c.proximo_cobro)}</span></div>`:""}
+          ${c.web_url?`<div class="frow"><b>Tu sitio</b><a class="lnk" href="${esc(c.web_url)}" target="_blank" rel="noopener">Ver web →</a></div>`:""}
+        </div>
+        ${(setupBtn||mensualBtn||paypalBtn)?`<div class="pcard">
+          <div class="seg-pay"><span class="seg-lock">${LOCK_SVG}</span><div><b>Pago 100% seguro</b><span>Procesado por Mercado Pago. Los datos de tu tarjeta viajan cifrados — nosotros nunca los vemos ni los guardamos.</span></div></div>
+          <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:16px">${setupBtn}${mensualBtn}${paypalBtn}</div>
+          <div class="trust-row"><span>Cifrado SSL</span><span>·</span><span><b>Mercado Pago</b></span><span>·</span><span>Comprobante al instante</span></div>
+        </div>`:`<div class="pcard"><p style="margin:0">Estás al día. Gracias por confiar en condor.ai.</p></div>`}
+        <div class="pcard" id="histCard" style="margin-top:18px"><h3 style="font-size:18px;margin:0 0 6px">Historial de pagos</h3><p class="muted" id="histBody">Cargando…</p></div>
+        <p class="muted" style="text-align:center;margin-top:18px">¿Dudas? <a class="lnk" href="https://wa.me/56988989824" target="_blank" rel="noopener">Escríbenos por WhatsApp</a></p>`;
+
+      // Historial de pagos + comprobantes
+      window.__cli = c;
+      const { data:pagos } = await sb.from("pagos").select("*").eq("cliente_id", c.id).order("creado_en",{ascending:false});
+      const hb = $("histBody");
+      if(!pagos || !pagos.length){ hb.textContent = "Aún no tienes pagos registrados."; }
+      else {
+        window.__pagos = pagos;
+        hb.innerHTML = pagos.map(p=>`<div class="frow"><div><b>${p.tipo==="mensual"?"Mensualidad":"Setup"}</b> · <span class="num">${mon} ${(p.monto||0).toLocaleString()}</span><br><span class="num" style="font-size:12.5px">${(p.creado_en||"").slice(0,10)}</span></div><div style="text-align:right">${badge(p.estado)}${p.estado==="pagado"?`<br><a class="lnk" style="font-size:13px" onclick="comprobante('${p.id}')">Descargar comprobante</a>`:""}</div></div>`).join("");
+      }
+    }
+
+    // Genera un comprobante de pago imprimible (Guardar como PDF desde el navegador)
+    window.comprobante = function(pagoId){
+      const c = window.__cli, p = (window.__pagos||[]).find(x=>x.id===pagoId);
+      if(!p) return;
+      const mon = c.moneda || "CLP";
+      const w = window.open("", "_blank");
+      w.document.write(`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Comprobante ${p.id.slice(0,8)}</title>
+        <style>body{font-family:-apple-system,Segoe UI,Roboto,sans-serif;color:#15151a;max-width:640px;margin:40px auto;padding:0 24px}
+        .h{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #15151a;padding-bottom:16px}
+        h1{font-size:1.4rem;margin:0}.muted{color:#6b6b76;font-size:.9rem}
+        .row{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #eee}
+        .tot{font-size:1.5rem;font-weight:700;margin-top:18px}
+        .ok{display:inline-block;background:#e7f5ee;color:#0a7d4f;font-weight:700;padding:5px 12px;border-radius:99px;font-size:.85rem}
+        @media print{.np{display:none}}</style></head><body>
+        <div class="h"><div><h1>condor.ai</h1><div class="muted">Comprobante de pago</div></div><div class="ok">PAGADO</div></div>
+        <div style="margin-top:24px">
+          <div class="row"><span class="muted">N° comprobante</span><b>${p.id.slice(0,8).toUpperCase()}</b></div>
+          <div class="row"><span class="muted">Fecha</span><b>${(p.creado_en||"").slice(0,10)}</b></div>
+          <div class="row"><span class="muted">Cliente</span><b>${(c.negocio||c.email||"").replace(/[<>]/g,"")}</b></div>
+          <div class="row"><span class="muted">Correo</span><b>${(c.email||"").replace(/[<>]/g,"")}</b></div>
+          <div class="row"><span class="muted">Concepto</span><b>${(c.concepto||(p.tipo==="mensual"?"Mensualidad":"Servicio condor.ai")).replace(/[<>]/g,"")}</b></div>
+          <div class="row"><span class="muted">Tipo</span><b>${p.tipo==="mensual"?"Mensualidad":"Pago inicial (setup)"}</b></div>
+          ${p.mp_id?`<div class="row"><span class="muted">ID transacción</span><b>${String(p.mp_id).replace(/[<>]/g,"")}</b></div>`:""}
+          <div class="row tot"><span>Total</span><span>${mon} ${(p.monto||0).toLocaleString()}</span></div>
+        </div>
+        <p class="muted" style="margin-top:30px">Gracias por confiar en condor.ai · contacto@teamcondorcl.com<br>Este documento es un comprobante interno de pago. La boleta/factura tributaria, si la requieres, se emite por separado.</p>
+        <button class="np" onclick="window.print()" style="margin-top:24px;padding:12px 22px;border:none;border-radius:10px;background:#2f6fd0;color:#fff;font-weight:700;cursor:pointer">Descargar / Imprimir PDF</button>
+        </body></html>`);
+      w.document.close();
+    };
+
+    const reMail = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+
+    // Paso 1: entrar con contraseña
+    $("btnPass").onclick = async () => {
+      const email = $("email").value.trim(), password = $("pass").value;
+      if(!reMail.test(email)){ $("loginMsg").textContent="Pon un correo válido."; return; }
+      if(!password){ $("loginMsg").textContent="Escribe tu contraseña o usa “Entrar con código”."; return; }
+      $("btnPass").disabled=true; $("loginMsg").textContent="Entrando…";
+      const { error } = await sb.auth.signInWithPassword({ email, password });
+      $("btnPass").disabled=false;
+      $("loginMsg").textContent = error ? "Correo o contraseña incorrectos. Si es tu primera vez, usa “Entrar con código”." : "";
+    };
+
+    // Pedir código — pasa por la Edge Function que SOLO envía a correos registrados (anti-acceso ajeno)
+    let codeCooldown = 0;
+    $("lnkCode").onclick = async () => {
+      const email = $("email").value.trim();
+      if(!reMail.test(email)){ $("loginMsg").textContent="Primero escribe tu correo arriba."; return; }
+      if(Date.now() < codeCooldown){ $("loginMsg").textContent="Espera unos segundos antes de pedir otro código."; return; }
+      codeCooldown = Date.now() + 20000;
+      $("loginMsg").textContent="Enviando código…";
+      try{
+        const r = await fetch(FUNCTIONS+"/solicitar-acceso",{ method:"POST", headers:{"Content-Type":"application/json","apikey":ANON_KEY,"Authorization":"Bearer "+ANON_KEY}, body:JSON.stringify({ email }) });
+        const j = await r.json();
+        if(r.status===429){ $("loginMsg").textContent = j.error || "Demasiados intentos. Espera unos minutos."; return; }
+        // Mensaje genérico (no revela si el correo existe). Si está registrado, llegará el código.
+        $("codeEmail").textContent = email; $("loginMsg").textContent="Si tu correo está registrado, te llegará un código."; show("step-code"); $("code").focus();
+      }catch(e){ $("loginMsg").textContent="Error de conexión. Intenta de nuevo."; }
+    };
+    $("lnkBack").onclick = () => { show("step-pass"); $("loginMsg").textContent=""; };
+
+    // Paso 2: verificar código
+    $("btnCode").onclick = async () => {
+      const email = $("email").value.trim(), token = $("code").value.trim();
+      if(token.length<6){ $("loginMsg").textContent="El código tiene 6 dígitos."; return; }
+      $("btnCode").disabled=true; $("loginMsg").textContent="Verificando…";
+      const { error } = await sb.auth.verifyOtp({ email, token, type:"email" });
+      $("btnCode").disabled=false;
+      $("loginMsg").textContent = error ? "Código incorrecto o vencido. Pide uno nuevo." : "";
+    };
+
+    // Paso 3: guardar contraseña permanente
+    $("btnNewPass").onclick = async () => {
+      const p1 = $("np1").value, p2 = $("np2").value;
+      if(p1.length<8){ $("loginMsg").textContent="Mínimo 8 caracteres."; return; }
+      if(p1!==p2){ $("loginMsg").textContent="Las contraseñas no coinciden."; return; }
+      $("btnNewPass").disabled=true; $("loginMsg").textContent="Guardando…";
+      const { error } = await sb.auth.updateUser({ password:p1, data:{ password_set:true } });
+      $("btnNewPass").disabled=false;
+      if(error){ $("loginMsg").textContent="Error: "+error.message; return; }
+      $("loginMsg").textContent=""; await afterAuth();
+    };
+
+    $("btnOut").onclick = async () => { await sb.auth.signOut(); location.reload(); };
+
+    // Reaccionar al iniciar sesión (código o contraseña)
+    sb.auth.onAuthStateChange((_e, session)=>{ if(session) afterAuth(); });
+    init();
+  </script>
+</body>
+</html>

@@ -93,7 +93,7 @@ const cab = (t) => `<!DOCTYPE html>
   <nav class="menu">
 ${NAV.map(([u, n]) => `    <a href="${u}"${t.ruta === u ? ' aria-current="page"' : ""}>${n}</a>`).join("\n")}
   </nav>
-  <a class="portal-acceso" href="/portal.html">Portal clientes</a>
+  <a class="portal-acceso" href="/acceso">Portal clientes</a>
   <a class="btn btn-primario" href="/agendar">Agendar una reunión</a>
 </div></header>
 
@@ -104,7 +104,7 @@ ${NAV.map(([u, n]) => `    <a href="${u}"${t.ruta === u ? ' aria-current="page"'
     <button class="cerrar" aria-label="Cerrar menú">&times;</button>
   </div>
 ${NAV.map(([u, n]) => `  <a href="${u}"${t.ruta === u ? ' aria-current="page"' : ""}>${n}</a>`).join("\n")}
-  <a href="/portal.html">Portal de clientes</a>
+  <a href="/acceso">Portal de clientes</a>
   <a class="btn btn-primario" href="/agendar">Agendar una reunión</a>
 </nav>
 `;
@@ -136,7 +136,7 @@ const pie = `
       <a href="/agendar">Agendar una reunión</a>
       <a href="mailto:${CORREO}">${CORREO}</a>
       <a href="https://wa.me/${WSP}" target="_blank" rel="noopener">WhatsApp ${WSP_VISIBLE}</a>
-      <a href="/portal.html">Portal de clientes</a></div>
+      <a href="/acceso">Portal de clientes</a></div>
   </div>
   <div class="legal"><span>© 2026 condor.ai · Santiago, Chile</span><span>Todos los derechos reservados</span></div>
 </div></footer>

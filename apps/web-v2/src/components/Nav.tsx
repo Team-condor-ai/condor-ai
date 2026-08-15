@@ -13,7 +13,7 @@ const LINKS: NavItem[] = [
   { label: "Portafolio", href: "/clientes/", type: "ext" },
   { label: "Blog", href: "/blog/", type: "ext" },
   { label: "Nosotros", href: "/inicio/", type: "ext" },
-  { label: "Acceso clientes", href: "/portal.html", type: "ext" },
+  { label: "Acceso clientes", href: "/acceso", type: "ext" },
 ];
 
 /** Renderiza un enlace según su tipo, con cierre opcional del drawer. */

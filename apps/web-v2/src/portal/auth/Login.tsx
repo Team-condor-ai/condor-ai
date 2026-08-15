@@ -68,12 +68,15 @@ export function Login() {
         }}
       >
         <div className="marca-portal">
-          <b>CÓNDOR AI</b>
-          <small>PORTAL</small>
+          <span className="punto" aria-hidden="true" />
+          <span>
+            <b>CÓNDOR AI</b>
+            <small>PORTAL</small>
+          </span>
         </div>
 
         {paso === "correo" && (
-          <>
+          <div key="correo" className="paso">
             <h1>Acceso</h1>
             <p className="bajada">
               Clientes y equipo entran por acá. Te enviamos un código a tu
@@ -98,11 +101,11 @@ export function Login() {
             >
               Ya tengo contraseña
             </button>
-          </>
+          </div>
         )}
 
         {paso === "codigo" && (
-          <>
+          <div key="codigo" className="paso">
             <h1>Revisa tu correo</h1>
             <p className="bajada">{aviso}</p>
             <input
@@ -126,11 +129,11 @@ export function Login() {
             >
               Usar otro correo
             </button>
-          </>
+          </div>
         )}
 
         {paso === "clave" && (
-          <>
+          <div key="clave" className="paso">
             <h1>Entrar</h1>
             <p className="bajada">Con tu correo y tu contraseña.</p>
             <input
@@ -159,11 +162,11 @@ export function Login() {
             >
               Prefiero un código
             </button>
-          </>
+          </div>
         )}
 
         {paso === "crear" && (
-          <>
+          <div key="crear" className="paso">
             <h1>Crea tu contraseña</h1>
             <p className="bajada">
               Para que la próxima vez entres directo, sin esperar el correo.
@@ -188,7 +191,7 @@ export function Login() {
             <button className="btn solido ancho" disabled={cargando}>
               {cargando ? "Guardando…" : "Guardar y entrar"}
             </button>
-          </>
+          </div>
         )}
 
         {error && <p className="error">{error}</p>}

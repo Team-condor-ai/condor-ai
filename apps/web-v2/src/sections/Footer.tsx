@@ -32,8 +32,8 @@ export default function Footer() {
 
         <div className="footer-col">
           <h5>Clientes</h5>
-          <a href="/portal.html">Acceso clientes</a>
-          <a href="/admin.html">Panel admin</a>
+          <a href="/acceso">Acceso clientes</a>
+          <a href="/acceso">Panel admin</a>
           <a href="https://wa.me/56988989824" target="_blank" rel="noopener">
             WhatsApp +56 9 8898 9824
           </a>

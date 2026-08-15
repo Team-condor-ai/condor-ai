@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin · condor.ai</title>
+  <meta name="robots" content="noindex" />
+  <meta name="theme-color" content="#05081a" />
+  <link rel="icon" type="image/png" href="/assets/favicon.png" /><link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    /* =====================================================================
+       Panel Admin · condor.ai — rediseño "liquid glass" (premium, sin emojis).
+       Página autónoma (NO usa /assets/styles.css). Los tokens se redefinen en
+       tema noche para que el HTML generado por el JS se adapte sin tocar lógica.
+       ===================================================================== */
+    :root{
+      --bg:#05081a;
+      --tx:#eaf0ff; --tx-2:rgba(234,240,255,.62); --tx-3:rgba(234,240,255,.40);
+      --azul:#6b8cff; --indigo:#8b7bff;
+      --glass:rgba(255,255,255,.05); --glass-2:rgba(255,255,255,.085);
+      --linea:rgba(255,255,255,.11);
+      --bg-2:rgba(255,255,255,.045); --bg-3:rgba(255,255,255,.08);
+      --r:22px;
+      --sf:-apple-system,"SF Pro Display","SF Pro Text",BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+      --sombra:0 30px 80px -30px rgba(2,6,30,.85), 0 8px 30px -12px rgba(2,6,30,.55);
+      --ring:0 0 0 4px rgba(107,140,255,.22);
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0}
+    body{font-family:var(--sf);color:var(--tx);background:var(--bg);min-height:100vh;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;position:relative;overflow-x:hidden}
+
+    /* Fondo noche + aurora (firma visual, igual que el portal) */
+    .bg-deco{position:fixed;inset:0;z-index:-2;overflow:hidden;background:radial-gradient(120% 80% at 50% -20%,#142b6e 0%,#0a1740 38%,#05081a 78%),var(--bg)}
+    .aura{position:absolute;border-radius:50%;filter:blur(95px);opacity:.42;will-change:transform}
+    .aura-1{width:44vw;height:44vw;left:-10vw;top:-8vw;background:radial-gradient(circle,#2747ff,transparent 65%);animation:drift1 28s ease-in-out infinite}
+    .aura-2{width:38vw;height:38vw;right:-12vw;top:32vh;background:radial-gradient(circle,#6b4bff,transparent 65%);opacity:.32;animation:drift2 34s ease-in-out infinite}
+    @keyframes drift1{0%,100%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(4vw,3vh,0) scale(1.08)}}
+    @keyframes drift2{0%,100%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(-3vw,-4vh,0) scale(1.1)}}
+
+    a{color:inherit;text-decoration:none}
+    .grad-tx{background:linear-gradient(120deg,#8aa6ff,#c4b4ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+    .lnk{color:#9db4ff;cursor:pointer;font-weight:550;transition:color .2s}
+    .lnk:hover{color:#c4d2ff}
+
+    .aw{max-width:1040px;margin:0 auto;padding:104px 20px 90px}
+
+    /* Topbar glass */
+    .topbar{position:fixed;top:0;left:0;right:0;z-index:50;background:rgba(10,16,38,.55);backdrop-filter:blur(22px) saturate(160%);-webkit-backdrop-filter:blur(22px) saturate(160%);border-bottom:1px solid rgba(255,255,255,.08)}
+    .topbar-in{max-width:1040px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 20px}
+    .topbar img{height:24px;filter:brightness(0) invert(1);opacity:.92}
+    .topbar>div>span,.topbar span.title{color:var(--tx-2);font-weight:600;font-size:.92rem}
+
+    /* Botones */
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:0 20px;border:none;border-radius:13px;cursor:pointer;font-family:var(--sf);font-size:.95rem;font-weight:600;letter-spacing:-.01em;transition:transform .16s,box-shadow .25s,background .2s,opacity .2s;text-decoration:none;color:var(--tx)}
+    .btn:active{transform:scale(.98)}
+    .btn:disabled{opacity:.55;cursor:default}
+    .btn svg{width:16px;height:16px;flex:none;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+    .btn-grad{color:#fff;background:linear-gradient(135deg,#3b6cff,#6b4bff);box-shadow:0 10px 26px -12px rgba(91,134,255,.7),inset 0 1px 0 rgba(255,255,255,.28)}
+    .btn-grad:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 16px 34px -12px rgba(91,134,255,.85),inset 0 1px 0 rgba(255,255,255,.33)}
+    .btn-soft{background:var(--glass-2);border:1px solid var(--linea);color:var(--tx);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+    .btn-soft:hover:not(:disabled){background:rgba(255,255,255,.14);transform:translateY(-1px)}
+    .mini{min-height:36px;padding:0 13px;font-size:.82rem;border-radius:10px;gap:6px}
+
+    /* Inputs */
+    input,select,textarea{width:100%;border:1px solid var(--linea);border-radius:12px;padding:11px 13px;font-family:var(--sf);font-size:.92rem;margin-top:5px;color:var(--tx);background:rgba(255,255,255,.04);transition:border-color .2s,box-shadow .2s,background .2s}
+    input::placeholder,textarea::placeholder{color:var(--tx-3)}
+    input:focus,select:focus,textarea:focus{outline:none;border-color:var(--azul);background:rgba(255,255,255,.07);box-shadow:var(--ring)}
+    select option{background:#0b1330;color:var(--tx)}
+    label{font-size:.78rem;color:var(--tx-2);font-weight:600}
+    .fgrid{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+
+    /* Tarjeta glass */
+    .pcard{position:relative;overflow:hidden;background:var(--glass);border:1px solid var(--linea);border-radius:var(--r);padding:24px;margin-bottom:22px;backdrop-filter:blur(34px) saturate(170%);-webkit-backdrop-filter:blur(34px) saturate(170%);box-shadow:var(--sombra),inset 0 1px 0 rgba(255,255,255,.14)}
+    .pcard::before{content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;background:linear-gradient(135deg,rgba(255,255,255,.12) 0%,rgba(255,255,255,.03) 20%,transparent 44%)}
+    .pcard>*{position:relative;z-index:1}
+    .pcard h3,.pcard h4{color:var(--tx);letter-spacing:-.01em}
+
+    /* KPIs */
+    .kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:26px}
+    .kpi{position:relative;overflow:hidden;background:var(--glass);border:1px solid var(--linea);border-radius:18px;padding:22px;backdrop-filter:blur(30px) saturate(160%);-webkit-backdrop-filter:blur(30px) saturate(160%);box-shadow:var(--sombra),inset 0 1px 0 rgba(255,255,255,.12);transition:transform .2s,border-color .2s}
+    .kpi:hover{transform:translateY(-2px);border-color:rgba(255,255,255,.2)}
+    .kpi b{font-size:1.9rem;font-weight:700;display:block;letter-spacing:-.03em;color:var(--tx)}
+    .kpi span{color:var(--tx-2);font-size:.84rem}
+
+    /* Tabla */
+    table{width:100%;border-collapse:collapse;font-size:.9rem}
+    th,td{text-align:left;padding:12px 8px;border-bottom:1px solid var(--linea)}
+    th{color:var(--tx-3);font-weight:600;font-size:.72rem;text-transform:uppercase;letter-spacing:.05em}
+    td{color:var(--tx-2)} td b{color:var(--tx)}
+    tbody tr{transition:background .15s}
+    tbody tr:hover{background:rgba(255,255,255,.03)}
+
+    /* Badges */
+    .badge{display:inline-flex;align-items:center;gap:5px;font-size:.72rem;font-weight:650;padding:4px 10px;border-radius:999px;border:1px solid transparent}
+    .b-ok{background:rgba(52,211,153,.14);color:#7ff0c8;border-color:rgba(52,211,153,.34)}
+    .b-pend{background:rgba(251,113,133,.14);color:#ffb0bd;border-color:rgba(251,113,133,.36)}
+    .b-aldia{background:rgba(107,140,255,.16);color:#b3c4ff;border-color:rgba(107,140,255,.4)}
+
+    /* Layout + sidebar glass */
+    .layout{display:flex;gap:26px;align-items:flex-start}
+    .sidebar{flex:0 0 212px;position:sticky;top:96px;display:flex;flex-direction:column;gap:5px;padding:10px;border-radius:20px;background:var(--glass);border:1px solid var(--linea);backdrop-filter:blur(30px) saturate(160%);-webkit-backdrop-filter:blur(30px) saturate(160%);box-shadow:var(--sombra)}
+    .nav-item{display:flex;align-items:center;gap:11px;padding:12px 14px;border-radius:13px;font-weight:600;color:var(--tx-2);cursor:pointer;font-size:.92rem;transition:background .18s,color .18s;user-select:none}
+    .nav-item svg{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;opacity:.85}
+    .nav-item:hover{background:rgba(255,255,255,.06);color:var(--tx)}
+    .nav-item.active{background:linear-gradient(135deg,#3b6cff,#6b4bff);color:#fff;box-shadow:0 8px 22px -10px rgba(91,134,255,.7)}
+    .nav-item.active svg{opacity:1}
+    .main{flex:1;min-width:0}
+    .modulo{display:none}
+    .modulo.on{display:block;animation:fade .35s ease}
+    @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+    .mod-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+    .mod-head h1{font-size:1.6rem;letter-spacing:-.02em;display:flex;align-items:center;gap:11px;margin:0}
+    .mod-head h1 svg{width:24px;height:24px;flex:none;stroke:var(--azul);fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+    .lead-fecha{font-family:var(--sf);font-size:.74rem;color:var(--tx-3)}
+
+    /* Puntos de color en las pestañas de leads (sin emoji) */
+    #leadsWA::before,#leadsAb::before{content:"";width:8px;height:8px;border-radius:50%;flex:none}
+    #leadsWA::before{background:#34d399;box-shadow:0 0 8px rgba(52,211,153,.8)}
+    #leadsAb::before{background:#fbbf24;box-shadow:0 0 8px rgba(251,191,36,.7)}
+
+    @media(max-width:760px){.layout{flex-direction:column;gap:14px}.sidebar{flex:none;flex-direction:row;overflow-x:auto;position:static;padding:8px}.nav-item{flex:0 0 auto;font-size:.84rem;padding:9px 13px}}
+    @media(max-width:640px){.fgrid{grid-template-columns:1fr}.kpis{grid-template-columns:1fr 1fr}}
+
+    /* ── Calendario premium ── */
+    .cal-nav{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:18px}
+    .cal-mes{font-size:1.05rem;font-weight:700;min-width:190px;text-align:center;letter-spacing:-.02em;color:var(--tx)}
+    .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+    .cal-dh{text-align:center;font-size:.66rem;font-weight:700;color:var(--tx-3);padding:2px 0 10px;text-transform:uppercase;letter-spacing:.09em}
+    /* Cada día ocupa un espacio fijo y uniforme en pantalla */
+    .cal-dia{min-height:108px;background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:8px;cursor:default;transition:border-color .2s,background .2s;display:flex;flex-direction:column;gap:6px}
+    .cal-dia.otro-mes{opacity:.3}
+    .cal-dia.hoy{border-color:rgba(107,140,255,.55);background:rgba(107,140,255,.1);box-shadow:inset 0 0 0 1px rgba(107,140,255,.3)}
+    .cal-num{font-size:.78rem;font-weight:700;color:var(--tx-2);width:24px;height:24px;display:flex;align-items:center;justify-content:center;flex:none}
+    .cal-dia.hoy .cal-num{color:#fff;background:linear-gradient(135deg,#3b6cff,#6b4bff);border-radius:50%;box-shadow:0 4px 12px -4px rgba(91,134,255,.8)}
+    /* Reuniones del día como cubos con iniciales, clicables */
+    .cal-cubes{display:flex;flex-wrap:wrap;gap:4px;align-content:flex-start}
+    .cal-cube{width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:9px;font-size:.6rem;font-weight:750;letter-spacing:.02em;color:#fff;background:linear-gradient(135deg,#3b6cff,#6b4bff);border:1px solid rgba(255,255,255,.18);box-shadow:0 3px 10px -4px rgba(91,134,255,.85);cursor:pointer;transition:transform .14s,box-shadow .2s;user-select:none}
+    .cal-cube:hover{transform:translateY(-2px) scale(1.07);box-shadow:0 7px 16px -4px rgba(91,134,255,1);z-index:1}
+    .cal-cube:active{transform:scale(.96)}
+    /* Estados: reunión ya pasada = gris · reunión en curso ahora = verde (parpadea) */
+    .cal-cube.pasada{background:linear-gradient(135deg,#4a5066,#3a3f52);box-shadow:0 3px 9px -5px rgba(0,0,0,.6);opacity:.6;color:rgba(255,255,255,.7)}
+    .cal-cube.pasada:hover{box-shadow:0 6px 14px -5px rgba(0,0,0,.7)}
+    .cal-cube.encurso{background:linear-gradient(135deg,#15a34a,#22c55e);box-shadow:0 3px 14px -3px rgba(34,197,94,.95);animation:cubePulse 1.8s ease-in-out infinite}
+    @keyframes cubePulse{0%,100%{box-shadow:0 3px 14px -3px rgba(34,197,94,.95)}50%{box-shadow:0 4px 22px 0 rgba(34,197,94,1)}}
+
+    /* Modales glass */
+    .cal-overlay{display:none;position:fixed;inset:0;background:rgba(3,6,20,.6);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:200;align-items:center;justify-content:center}
+    .cal-overlay.open{display:flex}
+    .cal-modal{position:relative;background:rgba(16,22,46,.82);border:1px solid var(--linea);border-radius:24px;padding:28px;width:calc(100% - 40px);max-width:500px;max-height:88vh;overflow-y:auto;backdrop-filter:blur(40px) saturate(180%);-webkit-backdrop-filter:blur(40px) saturate(180%);box-shadow:var(--sombra),inset 0 1px 0 rgba(255,255,255,.16)}
+    .cal-modal h3{font-size:1.2rem;margin:0 0 16px;letter-spacing:-.02em;color:var(--tx)}
+    .cal-modal h4{color:var(--tx)}
+    .cal-admins-list{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px;padding:11px;border:1px solid var(--linea);border-radius:12px;min-height:46px;background:rgba(255,255,255,.03)}
+    .cal-admin-chip{font-size:.78rem;font-weight:600;padding:6px 12px;border-radius:999px;background:rgba(255,255,255,.05);border:1.5px solid var(--linea);cursor:pointer;transition:all .2s;user-select:none;color:var(--tx-2)}
+    .cal-admin-chip.sel{background:linear-gradient(135deg,#3b6cff,#6b4bff);color:#fff;border-color:transparent}
+    .cal-msg{font-size:.82rem;color:var(--tx-2);margin-top:8px}
+    @media(max-width:640px){.cal-grid{gap:3px}.cal-dia{min-height:74px;padding:5px;gap:4px}.cal-cube{width:24px;height:24px;border-radius:7px;font-size:.54rem}}
+  </style>
+</head>
+<body>
+  <div class="bg-deco"><div class="aura aura-1"></div><div class="aura aura-2"></div></div>
+
+  <div class="topbar"><div class="topbar-in" style="justify-content:flex-start;gap:14px"><a href="/"><img src="/assets/logo.png" alt="condor.ai" /></a><span class="title" style="margin-right:auto">Panel Admin</span><button class="btn btn-soft mini" id="btnOut" style="display:none">Salir</button></div></div>
+
+  <div class="aw">
+    <div id="login" style="display:none">
+      <h1 style="font-size:1.8rem;margin-bottom:8px">Acceso <span class="grad-tx">admin</span></h1>
+      <p style="color:var(--tx-2);margin-bottom:18px">Solo el equipo condor.ai.</p>
+      <div class="pcard" style="max-width:420px">
+        <div id="step-pass">
+          <label>Correo</label><input id="email" type="email" placeholder="tucorreo@gmail.com" autocomplete="email" />
+          <label>Contraseña</label><input id="pass" type="password" placeholder="Tu contraseña" autocomplete="current-password" />
+          <button class="btn btn-grad" style="width:100%;margin-top:14px" id="btnPass">Entrar</button>
+          <p style="margin-top:12px;text-align:center"><a class="lnk" id="lnkCode" style="cursor:pointer;font-size:.85rem">Entrar con código / Olvidé mi contraseña</a></p>
+        </div>
+        <div id="step-code" style="display:none">
+          <p style="color:var(--tx-2);font-size:.9rem">Código enviado a <b id="codeEmail" style="color:var(--tx)"></b>:</p>
+          <input id="code" type="text" inputmode="numeric" maxlength="8" placeholder="________" style="letter-spacing:.4em;text-align:center;font-size:1.2rem" />
+          <button class="btn btn-grad" style="width:100%;margin-top:14px" id="btnCode">Verificar</button>
+          <p style="margin-top:12px;text-align:center"><a class="lnk" id="lnkBack" style="cursor:pointer;font-size:.85rem">&larr; Volver</a></p>
+        </div>
+        <div id="step-newpass" style="display:none">
+          <p style="color:var(--tx-2);font-size:.9rem">Crea tu contraseña (la usarás siempre):</p>
+          <input id="np1" type="password" placeholder="Nueva contraseña (mín. 8)" autocomplete="new-password" />
+          <input id="np2" type="password" placeholder="Repite la contraseña" autocomplete="new-password" />
+          <button class="btn btn-grad" style="width:100%;margin-top:14px" id="btnNewPass">Guardar contraseña</button>
+        </div>
+        <p id="msg" style="color:var(--tx-2);font-size:.85rem;margin-top:12px;text-align:center"></p>
+      </div>
+    </div>
+
+    <div id="panel" style="display:none">
+     <div class="layout">
+      <nav class="sidebar">
+        <a class="nav-item active" data-mod="dashboard" onclick="navegar('dashboard')"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg> Dashboard</a>
+        <a class="nav-item" data-mod="leads" onclick="navegar('leads')"><svg viewBox="0 0 24 24"><path d="M8 6h11M8 12h11M8 18h11"/><circle cx="3.5" cy="6" r="1.1"/><circle cx="3.5" cy="12" r="1.1"/><circle cx="3.5" cy="18" r="1.1"/></svg> Leads</a>
+        <a class="nav-item" data-mod="clientes" onclick="navegar('clientes')"><svg viewBox="0 0 24 24"><path d="M16 19v-1a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v1"/><circle cx="9" cy="7" r="3.2"/><path d="M22 19v-1a4 4 0 0 0-3-3.8"/><path d="M16 4.2a4 4 0 0 1 0 7.6"/></svg> Clientes</a>
+        <a class="nav-item" data-mod="calendario" onclick="navegar('calendario')"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2.5"/><path d="M3 10h18M8 3v4M16 3v4"/></svg> Calendario</a>
+      </nav>
+      <div class="main">
+
+        <!-- ── DASHBOARD ── -->
+        <section class="modulo on" data-mod="dashboard">
+          <div class="mod-head"><h1><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg> Dashboard <span class="grad-tx">condor.ai</span></h1></div>
+          <div class="kpis" id="kpis"></div>
+          <div class="kpis" id="kpis2" style="margin-top:4px"></div>
+        </section>
+
+        <!-- ── LEADS ── -->
+        <section class="modulo" data-mod="leads">
+          <div class="mod-head">
+            <h1><svg viewBox="0 0 24 24"><path d="M8 6h11M8 12h11M8 18h11"/><circle cx="3.5" cy="6" r="1.1"/><circle cx="3.5" cy="12" r="1.1"/><circle cx="3.5" cy="18" r="1.1"/></svg> Leads de campaña</h1>
+            <button class="btn btn-soft mini" onclick="cargarLeads()"><svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 4v5h-5"/></svg> Actualizar</button>
+          </div>
+          <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+            <button class="btn btn-soft mini" id="leadsWA" onclick="verLeads('wa')">Al WhatsApp</button>
+            <button class="btn btn-soft mini" id="leadsAb" onclick="verLeads('ab')">Abandonados</button>
+          </div>
+          <div id="leadsCont"></div>
+        </section>
+
+        <!-- ── CLIENTES ── -->
+        <section class="modulo" data-mod="clientes">
+          <div class="mod-head"><h1><svg viewBox="0 0 24 24"><path d="M16 19v-1a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v1"/><circle cx="9" cy="7" r="3.2"/><path d="M22 19v-1a4 4 0 0 0-3-3.8"/><path d="M16 4.2a4 4 0 0 1 0 7.6"/></svg> Clientes</h1></div>
+          <div class="pcard">
+            <h3 style="font-size:1.1rem;margin:0 0 14px;display:flex;align-items:center;gap:8px"><svg style="width:18px;height:18px;stroke:var(--azul);fill:none;stroke-width:1.8;stroke-linecap:round" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg> Nuevo cliente</h3>
+            <div class="fgrid">
+              <div><label>Correo del cliente</label><input id="c_email" type="email" /></div>
+              <div><label>Negocio</label><input id="c_negocio" /></div>
+              <div><label>Plan</label><input id="c_plan" placeholder="Esencial / Pro / Premium" /></div>
+              <div><label>Concepto (qué incluye)</label><input id="c_concepto" placeholder="Landing + Videos IA" /></div>
+              <div><label>Setup (monto)</label><input id="c_setup" type="number" value="0" /></div>
+              <div><label>Mensual (monto)</label><input id="c_mensual" type="number" value="0" /></div>
+              <div><label>Moneda</label><select id="c_moneda"><option>CLP</option><option>PEN</option><option>USD</option></select></div>
+              <div><label>Web del cliente (opcional)</label><input id="c_web" placeholder="https://…" /></div>
+            </div>
+            <button class="btn btn-grad" style="margin-top:16px" id="btnAdd">Crear cliente</button>
+            <p id="addMsg" style="color:var(--tx-2);font-size:.85rem;margin-top:10px"></p>
+          </div>
+          <div class="pcard">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:12px"><h3 style="font-size:1.1rem;margin:0">Lista de clientes</h3><button class="btn btn-soft mini" id="verArch" onclick="toggleArch()">Ver archivados</button></div>
+            <div style="overflow-x:auto"><table id="tabla"><thead><tr><th>Negocio</th><th>Plan</th><th>Setup</th><th>Mensual</th><th>Acciones</th></tr></thead><tbody id="filas"></tbody></table></div>
+          </div>
+        </section>
+
+        <!-- ── CALENDARIO ── -->
+        <section class="modulo" data-mod="calendario">
+          <div class="mod-head">
+            <h1><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2.5"/><path d="M3 10h18M8 3v4M16 3v4"/></svg> Calendario</h1>
+            <button class="btn btn-grad mini" id="btnNuevaReunion"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg> Nueva reunión</button>
+          </div>
+          <div class="pcard">
+            <div class="cal-nav">
+              <button class="btn btn-soft mini" id="calPrev" aria-label="Mes anterior"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button>
+              <span class="cal-mes" id="calMesLabel"></span>
+              <button class="btn btn-soft mini" id="calNext" aria-label="Mes siguiente"><svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></button>
+            </div>
+            <div class="cal-grid" id="calGrid"></div>
+          </div>
+        </section>
+
+      </div>
+     </div>
+    </div><!-- fin #panel -->
+    <p id="cargando" style="color:var(--tx-2);text-align:center">Cargando…</p>
+  </div>
+
+  <!-- Modal ficha de cliente -->
+  <div class="cal-overlay" id="fichaModal">
+    <div class="cal-modal" style="max-width:580px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:4px">
+        <h3 id="f_negocio" style="font-size:1.2rem"></h3>
+        <button class="btn btn-soft mini" id="btnCerrarFicha" aria-label="Cerrar"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+      </div>
+      <p id="f_datos" style="color:var(--tx-2);font-size:.84rem;margin-bottom:14px"></p>
+      <div class="kpis" id="f_resumen" style="grid-template-columns:repeat(3,1fr);margin-bottom:8px"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin:16px 0 8px">
+        <h4 style="font-size:.95rem;margin:0">Pagos y abonos</h4>
+        <button class="btn btn-soft mini" id="btnCobroManual">+ Cobro manual</button>
+      </div>
+      <div id="f_pagos"></div>
+      <h4 style="margin:16px 0 6px;font-size:.95rem">Notas internas</h4>
+      <textarea id="f_notas" style="min-height:60px;resize:vertical" placeholder="Notas sobre este cliente…"></textarea>
+      <button class="btn btn-grad mini" id="btnGuardarNotas" style="margin-top:8px">Guardar notas</button>
+      <p id="f_msg" style="font-size:.82rem;color:var(--tx-2);margin-top:8px"></p>
+    </div>
+  </div>
+
+  <!-- Modal nueva reunión -->
+  <div class="cal-overlay" id="calModal">
+    <div class="cal-modal">
+      <h3>Nueva reunión</h3>
+      <label>Título</label><input id="r_titulo" placeholder="Reunión de equipo" style="margin-bottom:8px" />
+      <label>Cliente (opcional)</label><input id="r_cliente" placeholder="Nombre del cliente / negocio" style="margin-bottom:8px" />
+      <label>Descripción</label>
+      <textarea id="r_desc" style="margin-bottom:8px;min-height:70px;resize:vertical" placeholder="Opcional"></textarea>
+      <div class="fgrid">
+        <div><label>Fecha</label><input id="r_fecha" type="date" /></div>
+        <div><label>Hora</label><input id="r_hora" type="time" value="09:00" /></div>
+      </div>
+      <label>Duración</label>
+      <select id="r_dur" style="margin-bottom:8px">
+        <option value="30">30 min</option>
+        <option value="60" selected>1 hora</option>
+        <option value="90">1.5 horas</option>
+        <option value="120">2 horas</option>
+      </select>
+      <label>Participantes (click para seleccionar)</label>
+      <div class="cal-admins-list" id="r_admins"></div>
+      <div style="display:flex;gap:10px;margin-top:18px">
+        <button class="btn btn-grad" id="btnGuardarReunion" style="flex:1">Guardar</button>
+        <button class="btn btn-soft" id="btnCerrarModal">Cancelar</button>
+      </div>
+      <p class="cal-msg" id="calMsg"></p>
+    </div>
+  </div>
+
+  <!-- Detalle reunión -->
+  <div class="cal-overlay" id="calDetalle">
+    <div class="cal-modal" style="max-width:420px">
+      <h3 id="det_titulo" style="margin-bottom:8px"></h3>
+      <span id="det_estado" style="display:none;font-size:.72rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:4px 10px;border-radius:999px;margin-bottom:8px"></span>
+      <p id="det_fecha" style="color:var(--tx-2);font-size:.9rem;margin-bottom:6px"></p>
+      <p id="det_cliente" style="font-size:.9rem;margin-bottom:6px;font-weight:600"></p>
+      <p id="det_desc" style="margin-bottom:10px;white-space:pre-line"></p>
+      <p id="det_creador" style="color:var(--tx-2);font-size:.82rem;margin-bottom:3px"></p>
+      <p id="det_asistentes" style="color:var(--tx-2);font-size:.82rem;margin-bottom:14px"></p>
+      <label style="font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--tx-2);font-weight:600">Agregar a mi calendario</label>
+      <div style="display:flex;gap:10px;margin:8px 0 4px">
+        <a class="btn btn-soft mini" id="det_gcal" target="_blank" rel="noopener" style="flex:1"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2.5"/><path d="M3 10h18M8 3v4M16 3v4"/></svg> Google</a>
+        <button class="btn btn-soft mini" id="det_ical" style="flex:1"><svg viewBox="0 0 24 24"><path d="M8 2v4M16 2v4M3 9h18M5 5h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/></svg> Apple / .ics</button>
+      </div>
+      <button class="btn btn-soft" id="btnEliminarReunion" style="width:100%;margin-top:14px;color:#ff8a8a;border-color:rgba(255,90,90,.4)"><svg viewBox="0 0 24 24" style="width:16px;height:16px"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M10 11v6M14 11v6"/></svg> Eliminar reunión</button>
+      <button class="btn btn-soft" id="btnCerrarDetalle" style="width:100%;margin-top:10px">Cerrar</button>
+      <p id="det_delmsg" style="font-size:.8rem;color:var(--tx-2);margin-top:8px;text-align:center"></p>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL="https://ogmvdthxwcmvqjlxhpsr.supabase.co";
+    const ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9nbXZkdGh4d2NtdnFqbHhocHNyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE2NDEwMTksImV4cCI6MjA5NzIxNzAxOX0.wo6zSUlMejjYu1hSweZcWEBBdCvBgVNWg3xtLzFTIrI";
+    const sb=supabase.createClient(SUPABASE_URL,ANON_KEY);
+    const FUNCTIONS=SUPABASE_URL+"/functions/v1";
+    const $=id=>document.getElementById(id);
+    const esc=s=>String(s||"").replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+    const fmt=(n,m)=> (m||"CLP")+" "+(Number(n||0)).toLocaleString();
+    // ── Conversión de ingresos a CLP ── (ACTUALIZA estas tasas según el dólar/sol del momento)
+    const TASA_CLP = { CLP:1, USD:950, PEN:255 };
+    const COMISION_MP = 0.04; // Mercado Pago retiene ~4% de cada cobro
+    const clp = n => "$"+Math.round(n||0).toLocaleString("es-CL");
+    // Navegación entre módulos del menú lateral
+    window.navegar = (mod) => {
+      document.querySelectorAll('.modulo').forEach(s => s.classList.toggle('on', s.dataset.mod===mod));
+      document.querySelectorAll('.nav-item').forEach(a => a.classList.toggle('active', a.dataset.mod===mod));
+      window.scrollTo({top:0,behavior:'smooth'});
+    };
+    // Fecha/hora legible y teléfono con prefijo Perú (+51)
+    const fechaHora = s => s ? new Date(s).toLocaleString('es-CL',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
+    function telPrefijo(w){ if(!w) return ''; const t=String(w).trim(); if(t.startsWith('+')) return t; const d=t.replace(/\D/g,''); return d.startsWith('51') ? '+'+d : '+51 '+d; }
+
+    const show = (s) => ["step-pass","step-code","step-newpass"].forEach(x=>$(x).style.display = x===s?"block":"none");
+    const reMail=/^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+
+    async function init(){
+      const { data:{session} } = await sb.auth.getSession();
+      $("cargando").style.display="none";
+      if(!session){ $("login").style.display="block"; show("step-pass"); return; }
+      await afterAuth();
+    }
+
+    async function afterAuth(){
+      const { data:{ user } } = await sb.auth.getUser();
+      if(!user) return;
+      if(!user.user_metadata || user.user_metadata.password_set !== true){
+        $("cargando").style.display="none"; $("panel").style.display="none";
+        $("login").style.display="block"; show("step-newpass"); return;
+      }
+      const { data:adm } = await sb.rpc("es_admin");
+      if(!adm){ $("login").style.display="none"; $("cargando").style.display="block"; $("cargando").innerHTML="Tu correo no es admin. <a class='lnk' href='portal.html'>Ir al portal de clientes →</a>"; return; }
+      $("login").style.display="none";
+      $("btnOut").style.display="inline-flex"; $("panel").style.display="block";
+      cargar();
+      upsertPerfil(user);
+      cargarCalendario();
+      cargarLeads();
+    }
+
+    // ── Panel de Leads de campaña ──
+    let leadsTodos = [], leadsTab = 'wa';
+    async function cargarLeads(){
+      const { data, error } = await sb.from("leads").select("*").order("creado_en",{ascending:false});
+      if (error) { console.error("Leads — error:", error.message, "(¿aplicaste leads_modulo_v2.sql en Supabase?)"); }
+      leadsTodos = data || [];
+      renderLeads();
+    }
+    window.verLeads = (t)=>{ leadsTab=t; renderLeads(); };
+    function statsLeads(){
+      const total = leadsTodos.length;
+      const wa = leadsTodos.filter(l=>l.fue_whatsapp).length;
+      const hoyN = new Date().toDateString();
+      const hoy = leadsTodos.filter(l=> l.creado_en && new Date(l.creado_en).toDateString()===hoyN).length;
+      const pct = total ? Math.round(wa/total*100) : 0;
+      const k2 = $("kpis2");
+      if(k2) k2.innerHTML = `
+        <div class="kpi"><b>${total}</b><span>Leads totales</span></div>
+        <div class="kpi"><b class="grad-tx">${wa}</b><span>Fueron al WhatsApp</span></div>
+        <div class="kpi"><b>${pct}%</b><span>Conversión a WhatsApp</span></div>
+        <div class="kpi"><b>${hoy}</b><span>Leads hoy</span></div>`;
+    }
+    function renderLeads(){
+      const wa = leadsTodos.filter(l=>l.fue_whatsapp);
+      const ab = leadsTodos.filter(l=>!l.fue_whatsapp);
+      if($("leadsWA")) $("leadsWA").textContent = `Al WhatsApp (${wa.length})`;
+      if($("leadsAb")) $("leadsAb").textContent = `Abandonados (${ab.length})`;
+      statsLeads();
+      const lista = leadsTab==='wa' ? wa : ab;
+      const catBadge = c => { const m={'Listo para comprar':'b-ok','Interesado':'b-aldia','Explorando':'b-pend'}; return c?`<span class="badge ${m[c]||'b-pend'}">${esc(c)}</span>`:''; };
+      $("leadsCont").innerHTML = lista.map(l=>{
+        let tel = (l.whatsapp||'').replace(/\D/g,''); if(tel && !tel.startsWith('51')) tel = '51'+tel;
+        return `<div style="border:1px solid var(--linea);border-radius:14px;padding:16px;margin-bottom:10px;background:rgba(255,255,255,.03)">
+          <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center">
+            <b>${esc(l.negocio)||esc(l.tipo)||'Lead'}</b>
+            <span>${catBadge(l.categoria)} ${l.prioridad?`<span class="badge b-aldia">${esc(l.prioridad)}</span>`:''}</span>
+          </div>
+          <div style="color:var(--tx-2);font-size:.8rem;margin:5px 0">${esc(l.tipo)||''}${l.email?` · ${esc(l.email)}`:''}${l.whatsapp?` · ${esc(telPrefijo(l.whatsapp))}`:''}</div>
+          <div class="lead-fecha">${fechaHora(l.creado_en)}</div>
+          ${l.problema?`<p style="font-size:.86rem;margin:6px 0"><b>Problema:</b> ${esc(l.problema)}</p>`:''}
+          ${l.como_cerrar?`<div style="background:rgba(107,140,255,.1);border:1px solid rgba(107,140,255,.22);border-radius:10px;padding:11px 12px;font-size:.84rem;margin-top:6px"><b style="color:#b3c4ff">Cómo cerrarlo:</b> ${esc(l.como_cerrar)}</div>`:''}
+          ${tel?`<a class="btn btn-soft mini" style="margin-top:10px" target="_blank" rel="noopener" href="https://wa.me/${tel}">Escribir por WhatsApp →</a>`:''}
+        </div>`;
+      }).join('') || `<p style="color:var(--tx-2);text-align:center;padding:20px">No hay leads en esta categoría todavía.</p>`;
+    }
+
+    let verArchivados=false;
+    async function cargar(){
+      const { data:clientes } = await sb.from("clientes").select("*").order("creado_en",{ascending:false});
+      const { data:pagos } = await sb.from("pagos").select("monto,estado,tipo,cliente_id");
+      const activos   = (clientes||[]).filter(c=>!c.archivado);
+      const archivados= (clientes||[]).filter(c=>c.archivado);
+      const lista = verArchivados ? archivados : activos;
+      // Moneda de cada pago (viene del cliente) → convertir todo a CLP
+      const monedaDe = {}; (clientes||[]).forEach(c=>{ monedaDe[c.id]=c.moneda||"CLP"; });
+      const aCLP = p => (p.monto||0) * (TASA_CLP[monedaDe[p.cliente_id]||"CLP"]||1);
+      const pagados = (pagos||[]).filter(p=>p.estado==="pagado");
+      const brutoCLP = pagados.reduce((s,p)=>s+aCLP(p),0);
+      const netoCLP  = brutoCLP * (1 - COMISION_MP); // descontada la comisión de Mercado Pago
+      const pend = activos.filter(c=>c.setup_estado!=="pagado").length;
+      const morosos = activos.filter(c=>c.irresponsable).length;
+      $("kpis").innerHTML=`
+        <div class="kpi"><b>${activos.length}</b><span>Clientes activos</span></div>
+        <div class="kpi" title="Convertido a CLP y descontado 4% de comisión de Mercado Pago"><b class="grad-tx">${clp(netoCLP)}</b><span>Ingresos netos (CLP, −4% MP)</span></div>
+        <div class="kpi"><b>${clp(brutoCLP)}</b><span>Ingresos brutos (CLP)</span></div>
+        <div class="kpi" ${morosos?'style="border-color:rgba(251,113,133,.5);background:rgba(251,113,133,.08)"':''}><b style="${morosos?'color:#ff8d9b':''}">${morosos}</b><span>${morosos?'Sin pagar (alerta)':'Sin pagar'}</span></div>`;
+      $("verArch").textContent = verArchivados ? `← Ver activos (${activos.length})` : `Ver archivados (${archivados.length})`;
+      const badge=(e)=>{const m={pagado:["b-ok","Pagado"],al_dia:["b-aldia","Al día"],vencido:["b-pend","Vencido"],pendiente:["b-pend","Pendiente"]};const[c,t]=m[e]||["b-pend",e||"—"];return `<span class="badge ${c}">${t}</span>`;};
+      $("filas").innerHTML = lista.map(c=>`
+        <tr ${c.irresponsable?'style="background:rgba(251,113,133,.06)"':''}><td><b>${esc(c.negocio)||"—"}</b>${c.irresponsable?` <span class="badge b-pend" title="No ha pagado tras el cobro">Irresponsable${c.dias_sin_pagar?` · ${c.dias_sin_pagar}d`:''}</span>`:''}<br><span style="color:var(--tx-2);font-size:.8rem">${esc(c.email)}</span></td>
+        <td>${esc(c.plan)||"—"}</td>
+        <td>${fmt(c.setup_monto,c.moneda)}<br>${badge(c.setup_estado)}</td>
+        <td>${fmt(c.mensual_monto,c.moneda)}<br>${badge(c.mensual_estado)}</td>
+        <td>${ verArchivados
+          ? `<button class="btn btn-soft mini" onclick="restaurar('${c.id}')">Restaurar</button> <button class="btn mini" style="background:rgba(251,113,133,.16);color:#ffb0bd" onclick="borrarCliente('${c.id}','${esc(c.negocio||c.email).replace(/'/g,"")}')">Borrar</button>`
+          : `<button class="btn mini" style="background:rgba(107,140,255,.18);color:#b3c4ff" onclick="verFicha('${c.id}')">Ficha</button> <button class="btn btn-soft mini" onclick="cobro('${c.id}','setup')" title="Copia el link de pago">Link setup</button> <button class="btn btn-soft mini" onclick="cobro('${c.id}','mensual')" title="Copia el link de mensualidad">Link mensual</button> <button class="btn btn-soft mini" onclick="cobrarCorreo('${c.id}')" title="Envía el cobro por correo al cliente">Cobro</button> <button class="btn btn-soft mini" onclick="archivar('${c.id}')">Archivar</button>` }
+        </td></tr>`).join("") || `<tr><td colspan="5" style="text-align:center;color:var(--tx-2);padding:24px">${verArchivados?"No hay clientes archivados.":"Aún no hay clientes. Crea el primero arriba."}</td></tr>`;
+    }
+    window.toggleArch=()=>{ verArchivados=!verArchivados; cargar(); };
+    window.archivar=async(id)=>{ const {error}=await sb.from("clientes").update({archivado:true}).eq("id",id); if(error)alert("No se pudo archivar: "+error.message); else cargar(); };
+    window.restaurar=async(id)=>{ const {error}=await sb.from("clientes").update({archivado:false}).eq("id",id); if(error)alert("No se pudo restaurar: "+error.message); else cargar(); };
+
+    /* ── Ficha de cliente + abonos ── */
+    let fichaCli = null, fichaPagos = [];
+    window.verFicha = async (id) => {
+      const { data: c } = await sb.from("clientes").select("*").eq("id", id).single();
+      if (!c) return;
+      fichaCli = c;
+      const { data: pagos } = await sb.from("pagos").select("*").eq("cliente_id", id).order("creado_en",{ascending:false});
+      fichaPagos = pagos || [];
+      renderFicha();
+      $("fichaModal").classList.add("open");
+    };
+    function renderFicha(){
+      const c = fichaCli, mon = c.moneda||"CLP", t = TASA_CLP[mon]||1;
+      $("f_negocio").textContent = c.negocio || c.email || "Cliente";
+      $("f_datos").innerHTML = `${esc(c.email)||""}${c.plan?` · Plan ${esc(c.plan)}`:""}${c.concepto?` · ${esc(c.concepto)}`:""}${c.web_url?` · <a class="lnk" target="_blank" rel="noopener" href="${esc(c.web_url)}">web ↗</a>`:""}<br>Moneda: ${mon} · Creado: ${fechaHora(c.creado_en)}`;
+      let cobrado=0, abonadoT=0, pendiente=0;
+      fichaPagos.forEach(p=>{ const m=p.monto||0, ab=p.abonado||0;
+        if(p.estado==="pagado"){ cobrado+=m*t; } else { abonadoT+=ab*t; pendiente+=Math.max(0,m-ab)*t; } });
+      $("f_resumen").innerHTML = `
+        <div class="kpi"><b class="grad-tx" style="font-size:1.25rem">${clp(cobrado)}</b><span>Cobrado (CLP)</span></div>
+        <div class="kpi"><b style="font-size:1.25rem">${clp(abonadoT)}</b><span>Abonado (CLP)</span></div>
+        <div class="kpi"><b style="font-size:1.25rem;color:#ff8d9b">${clp(pendiente)}</b><span>Pendiente (CLP)</span></div>`;
+      $("f_pagos").innerHTML = fichaPagos.map(p=>{
+        const m=p.monto||0, ab=p.abonado||0, falta=Math.max(0,m-ab), pagado=p.estado==="pagado";
+        return `<div style="border:1px solid var(--linea);border-radius:12px;padding:11px 13px;margin-bottom:8px;background:rgba(255,255,255,.03)">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+            <b>${p.tipo==="mensual"?"Mensualidad":p.tipo==="setup"?"Setup":(esc(p.tipo)||"Cobro")} · ${fmt(m,mon)}</b>
+            ${pagado?'<span class="badge b-ok">Pagado</span>':`<span class="badge b-pend">Falta ${fmt(falta,mon)}</span>`}
+          </div>
+          <div style="font-size:.78rem;color:var(--tx-2);margin-top:3px">Abonado: ${fmt(ab,mon)} de ${fmt(m,mon)} · ${fechaHora(p.creado_en)}</div>
+          ${!pagado?`<button class="btn btn-soft mini" style="margin-top:8px" onclick="abonarPago('${p.id}')">Registrar abono</button>`:''}
+        </div>`;
+      }).join("") || `<p style="color:var(--tx-2);font-size:.85rem">Sin pagos registrados. Usa "+ Cobro manual".</p>`;
+      $("f_notas").value = c.notas || "";
+      $("f_msg").textContent = "";
+    }
+    window.abonarPago = async (pagoId) => {
+      const p = fichaPagos.find(x=>String(x.id)===String(pagoId)); if(!p) return;
+      const falta = (p.monto||0)-(p.abonado||0);
+      const v = prompt(`¿Cuánto abonó el cliente? (${fichaCli.moneda||"CLP"})\nFalta por pagar: ${falta}`, String(falta));
+      if(v===null) return;
+      const monto = Math.round(+v||0); if(monto<=0){ alert("Monto inválido"); return; }
+      const nuevoAbonado = Math.min((p.abonado||0)+monto, p.monto||0);
+      const upd = { abonado: nuevoAbonado };
+      if(nuevoAbonado >= (p.monto||0)) upd.estado = "pagado";
+      const { error } = await sb.from("pagos").update(upd).eq("id", p.id);
+      if(error){ alert("No se pudo registrar el abono: "+error.message); return; }
+      await verFicha(fichaCli.id); cargar();
+    };
+    window.cobroManual = async () => {
+      const tipo = prompt("Tipo de cobro (ej: setup, mensual, otro):", "setup"); if(tipo===null) return;
+      const monto = Math.round(+prompt(`Monto total del cobro (${fichaCli.moneda||"CLP"}):`, "0")||0);
+      if(monto<=0){ alert("Monto inválido"); return; }
+      const { error } = await sb.from("pagos").insert({ cliente_id: fichaCli.id, tipo: (tipo.trim()||"otro").toLowerCase(), monto, estado:"pendiente", abonado:0 });
+      if(error){ alert("No se pudo crear el cobro: "+error.message); return; }
+      await verFicha(fichaCli.id); cargar();
+    };
+    $("btnCobroManual").onclick = ()=> cobroManual();
+    $("btnGuardarNotas").onclick = async ()=>{
+      const { error } = await sb.from("clientes").update({ notas: $("f_notas").value.trim() }).eq("id", fichaCli.id);
+      $("f_msg").textContent = error ? ("Error: "+error.message) : "Notas guardadas";
+    };
+    $("btnCerrarFicha").onclick = ()=> $("fichaModal").classList.remove("open");
+    $("fichaModal").addEventListener("click", e=>{ if(e.target===$("fichaModal")) $("fichaModal").classList.remove("open"); });
+    window.borrarCliente=async(id,nombre)=>{
+      if(!confirm("¿Borrar definitivamente a "+nombre+"?\n\nEsto elimina su ficha y TODO su historial de pagos. No se puede deshacer.\n\n(Si solo quieres ocultarlo, usa Archivar.)")) return;
+      const {error}=await sb.from("clientes").delete().eq("id",id);
+      if(error)alert("No se pudo borrar: "+error.message); else cargar();
+    };
+
+    window.cobro=async function(id,tipo){
+      const { data:{session} } = await sb.auth.getSession();
+      try{
+        const r=await fetch(FUNCTIONS+"/crear-pago",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+session.access_token,"apikey":ANON_KEY},body:JSON.stringify({tipo,cliente_id:id})});
+        const j=await r.json();
+        if(j.init_point){ await navigator.clipboard.writeText(j.init_point).catch(()=>{}); prompt("Link de cobro (cópialo y envíalo al cliente por WhatsApp):", j.init_point); }
+        else alert("Error: "+(j.error||"intenta de nuevo"));
+      }catch(e){ alert("Error de conexión"); }
+    };
+
+    // Envía el cobro por correo al cliente (opcional, el admin decide)
+    window.cobrarCorreo=async function(id){
+      const tipo = confirm("¿Qué cobro envías por correo al cliente?\n\nAceptar = Setup (pago inicial)\nCancelar = Mensualidad") ? "setup" : "mensual";
+      const { data:{session} } = await sb.auth.getSession();
+      try{
+        const r=await fetch(FUNCTIONS+"/crear-pago",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+session.access_token,"apikey":ANON_KEY},body:JSON.stringify({tipo,cliente_id:id,enviar_correo:true})});
+        const j=await r.json();
+        if(j.init_point){ alert(j.correo_enviado ? "Cobro enviado al correo del cliente." : "Se generó el cobro, pero el correo no se pudo enviar. Revisa que Resend esté configurado."); cargar(); }
+        else alert("Error: "+(j.error||"intenta de nuevo"));
+      }catch(e){ alert("Error de conexión"); }
+    };
+
+    $("btnAdd").onclick=async()=>{
+      const { data:{ user } } = await sb.auth.getUser();
+      const row={email:$("c_email").value.trim(),negocio:$("c_negocio").value.trim(),plan:$("c_plan").value.trim(),concepto:$("c_concepto").value.trim(),setup_monto:+$("c_setup").value||0,mensual_monto:+$("c_mensual").value||0,moneda:$("c_moneda").value,web_url:$("c_web").value.trim(),creado_por:user?.email||null};
+      if(!row.email){ $("addMsg").textContent="Pon el correo del cliente."; return; }
+      const { error }=await sb.from("clientes").insert(row);
+      $("addMsg").textContent= error ? ("Error: "+error.message) : "Cliente creado. Usa el botón “Cobro” para enviarle el link de pago por correo.";
+      if(!error){ ["c_email","c_negocio","c_plan","c_concepto","c_web"].forEach(i=>$(i).value=""); cargar(); }
+    };
+
+    $("btnPass").onclick=async()=>{
+      const email=$("email").value.trim(), password=$("pass").value;
+      if(!reMail.test(email)){ $("msg").textContent="Correo inválido."; return; }
+      if(!password){ $("msg").textContent="Escribe tu contraseña o usa “Entrar con código”."; return; }
+      $("btnPass").disabled=true; $("msg").textContent="Entrando…";
+      const { error }=await sb.auth.signInWithPassword({ email, password });
+      $("btnPass").disabled=false;
+      $("msg").textContent= error ? "Correo o contraseña incorrectos. Primera vez: usa “Entrar con código”." : "";
+    };
+    let codeCooldown=0;
+    $("lnkCode").onclick=async()=>{
+      const email=$("email").value.trim();
+      if(!reMail.test(email)){ $("msg").textContent="Primero escribe tu correo."; return; }
+      if(Date.now()<codeCooldown){ $("msg").textContent="Espera unos segundos antes de pedir otro código."; return; }
+      codeCooldown=Date.now()+20000;
+      $("msg").textContent="Enviando código…";
+      try{
+        const r=await fetch(FUNCTIONS+"/solicitar-acceso",{method:"POST",headers:{"Content-Type":"application/json","apikey":ANON_KEY,"Authorization":"Bearer "+ANON_KEY},body:JSON.stringify({email})});
+        const j=await r.json();
+        if(r.status===429){ $("msg").textContent=j.error||"Demasiados intentos. Espera unos minutos."; return; }
+        $("codeEmail").textContent=email; $("msg").textContent="Si tu correo está registrado, te llegará un código."; show("step-code"); $("code").focus();
+      }catch(e){ $("msg").textContent="Error de conexión."; }
+    };
+    $("lnkBack").onclick=()=>{ show("step-pass"); $("msg").textContent=""; };
+    $("btnCode").onclick=async()=>{
+      const email=$("email").value.trim(), token=$("code").value.trim();
+      if(token.length<6){ $("msg").textContent="El código tiene 6 dígitos."; return; }
+      $("btnCode").disabled=true; $("msg").textContent="Verificando…";
+      const { error }=await sb.auth.verifyOtp({ email, token, type:"email" });
+      $("btnCode").disabled=false;
+      $("msg").textContent= error ? "Código incorrecto o vencido." : "";
+    };
+    $("btnNewPass").onclick=async()=>{
+      const p1=$("np1").value, p2=$("np2").value;
+      if(p1.length<8){ $("msg").textContent="Mínimo 8 caracteres."; return; }
+      if(p1!==p2){ $("msg").textContent="Las contraseñas no coinciden."; return; }
+      $("btnNewPass").disabled=true; $("msg").textContent="Guardando…";
+      const { error }=await sb.auth.updateUser({ password:p1, data:{ password_set:true } });
+      $("btnNewPass").disabled=false;
+      if(error){ $("msg").textContent="Error: "+error.message; return; }
+      $("msg").textContent=""; await afterAuth();
+    };
+    $("btnOut").onclick=async()=>{ await sb.auth.signOut(); location.reload(); };
+    sb.auth.onAuthStateChange((_e,s)=>{ if(s) afterAuth(); });
+
+    // ── Calendario ────────────────────────────────────────────────
+    let calFecha = new Date();
+    let calReuniones = [];
+    let adminsList = [];
+    let selectedAdmins = new Set();
+    let currentUser = null;
+
+    async function upsertPerfil(user) {
+      currentUser = user;
+      const nombre = (user.email || "").split("@")[0];
+      await sb.from("admin_profiles").upsert({ id: user.id, email: user.email, nombre }, { onConflict: "id" });
+    }
+
+    let perfilesMap = {}; // id de admin -> nombre (para mostrar participantes en el detalle)
+
+    async function cargarCalendario() {
+      const año = calFecha.getFullYear();
+      const mes = calFecha.getMonth();
+      // Rango amplio (mes completo en hora local, con margen) para no perder reuniones de borde por UTC
+      const desde = new Date(año, mes, 1).toISOString();
+      const hasta = new Date(año, mes + 1, 1).toISOString();
+
+      // Mapa de nombres de admins (query aparte; NO anidamos admin_profiles dentro de
+      // reuniones_admins porque no hay FK directa entre ambas y PostgREST da PGRST200).
+      if (!Object.keys(perfilesMap).length) {
+        const { data: perfiles } = await sb.from("admin_profiles").select("id,nombre");
+        (perfiles || []).forEach(p => { perfilesMap[p.id] = p.nombre; });
+      }
+
+      const { data, error } = await sb.from("reuniones").select("*,reuniones_admins(admin_id)")
+        .gte("fecha_hora", desde).lte("fecha_hora", hasta).order("fecha_hora");
+      if (error) { console.error("Calendario — error cargando reuniones:", error.message); }
+      calReuniones = data || [];
+      renderCalendario(año, mes);
+    }
+
+    // Iniciales del título para el cubo (ej. "Delta Force GHL" → "DFG")
+    function iniciales(t){
+      const w = String(t||"").trim().split(/\s+/).filter(Boolean);
+      if (!w.length) return "—";
+      if (w.length === 1) return w[0].slice(0,2).toUpperCase();
+      return w.slice(0,3).map(x => x[0]).join("").toUpperCase();
+    }
+
+    function renderCalendario(año, mes) {
+      const meses = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+      $("calMesLabel").textContent = `${meses[mes]} ${año}`;
+
+      const dias = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
+      const primerDia = new Date(año, mes, 1).getDay();
+      const ultimoDia = new Date(año, mes + 1, 0).getDate();
+      const hoy = new Date();
+
+      let html = dias.map(d => `<div class="cal-dh">${d}</div>`).join("");
+
+      for (let i = 0; i < primerDia; i++) {
+        const d = new Date(año, mes, 0 - (primerDia - i - 1));
+        html += `<div class="cal-dia otro-mes"><div class="cal-num">${d.getDate()}</div></div>`;
+      }
+      for (let d = 1; d <= ultimoDia; d++) {
+        const esHoy = hoy.getFullYear() === año && hoy.getMonth() === mes && hoy.getDate() === d;
+        const clave = `${año}-${String(mes + 1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+        const eventos = calReuniones.filter(r => { const dt = new Date(r.fecha_hora); return dt.getFullYear()===año && dt.getMonth()===mes && dt.getDate()===d; });
+        // Una reunión = un cubo con sus iniciales; clic abre su detalle
+        const cubos = eventos.map(r =>
+          `<div class="cal-cube ${estadoReunion(r)}" data-rid="${esc(String(r.id))}" title="${esc(r.titulo)}">${esc(iniciales(r.titulo))}</div>`
+        ).join("");
+        html += `<div class="cal-dia${esHoy ? " hoy" : ""}" data-fecha="${clave}">
+          <div class="cal-num">${d}</div>${cubos ? `<div class="cal-cubes">${cubos}</div>` : ""}
+        </div>`;
+      }
+
+      $("calGrid").innerHTML = html;
+
+      $("calGrid").querySelectorAll(".cal-cube").forEach(el => {
+        el.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const r = calReuniones.find(x => String(x.id) === el.dataset.rid);
+          if (r) abrirDetalle(r);
+        });
+      });
+    }
+
+    // Fecha a formato calendario UTC (YYYYMMDDTHHMMSSZ)
+    function fmtCalDate(d){ return d.toISOString().replace(/[-:]/g,"").replace(/\.\d{3}/,""); }
+    function calRango(r){ const ini=new Date(r.fecha_hora); const fin=new Date(ini.getTime()+(r.duracion_min||60)*60000); return {ini,fin}; }
+    // Estado por hora: "pasada" (ya terminó), "encurso" (entre inicio y fin ahora), "" (futura)
+    function estadoReunion(r){ const {ini,fin}=calRango(r); const ahora=new Date(); if(ahora>fin) return "pasada"; if(ahora>=ini && ahora<=fin) return "encurso"; return ""; }
+    function gcalLink(r){
+      const {ini,fin}=calRango(r);
+      const det=(r.cliente?("Cliente: "+r.cliente+"\n"):"")+(r.descripcion||"");
+      const p=new URLSearchParams({action:"TEMPLATE",text:r.titulo||"Reunión",dates:fmtCalDate(ini)+"/"+fmtCalDate(fin),details:det});
+      return "https://calendar.google.com/calendar/render?"+p.toString();
+    }
+    function descargarICS(r){
+      const {ini,fin}=calRango(r);
+      const det=((r.cliente?("Cliente: "+r.cliente+"\\n"):"")+(r.descripcion||"")).replace(/\n/g,"\\n");
+      const ics=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//condor.ai//calendario//ES","BEGIN:VEVENT",
+        "UID:"+(r.id||Date.now())+"@condorai.cl","DTSTAMP:"+fmtCalDate(new Date()),
+        "DTSTART:"+fmtCalDate(ini),"DTEND:"+fmtCalDate(fin),"SUMMARY:"+(r.titulo||"Reunión"),
+        "DESCRIPTION:"+det,"END:VEVENT","END:VCALENDAR"].join("\r\n");
+      const a=document.createElement("a");
+      a.href=URL.createObjectURL(new Blob([ics],{type:"text/calendar"}));
+      a.download=(r.titulo||"reunion").replace(/[^\w]+/g,"_")+".ics"; a.click();
+    }
+
+    let detReunion = null;
+    function abrirDetalle(r) {
+      detReunion = r;
+      $("det_delmsg").textContent = "";
+      const est = estadoReunion(r);
+      const badge = $("det_estado");
+      if (est === "pasada") { badge.textContent = "Finalizada"; badge.style.background = "rgba(120,130,150,.18)"; badge.style.color = "#aab3c5"; }
+      else if (est === "encurso") { badge.textContent = "● En curso ahora"; badge.style.background = "rgba(34,197,94,.18)"; badge.style.color = "#4ade80"; }
+      else { badge.textContent = "Próxima"; badge.style.background = "rgba(91,134,255,.18)"; badge.style.color = "#9bb4ff"; }
+      badge.style.display = "inline-block";
+      const dt = new Date(r.fecha_hora);
+      const dur = r.duracion_min >= 60 ? `${r.duracion_min/60}h` : `${r.duracion_min} min`;
+      $("det_titulo").textContent = r.titulo;
+      $("det_fecha").textContent = dt.toLocaleDateString("es-CL", {weekday:"long",day:"numeric",month:"long"}) + " · " + dt.toLocaleTimeString("es-CL",{hour:"2-digit",minute:"2-digit"}) + " (" + dur + ")";
+      $("det_cliente").textContent = r.cliente ? "Cliente: " + r.cliente : "";
+      $("det_desc").textContent = r.descripcion || "";
+      $("det_creador").textContent = "";
+      const participantes = (r.reuniones_admins || []).map(a => perfilesMap[a.admin_id] || a.admin_id);
+      $("det_asistentes").textContent = participantes.length ? "Participantes: " + participantes.join(", ") : "";
+      $("det_gcal").href = gcalLink(r);
+      $("det_ical").onclick = () => descargarICS(r);
+      $("calDetalle").classList.add("open");
+    }
+
+    $("calPrev").addEventListener("click", () => {
+      calFecha = new Date(calFecha.getFullYear(), calFecha.getMonth() - 1, 1);
+      cargarCalendario();
+    });
+    $("calNext").addEventListener("click", () => {
+      calFecha = new Date(calFecha.getFullYear(), calFecha.getMonth() + 1, 1);
+      cargarCalendario();
+    });
+
+    $("btnNuevaReunion").addEventListener("click", async () => {
+      $("calMsg").textContent = "";
+      const hoy = new Date().toISOString().slice(0,10);
+      $("r_fecha").value = hoy;
+      $("r_titulo").value = "";
+      $("r_cliente").value = "";
+      $("r_desc").value = "";
+      $("r_hora").value = "09:00";
+      $("r_dur").value = "60";
+      selectedAdmins = new Set();
+
+      const { data: perfiles } = await sb.from("admin_profiles").select("id,nombre,email");
+      adminsList = perfiles || [];
+      $("r_admins").innerHTML = adminsList.map(a =>
+        `<span class="cal-admin-chip" data-id="${a.id}">${esc(a.nombre)}</span>`
+      ).join("");
+      $("r_admins").querySelectorAll(".cal-admin-chip").forEach(chip => {
+        chip.addEventListener("click", () => {
+          const id = chip.dataset.id;
+          if (selectedAdmins.has(id)) { selectedAdmins.delete(id); chip.classList.remove("sel"); }
+          else { selectedAdmins.add(id); chip.classList.add("sel"); }
+        });
+      });
+      $("calModal").classList.add("open");
+    });
+
+    $("btnGuardarReunion").addEventListener("click", async () => {
+      const titulo = $("r_titulo").value.trim();
+      const fecha = $("r_fecha").value;
+      const hora = $("r_hora").value;
+      if (!titulo) { $("calMsg").textContent = "Escribe un título."; return; }
+      if (!fecha || !hora) { $("calMsg").textContent = "Pon la fecha y hora."; return; }
+      $("btnGuardarReunion").disabled = true;
+      $("calMsg").textContent = "Guardando…";
+
+      const cliente = $("r_cliente").value.trim();
+      const descripcion = $("r_desc").value.trim();
+      const duracion_min = +$("r_dur").value;
+      const fecha_hora = new Date(`${fecha}T${hora}:00`).toISOString();
+      const { data: reunion, error } = await sb.from("reuniones").insert({
+        titulo, cliente: cliente || null, descripcion: descripcion || null,
+        fecha_hora, duracion_min, creado_por: currentUser?.id,
+      }).select().single();
+
+      if (error) { $("calMsg").textContent = "Error: " + error.message; $("btnGuardarReunion").disabled = false; return; }
+
+      // El creador también participa, para que la vea en su calendario
+      const participantes = new Set(selectedAdmins);
+      participantes.add(currentUser?.id);
+      const inserts = [...participantes].filter(Boolean).map(admin_id => ({ reunion_id: reunion.id, admin_id }));
+      if (inserts.length) await sb.from("reuniones_admins").insert(inserts);
+
+      // Sandra avisa en el grupo de Telegram (no bloquea si falla)
+      try {
+        const { data:{session} } = await sb.auth.getSession();
+        const invitadosObj = adminsList.filter(a => participantes.has(a.id)).map(a => ({ nombre: a.nombre, email: a.email }));
+        const invitados = invitadosObj.map(a => a.nombre); // compat: el aviso de Telegram usa nombres
+        fetch(FUNCTIONS + "/reunion-notificar", {
+          method: "POST",
+          headers: { "Content-Type":"application/json", "Authorization":"Bearer "+session.access_token, "apikey":ANON_KEY },
+          body: JSON.stringify({ titulo, cliente, fecha_hora, duracion_min, descripcion, invitados, invitados_email: invitadosObj }),
+        }).catch(()=>{});
+      } catch(e) {}
+
+      $("btnGuardarReunion").disabled = false;
+      $("calModal").classList.remove("open");
+      cargarCalendario();
+    });
+
+    $("btnCerrarModal").addEventListener("click", () => $("calModal").classList.remove("open"));
+    $("btnCerrarDetalle").addEventListener("click", () => $("calDetalle").classList.remove("open"));
+
+    // Eliminar la reunión abierta en el detalle
+    $("btnEliminarReunion").addEventListener("click", async () => {
+      if (!detReunion) return;
+      if (!confirm(`¿Eliminar la reunión "${detReunion.titulo}"? No se puede deshacer.`)) return;
+      $("btnEliminarReunion").disabled = true;
+      $("det_delmsg").textContent = "Eliminando…";
+      const { error } = await sb.from("reuniones").delete().eq("id", detReunion.id);
+      $("btnEliminarReunion").disabled = false;
+      if (error) { $("det_delmsg").textContent = "Error: " + error.message; return; }
+      $("calDetalle").classList.remove("open");
+      cargarCalendario();
+    });
+    $("calModal").addEventListener("click", e => { if (e.target === $("calModal")) $("calModal").classList.remove("open"); });
+    $("calDetalle").addEventListener("click", e => { if (e.target === $("calDetalle")) $("calDetalle").classList.remove("open"); });
+    // ── Fin Calendario ─────────────────────────────────────────────
+
+    init();
+  </script>
+</body>
+</html>
