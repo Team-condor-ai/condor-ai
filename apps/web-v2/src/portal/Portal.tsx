@@ -10,6 +10,7 @@ import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import "./disenio/estilo.css";
 import "./disenio/piezas.css";
 import "./disenio/portal.css";
+import "./disenio/acceso.css";
 
 import { useSesion, salir } from "./auth/sesion";
 import { Login } from "./auth/Login";
