@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { Suspense, lazy, useState } from "react";
 import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 
 // El CSS del ERP de Planeta, copiado sin tocar. Se importa SOLO acá y no en
@@ -17,20 +17,41 @@ import { Lateral, type Entrada } from "./disenio/Lateral";
 import { Ico } from "./disenio/iconos";
 import { Clientes } from "./staff/Clientes";
 import { FichaCliente } from "./staff/FichaCliente";
+import { Cobros } from "./staff/Cobros";
+import { Correos } from "./staff/Correos";
+import { Mapa } from "./staff/Mapa";
+
 import { MiPlan } from "./cliente/MiPlan";
+
+import { MiCuenta } from "./cliente/MiCuenta";
+
+// EL MOTOR DE PDF VA APARTE, Y NO ES UN DETALLE
+// @react-pdf/renderer pesa ~1,1 MB. Importado de frente, el portal entero
+// cargaba 1,5 MB — o sea alguien que solo entra a ver la lista de clientes se
+// bajaba el generador de documentos completo. En diferido, ese peso lo paga
+// únicamente quien abre Herramientas o Comprobantes.
+const Herramientas = lazy(() =>
+  import("./documentos/Herramientas").then((m) => ({ default: m.Herramientas })),
+);
+const MisBoletas = lazy(() =>
+  import("./cliente/MisBoletas").then((m) => ({ default: m.MisBoletas })),
+);
+
+const cargando = <div className="cuerpo"><p className="vacio">Cargando…</p></div>;
+const dif = (n: React.ReactNode) => <Suspense fallback={cargando}>{n}</Suspense>;
 
 const MENU_STAFF: Entrada[] = [
   { a: "/acceso/clientes", texto: "Clientes", icono: "clientes" },
-  { a: "/acceso/cobros", texto: "Cobros", icono: "cobros", pronto: true },
-  { a: "/acceso/herramientas", texto: "Herramientas", icono: "documentos", pronto: true },
-  { a: "/acceso/correos", texto: "Correos", icono: "correos", pronto: true },
-  { a: "/acceso/mapa", texto: "Mapa", icono: "grafo", pronto: true },
+  { a: "/acceso/cobros", texto: "Cobros", icono: "cobros" },
+  { a: "/acceso/herramientas", texto: "Herramientas", icono: "documentos" },
+  { a: "/acceso/correos", texto: "Correos", icono: "correos" },
+  { a: "/acceso/mapa", texto: "Mapa", icono: "grafo" },
 ];
 
 const MENU_CLIENTE: Entrada[] = [
   { a: "/acceso/plan", texto: "Mi plan", icono: "plan" },
-  { a: "/acceso/boletas", texto: "Boletas", icono: "boletas", pronto: true },
-  { a: "/acceso/cuenta", texto: "Mi cuenta", icono: "ajustes", pronto: true },
+  { a: "/acceso/boletas", texto: "Comprobantes", icono: "boletas" },
+  { a: "/acceso/cuenta", texto: "Mi cuenta", icono: "ajustes" },
 ];
 
 function Marco({
@@ -111,6 +132,10 @@ export default function Portal() {
         <Routes>
           <Route path="clientes" element={<Clientes />} />
           <Route path="clientes/:id" element={<FichaCliente />} />
+          <Route path="cobros" element={<Cobros />} />
+          <Route path="herramientas" element={dif(<Herramientas />)} />
+          <Route path="correos" element={<Correos />} />
+          <Route path="mapa" element={<Mapa />} />
           <Route path="*" element={<Navigate to="/acceso/clientes" replace />} />
         </Routes>
       </Marco>,
@@ -120,6 +145,8 @@ export default function Portal() {
     <Marco menu={MENU_CLIENTE} nombre={nombre} detalle={correo}>
       <Routes>
         <Route path="plan" element={<MiPlan />} />
+        <Route path="boletas" element={dif(<MisBoletas />)} />
+        <Route path="cuenta" element={<MiCuenta />} />
         <Route path="*" element={<Navigate to="/acceso/plan" replace />} />
       </Routes>
     </Marco>,
