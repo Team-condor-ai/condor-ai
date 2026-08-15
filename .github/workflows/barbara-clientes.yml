@@ -1,0 +1,88 @@
+name: Barbara clientes - contenido multi-cliente
+
+# Genera contenido para cada cliente activo de barbara_clientes (portal
+# Agentes IA > Bárbara), usando su brand book y su formulario propios.
+# Mientras no haya clientes activos con brand book + formulario + chat de
+# Telegram completos, este workflow corre y no hace nada (no-op seguro).
+#
+# A propósito NO toca barbara.mjs/reels.mjs ni content-log.json — es un
+# workflow y un script totalmente aparte del contenido propio de Cóndor.
+
+on:
+  schedule:
+    # Diario, 08:00 Chile = 12:00 UTC (invierno UTC-4). Ajustar cuando haya
+    # clientes reales y se sepa la cadencia real que necesitan.
+    - cron: '0 12 * * *'
+  workflow_dispatch:
+    inputs:
+      tipo:
+        description: 'carrusel | historia (default carrusel)'
+        required: false
+        default: ''
+      cliente_id:
+        description: 'UUID de barbara_clientes para probar con uno solo (vacío = todos los activos)'
+        required: false
+        default: ''
+      test:
+        description: 'poner 1 para solo validar conexión, sin generar nada'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  barbara-clientes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Instalar CLI de Higgsfield
+        run: npm install -g @higgsfield/cli@0.2.3
+      - name: Autenticar Higgsfield (descifrar credenciales rotadas)
+        env:
+          HF_CREDS_KEY: ${{ secrets.HF_CREDS_KEY }}
+          HF_ACCESS: ${{ secrets.HIGGSFIELD_ACCESS_TOKEN }}
+          HF_REFRESH: ${{ secrets.HIGGSFIELD_REFRESH_TOKEN }}
+          HF_WORKSPACE_ID: ${{ secrets.HIGGSFIELD_WORKSPACE_ID }}
+        run: |
+          mkdir -p ~/.config/higgsfield
+          if [ -n "$HF_CREDS_KEY" ] && [ -f services/barbara/hf-creds.enc ]; then
+            openssl enc -d -aes-256-cbc -pbkdf2 -salt -in services/barbara/hf-creds.enc -out ~/.config/higgsfield/credentials.json -pass pass:"$HF_CREDS_KEY"
+          else
+            printf '{"access_token":"%s","refresh_token":"%s"}' "$HF_ACCESS" "$HF_REFRESH" > ~/.config/higgsfield/credentials.json
+          fi
+          sha256sum ~/.config/higgsfield/credentials.json | awk '{print $1}' > /tmp/hf_before.sha
+          WS_ID="${HF_WORKSPACE_ID:-a2878df7-43e1-4685-acca-5be527026fc2}"
+          higgsfield workspace set "$WS_ID" >/dev/null 2>&1 || echo "Aviso: no se seleccionó workspace (ok en CLI 0.2.x)."
+      - name: Generar contenido de clientes activos
+        run: node services/barbara/clientes.mjs
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          TIPO: ${{ github.event.inputs.tipo }}
+          CLIENTE_ID: ${{ github.event.inputs.cliente_id }}
+          TEST: ${{ github.event.inputs.test }}
+      - name: Persistir credenciales de Higgsfield si rotaron
+        if: always()
+        env:
+          HF_CREDS_KEY: ${{ secrets.HF_CREDS_KEY }}
+        run: |
+          git config user.name "barbara-bot"
+          git config user.email "bot@condorai.cl"
+          if [ -n "$HF_CREDS_KEY" ] && [ -f ~/.config/higgsfield/credentials.json ]; then
+            AFTER=$(sha256sum ~/.config/higgsfield/credentials.json | awk '{print $1}')
+            BEFORE=$(cat /tmp/hf_before.sha 2>/dev/null || echo "")
+            if [ "$AFTER" != "$BEFORE" ]; then
+              openssl enc -aes-256-cbc -pbkdf2 -salt -in ~/.config/higgsfield/credentials.json -out services/barbara/hf-creds.enc -pass pass:"$HF_CREDS_KEY"
+              git add services/barbara/hf-creds.enc
+              if git diff --staged --quiet; then echo "sin cambios"; else
+                git commit -m "barbara-clientes: token rotado $(date +%Y-%m-%d)"
+                for n in 1 2 3; do git pull --rebase origin main && git push && break || sleep 5; done
+              fi
+            fi
+          fi
