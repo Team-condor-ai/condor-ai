@@ -1,0 +1,235 @@
+/* ═══════════ Piezas nuevas: selector de vista, alertas, fotos, gráficos ═══════════ */
+
+/* Foto real del producto, o recuadro con la inicial cuando todavía no está
+   publicado. Nada de ícono genérico: uno igual para todos no ayuda a
+   reconocer el frasco, que es para lo que sirve la foto en la bodega. */
+.foto{border-radius:8px;object-fit:contain;background:var(--panel-2);
+  border:1px solid var(--borde);flex:none;display:block}
+.foto.vacia{display:grid;place-items:center;font-size:11px;font-weight:700;
+  color:var(--texto-3);border-style:dashed}
+
+/* ── selector de vista por cuenta ── */
+.sel{position:relative}
+.sel-menu{position:absolute;top:calc(100% + 6px);right:0;min-width:252px;z-index:30;
+  background:var(--panel);border:1px solid var(--borde);border-radius:12px;
+  box-shadow:var(--sombra-alta);padding:6px;display:none}
+.sel.abierto .sel-menu{display:block}
+.sel-menu .op{display:flex;align-items:center;gap:9px;width:100%;padding:8px 10px;border:0;
+  background:none;border-radius:8px;cursor:pointer;font-size:13px;text-align:left}
+.sel-menu .op:hover{background:var(--hover)}
+.sel-menu .op.on{font-weight:600}
+.sel-menu .tic{width:14px;color:var(--ok-tx);font-weight:800}
+.sel-menu .sep{height:1px;background:var(--borde-suave);margin:5px 8px}
+.sel-menu .pie-menu{margin:2px 10px 6px;font-size:11.5px;color:var(--texto-3)}
+
+/* ── alertas ── */
+.nav-item.rojo .punto{width:7px;height:7px;border-radius:50%;background:var(--mal-tx);flex:none}
+.nav-item.rojo.on{background:var(--mal-bg);color:var(--mal-tx)}
+.banda-alerta{display:flex;align-items:center;gap:10px;width:100%;padding:12px 14px;
+  margin-bottom:14px;border:1px solid var(--mal-bd);background:var(--mal-bg);color:var(--mal-tx);
+  border-radius:11px;cursor:pointer;text-align:left;font-size:13px}
+.banda-alerta span{flex:1}
+.banda-alerta:hover{filter:brightness(.97)}
+.lista-alertas{display:flex;flex-direction:column;gap:10px}
+.alerta{display:flex;gap:12px;align-items:flex-start;padding:14px;
+  border:1px solid var(--borde);border-radius:12px}
+.alerta.grave{border-color:var(--mal-bd);background:var(--mal-bg)}
+.alerta .marca{color:var(--texto-3)}
+.alerta.grave .marca{color:var(--mal-tx)}
+.alerta .cont{flex:1;min-width:0}
+.alerta .tipo{font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--texto-3)}
+.alerta.grave .tipo{color:var(--mal-tx);opacity:.85}
+.alerta .cont b{display:block;font-size:13.5px;font-weight:650;margin:3px 0 4px}
+.alerta.grave .cont b{color:var(--mal-tx)}
+.alerta .cont p{margin:0;font-size:12.5px;color:var(--texto-2)}
+.alerta.grave .cont p{color:var(--mal-tx);opacity:.9}
+.alerta .btn{flex:none;align-self:center}
+
+/* ── filas apretables ── */
+.fila-btn{display:flex;align-items:center;gap:11px;width:100%;padding:11px 14px;border:0;
+  border-bottom:1px solid var(--borde-suave);background:none;cursor:pointer;text-align:left}
+.fila-btn:last-child{border-bottom:0}
+.fila-btn:hover{background:var(--panel-2)}
+.fila-btn .txt{flex:1;min-width:0}
+.fila-btn .txt b{display:block;font-size:13px;font-weight:600;line-height:1.3}
+.fila-btn .txt small{font-size:11.5px;color:var(--texto-3)}
+.fila-btn .montos{text-align:right}
+.fila-btn .montos b{display:block;font-size:13.5px;font-weight:650;font-variant-numeric:tabular-nums}
+.fila-btn .montos small{font-size:10.5px;color:var(--texto-3);font-variant-numeric:tabular-nums}
+tr.clic{cursor:pointer}
+.mas-link{border:0;background:none;font-size:12px;color:var(--texto-2);cursor:pointer;
+  text-decoration:underline;text-underline-offset:2px}
+.mas-link:hover{color:var(--texto)}
+
+/* ── perfiles de comisión ── */
+.perfiles{display:grid;gap:12px;grid-template-columns:1fr}
+@media(min-width:700px){.perfiles{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}}
+.perfil{display:flex;flex-direction:column;align-items:flex-start;gap:3px;padding:18px;
+  border:1px solid var(--borde);border-radius:14px;background:var(--panel);cursor:pointer;text-align:left}
+.perfil:hover{background:var(--panel-2);border-color:var(--texto-3)}
+.av.grande{width:44px;height:44px;border-radius:12px;font-size:14px;margin-bottom:8px}
+.perfil b{font-size:15px;font-weight:650}
+.perfil .monto{font-size:26px;font-weight:660;letter-spacing:-.035em;
+  font-variant-numeric:tabular-nums;margin:4px 0 2px}
+.perfil .sub{font-size:12px;color:var(--texto-2)}
+.perfil .pend{font-size:12px;color:var(--warn-tx)}
+.perfil .ver{margin-top:10px;font-size:12px;font-weight:600;color:var(--texto-2)}
+
+/* ── llegada de un pedido ── */
+.pedido-banda{display:flex;align-items:center;gap:11px;padding:12px 14px;margin-bottom:13px;
+  border:1px solid var(--info-bd);background:var(--info-bg);color:var(--info-tx);
+  border-radius:11px;font-size:13px;flex-wrap:wrap}
+.pedido-banda span{flex:1;min-width:180px}
+.lineas-pedido{display:flex;flex-direction:column;border:1px solid var(--borde);
+  border-radius:12px;overflow:hidden}
+.linea-ped{display:flex;align-items:center;gap:11px;padding:11px 13px;
+  border-bottom:1px solid var(--borde-suave)}
+.linea-ped:last-child{border-bottom:0}
+.linea-ped.cambiada{background:var(--warn-bg)}
+.linea-ped .txt{flex:1;min-width:0}
+.linea-ped .txt b{display:block;font-size:13px;font-weight:600}
+.linea-ped .txt small{font-size:11.5px;color:var(--texto-3)}
+.stepper{display:flex;align-items:center;border:1px solid var(--borde);border-radius:9px;
+  overflow:hidden;background:var(--panel);flex:none}
+.stepper button{width:32px;height:34px;border:0;background:none;cursor:pointer;font-size:17px;
+  color:var(--texto-2)}
+.stepper button:hover{background:var(--hover);color:var(--texto)}
+.stepper input{width:48px;height:34px;border:0;border-left:1px solid var(--borde-suave);
+  border-right:1px solid var(--borde-suave);text-align:center;font:inherit;font-weight:650;
+  background:none;color:var(--texto);font-variant-numeric:tabular-nums;-moz-appearance:textfield}
+.stepper input::-webkit-outer-spin-button,.stepper input::-webkit-inner-spin-button{
+  -webkit-appearance:none;margin:0}
+.resumen-ped{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:12px;
+  padding:12px 14px;border:1px solid var(--borde);border-radius:11px;background:var(--panel-2);
+  font-size:12.5px;color:var(--texto-2)}
+.resumen-ped b{color:var(--texto);font-variant-numeric:tabular-nums}
+.pie-panel{display:flex;gap:10px;padding:12px 16px;border-top:1px solid var(--borde);
+  background:var(--panel)}
+.pie-panel .btn{flex:1;justify-content:center}
+.panel-ped{transform:translateX(101%);z-index:61}
+body.pedido-abierto .panel-ped{transform:none}
+.velo-ped{z-index:56}
+body.pedido-abierto .velo-ped{opacity:1;pointer-events:auto}
+
+/* ── gráficos, dibujados a mano: sin librerías externas ── */
+.graf-barras{display:flex;align-items:flex-end;gap:10px;padding-top:22px}
+.graf-barras .col{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;
+  height:100%;justify-content:flex-end;min-width:0}
+.graf-barras .col i{display:block;width:100%;max-width:54px;border-radius:6px 6px 0 0;opacity:.88}
+.graf-barras .col .val{font-size:11px;font-weight:650;font-variant-numeric:tabular-nums;
+  white-space:nowrap}
+.graf-barras .col .et{font-size:11px;color:var(--texto-3);white-space:nowrap;overflow:hidden;
+  text-overflow:ellipsis;max-width:100%}
+.graf-linea svg{width:100%;height:170px;display:block}
+.graf-et{display:flex;justify-content:space-between;font-size:10.5px;color:var(--texto-3);margin-top:4px}
+.leyenda{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;font-size:12px;color:var(--texto-2)}
+.leyenda span{display:flex;align-items:center;gap:6px}
+.leyenda i{width:10px;height:3px;border-radius:2px}
+
+.cuentas-grid{display:grid;gap:12px;grid-template-columns:1fr}
+@media(min-width:900px){.cuentas-grid{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}}
+.linea.cal{padding:6px 0}
+.linea.cal .et{font-variant-numeric:tabular-nums}
+h2.sec{font-size:14px;font-weight:650;margin:0 0 9px;letter-spacing:-.01em}
+.scan-grilla .item{align-items:flex-start}
+
+/* ═══════════ Ficha editable del producto ═══════════ */
+.ficha-cab{display:flex;gap:14px;align-items:flex-start;margin-bottom:12px}
+.ficha-cab .campos{flex:1;min-width:0;display:flex;flex-direction:column;gap:10px}
+.campo{display:flex;flex-direction:column;gap:5px}
+.campo span{font-size:11px;font-weight:650;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--texto-3)}
+.campo input{padding:9px 11px;border:1px solid var(--borde);border-radius:9px;
+  background:var(--panel);color:var(--texto);font:inherit;outline:none;width:100%}
+.campo input:focus{border-color:var(--texto);box-shadow:0 0 0 3px var(--activo)}
+.campo input::placeholder{color:var(--texto-3)}
+.campo.chico{width:130px;flex:none}
+.campos-2{display:grid;gap:10px;grid-template-columns:1fr 1fr;margin-bottom:8px}
+
+.precios{display:flex;flex-direction:column;border:1px solid var(--borde);border-radius:12px;
+  overflow:hidden}
+.precio-fila{display:flex;align-items:flex-end;gap:12px;padding:12px 14px;
+  border-bottom:1px solid var(--borde-suave);flex-wrap:wrap}
+.precio-fila:last-child{border-bottom:0}
+.precio-fila .quien{flex:1;min-width:150px}
+.precio-fila .quien b{display:block;font-size:13px;font-weight:600;margin-bottom:4px}
+.precio-fila .util{min-width:104px;text-align:right}
+.precio-fila .util b{display:block;font-size:15px;font-weight:650;font-variant-numeric:tabular-nums}
+.precio-fila .util b.ok{color:var(--ok-tx)}
+.precio-fila .util b.mal{color:var(--mal-tx)}
+.precio-fila .util small{font-size:10.5px;color:var(--texto-3)}
+.precio-fila .util .na{font-size:12px;color:var(--texto-3)}
+
+.barra-guardar{display:flex;align-items:center;gap:12px;margin-top:16px;padding-top:14px;
+  border-top:1px solid var(--borde-suave);flex-wrap:wrap}
+.barra-guardar .mini{margin:0;color:var(--ok-tx);font-weight:600}
+@media(max-width:560px){.campos-2{grid-template-columns:1fr}
+  .precio-fila .campo.chico{width:100%}}
+
+/* ═══════════ Horario de corte ═══════════ */
+.horario-caja{border:1px solid var(--borde);border-radius:12px;padding:14px;margin-bottom:14px}
+.horario-caja.vencido{border-color:var(--mal-bd);background:var(--mal-bg)}
+.hcab{display:flex;align-items:center;gap:11px;flex-wrap:wrap}
+.hcab .txt{flex:1;min-width:180px}
+.hcab .txt b{display:block;font-size:13px;font-weight:650}
+.hcab .txt small{font-size:12px;color:var(--texto-2)}
+.horario-caja.vencido .hcab svg,.horario-caja.vencido .hcab .txt b,
+.horario-caja.vencido .hcab .txt small{color:var(--mal-tx)}
+.hdias{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:12px}
+.hdia{border:1px solid var(--borde-suave);border-radius:9px;padding:8px 4px;text-align:center;
+  background:var(--panel-2)}
+.hdia span{display:block;font-size:10.5px;color:var(--texto-3);font-weight:650;
+  text-transform:uppercase;letter-spacing:.06em}
+.hdia b{display:block;font-size:13px;font-weight:650;margin-top:3px;
+  font-variant-numeric:tabular-nums}
+.hdia.libre b{color:var(--texto-3);font-weight:500}
+.hdia.hoy{border-color:var(--texto);background:var(--activo)}
+.hpie{margin:10px 0 0;font-size:11.5px;color:var(--texto-3)}
+.horario-caja.vencido .hpie{color:var(--mal-tx);opacity:.8}
+
+.atajo{display:flex;align-items:flex-end;gap:10px;margin:14px 0;flex-wrap:wrap}
+.hlista{display:flex;flex-direction:column;border:1px solid var(--borde);border-radius:12px;
+  overflow:hidden}
+.hfila{display:flex;align-items:center;gap:12px;padding:10px 13px;
+  border-bottom:1px solid var(--borde-suave);flex-wrap:wrap}
+.hfila:last-child{border-bottom:0}
+.hfila.libre{background:var(--panel-2)}
+.chk{display:flex;align-items:center;gap:8px;flex:1;min-width:120px;cursor:pointer;font-size:13px}
+.chk input{width:16px;height:16px;accent-color:var(--texto);cursor:pointer}
+.hfila input[type=time]{padding:7px 9px;border:1px solid var(--borde);border-radius:8px;
+  background:var(--panel);color:var(--texto);font:inherit;font-variant-numeric:tabular-nums}
+.hfila input[type=time]:disabled{opacity:.4}
+.hfila .sale{font-size:12px;color:var(--texto-2);min-width:150px;text-align:right}
+.hfila.libre .sale{color:var(--texto-3)}
+.panel-hor{transform:translateX(101%);z-index:62}
+body.horario-abierto .panel-hor{transform:none}
+.velo-hor{z-index:57}
+body.horario-abierto .velo-hor{opacity:1;pointer-events:auto}
+
+/* popup del domingo */
+.popup{position:fixed;inset:0;z-index:80;display:none;place-items:center;padding:18px;
+  background:rgba(0,0,0,.45)}
+body.popup-horario .popup{display:grid}
+.popup-caja{background:var(--panel);border:1px solid var(--borde);border-radius:16px;
+  box-shadow:var(--sombra-alta);padding:26px;max-width:430px;text-align:center}
+.popup-icono{display:grid;place-items:center;width:52px;height:52px;margin:0 auto 14px;
+  border-radius:14px;background:var(--mal-bg);color:var(--mal-tx);border:1px solid var(--mal-bd)}
+.popup-caja h2{margin:0 0 8px;font-size:18px;font-weight:660;letter-spacing:-.02em}
+.popup-caja p{margin:0 0 18px;font-size:13px;color:var(--texto-2)}
+.popup-btns{display:flex;gap:10px}
+.popup-btns .btn{flex:1;justify-content:center}
+
+/* ═══════════ Indicador de modo y avisos ═══════════ */
+.modo{font-size:10.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;
+  padding:3px 9px;border-radius:999px;border:1px solid transparent;white-space:nowrap}
+.modo.servidor{background:var(--ok-bg);color:var(--ok-tx);border-color:var(--ok-bd)}
+.modo.local{background:var(--warn-bg);color:var(--warn-tx);border-color:var(--warn-bd)}
+
+/* Un aviso que informa sin frenar: `alert()` bloquea la pantalla y en el
+   celular se ve como un error del sistema. */
+.brindis{position:fixed;left:50%;bottom:22px;transform:translate(-50%,140%);z-index:90;
+  background:var(--oscuro);color:var(--sobre-oscuro);padding:12px 18px;border-radius:11px;
+  font-size:13px;font-weight:550;box-shadow:var(--sombra-alta);max-width:min(520px,92vw);
+  text-align:center;transition:transform .22s ease;pointer-events:none}
+.brindis.visible{transform:translate(-50%,0)}
