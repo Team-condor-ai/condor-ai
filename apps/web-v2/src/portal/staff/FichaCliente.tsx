@@ -58,7 +58,7 @@ export function FichaCliente() {
   return (
     <>
       <div className="barra">
-        <Link to="/portal/clientes" className="icono-btn" title="Volver">
+        <Link to="/acceso/clientes" className="icono-btn" title="Volver">
           {Ico.volver({ t: 16 })}
         </Link>
         <h1>{c.negocio || c.email}</h1>

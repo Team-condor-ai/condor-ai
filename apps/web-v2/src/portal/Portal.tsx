@@ -20,17 +20,17 @@ import { FichaCliente } from "./staff/FichaCliente";
 import { MiPlan } from "./cliente/MiPlan";
 
 const MENU_STAFF: Entrada[] = [
-  { a: "/portal/clientes", texto: "Clientes", icono: "clientes" },
-  { a: "/portal/cobros", texto: "Cobros", icono: "cobros", pronto: true },
-  { a: "/portal/herramientas", texto: "Herramientas", icono: "documentos", pronto: true },
-  { a: "/portal/correos", texto: "Correos", icono: "correos", pronto: true },
-  { a: "/portal/mapa", texto: "Mapa", icono: "grafo", pronto: true },
+  { a: "/acceso/clientes", texto: "Clientes", icono: "clientes" },
+  { a: "/acceso/cobros", texto: "Cobros", icono: "cobros", pronto: true },
+  { a: "/acceso/herramientas", texto: "Herramientas", icono: "documentos", pronto: true },
+  { a: "/acceso/correos", texto: "Correos", icono: "correos", pronto: true },
+  { a: "/acceso/mapa", texto: "Mapa", icono: "grafo", pronto: true },
 ];
 
 const MENU_CLIENTE: Entrada[] = [
-  { a: "/portal/plan", texto: "Mi plan", icono: "plan" },
-  { a: "/portal/boletas", texto: "Boletas", icono: "boletas", pronto: true },
-  { a: "/portal/cuenta", texto: "Mi cuenta", icono: "ajustes", pronto: true },
+  { a: "/acceso/plan", texto: "Mi plan", icono: "plan" },
+  { a: "/acceso/boletas", texto: "Boletas", icono: "boletas", pronto: true },
+  { a: "/acceso/cuenta", texto: "Mi cuenta", icono: "ajustes", pronto: true },
 ];
 
 function Marco({
@@ -57,7 +57,7 @@ function Marco({
         cerrar={() => setAbierto(false)}
         onSalir={async () => {
           await salir();
-          navega("/portal");
+          navega("/acceso");
         }}
       />
       <main>
@@ -111,7 +111,7 @@ export default function Portal() {
         <Routes>
           <Route path="clientes" element={<Clientes />} />
           <Route path="clientes/:id" element={<FichaCliente />} />
-          <Route path="*" element={<Navigate to="/portal/clientes" replace />} />
+          <Route path="*" element={<Navigate to="/acceso/clientes" replace />} />
         </Routes>
       </Marco>,
     );
@@ -120,7 +120,7 @@ export default function Portal() {
     <Marco menu={MENU_CLIENTE} nombre={nombre} detalle={correo}>
       <Routes>
         <Route path="plan" element={<MiPlan />} />
-        <Route path="*" element={<Navigate to="/portal/plan" replace />} />
+        <Route path="*" element={<Navigate to="/acceso/plan" replace />} />
       </Routes>
     </Marco>,
   );

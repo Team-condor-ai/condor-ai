@@ -18,12 +18,18 @@ createRoot(document.getElementById("root")!).render(
         <Route element={<Layout />}>
           <Route index element={<Home />} />
         </Route>
-        {/* El portal va FUERA del Layout del sitio: trae su propio menú
-            lateral y su propio fondo. Metido dentro, saldría con el header
-            público encima. `/*` es obligatorio para que sus rutas internas
-            (clientes, clientes/:id) resuelvan. */}
+        {/* EN /acceso Y NO EN /portal, A PROPÓSITO
+            GitHub Pages resuelve /portal como /portal.html ("pretty URLs"),
+            y ese archivo todavía existe en public/ — es el portal viejo. Con
+            la ruta en /portal, Pages servía el HTML viejo y esta ruta no se
+            alcanzaba nunca. Comprobado en producción.
+            Además /acceso calza con el botón "Acceso clientes" del menú.
+
+            Va FUERA del Layout del sitio: trae su propio menú lateral y su
+            propio fondo; dentro, saldría con el header público encima. El
+            `/*` es obligatorio para que sus rutas internas resuelvan. */}
         <Route
-          path="portal/*"
+          path="acceso/*"
           element={
             <Suspense fallback={null}>
               <Portal />

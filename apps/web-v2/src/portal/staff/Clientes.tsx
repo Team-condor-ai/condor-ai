@@ -160,7 +160,7 @@ export function Clientes() {
                 {visibles.map((c) => (
                   <tr key={c.id}>
                     <td>
-                      <Link to={`/portal/clientes/${c.id}`} className="enlace-tabla">
+                      <Link to={`/acceso/clientes/${c.id}`} className="enlace-tabla">
                         <b>{c.negocio || "—"}</b>
                         <small>{c.email}</small>
                       </Link>
