@@ -55,9 +55,23 @@ export function MiCuenta() {
     if (hayTelefono && tel !== ((c as Cliente & { telefono?: string }).telefono ?? ""))
       cambios.telefono = tel;
     if (Object.keys(cambios).length) {
-      const { error } = await sb.from("clientes").update(cambios).eq("id", c.id);
+      // SE PIDE LA FILA DE VUELTA, Y NO ES UN CAPRICHO
+      // Cuando RLS bloquea un UPDATE, Supabase NO devuelve error: informa
+      // cero filas afectadas. Sin `.select()`, este código daba "guardado"
+      // aunque no hubiera guardado nada — que es la peor forma de fallar,
+      // porque el cliente se entera después.
+      const { data, error } = await sb
+        .from("clientes").update(cambios).eq("id", c.id).select();
       if (error) {
         setError(error.message);
+        setGuardando(false);
+        return;
+      }
+      if (!data || data.length === 0) {
+        setError(
+          "No se pudo guardar: tu cuenta no tiene permiso para editar estos " +
+          "datos. Escríbenos y lo cambiamos nosotros.",
+        );
         setGuardando(false);
         return;
       }
@@ -72,13 +86,22 @@ export function MiCuenta() {
   async function darDeBaja() {
     if (!c) return;
     setGuardando(true);
-    const { error } = await sb
+    const { data, error } = await sb
       .from("clientes")
       .update({ archivado: true, mensual_estado: "pendiente" })
-      .eq("id", c.id);
+      .eq("id", c.id)
+      .select();
     setGuardando(false);
     if (error) setError(error.message);
-    else {
+    else if (!data || data.length === 0) {
+      // Mismo caso que arriba: sin filas afectadas, la baja no ocurrió.
+      // Decirle "listo" a alguien que quiso cancelar y no se canceló es
+      // exactamente cómo se llega a un cobro reclamado el mes siguiente.
+      setError(
+        "No pudimos registrar la baja desde acá. Escríbenos a " +
+        "contacto@teamcondorcl.com y la procesamos hoy.",
+      );
+    } else {
       setBajando(false);
       setAviso(
         "Registramos tu solicitud. Te escribimos hoy para confirmar y coordinar el cierre.",

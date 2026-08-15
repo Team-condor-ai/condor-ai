@@ -71,6 +71,53 @@ async function marcarLeadPagado(sb: any, leadId: string, mpId: string, p: any) {
   }
 }
 
+
+// ── FIRMA DE MERCADO PAGO ────────────────────────────────────────────────
+//
+// El webhook es público a la fuerza: MP lo llama sin sesión. Eso NO permite
+// falsificar un pago —más abajo se consulta a la API de MP con nuestro token
+// y solo se actúa si viene `approved`—, pero sí permitía que cualquiera
+// reenviara una notificación real y disparara los correos otra vez.
+//
+// MP firma cada notificación con HMAC-SHA256 sobre
+//   id:<data.id>;request-id:<x-request-id>;ts:<ts>;
+// y manda el resultado en la cabecera `x-signature` como `ts=...,v1=...`.
+//
+// DEGRADA CON AVISO, NO REVIENTA: si `MP_WEBHOOK_SECRET` no está configurado
+// se sigue procesando y se deja constancia en el log. Rechazar todo sin el
+// secreto dejaría los cobros caídos en silencio, que es peor que el riesgo
+// que se está cerrando.
+async function firmaValida(req: Request, dataId: string): Promise<boolean> {
+  const secreto = Deno.env.get("MP_WEBHOOK_SECRET") || "";
+  if (!secreto) {
+    console.warn("MP_WEBHOOK_SECRET sin configurar: no se valida la firma.");
+    return true;
+  }
+  const cabecera = req.headers.get("x-signature") || "";
+  const reqId = req.headers.get("x-request-id") || "";
+  const partes = Object.fromEntries(
+    cabecera.split(",").map((t) => t.trim().split("=").map((x) => x.trim())),
+  );
+  const ts = partes["ts"], v1 = partes["v1"];
+  if (!ts || !v1) return false;
+
+  const plantilla = `id:${dataId};request-id:${reqId};ts:${ts};`;
+  const clave = await crypto.subtle.importKey(
+    "raw", new TextEncoder().encode(secreto),
+    { name: "HMAC", hash: "SHA-256" }, false, ["sign"],
+  );
+  const mac = await crypto.subtle.sign("HMAC", clave, new TextEncoder().encode(plantilla));
+  const esperado = [...new Uint8Array(mac)]
+    .map((b) => b.toString(16).padStart(2, "0")).join("");
+
+  // Comparación de tiempo constante: un `===` filtra por cuánto tarda en
+  // fallar y deja adivinar la firma byte a byte.
+  if (esperado.length !== v1.length) return false;
+  let dif = 0;
+  for (let i = 0; i < esperado.length; i++) dif |= esperado.charCodeAt(i) ^ v1.charCodeAt(i);
+  return dif === 0;
+}
+
 Deno.serve(async (req) => {
   const MP = Deno.env.get("MP_ACCESS_TOKEN") || "";
   const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
@@ -80,6 +127,13 @@ Deno.serve(async (req) => {
   let id = url.searchParams.get("data.id") || url.searchParams.get("id") || "";
   try { const b = await req.json(); type = b.type || b.topic || type; id = (b.data && b.data.id) || b.id || id; } catch { /* sin body */ }
 
+  if (id && !(await firmaValida(req, String(id)))) {
+    console.warn("firma inválida, se ignora la notificación", id);
+    // 200 y no 401 a propósito: MP reintenta ante un error, y reintentar algo
+    // que nunca vamos a aceptar solo genera ruido en ambos lados.
+    return new Response("ok", { status: 200 });
+  }
+
   try {
     if (type.includes("payment") && id) {
       const r = await fetch("https://api.mercadopago.com/v1/payments/" + id, { headers: { Authorization: "Bearer " + MP } });
@@ -88,9 +142,15 @@ Deno.serve(async (req) => {
       if (p.status === "approved" && String(p.external_reference || "").startsWith("lead:")) {
         await marcarLeadPagado(sb, String(p.external_reference).slice(5), String(id), p);
       } else if (p.status === "approved" && p.external_reference) {
+        // Se lee el estado ANTES de actualizar: si ya estaba pagado, esta es
+        // una notificación repetida (MP reintenta, y cualquiera puede
+        // reenviarla). Sin esto, cada repetición mandaba de nuevo el correo
+        // al cliente y al equipo.
+        const { data: antes } = await sb.from("pagos").select("estado").eq("id", p.external_reference).maybeSingle();
+        const yaEstaba = antes?.estado === "pagado";
         await sb.from("pagos").update({ estado: "pagado", mp_id: String(id) }).eq("id", p.external_reference);
         const { data: pago } = await sb.from("pagos").select("cliente_id,tipo").eq("id", p.external_reference).maybeSingle();
-        if (pago) {
+        if (pago && !yaEstaba) {
           const limpiar = { irresponsable: false, dias_sin_pagar: 0, alerta_admin_en: null };
           if (pago.tipo === "setup") await sb.from("clientes").update({ setup_estado: "pagado", ...limpiar }).eq("id", pago.cliente_id);
           else { const prox = new Date(); prox.setMonth(prox.getMonth() + 1); await sb.from("clientes").update({ mensual_estado: "al_dia", proximo_cobro: prox.toISOString().slice(0, 10), ...limpiar }).eq("id", pago.cliente_id); }
