@@ -6,6 +6,7 @@ import "./App.css";
 import Layout from "./Layout";
 import Home from "./pages/Home";
 import Colombia from "./pages/Colombia";
+import { Perdido, Cargando, Salvavidas } from "./Perdido";
 // En diferido a propósito: así Vite deja el portal y el CSS del ERP en un
 // chunk aparte que el sitio público no descarga. Es lo que evita que la home
 // cargue 34 kB de estilos que no usa.
@@ -31,14 +32,25 @@ createRoot(document.getElementById("root")!).render(
         <Route
           path="acceso/*"
           element={
-            <Suspense fallback={null}>
-              <Portal />
-            </Suspense>
+            // `fallback` visible y no `null`: mientras baja el chunk del
+            // portal, un null deja la pantalla en blanco y desde afuera eso
+            // se ve igual que un sitio caído.
+            <Salvavidas>
+              <Suspense fallback={<Cargando />}>
+                <Portal />
+              </Suspense>
+            </Salvavidas>
           }
         />
 
         {/* Landing de campaña — standalone, sin el chrome del sitio */}
         <Route path="colombia" element={<Colombia />} />
+
+        {/* CUALQUIER OTRA URL.
+            GitHub Pages entrega 404.html (la cáscara del SPA) para todo lo
+            que no sea un archivo, así que sin esta ruta react-router no monta
+            nada y la página queda EN BLANCO. Pasó con una URL mal pegada. */}
+        <Route path="*" element={<Perdido />} />
       </Routes>
     </BrowserRouter>
   </StrictMode>
