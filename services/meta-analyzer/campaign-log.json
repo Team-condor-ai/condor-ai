@@ -25,5 +25,14 @@
     "costo": 620,
     "gasto": 29783,
     "moneda": "CLP"
+  },
+  {
+    "campana": "PE · WhatsApp · Ago 2026",
+    "fecha": "2026-08-15",
+    "dia": 4,
+    "resultados": 67,
+    "costo": 573,
+    "gasto": 38391,
+    "moneda": "CLP"
   }
 ]
