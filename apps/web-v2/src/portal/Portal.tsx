@@ -21,8 +21,12 @@ import { FichaCliente } from "./staff/FichaCliente";
 import { Cobros } from "./staff/Cobros";
 import { Correos } from "./staff/Correos";
 import { Mapa } from "./staff/Mapa";
+import { AgentesIA } from "./staff/agentes-ia/AgentesIA";
+import { FichaBarbaraCliente } from "./staff/agentes-ia/FichaBarbaraCliente";
 
 import { MiPlan } from "./cliente/MiPlan";
+import { Barbara } from "./cliente/Barbara";
+import { useTieneBarbara } from "./agentes-ia/useTieneBarbara";
 
 import { MiCuenta } from "./cliente/MiCuenta";
 
@@ -47,13 +51,20 @@ const MENU_STAFF: Entrada[] = [
   { a: "/acceso/herramientas", texto: "Herramientas", icono: "documentos" },
   { a: "/acceso/correos", texto: "Correos", icono: "correos" },
   { a: "/acceso/mapa", texto: "Mapa", icono: "grafo" },
+  // "Agentes IA" es un solo ítem de menú aunque la jerarquía del encargo sea
+  // "Agentes IA > Bárbara > Bárbara Clientes" — el menú lateral no anida,
+  // así que el nivel "Bárbara" vive DENTRO de la página (chips, pensado para
+  // más agentes a futuro) y "Bárbara Clientes" es la lista que se ve ahí.
+  { a: "/acceso/agentes-ia", texto: "Agentes IA", icono: "agentesia" },
 ];
 
-const MENU_CLIENTE: Entrada[] = [
+const MENU_CLIENTE_BASE: Entrada[] = [
   { a: "/acceso/plan", texto: "Mi plan", icono: "plan" },
   { a: "/acceso/boletas", texto: "Comprobantes", icono: "boletas" },
-  { a: "/acceso/cuenta", texto: "Mi cuenta", icono: "ajustes" },
 ];
+
+const ITEM_CUENTA: Entrada = { a: "/acceso/cuenta", texto: "Mi cuenta", icono: "ajustes" };
+const ITEM_BARBARA: Entrada = { a: "/acceso/barbara", texto: "Bárbara", icono: "agentesia" };
 
 function Marco({
   menu,
@@ -107,6 +118,9 @@ function Marco({
  */
 export default function Portal() {
   const s = useSesion();
+  // Se consulta siempre (staff incluido) porque los hooks no pueden ser
+  // condicionales — para staff simplemente no se usa el resultado.
+  const { tiene: tieneBarbara } = useTieneBarbara();
 
   // `.portal-app` no es decorativo: es el scope del CSS del ERP. Sin este
   // div, las reglas de fondo, tipografía e iconos no se aplican — ver el
@@ -137,16 +151,28 @@ export default function Portal() {
           <Route path="herramientas" element={dif(<Herramientas />)} />
           <Route path="correos" element={<Correos />} />
           <Route path="mapa" element={<Mapa />} />
+          <Route path="agentes-ia" element={<AgentesIA />} />
+          <Route path="agentes-ia/:id" element={<FichaBarbaraCliente />} />
           <Route path="*" element={<Navigate to="/acceso/clientes" replace />} />
         </Routes>
       </Marco>,
     );
 
+  // El ítem "Bárbara" en el menú del cliente solo aparece si tiene la fila
+  // activa en `barbara_clientes` — no aparece deshabilitado, directamente no
+  // está (pedido explícito). La ruta igual queda montada: si alguien la
+  // visita a mano sin tener Bárbara, `Barbara.tsx` muestra su propio
+  // mensaje de "todavía no tienes Bárbara activada" en vez de romper.
+  const menuCliente = tieneBarbara
+    ? [...MENU_CLIENTE_BASE, ITEM_BARBARA, ITEM_CUENTA]
+    : [...MENU_CLIENTE_BASE, ITEM_CUENTA];
+
   return envolver(
-    <Marco menu={MENU_CLIENTE} nombre={nombre} detalle={correo}>
+    <Marco menu={menuCliente} nombre={nombre} detalle={correo}>
       <Routes>
         <Route path="plan" element={<MiPlan />} />
         <Route path="boletas" element={dif(<MisBoletas />)} />
+        <Route path="barbara" element={<Barbara />} />
         <Route path="cuenta" element={<MiCuenta />} />
         <Route path="*" element={<Navigate to="/acceso/plan" replace />} />
       </Routes>

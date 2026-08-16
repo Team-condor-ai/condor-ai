@@ -145,6 +145,31 @@ export const Ico = {
       <path d="m4.5 12.5 5 5 10-11" />
     </Svg>
   ),
+  agentesia: (p: Props = {}) => (
+    <Svg {...p}>
+      <rect x="5" y="8" width="14" height="11" rx="3" />
+      <path d="M12 8V4.5" />
+      <circle cx="12" cy="3" r="1.3" />
+      <circle cx="9" cy="13.2" r="1.1" fill="currentColor" stroke="none" />
+      <circle cx="15" cy="13.2" r="1.1" fill="currentColor" stroke="none" />
+      <path d="M9 17h6" />
+      <path d="M3 12h2M19 12h2" />
+    </Svg>
+  ),
+  candado: (p: Props = {}) => (
+    <Svg {...p}>
+      <rect x="5" y="10.5" width="14" height="9.5" rx="2.2" />
+      <path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" />
+    </Svg>
+  ),
+  paleta: (p: Props = {}) => (
+    <Svg {...p}>
+      <path d="M12 3a9 8.2 0 1 0 0 16.4c1.4 0 1.9-1 1.9-1.9 0-.5-.2-.9-.5-1.3-.3-.4-.5-.8-.5-1.3 0-1 .8-1.7 1.8-1.7h1.7c2 0 3.6-1.6 3.6-3.6C20 6.6 16.4 3 12 3z" />
+      <circle cx="8" cy="10.5" r="1.1" fill="currentColor" stroke="none" />
+      <circle cx="11.5" cy="7.5" r="1.1" fill="currentColor" stroke="none" />
+      <circle cx="15.5" cy="8.5" r="1.1" fill="currentColor" stroke="none" />
+    </Svg>
+  ),
 };
 
 export type NombreIcono = keyof typeof Ico;
