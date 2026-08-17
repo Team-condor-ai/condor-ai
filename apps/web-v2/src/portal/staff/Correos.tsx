@@ -137,7 +137,7 @@ export function Correos() {
                     onChange={() => alternar(c.id)}
                   />
                   <span>
-                    <b>{c.negocio || c.email}</b>
+                    <b>{c.negocio || c.nombre || c.email || "Sin nombre"}</b>
                     <small>{c.email}</small>
                   </span>
                 </label>

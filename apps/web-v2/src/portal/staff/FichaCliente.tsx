@@ -4,6 +4,7 @@ import { sb, plata, fecha, enlaceWeb } from "../lib/supabase";
 import { Ico } from "../disenio/iconos";
 import { EditorCliente } from "./EditorCliente";
 import { EditorCobro } from "./EditorCobro";
+import { CrearLinkCobro } from "./CrearLinkCobro";
 import type { Cliente, Pago } from "./tipos";
 
 function Dato({ k, v }: { k: string; v: React.ReactNode }) {
@@ -23,6 +24,7 @@ export function FichaCliente() {
   const [cargando, setCargando] = useState(true);
   const [editando, setEditando] = useState(false);
   const [anotando, setAnotando] = useState(false);
+  const [cobrando, setCobrando] = useState(false);
 
   async function cargar() {
     setCargando(true);
@@ -63,7 +65,7 @@ export function FichaCliente() {
         <Link to="/acceso/clientes" className="icono-btn" title="Volver">
           {Ico.volver({ t: 16 })}
         </Link>
-        <h1>{c.negocio || c.email}</h1>
+        <h1>{c.negocio || c.nombre || c.email || "Sin nombre"}</h1>
         <button className="btn" onClick={() => setEditando(true)}>
           Editar
         </button>
@@ -138,9 +140,14 @@ export function FichaCliente() {
             style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}
           >
             <h3 style={{ margin: 0 }}>Historial de pagos</h3>
-            <button className="btn" onClick={() => setAnotando(true)}>
-              {Ico.mas({ t: 14 })} Anotar cobro
-            </button>
+            <div className="botonera">
+              <button className="btn" onClick={() => setAnotando(true)}>
+                {Ico.mas({ t: 14 })} Anotar cobro
+              </button>
+              <button className="btn solido" onClick={() => setCobrando(true)}>
+                {Ico.cobros({ t: 14 })} Crear link de cobro
+              </button>
+            </div>
           </div>
           {pagos.length === 0 ? (
             <p className="vacio">
@@ -157,6 +164,7 @@ export function FichaCliente() {
                     <th>Cómo</th>
                     <th className="num">Monto</th>
                     <th>Estado</th>
+                    <th></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -177,6 +185,21 @@ export function FichaCliente() {
                         >
                           {p.estado ?? "—"}
                         </span>
+                      </td>
+                      <td className="acciones">
+                        {/* El link se guarda al generarlo: reenviar un cobro no
+                            debería crear una fila nueva en el historial. */}
+                        {p.link && (
+                          <a
+                            className="icono-btn"
+                            title="Abrir el link de pago"
+                            href={p.link}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            {Ico.abrirWeb({ t: 15 })}
+                          </a>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -206,6 +229,14 @@ export function FichaCliente() {
             setAnotando(false);
             cargar();
           }}
+        />
+      )}
+
+      {cobrando && (
+        <CrearLinkCobro
+          cliente={c}
+          cerrar={() => setCobrando(false)}
+          guardado={cargar}
         />
       )}
     </>

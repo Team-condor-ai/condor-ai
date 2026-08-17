@@ -62,7 +62,7 @@ export function Cobros() {
       setAviso(
         correo
           ? `Cobro enviado a ${c.email}.`
-          : `Link listo para ${c.negocio || c.email}.`,
+          : `Link listo para ${c.negocio || c.nombre || c.email || "Sin nombre"}.`,
       );
       if (!correo) window.open(link, "_blank", "noopener");
       cargar();
@@ -128,7 +128,7 @@ export function Cobros() {
                   <tr key={c.id}>
                     <td>
                       <Link to={`/acceso/clientes/${c.id}`} className="enlace-tabla">
-                        <b>{c.negocio || c.email}</b>
+                        <b>{c.negocio || c.nombre || c.email || "Sin nombre"}</b>
                         <small>{c.email}</small>
                       </Link>
                     </td>
@@ -195,7 +195,7 @@ export function Cobros() {
                     return (
                       <tr key={p.id}>
                         <td>{fecha(p.creado_en)}</td>
-                        <td>{c?.negocio || c?.email || "—"}</td>
+                        <td>{c?.negocio || c?.nombre || c?.email || "—"}</td>
                         <td>{p.tipo ?? "—"}</td>
                         <td className="num">{plata(p.monto, c?.moneda)}</td>
                         <td>

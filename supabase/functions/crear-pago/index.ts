@@ -17,8 +17,12 @@ const CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods
 const json = (o: unknown, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "Content-Type": "application/json", ...CORS } });
 
 // Correo de cobro estético (HTML) con el botón de pago
-function emailCobro(cliente: any, tipo: string, monto: number, moneda: string, link: string) {
-  const concepto = tipo === "mensual" ? "tu mensualidad" : "el pago inicial (setup)";
+function emailCobro(cliente: any, tipo: string, monto: number, moneda: string, link: string, detalle = "") {
+  // Un cobro puntual lleva su propio nombre ("la landing de septiembre"); decirle
+  // "el pago inicial (setup)" a un cliente que lleva meses con nosotros confunde.
+  const concepto = detalle
+    ? detalle
+    : tipo === "mensual" ? "tu mensualidad" : "el pago inicial (setup)";
   const titulo = tipo === "mensual" ? "Tu mensualidad de condor.ai" : "Tu pago de condor.ai está listo";
   return `<!DOCTYPE html><html><body style="margin:0;background:#f4f4f7;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif">
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f7;padding:32px 0"><tr><td align="center">
@@ -62,7 +66,16 @@ Deno.serve(async (req) => {
   if (!MP) return json({ error: "Falta configurar MP_ACCESS_TOKEN" }, 500);
 
   let tipo = "setup", clienteId: string | null = null, enviarCorreoFlag = false;
-  try { const b = await req.json(); if (b?.tipo) tipo = b.tipo; if (b?.cliente_id) clienteId = b.cliente_id; if (b?.enviar_correo) enviarCorreoFlag = true; } catch { /* default */ }
+  // Solo se usan si quien llama es ADMIN — ver el bloque de más abajo.
+  let montoPedido: number | null = null, conceptoPedido = "";
+  try {
+    const b = await req.json();
+    if (b?.tipo) tipo = b.tipo;
+    if (b?.cliente_id) clienteId = b.cliente_id;
+    if (b?.enviar_correo) enviarCorreoFlag = true;
+    if (b?.monto != null) montoPedido = Number(b.monto);
+    if (b?.concepto) conceptoPedido = String(b.concepto).slice(0, 200);
+  } catch { /* default */ }
 
   // Identificar al usuario por su sesión (correo)
   const auth = req.headers.get("Authorization") || "";
@@ -93,13 +106,23 @@ Deno.serve(async (req) => {
   else cliente = (await sb.from("clientes").select("*").eq("email", user.email).maybeSingle()).data;
   if (!cliente) return json({ error: "cliente no encontrado" }, 404);
 
-  const monto = tipo === "mensual" ? (cliente.mensual_monto || 0) : (cliente.setup_monto || 0);
+  // EL MONTO LIBRE ES SOLO PARA ADMINS, Y ESO ES LA PROTECCIÓN ENTERA
+  // ---------------------------------------------------------------------------
+  // Si el monto pudiera venir del navegador para cualquiera, un cliente con la
+  // consola abierta se cobraría $1 a sí mismo. Para un admin no hay tal riesgo:
+  // ya puede editar la ficha y poner el monto que quiera. Por eso `monto` y
+  // `concepto` del cuerpo se aceptan SOLO si `esAdmin`; para todos los demás se
+  // ignoran en silencio y manda la ficha, igual que antes.
+  const montoFicha = tipo === "mensual" ? (cliente.mensual_monto || 0) : (cliente.setup_monto || 0);
+  const monto = (esAdmin && montoPedido && montoPedido > 0) ? Math.round(montoPedido) : montoFicha;
   const moneda = cliente.moneda || "CLP";
-  const concepto = cliente.concepto || `condor.ai · ${tipo}`;
+  const concepto = (esAdmin && conceptoPedido) || cliente.concepto || `condor.ai · ${tipo}`;
   if (!monto || monto <= 0) return json({ error: "monto no definido para este cliente" }, 400);
 
   // Registrar el pago como pendiente (su id = external_reference)
-  const { data: pago, error: ep } = await sb.from("pagos").insert({ cliente_id: cliente.id, tipo, monto, estado: "pendiente" }).select().single();
+  const { data: pago, error: ep } = await sb.from("pagos")
+    .insert({ cliente_id: cliente.id, tipo, monto, estado: "pendiente", detalle: conceptoPedido || null })
+    .select().single();
   if (ep) return json({ error: "no se pudo registrar el pago: " + ep.message }, 500);
 
   try {
@@ -139,17 +162,21 @@ Deno.serve(async (req) => {
       initPoint = d.init_point;
     }
 
+    // El link se guarda para poder volver a copiarlo o reenviarlo sin generar
+    // un cobro nuevo — si no, cada "no me llegó" dejaría una fila duplicada.
+    await sb.from("pagos").update({ link: initPoint }).eq("id", pago.id);
+
     // Si el admin pidió enviar el cobro por correo: email bonito al cliente + marcar cobro_enviado_en
     let correoEnviado = false;
     if (enviarCorreoFlag && esAdmin && cliente.email) {
       correoEnviado = await enviarCorreo(
         cliente.email,
         tipo === "mensual" ? "Tu mensualidad de condor.ai" : "Tu pago de condor.ai está listo 🦅",
-        emailCobro(cliente, tipo, monto, moneda, initPoint),
+        emailCobro(cliente, tipo, monto, moneda, initPoint, conceptoPedido),
       );
       await sb.from("pagos").update({ cobro_enviado_en: new Date().toISOString() }).eq("id", pago.id);
     }
-    return json({ init_point: initPoint, correo_enviado: correoEnviado });
+    return json({ init_point: initPoint, correo_enviado: correoEnviado, pago_id: pago.id });
   } catch (e) {
     return json({ error: String(e).slice(0, 200) }, 500);
   }

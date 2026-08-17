@@ -98,7 +98,7 @@ export function AgregarBarbaraCliente({ cerrar, guardado }: Props) {
       return;
     }
     if (esErrorDuplicado(error.message, (error as { code?: string }).code) || status === 409) {
-      await verFichaExistente(c.id, c.negocio || c.email);
+      await verFichaExistente(c.id, c.negocio || c.nombre || c.email || "Sin nombre");
     } else {
       setError(error.message);
     }

@@ -1,7 +1,10 @@
 /** Las columnas reales de `public.clientes` (ver portal_schema.sql). */
 export type Cliente = {
   id: string;
-  email: string;
+  /** Opcional a propósito: sin correo el cliente no entra al portal, pero
+   *  igual se administra desde acá. Ver 20260817_cliente_nombre.sql. */
+  email: string | null;
+  nombre: string | null;
   negocio: string | null;
   plan: string | null;
   concepto: string | null;
@@ -33,6 +36,9 @@ export type Pago = {
   detalle: string | null;
   fecha: string | null;
   metodo: string | null;
+  /** `init_point` de Mercado Pago, guardado para poder reenviarlo sin generar
+   *  un cobro nuevo. Ver 20260817_pagos_link.sql. */
+  link: string | null;
   creado_en: string | null;
 };
 

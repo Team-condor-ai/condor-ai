@@ -66,7 +66,7 @@ export function Clientes() {
         if (filtro !== "todos" && c.mensual_estado !== filtro) return false;
       }
       if (!q) return true;
-      return [c.negocio, c.email, c.plan, c.concepto]
+      return [c.negocio, c.nombre, c.email, c.plan, c.concepto]
         .filter(Boolean)
         .some((t) => String(t).toLowerCase().includes(q));
     });
@@ -101,7 +101,7 @@ export function Clientes() {
     // Esto SÍ borra, a diferencia de archivar — y se lleva el historial de
     // pagos por el `on delete cascade` de la tabla `pagos`. Por eso pide
     // confirmación explícita con el nombre del negocio: no hay deshacer.
-    const nombre = c.negocio || c.email || "este cliente";
+    const nombre = c.negocio || c.nombre || c.email || "este cliente";
     const ok = window.confirm(
       `Vas a eliminar "${nombre}" para siempre, junto con su historial de pagos.\n\n` +
         `Esto NO se puede deshacer. Si solo quieres dejar de verlo en la lista, ` +
@@ -177,8 +177,13 @@ export function Clientes() {
                   <tr key={c.id}>
                     <td>
                       <Link to={`/acceso/clientes/${c.id}`} className="enlace-tabla">
-                        <b>{c.negocio || "—"}</b>
-                        <small>{c.email}</small>
+                        <b>{c.negocio || c.nombre || "—"}</b>
+                        {/* Debajo va el contacto: el correo si lo hay, si no
+                            el nombre. Sin correo se dice explícitamente, para
+                            no confundir "no tiene" con "no se cargó". */}
+                        <small>
+                          {c.email || (c.negocio && c.nombre) || "sin correo · no entra al portal"}
+                        </small>
                       </Link>
                     </td>
                     <td>{c.plan || "—"}</td>

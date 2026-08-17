@@ -85,7 +85,7 @@ export function Mapa() {
       n.push({
         id: c.id,
         tipo: "cliente",
-        txt: c.negocio || c.email,
+        txt: c.negocio || c.nombre || c.email || "Sin nombre",
         sub: plata(c.mensual_monto, c.moneda),
         // El radio cuenta lo que aporta cada cliente al mes: en un vistazo se
         // ve quién sostiene el negocio, que es la pregunta que uno le hace a

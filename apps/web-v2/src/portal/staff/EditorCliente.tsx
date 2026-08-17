@@ -33,6 +33,7 @@ type Props = {
 export function EditorCliente({ cliente, cerrar, guardado }: Props) {
   const [f, setF] = useState({
     email: cliente?.email ?? "",
+    nombre: cliente?.nombre ?? "",
     negocio: cliente?.negocio ?? "",
     plan: cliente?.plan ?? "",
     concepto: cliente?.concepto ?? "",
@@ -79,7 +80,11 @@ export function EditorCliente({ cliente, cerrar, guardado }: Props) {
 
     const fila = {
       ...f,
-      email: f.email.trim().toLowerCase(),
+      // El correo vacío viaja como null, no como "": es lo que distingue
+      // "no tiene correo" de "tiene un correo en blanco", y `email` dejó de
+      // ser obligatorio en la base justamente para permitir el primer caso.
+      email: f.email.trim().toLowerCase() || null,
+      nombre: f.nombre.trim() || null,
       plan: f.plan.trim() || null,
       cobra_setup: cobraSetup,
       cobra_mensual: cobraMensual,
@@ -119,25 +124,42 @@ export function EditorCliente({ cliente, cerrar, guardado }: Props) {
         </header>
 
         <div className="contenido">
+          <div className="dos">
+            <label className="campo-lbl">
+              Nombre de contacto
+              <input
+                className="campo"
+                placeholder="Ej: Carmen Reyes"
+                value={f.nombre}
+                onChange={(e) => set("nombre", e.target.value)}
+              />
+            </label>
+            <label className="campo-lbl">
+              Negocio
+              <input
+                className="campo"
+                value={f.negocio}
+                onChange={(e) => set("negocio", e.target.value)}
+              />
+            </label>
+          </div>
+
           <label className="campo-lbl">
-            Correo del cliente
+            Correo <span style={{ fontWeight: 400, opacity: 0.7 }}>· opcional</span>
             <input
               className="campo"
               type="email"
-              required
               value={f.email}
               onChange={(e) => set("email", e.target.value)}
             />
-            <small>Con este correo inicia sesión en el portal.</small>
-          </label>
-
-          <label className="campo-lbl">
-            Negocio
-            <input
-              className="campo"
-              value={f.negocio}
-              onChange={(e) => set("negocio", e.target.value)}
-            />
+            {/* El aviso cambia según lo que haya escrito: repetir siempre la
+                misma frase hace que nadie la lea. Sin correo se dice la
+                consecuencia concreta, no una regla abstracta. */}
+            <small style={f.email.trim() ? undefined : { color: "var(--mal-tx)" }}>
+              {f.email.trim()
+                ? "Con este correo inicia sesión en el portal de clientes."
+                : "Sin correo, este cliente NO tendrá acceso al portal de clientes. Se administra solo desde acá."}
+            </small>
           </label>
 
           <div className="dos">

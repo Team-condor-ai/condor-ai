@@ -150,7 +150,7 @@ export function Herramientas() {
                 <option value="">Elegir…</option>
                 {clientes.map((c) => (
                   <option key={c.id} value={c.id}>
-                    {c.negocio || c.email}
+                    {c.negocio || c.nombre || c.email || "Sin nombre"}
                   </option>
                 ))}
               </select>

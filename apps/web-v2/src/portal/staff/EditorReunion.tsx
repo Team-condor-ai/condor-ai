@@ -170,7 +170,7 @@ export function EditorReunion({ cerrar, guardado }: Props) {
             />
             <datalist id="lista-clientes">
               {clientes.map((c) => (
-                <option key={c.id} value={c.negocio ?? c.email} />
+                <option key={c.id} value={c.negocio || c.nombre || c.email || ""} />
               ))}
             </datalist>
           </label>

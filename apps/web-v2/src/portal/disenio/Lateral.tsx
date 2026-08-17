@@ -90,10 +90,11 @@ export function Lateral({
   return (
     <aside className={abierto ? "abierto" : ""}>
       <div className="logo">
-        <div>
-          <b>CÓNDOR AI</b>
-          <small>PORTAL</small>
-        </div>
+        {/* El logo es el lockup horizontal de la marca, el mismo del sitio
+            público — no una versión aparte que se desincronice. Lleva
+            "condor.ai" escrito, así que debajo solo queda "PORTAL". */}
+        <img className="marca" src="/assets/logo.png" alt="condor.ai" />
+        <small>PORTAL</small>
       </div>
 
       <nav className="menu" ref={menuRef} style={{ position: "relative" }}>
