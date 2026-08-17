@@ -99,15 +99,18 @@ export type ArchivoBiblioteca = {
   archivo_url: string | null;
   archivo_nombre: string | null;
   peso_bytes: number | null;
+  mime: string | null;
+  carpeta_id: string | null;
   creado_en: string | null;
 };
 
-export const CATEGORIAS_BIBLIOTECA = [
-  "presentacion",
-  "propuesta",
-  "marca",
-  "otro",
-] as const;
+/** Carpetas de la biblioteca. `padre_id` null = está en la raíz. */
+export type CarpetaBiblioteca = {
+  id: string;
+  nombre: string;
+  padre_id: string | null;
+  creado_en: string | null;
+};
 
 export const PLANES = ["Esencial", "Pro", "Premium"];
 export const MONEDAS = ["CLP", "COP", "PEN", "USD"];

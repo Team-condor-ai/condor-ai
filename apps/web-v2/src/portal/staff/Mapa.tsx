@@ -200,7 +200,7 @@ export function Mapa() {
           : n.tipo === "plan" ? col("--texto-2")
           // Los productos van con el color de acento para distinguirlos de un
           // vistazo: son otra clase de cosa que los clientes, no otro tamaño.
-          : n.tipo === "producto" ? col("--acento")
+          : n.tipo === "producto" ? col("--azul")
           : col("--panel");
         ctx.fill();
         ctx.strokeStyle = activo?.id === n.id ? col("--texto") : col("--borde");

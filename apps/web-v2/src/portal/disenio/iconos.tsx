@@ -146,6 +146,12 @@ export const Ico = {
       <path d="M15 4h5v5M20 4l-9.5 9.5" />
     </Svg>
   ),
+  carpetaMas: (p: Props = {}) => (
+    <Svg {...p}>
+      <path d="M21 12.5V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h4.2a2 2 0 0 1 1.5.7l1.1 1.3H19a2 2 0 0 1 2 2v.5" />
+      <path d="M18 14.5h5M20.5 12v5" />
+    </Svg>
+  ),
   biblioteca: (p: Props = {}) => (
     <Svg {...p}>
       <path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H9a2 2 0 0 1 2 2v13a1.6 1.6 0 0 0-1.6-1.6H5.5A1.5 1.5 0 0 1 4 15.9z" />

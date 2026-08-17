@@ -119,20 +119,90 @@ textarea.campo{resize:vertical;min-height:56px}
 .dato b{font-size:14px;font-weight:600;word-break:break-word}
 .parrafo{font-size:13.5px;color:var(--texto);margin:0 0 8px;line-height:1.5}
 
-/* ───── TARJETAS DE LA BIBLIOTECA ───── */
-.tarjetas-lib{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
-.tarjeta-lib{
+/* ───── BIBLIOTECA · ESTILO FINDER ─────
+   Imita al Finder de macOS: barra de ruta arriba, grilla de iconos grandes,
+   selección en azul redondeada y barra de estado abajo. Todo con las
+   variables del portal para que claro y oscuro sigan funcionando solos. */
+
+.fnd-barra{
+  display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap;
+  padding-bottom:10px;border-bottom:1px solid var(--borde-suave);
+}
+.fnd-ruta{display:flex;align-items:center;gap:2px;flex:1;min-width:0;overflow-x:auto;
+  scrollbar-width:none}
+.fnd-ruta::-webkit-scrollbar{display:none}
+.fnd-sep-migaja{display:inline-flex;align-items:center;gap:2px;color:var(--texto-3);font-size:13px}
+.fnd-migaja{
+  background:none;border:0;padding:3px 7px;border-radius:6px;cursor:pointer;
+  font-size:13px;color:var(--texto-2);white-space:nowrap;font-family:inherit;
+}
+.fnd-migaja:hover{background:var(--panel-2);color:var(--texto)}
+.fnd-migaja.on{color:var(--texto);font-weight:600}
+.fnd-vistas{display:flex;gap:2px;background:var(--panel-2);border-radius:8px;padding:2px}
+.fnd-vistas .icono-btn.on{background:var(--panel);color:var(--azul);
+  box-shadow:0 1px 2px rgba(0,0,0,.08)}
+
+.fnd-lienzo{
+  min-height:280px;border-radius:12px;padding:6px;
+  border:2px dashed transparent;transition:border-color .15s ease,background .15s ease;
+}
+/* Al arrastrar archivos encima, toda la zona se marca: el objetivo tiene que
+   ser obvio, no un rectángulo chico escondido. */
+.fnd-lienzo.soltando{border-color:var(--azul);background:var(--azul-suave)}
+
+.fnd-grilla{
+  display:grid;gap:4px;padding:8px 4px;
+  grid-template-columns:repeat(auto-fill,minmax(108px,1fr));
+}
+.fnd-item{
+  background:none;border:0;padding:10px 6px 8px;border-radius:9px;cursor:default;
+  display:flex;flex-direction:column;align-items:center;gap:6px;
+  font-family:inherit;color:inherit;text-align:center;
+  transition:background .12s ease;
+}
+.fnd-item:hover{background:var(--panel-2)}
+/* La selección del Finder: fondo azul sólido y texto blanco, no un borde. */
+.fnd-item.sel{background:var(--azul)}
+.fnd-item.sel .fnd-nombre{color:#fff}
+.fnd-nombre{
+  font-size:12px;line-height:1.3;color:var(--texto);word-break:break-word;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+}
+.fnd-miniatura{
+  width:62px;height:62px;border-radius:7px;overflow:hidden;background:var(--panel-2);
+  border:1px solid var(--borde-suave);display:flex;align-items:center;justify-content:center;
+}
+/* `contain`, no `cover`: en una biblioteca de plantillas la miniatura sirve
+   para reconocer el archivo, y recortar un logo o una portada por los bordes
+   es justo lo que impide reconocerlo. */
+.fnd-miniatura img{width:100%;height:100%;object-fit:contain;padding:3px}
+
+.fnd-renombrar{
+  font-size:12px;text-align:center;width:96px;border:1px solid var(--azul);
+  border-radius:5px;padding:2px 4px;background:var(--panel);color:var(--texto);
+  font-family:inherit;outline:none;
+}
+
+.fnd-tabla tbody tr{cursor:default}
+.fnd-tabla tbody tr.sel{background:var(--azul)}
+.fnd-tabla tbody tr.sel td,.fnd-tabla tbody tr.sel .fnd-nombre{color:#fff}
+.fnd-fila-nombre{display:flex;align-items:center;gap:9px}
+.fnd-fila-nombre svg{flex:none}
+
+.fnd-estado{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  margin-top:10px;padding-top:10px;border-top:1px solid var(--borde-suave);
+  font-size:12px;color:var(--texto-3);
+}
+.fnd-acciones{display:flex;gap:6px;align-items:center}
+
+.fnd-pronto{
+  display:flex;align-items:center;justify-content:space-between;gap:14px;
   background:var(--panel-2);border:1px solid var(--borde-suave);border-radius:11px;
-  padding:13px 14px;text-decoration:none;color:inherit;display:block;
-  transition:border-color .15s ease,transform .15s ease;
+  padding:14px 16px;
 }
-.tarjeta-lib:hover{border-color:var(--acento);transform:translateY(-1px)}
-.tarjeta-lib b{display:block;font-size:14px;font-weight:600;margin:7px 0 3px}
-.tarjeta-lib span{font-size:12.5px;color:var(--texto-2);line-height:1.45;display:block}
-.tarjeta-lib .tag-lib{
-  display:inline-block;font-size:10px;letter-spacing:.05em;text-transform:uppercase;
-  font-weight:650;color:var(--acento);
-}
+.fnd-pronto b{display:block;font-size:13.5px;font-weight:600;margin-bottom:3px}
+.fnd-pronto span{font-size:12.5px;color:var(--texto-2);line-height:1.45}
 
 /* ───── MODAL ───── */
 .velo{
