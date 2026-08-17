@@ -489,14 +489,22 @@ const carrusel = `
      para uso comercial). NO son capturas de nuestro trabajo, así que se
      presentan como CASOS DE USO, no como entregas. Poner una foto de banco
      de imágenes bajo el rótulo "lo que hemos hecho" sería mentir. */
+/* `url` = el sitio EN VIVO. Cuando está, la tarjeta se vuelve un enlace que
+   abre en pestaña nueva; cuando no, queda como tarjeta muerta igual que antes.
+   Cada URL de acá se verificó respondiendo 200 el 17-ago-2026 — una tarjeta
+   que promete "ver en vivo" y cae en un 404 es peor que no ser clicable. */
 const SITIOS = [
   { img: "/assets/sitios/ecommerce.webp",    nombre: "Tienda en línea",      tipo: "Comercio",
+    url: "/demos/ecommerce/",
     desc: "Catálogo, carro y pago en línea. Pensada para vender desde el teléfono." },
   { img: "/assets/sitios/inmobiliario.webp", nombre: "Portal inmobiliario",  tipo: "Propiedades",
+    url: "/demos/inmobiliario/",
     desc: "Buscador con filtros, fichas de propiedad y contacto directo con el corredor." },
   { img: "/assets/sitios/restaurante.webp",  nombre: "Sitio de restaurante", tipo: "Gastronomía",
+    url: "https://joaquinmunozs.github.io/condorweb-demo-restaurante/",
     desc: "Carta, reservas y ubicación. Carga rápido incluso con fotos grandes." },
   { img: "/assets/sitios/servicios.webp",    nombre: "Sitio de servicios",   tipo: "Salud",
+    url: "/demos/servicios/",
     desc: "Servicios, equipo y agenda de horas. Diseñado para generar confianza." },
   { img: "/assets/sitios/esencial.webp",     nombre: "Sitio esencial",       tipo: "Empresa",
     desc: "La versión directa: quiénes son, qué hacen y cómo contactarlos." },
@@ -538,12 +546,22 @@ const ETIQUETA = {
 const carruselProducto = (clave) => {
   const datos = CARRUSELES[clave];
   return '<div class="sitios" aria-label="' + ETIQUETA[clave] + '"><div class="sitios-pista">' +
-    datos.map((x, i) =>
-      '<article class="sitio" data-i="' + i + '">' +
-        '<div class="captura"><img src="' + x.img + '" alt="' + x.nombre + '" loading="lazy" /></div>' +
+    datos.map((x, i) => {
+      // Con `url` la tarjeta entera es el enlace (no solo el título): en el
+      // teléfono, que es donde más se mira esto, apuntarle a un texto chico es
+      // justamente lo que hace que nadie lo pinche.
+      const abre = x.url
+        ? '<a class="sitio sitio-link" data-i="' + i + '" href="' + x.url +
+          '" target="_blank" rel="noopener">'
+        : '<article class="sitio" data-i="' + i + '">';
+      const cierra = x.url ? '</a>' : '</article>';
+      const pista = x.url ? '<span class="sitio-ver">Ver en vivo →</span>' : '';
+      return abre +
+        '<div class="captura"><img src="' + x.img + '" alt="' + x.nombre + '" loading="lazy" />' + pista + '</div>' +
         '<div class="sitio-txt"><span class="sitio-tipo">' + x.tipo + '</span>' +
         '<h4>' + x.nombre + '</h4><p>' + x.desc + '</p></div>' +
-      '</article>').join("") +
+      cierra;
+    }).join("") +
     '</div><div class="sitios-puntos" role="tablist" aria-label="Elegir">' +
     datos.map((x, i) =>
       '<button class="s-punto" role="tab" aria-selected="' + (i === 0) + '" aria-label="' + x.nombre + '"></button>'

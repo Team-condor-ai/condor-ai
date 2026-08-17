@@ -595,6 +595,23 @@ p{margin:0;line-height:1.65;color:var(--ink-2)}
 .sitio h4{font-size:17px;margin:7px 0 6px}
 .sitio p{font-size:13.5px;line-height:1.5}
 
+/* Tarjetas que llevan al sitio en vivo. Solo la del centro
+   (`[data-pos="0"]`) recibe el clic: las de los costados están rotadas y
+   semitransparentes, y pinchar "sin querer" una que apenas se ve es de las
+   cosas que más molestan en un carrusel así. */
+.sitio-link{display:block;text-decoration:none;color:inherit;cursor:pointer;
+  pointer-events:none}
+.sitio-link[data-pos="0"]{pointer-events:auto}
+.sitio-link .captura{position:relative}
+.sitio-ver{position:absolute;right:10px;bottom:10px;
+  font-family:var(--display);font-size:11.5px;font-weight:700;letter-spacing:.03em;
+  color:#fff;background:rgba(11,20,55,.72);backdrop-filter:blur(6px);
+  padding:6px 11px;border-radius:999px;white-space:nowrap;
+  opacity:0;transform:translateY(4px);transition:opacity .25s var(--ease),transform .25s var(--ease)}
+.sitio-link[data-pos="0"] .sitio-ver{opacity:1;transform:none}
+.sitio-link[data-pos="0"]:hover{transform:translateX(-50%) translateZ(0) scale(1.02)}
+.sitio-link:focus-visible{outline:2px solid var(--acento,#4f6bff);outline-offset:3px}
+
 /* Posición respecto de la tarjeta activa. El JS pone data-pos. */
 .sitio[data-pos="0"]{transform:translateX(-50%) translateZ(0) scale(1);opacity:1;z-index:5}
 .sitio[data-pos="1"],.sitio[data-pos="-1"]{opacity:.62;z-index:4;filter:saturate(.8)}

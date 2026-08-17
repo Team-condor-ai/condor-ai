@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { sb, plata, fecha, enlaceWeb } from "../lib/supabase";
 import { Ico } from "../disenio/iconos";
 import { EditorCliente } from "./EditorCliente";
+import { EditorCobro } from "./EditorCobro";
 import type { Cliente, Pago } from "./tipos";
 
 function Dato({ k, v }: { k: string; v: React.ReactNode }) {
@@ -21,6 +22,7 @@ export function FichaCliente() {
   const [error, setError] = useState("");
   const [cargando, setCargando] = useState(true);
   const [editando, setEditando] = useState(false);
+  const [anotando, setAnotando] = useState(false);
 
   async function cargar() {
     setCargando(true);
@@ -94,24 +96,56 @@ export function FichaCliente() {
           <p className="parrafo">{c.concepto || "Sin descripción todavía."}</p>
         </section>
 
-        <section className="bloque">
-          <h3>Cobros</h3>
-          <div className="rejilla-datos">
-            <Dato k="Setup" v={`${plata(c.setup_monto, c.moneda)} · ${c.setup_estado ?? "—"}`} />
-            <Dato
-              k="Mensualidad"
-              v={`${plata(c.mensual_monto, c.moneda)} · ${(c.mensual_estado ?? "—").replace("_", " ")}`}
-            />
-            <Dato k="Próximo cobro" v={fecha(c.proximo_cobro)} />
-          </div>
-        </section>
+        {/* Solo se muestra lo que este cliente efectivamente cobra: para uno
+            de encargos sueltos, un bloque con "Setup $0 · pendiente" no dice
+            nada y encima confunde. */}
+        {(c.cobra_setup ?? true) || (c.cobra_mensual ?? true) ? (
+          <section className="bloque">
+            <h3>Cobros</h3>
+            <div className="rejilla-datos">
+              {(c.cobra_setup ?? true) && (
+                <Dato k="Setup" v={`${plata(c.setup_monto, c.moneda)} · ${c.setup_estado ?? "—"}`} />
+              )}
+              {(c.cobra_mensual ?? true) && (
+                <>
+                  <Dato
+                    k="Mensualidad"
+                    v={`${plata(c.mensual_monto, c.moneda)} · ${(c.mensual_estado ?? "—").replace("_", " ")}`}
+                  />
+                  <Dato k="Próximo cobro" v={fecha(c.proximo_cobro)} />
+                </>
+              )}
+            </div>
+          </section>
+        ) : (
+          <section className="bloque">
+            <h3>Cobros</h3>
+            <p className="parrafo">
+              Sin cobro fijo. Cada trabajo se anota abajo con su monto y forma de pago.
+            </p>
+          </section>
+        )}
+
+        {c.notas && (
+          <section className="bloque">
+            <h3>Notas internas</h3>
+            <p className="parrafo">{c.notas}</p>
+          </section>
+        )}
 
         <section className="bloque">
-          <h3>Historial de pagos</h3>
+          <div
+            style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}
+          >
+            <h3 style={{ margin: 0 }}>Historial de pagos</h3>
+            <button className="btn" onClick={() => setAnotando(true)}>
+              {Ico.mas({ t: 14 })} Anotar cobro
+            </button>
+          </div>
           {pagos.length === 0 ? (
             <p className="vacio">
-              Todavía no hay pagos registrados. Se llenan solos cuando el
-              webhook de MercadoPago confirme uno.
+              Todavía no hay pagos registrados. Los de MercadoPago entran solos por
+              webhook; los que se cobran por transferencia o boleta se anotan acá.
             </p>
           ) : (
             <div className="tabla-caja">
@@ -119,7 +153,8 @@ export function FichaCliente() {
                 <thead>
                   <tr>
                     <th>Fecha</th>
-                    <th>Tipo</th>
+                    <th>Detalle</th>
+                    <th>Cómo</th>
                     <th className="num">Monto</th>
                     <th>Estado</th>
                   </tr>
@@ -127,8 +162,12 @@ export function FichaCliente() {
                 <tbody>
                   {pagos.map((p) => (
                     <tr key={p.id}>
-                      <td>{fecha(p.creado_en)}</td>
-                      <td>{p.tipo ?? "—"}</td>
+                      {/* `fecha` es la del cobro real (la que se anota a mano);
+                          `creado_en` solo dice cuándo se registró. Para los pagos
+                          que entran por webhook solo existe la segunda. */}
+                      <td>{fecha(p.fecha ?? p.creado_en)}</td>
+                      <td>{p.detalle || p.tipo || "—"}</td>
+                      <td>{p.metodo ?? "—"}</td>
                       <td className="num">{plata(p.monto, c.moneda)}</td>
                       <td>
                         <span
@@ -154,6 +193,17 @@ export function FichaCliente() {
           cerrar={() => setEditando(false)}
           guardado={() => {
             setEditando(false);
+            cargar();
+          }}
+        />
+      )}
+
+      {anotando && (
+        <EditorCobro
+          clienteId={c.id}
+          cerrar={() => setAnotando(false)}
+          guardado={() => {
+            setAnotando(false);
             cargar();
           }}
         />

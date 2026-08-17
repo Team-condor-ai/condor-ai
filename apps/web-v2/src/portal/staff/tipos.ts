@@ -16,6 +16,9 @@ export type Cliente = {
   link_paypal: string | null;
   web_url: string | null;
   archivado: boolean | null;
+  cobra_setup: boolean | null;
+  cobra_mensual: boolean | null;
+  notas: string | null;
   creado_en: string | null;
 };
 
@@ -27,8 +30,23 @@ export type Pago = {
   monto: number | null;
   estado: string | null;
   mp_id: string | null;
+  detalle: string | null;
+  fecha: string | null;
+  metodo: string | null;
   creado_en: string | null;
 };
+
+/** Cómo entra la plata. No todo pasa por Mercado Pago. */
+export const METODOS_PAGO = [
+  "Transferencia",
+  "Mercado Pago",
+  "PayPal",
+  "Boleta de garantía",
+  "Efectivo",
+  "Otro",
+];
+
+export const ESTADOS_PAGO = ["pendiente", "pagado", "rechazado"];
 
 /** Las columnas reales de `public.productos` (ver 20260817_productos.sql). */
 export type Producto = {
