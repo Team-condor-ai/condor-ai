@@ -97,6 +97,22 @@ export function Clientes() {
     else cargar();
   }
 
+  async function eliminar(c: Cliente) {
+    // Esto SÍ borra, a diferencia de archivar — y se lleva el historial de
+    // pagos por el `on delete cascade` de la tabla `pagos`. Por eso pide
+    // confirmación explícita con el nombre del negocio: no hay deshacer.
+    const nombre = c.negocio || c.email || "este cliente";
+    const ok = window.confirm(
+      `Vas a eliminar "${nombre}" para siempre, junto con su historial de pagos.\n\n` +
+        `Esto NO se puede deshacer. Si solo quieres dejar de verlo en la lista, ` +
+        `usa "Archivar" en vez de esto.\n\n¿Eliminar de todas formas?`,
+    );
+    if (!ok) return;
+    const { error } = await sb.from("clientes").delete().eq("id", c.id);
+    if (error) setError(error.message);
+    else cargar();
+  }
+
   return (
     <>
       <div className="barra">
@@ -179,6 +195,13 @@ export function Clientes() {
                         onClick={() => archivar(c, !c.archivado)}
                       >
                         {c.archivado ? Ico.volver({ t: 15 }) : Ico.archivar({ t: 15 })}
+                      </button>
+                      <button
+                        className="icono-btn peligro"
+                        title="Eliminar para siempre"
+                        onClick={() => eliminar(c)}
+                      >
+                        {Ico.eliminar({ t: 15 })}
                       </button>
                     </td>
                   </tr>
