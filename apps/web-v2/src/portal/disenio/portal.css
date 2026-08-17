@@ -196,6 +196,19 @@ textarea.campo{resize:vertical;min-height:56px}
 }
 .fnd-acciones{display:flex;gap:6px;align-items:center}
 
+/* ───── SUSCRIPCIONES ───── */
+.sus-conteo{font-size:11px;color:var(--texto-3)}
+.fnd-item.sel .sus-conteo{color:rgba(255,255,255,.8)}
+.sus-plan{
+  display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap;
+  background:var(--panel-2);border:1px solid var(--borde-suave);border-radius:11px;
+  padding:14px 16px;margin-bottom:10px;
+}
+.sus-plan-txt{flex:1;min-width:240px}
+.sus-plan-txt b{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;margin-bottom:3px}
+.sus-plan-txt>span{display:block;font-size:12.5px;color:var(--texto-2);line-height:1.45}
+.sus-link{margin-top:9px;font-size:12px;font-family:ui-monospace,"SF Mono",Consolas,monospace}
+
 .fnd-pronto{
   display:flex;align-items:center;justify-content:space-between;gap:14px;
   background:var(--panel-2);border:1px solid var(--borde-suave);border-radius:11px;

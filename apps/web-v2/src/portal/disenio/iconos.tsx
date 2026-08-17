@@ -146,6 +146,14 @@ export const Ico = {
       <path d="M15 4h5v5M20 4l-9.5 9.5" />
     </Svg>
   ),
+  repetir: (p: Props = {}) => (
+    <Svg {...p}>
+      <path d="M3 11.5A7.5 7.5 0 0 1 16.8 7.4L21 11" />
+      <path d="M21 5.5V11h-5.5" />
+      <path d="M21 12.5A7.5 7.5 0 0 1 7.2 16.6L3 13" />
+      <path d="M3 18.5V13h5.5" />
+    </Svg>
+  ),
   carpetaMas: (p: Props = {}) => (
     <Svg {...p}>
       <path d="M21 12.5V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h4.2a2 2 0 0 1 1.5.7l1.1 1.3H19a2 2 0 0 1 2 2v.5" />

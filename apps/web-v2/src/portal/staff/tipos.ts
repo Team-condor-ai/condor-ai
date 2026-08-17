@@ -104,6 +104,37 @@ export type ArchivoBiblioteca = {
   creado_en: string | null;
 };
 
+/** Planes de suscripción con link compartido de Mercado Pago. */
+export type PlanSuscripcion = {
+  id: string;
+  grupo: string;
+  nombre: string;
+  descripcion: string | null;
+  monto: number;
+  moneda: string;
+  frecuencia_meses: number;
+  mp_plan_id: string | null;
+  init_point: string | null;
+  activo: boolean;
+  creado_en: string | null;
+};
+
+/** Quien se suscribió por el link. Los crea el webhook solo, al pagar. */
+export type Suscriptor = {
+  id: string;
+  plan_id: string | null;
+  email: string;
+  nombre: string | null;
+  telegram: string | null;
+  mp_preapproval_id: string | null;
+  estado: string;
+  monto: number | null;
+  moneda: string | null;
+  ultimo_pago: string | null;
+  proximo_cobro: string | null;
+  creado_en: string | null;
+};
+
 /** Carpetas de la biblioteca. `padre_id` null = está en la raíz. */
 export type CarpetaBiblioteca = {
   id: string;

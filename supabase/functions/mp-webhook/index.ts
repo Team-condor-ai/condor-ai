@@ -45,6 +45,70 @@ async function avisarPago(sb: any, clienteId: string, tipo: string) {
      <p>— El equipo de condor.ai</p>`);
 }
 
+// ── SUSCRIPCIÓN DESDE UN LINK COMPARTIDO ────────────────────────────────
+//
+// Cuando alguien entra por el link de un `preapproval_plan` (Rat.IA y demás),
+// NO hay ficha previa ni fila en `pagos`: Mercado Pago solo nos avisa que
+// existe una suscripción nueva colgando de un plan nuestro. Acá se le crea la
+// fila de suscriptor y se le abre la puerta del portal.
+//
+// El `mp_preapproval_id` es único en la tabla, así que un reintento de MP —o
+// alguien reenviando una notificación real— no puede duplicar al suscriptor.
+async function registrarSuscriptor(sb: any, pa: any, preapprovalId: string) {
+  const { data: plan } = await sb
+    .from("planes_suscripcion").select("*")
+    .eq("mp_plan_id", String(pa.preapproval_plan_id)).maybeSingle();
+  // Sin plan nuestro no se toca nada: puede ser una suscripción de otra
+  // integración en la misma cuenta de Mercado Pago.
+  if (!plan) return;
+
+  const email = String(pa.payer_email || "").trim().toLowerCase();
+  if (!email) {
+    console.warn("suscripción sin correo del pagador, no se registra", preapprovalId);
+    return;
+  }
+
+  const prox = new Date();
+  prox.setMonth(prox.getMonth() + (plan.frecuencia_meses || 1));
+
+  const { data: creado, error } = await sb.from("suscriptores").insert({
+    plan_id: plan.id,
+    email,
+    mp_preapproval_id: preapprovalId,
+    estado: "activa",
+    monto: plan.monto,
+    moneda: plan.moneda,
+    ultimo_pago: new Date().toISOString(),
+    proximo_cobro: prox.toISOString().slice(0, 10),
+  }).select().single();
+
+  // Choque de único = ya estaba registrado. Es el camino normal de un
+  // reintento, no un error: se sale sin volver a mandar la bienvenida.
+  if (error) {
+    if (!String(error.code) .includes("23505")) console.error("alta de suscriptor:", error);
+    return;
+  }
+
+  const mon = plan.moneda || "CLP";
+  await enviarCorreo(email, `✅ Tu suscripción a ${plan.nombre} está activa`,
+    `<h2>¡Bienvenido a ${plan.nombre}! 🎉</h2>
+     <p>Tu suscripción quedó activa por <b>${mon} ${Number(plan.monto).toLocaleString()}</b> al mes.
+     El cobro se hace solo; no tienes que hacer nada cada mes.</p>
+     <p>Puedes ver el estado de tu suscripción y tus pagos en tu portal:</p>
+     <p><a href="https://condorai.cl/portal.html">Abrir mi portal →</a></p>
+     <p style="color:#666;font-size:13px">Entra con este mismo correo (<b>${email}</b>) y te enviamos un código de acceso.</p>
+     <p>— El equipo de condor.ai</p>`);
+
+  await enviarCorreo(ADMIN_NOTIFY, `🎉 Suscriptor nuevo · ${plan.nombre}`,
+    `<h2>Se suscribió alguien nuevo</h2>
+     <p><b>Plan:</b> ${plan.grupo} · ${plan.nombre}<br>
+     <b>Correo:</b> ${email}<br>
+     <b>Monto:</b> ${mon} ${Number(plan.monto).toLocaleString()}/mes</p>
+     <p>Ya aparece en Suscripciones y puede entrar al portal con su correo.</p>`);
+
+  return creado;
+}
+
 // Pago de un lead de campaña (external_reference "lead:<id>"): marca el lead y avisa al equipo.
 async function marcarLeadPagado(sb: any, leadId: string, mpId: string, p: any) {
   if (!/^\d+$/.test(leadId)) return;
@@ -160,7 +224,11 @@ Deno.serve(async (req) => {
     } else if (type.includes("preapproval") && id) {
       const r = await fetch("https://api.mercadopago.com/preapproval/" + id, { headers: { Authorization: "Bearer " + MP } });
       const pa = await r.json();
-      if ((pa.status === "authorized") && pa.external_reference) {
+      // Suscripción nacida de un link compartido: no tiene `external_reference`
+      // nuestro porque nadie la creó desde el portal. Se reconoce por el plan.
+      if (pa.status === "authorized" && pa.preapproval_plan_id && !pa.external_reference) {
+        await registrarSuscriptor(sb, pa, String(id));
+      } else if ((pa.status === "authorized") && pa.external_reference) {
         await sb.from("pagos").update({ estado: "pagado", mp_id: String(id) }).eq("id", pa.external_reference);
         const { data: pago } = await sb.from("pagos").select("cliente_id").eq("id", pa.external_reference).maybeSingle();
         if (pago) {
