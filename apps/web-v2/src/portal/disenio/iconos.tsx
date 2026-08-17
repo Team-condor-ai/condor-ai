@@ -140,6 +140,12 @@ export const Ico = {
       <path d="M10 12.5h4" />
     </Svg>
   ),
+  abrirWeb: (p: Props = {}) => (
+    <Svg {...p}>
+      <path d="M18 13v6a1.6 1.6 0 0 1-1.6 1.6H5.6A1.6 1.6 0 0 1 4 19V7.6A1.6 1.6 0 0 1 5.6 6H11" />
+      <path d="M15 4h5v5M20 4l-9.5 9.5" />
+    </Svg>
+  ),
   producto: (p: Props = {}) => (
     <Svg {...p}>
       <path d="m12 3 8 4.6v8.8L12 21l-8-4.6V7.6z" />

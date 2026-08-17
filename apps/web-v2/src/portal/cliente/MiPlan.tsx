@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { sb, plata, fecha } from "../lib/supabase";
+import { sb, plata, fecha, enlaceWeb } from "../lib/supabase";
 import type { Cliente, Pago } from "../staff/tipos";
 
 /**
@@ -87,7 +87,7 @@ export function MiPlan() {
           {c.web_url && (
             <p className="parrafo">
               Tu sitio:{" "}
-              <a href={c.web_url} target="_blank" rel="noreferrer">
+              <a href={enlaceWeb(c.web_url)} target="_blank" rel="noreferrer">
                 {c.web_url}
               </a>
             </p>

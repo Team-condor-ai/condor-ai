@@ -37,6 +37,18 @@ export function plata(n: number | null | undefined, moneda?: string | null) {
   return moneda && moneda !== "CLP" ? `${s} ${moneda}` : s;
 }
 
+/**
+ * Normaliza una URL guardada a mano por el staff para que sirva como `href`.
+ * Sin esto, "tecnobox.cl" (sin protocolo) se interpreta como ruta RELATIVA
+ * al portal — el link "funciona" pero te deja adentro de condorai.cl en vez
+ * de llevarte al sitio real.
+ */
+export function enlaceWeb(url: string | null | undefined) {
+  const u = (url ?? "").trim();
+  if (!u) return "";
+  return /^https?:\/\//i.test(u) ? u : `https://${u}`;
+}
+
 /** Fecha corta y legible: "2026-08-13" -> "13 ago 2026". */
 export function fecha(f: string | null | undefined) {
   if (!f) return "—";

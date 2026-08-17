@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { sb, plata, fecha } from "../lib/supabase";
+import { sb, plata, fecha, enlaceWeb } from "../lib/supabase";
 import { Ico } from "../disenio/iconos";
 import { EditorCliente } from "./EditorCliente";
 import type { Cliente, Pago } from "./tipos";
@@ -79,7 +79,7 @@ export function FichaCliente() {
               k="Web entregada"
               v={
                 c.web_url ? (
-                  <a href={c.web_url} target="_blank" rel="noreferrer">
+                  <a href={enlaceWeb(c.web_url)} target="_blank" rel="noreferrer">
                     {c.web_url}
                   </a>
                 ) : null

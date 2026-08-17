@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { sb, plata, fecha } from "../lib/supabase";
+import { sb, plata, fecha, enlaceWeb } from "../lib/supabase";
 import { Ico } from "../disenio/iconos";
 import { EditorCliente } from "./EditorCliente";
 import type { Cliente } from "./tipos";
@@ -189,6 +189,17 @@ export function Clientes() {
                     </td>
                     <td>{fecha(c.proximo_cobro)}</td>
                     <td className="acciones">
+                      {c.web_url && (
+                        <a
+                          className="icono-btn"
+                          title="Abrir sitio web"
+                          href={enlaceWeb(c.web_url)}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          {Ico.abrirWeb({ t: 15 })}
+                        </a>
+                      )}
                       <button
                         className="icono-btn"
                         title={c.archivado ? "Restaurar" : "Archivar"}
