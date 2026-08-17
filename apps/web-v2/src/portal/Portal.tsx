@@ -18,6 +18,7 @@ import { Lateral, type Entrada } from "./disenio/Lateral";
 import { Ico } from "./disenio/iconos";
 import { Clientes } from "./staff/Clientes";
 import { FichaCliente } from "./staff/FichaCliente";
+import { Productos } from "./staff/Productos";
 import { Cobros } from "./staff/Cobros";
 import { Correos } from "./staff/Correos";
 import { Mapa } from "./staff/Mapa";
@@ -47,6 +48,7 @@ const dif = (n: React.ReactNode) => <Suspense fallback={cargando}>{n}</Suspense>
 
 const MENU_STAFF: Entrada[] = [
   { a: "/acceso/clientes", texto: "Clientes", icono: "clientes" },
+  { a: "/acceso/productos", texto: "Productos", icono: "producto" },
   { a: "/acceso/cobros", texto: "Cobros", icono: "cobros" },
   { a: "/acceso/herramientas", texto: "Herramientas", icono: "documentos" },
   { a: "/acceso/correos", texto: "Correos", icono: "correos" },
@@ -147,6 +149,7 @@ export default function Portal() {
         <Routes>
           <Route path="clientes" element={<Clientes />} />
           <Route path="clientes/:id" element={<FichaCliente />} />
+          <Route path="productos" element={<Productos />} />
           <Route path="cobros" element={<Cobros />} />
           <Route path="herramientas" element={dif(<Herramientas />)} />
           <Route path="correos" element={<Correos />} />

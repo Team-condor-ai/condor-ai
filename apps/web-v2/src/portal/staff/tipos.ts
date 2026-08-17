@@ -30,6 +30,19 @@ export type Pago = {
   creado_en: string | null;
 };
 
+/** Las columnas reales de `public.productos` (ver 20260817_productos.sql). */
+export type Producto = {
+  id: string;
+  nombre: string;
+  descripcion: string | null;
+  caracteristicas: string[] | null;
+  precio_setup_sugerido: number | null;
+  precio_mensual_sugerido: number | null;
+  moneda: string | null;
+  activo: boolean | null;
+  creado_en: string | null;
+};
+
 export const PLANES = ["Esencial", "Pro", "Premium"];
 export const MONEDAS = ["CLP", "COP", "PEN", "USD"];
 export const ESTADOS_SETUP = ["pendiente", "pagado"];
