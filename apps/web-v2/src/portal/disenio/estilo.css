@@ -233,8 +233,15 @@ tfoot td{padding:9px 14px;background:var(--panel-2);font-weight:650;border-top:1
   border-left:1px solid var(--borde);box-shadow:var(--sombra-alta);z-index:60;
   transform:translateX(101%);transition:transform .22s ease;display:flex;flex-direction:column}
 body.panel-abierto .panel-lat{transform:none}
-body.panel-abierto .velo{opacity:1;pointer-events:auto}
-.velo{position:fixed;inset:0;background:rgba(0,0,0,.32);z-index:55;opacity:0;pointer-events:none;
+/* `.velo` (fondo de TODOS los modales: EditorCliente, EditorProducto, etc.)
+   se copió del ERP de Planeta junto con `.panel-lat` de arriba, pero ahí el
+   JS le agregaba la clase `panel-abierto` al <body> para mostrarlo — acá
+   ese JS nunca se portó. Resultado: cada modal quedaba armado en el DOM con
+   opacity:0 y pointer-events:none PARA SIEMPRE, invisible e inclickeable
+   (17-ago-2026). Acá React ya decide cuándo mostrar `.velo` — solo se monta
+   cuando hay algo que editar — así que no necesita depender de ninguna
+   clase del body: visible e interactivo apenas existe. */
+.velo{position:fixed;inset:0;background:rgba(0,0,0,.32);z-index:55;
   transition:opacity .22s ease}
 .panel-lat>header{padding:14px 16px;border-bottom:1px solid var(--borde-suave);
   display:flex;align-items:flex-start;gap:12px}
