@@ -25,6 +25,9 @@ export function EditorProducto({ producto, cerrar, guardado }: Props) {
   const [mensual, setMensual] = useState(producto?.precio_mensual_sugerido ?? 0);
   const [moneda, setMoneda] = useState(producto?.moneda ?? "CLP");
   const [activo, setActivo] = useState(producto?.activo ?? true);
+  const [repoUrl, setRepoUrl] = useState(producto?.repo_url ?? "");
+  const [sitioUrl, setSitioUrl] = useState(producto?.sitio_url ?? "");
+  const [docsUrl, setDocsUrl] = useState(producto?.docs_url ?? "");
 
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState("");
@@ -92,6 +95,9 @@ export function EditorProducto({ producto, cerrar, guardado }: Props) {
       precio_mensual_sugerido: Number(mensual) || 0,
       moneda,
       activo,
+      repo_url: repoUrl.trim() || null,
+      sitio_url: sitioUrl.trim() || null,
+      docs_url: docsUrl.trim() || null,
     };
 
     const q = producto
@@ -218,6 +224,38 @@ export function EditorProducto({ producto, cerrar, guardado }: Props) {
                 <option value="activo">Activo</option>
                 <option value="inactivo">Inactivo</option>
               </select>
+            </label>
+          </div>
+
+          <label className="campo-lbl">
+            Repositorio de GitHub
+            <input
+              className="campo"
+              placeholder="github.com/joaquinmunozs/barbara"
+              value={repoUrl}
+              onChange={(e) => setRepoUrl(e.target.value)}
+            />
+            <small>Aparece como botón directo en la lista y en el mapa.</small>
+          </label>
+
+          <div className="dos">
+            <label className="campo-lbl">
+              Sitio / demo
+              <input
+                className="campo"
+                placeholder="condorai.cl"
+                value={sitioUrl}
+                onChange={(e) => setSitioUrl(e.target.value)}
+              />
+            </label>
+            <label className="campo-lbl">
+              Documentación
+              <input
+                className="campo"
+                placeholder="Notion, Drive…"
+                value={docsUrl}
+                onChange={(e) => setDocsUrl(e.target.value)}
+              />
             </label>
           </div>
 

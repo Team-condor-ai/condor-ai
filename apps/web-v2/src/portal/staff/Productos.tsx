@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { sb, plata } from "../lib/supabase";
+import { sb, plata, enlaceWeb } from "../lib/supabase";
 import { Ico } from "../disenio/iconos";
 import { EditorProducto } from "./EditorProducto";
 import type { Producto } from "./tipos";
@@ -106,6 +106,39 @@ export function Productos() {
                       </span>
                     </td>
                     <td className="acciones">
+                      {p.repo_url && (
+                        <a
+                          className="icono-btn"
+                          title="Abrir repositorio en GitHub"
+                          href={enlaceWeb(p.repo_url)}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          {Ico.github({ t: 15 })}
+                        </a>
+                      )}
+                      {p.sitio_url && (
+                        <a
+                          className="icono-btn"
+                          title="Abrir sitio / demo"
+                          href={enlaceWeb(p.sitio_url)}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          {Ico.abrirWeb({ t: 15 })}
+                        </a>
+                      )}
+                      {p.docs_url && (
+                        <a
+                          className="icono-btn"
+                          title="Abrir documentación"
+                          href={enlaceWeb(p.docs_url)}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          {Ico.documentos({ t: 15 })}
+                        </a>
+                      )}
                       <button
                         className="icono-btn"
                         title="Editar"

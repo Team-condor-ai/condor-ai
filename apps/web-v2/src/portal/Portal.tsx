@@ -19,6 +19,8 @@ import { Ico } from "./disenio/iconos";
 import { Clientes } from "./staff/Clientes";
 import { FichaCliente } from "./staff/FichaCliente";
 import { Productos } from "./staff/Productos";
+import { Reuniones } from "./staff/Reuniones";
+import { Biblioteca } from "./staff/Biblioteca";
 import { Cobros } from "./staff/Cobros";
 import { Correos } from "./staff/Correos";
 import { Mapa } from "./staff/Mapa";
@@ -50,6 +52,8 @@ const MENU_STAFF: Entrada[] = [
   { a: "/acceso/clientes", texto: "Clientes", icono: "clientes" },
   { a: "/acceso/productos", texto: "Productos", icono: "producto" },
   { a: "/acceso/cobros", texto: "Cobros", icono: "cobros" },
+  { a: "/acceso/reuniones", texto: "Reuniones", icono: "reuniones" },
+  { a: "/acceso/biblioteca", texto: "Biblioteca", icono: "biblioteca" },
   { a: "/acceso/herramientas", texto: "Herramientas", icono: "documentos" },
   { a: "/acceso/correos", texto: "Correos", icono: "correos" },
   { a: "/acceso/mapa", texto: "Mapa", icono: "grafo" },
@@ -150,6 +154,8 @@ export default function Portal() {
           <Route path="clientes" element={<Clientes />} />
           <Route path="clientes/:id" element={<FichaCliente />} />
           <Route path="productos" element={<Productos />} />
+          <Route path="reuniones" element={<Reuniones />} />
+          <Route path="biblioteca" element={<Biblioteca />} />
           <Route path="cobros" element={<Cobros />} />
           <Route path="herramientas" element={dif(<Herramientas />)} />
           <Route path="correos" element={<Correos />} />

@@ -119,6 +119,21 @@ textarea.campo{resize:vertical;min-height:56px}
 .dato b{font-size:14px;font-weight:600;word-break:break-word}
 .parrafo{font-size:13.5px;color:var(--texto);margin:0 0 8px;line-height:1.5}
 
+/* ───── TARJETAS DE LA BIBLIOTECA ───── */
+.tarjetas-lib{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
+.tarjeta-lib{
+  background:var(--panel-2);border:1px solid var(--borde-suave);border-radius:11px;
+  padding:13px 14px;text-decoration:none;color:inherit;display:block;
+  transition:border-color .15s ease,transform .15s ease;
+}
+.tarjeta-lib:hover{border-color:var(--acento);transform:translateY(-1px)}
+.tarjeta-lib b{display:block;font-size:14px;font-weight:600;margin:7px 0 3px}
+.tarjeta-lib span{font-size:12.5px;color:var(--texto-2);line-height:1.45;display:block}
+.tarjeta-lib .tag-lib{
+  display:inline-block;font-size:10px;letter-spacing:.05em;text-transform:uppercase;
+  font-weight:650;color:var(--acento);
+}
+
 /* ───── MODAL ───── */
 .velo{
   position:fixed;inset:0;background:rgba(0,0,0,.34);z-index:60;

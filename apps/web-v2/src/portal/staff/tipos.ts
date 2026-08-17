@@ -40,8 +40,50 @@ export type Producto = {
   precio_mensual_sugerido: number | null;
   moneda: string | null;
   activo: boolean | null;
+  repo_url: string | null;
+  sitio_url: string | null;
+  docs_url: string | null;
   creado_en: string | null;
 };
+
+/** Filas de `public.reuniones` (ver reuniones.sql + reuniones_fix.sql). */
+export type Reunion = {
+  id: string;
+  titulo: string;
+  descripcion: string | null;
+  fecha_hora: string;
+  duracion_min: number | null;
+  cliente: string | null;
+  meet_url: string | null;
+  creado_por: string | null;
+  created_at: string | null;
+};
+
+/** Perfiles del equipo, para elegir invitados (ver reuniones.sql). */
+export type PerfilAdmin = {
+  id: string;
+  email: string;
+  nombre: string;
+};
+
+/** Archivos subidos a `public.biblioteca`. */
+export type ArchivoBiblioteca = {
+  id: string;
+  nombre: string;
+  descripcion: string | null;
+  categoria: string | null;
+  archivo_url: string | null;
+  archivo_nombre: string | null;
+  peso_bytes: number | null;
+  creado_en: string | null;
+};
+
+export const CATEGORIAS_BIBLIOTECA = [
+  "presentacion",
+  "propuesta",
+  "marca",
+  "otro",
+] as const;
 
 export const PLANES = ["Esencial", "Pro", "Premium"];
 export const MONEDAS = ["CLP", "COP", "PEN", "USD"];

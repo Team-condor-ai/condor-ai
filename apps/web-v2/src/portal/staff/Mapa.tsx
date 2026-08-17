@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { sb, plata } from "../lib/supabase";
-import type { Cliente } from "./tipos";
+import { sb, plata, enlaceWeb } from "../lib/supabase";
+import type { Cliente, Producto } from "./tipos";
 
 type Nodo = {
   id: string;
-  tipo: "centro" | "plan" | "cliente";
+  tipo: "centro" | "plan" | "cliente" | "producto";
   txt: string;
   sub?: string;
   r: number;
@@ -14,6 +14,7 @@ type Nodo = {
   vx: number;
   vy: number;
   ref?: Cliente;
+  producto?: Producto;
 };
 type Arco = { a: string; b: string };
 
@@ -34,18 +35,24 @@ type Arco = { a: string; b: string };
  */
 export function Mapa() {
   const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [productos, setProductos] = useState<Producto[]>([]);
   const [cargando, setCargando] = useState(true);
   const [activo, setActivo] = useState<Nodo | null>(null);
   const lienzo = useRef<HTMLCanvasElement>(null);
   const navega = useNavigate();
 
+  // Clientes y productos se leen por separado y el mapa se arma con lo que
+  // haya: cada vez que se crea uno, aparece acá solo — no hay que registrarlo
+  // en ningún lado.
   useEffect(() => {
-    sb.from("clientes")
-      .select("*")
-      .then(({ data }) => {
-        setClientes(((data ?? []) as Cliente[]).filter((c) => !c.archivado));
-        setCargando(false);
-      });
+    Promise.all([
+      sb.from("clientes").select("*"),
+      sb.from("productos").select("*"),
+    ]).then(([resClientes, resProductos]) => {
+      setClientes(((resClientes.data ?? []) as Cliente[]).filter((c) => !c.archivado));
+      setProductos(((resProductos.data ?? []) as Producto[]).filter((p) => p.activo));
+      setCargando(false);
+    });
   }, []);
 
   const { nodos, arcos } = useMemo(() => {
@@ -89,8 +96,25 @@ export function Mapa() {
       });
       a.push({ a: padre, b: c.id });
     }
+
+    // Los productos cuelgan del centro, no de los planes: son lo que Cóndor
+    // ofrece, no una forma de agrupar clientes. Cuando un producto tenga
+    // clientes asociados, acá irían esos arcos.
+    for (const p of productos) {
+      n.push({
+        id: "producto:" + p.id,
+        tipo: "producto",
+        txt: p.nombre,
+        sub: p.repo_url ? "repo ↗" : undefined,
+        r: 13,
+        x: suelto(), y: suelto(), vx: 0, vy: 0,
+        producto: p,
+      });
+      a.push({ a: "condor", b: "producto:" + p.id });
+    }
+
     return { nodos: n, arcos: a };
-  }, [clientes]);
+  }, [clientes, productos]);
 
   useEffect(() => {
     const cv = lienzo.current;
@@ -174,6 +198,9 @@ export function Mapa() {
         ctx.fillStyle =
           n.tipo === "centro" ? col("--texto")
           : n.tipo === "plan" ? col("--texto-2")
+          // Los productos van con el color de acento para distinguirlos de un
+          // vistazo: son otra clase de cosa que los clientes, no otro tamaño.
+          : n.tipo === "producto" ? col("--acento")
           : col("--panel");
         ctx.fill();
         ctx.strokeStyle = activo?.id === n.id ? col("--texto") : col("--borde");
@@ -217,6 +244,13 @@ export function Mapa() {
       const p = aMundo(e);
       const bajo = nodos.find((n) => Math.hypot(n.x - p.x, n.y - p.y) < n.r + 5);
       if (bajo?.tipo === "cliente") navega(`/acceso/clientes/${bajo.id}`);
+      // Un producto no tiene ficha propia todavía, así que el clic abre su
+      // repositorio si lo tiene; si no, lleva al catálogo.
+      else if (bajo?.tipo === "producto") {
+        const repo = bajo.producto?.repo_url;
+        if (repo) window.open(enlaceWeb(repo), "_blank", "noreferrer");
+        else navega("/acceso/productos");
+      }
     };
     const alRodar = (e: WheelEvent) => {
       e.preventDefault();
