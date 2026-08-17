@@ -816,6 +816,23 @@ escribir("productos/index.html", cab({
 <div class="lista">${bloquesProducto()}</div>
 </div></section>
 
+<!-- Bárbara es un producto EMPAQUETADO, no una línea de servicio a medida:
+     tiene precio de lista y se instala igual para todos. Por eso va aparte de
+     las tres líneas y con su propia página, que además tiene otra identidad
+     visual (negro y lima, no el azul corporativo). -->
+<section style="padding-bottom:clamp(56px,7vw,96px)"><div class="wrap">
+  <a href="/productos/barbara/" class="barbara-tira">
+    <div class="barbara-tira-txt">
+      <span class="mono-label">Producto · suscripción mensual</span>
+      <h2>Bárbara</h2>
+      <p>Tu agente de IA que crea el contenido de Instagram de tu marca cada semana:
+         carruseles, historias y video, con tu paleta y tu logo. Desde $36.990 al mes.</p>
+      <span class="barbara-tira-cta">Conocer Bárbara →</span>
+    </div>
+    <img src="/assets/barbara/lockup.jpg" alt="Bárbara, agente de IA de contenido" loading="lazy" />
+  </a>
+</div></section>
+
 <section class="seccion oscura"><div class="wrap">
   <h2 style="margin-top:20px;max-width:20ch">La entrega incluye más que el sistema funcionando</h2>
   <div class="pasos" style="margin-top:34px;background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.1)">

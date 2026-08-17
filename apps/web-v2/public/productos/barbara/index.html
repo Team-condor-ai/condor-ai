@@ -1,0 +1,483 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Bárbara · Tu agente de IA que impulsa tu marca cada semana — condor.ai</title>
+<meta name="description" content="Bárbara crea el contenido de Instagram de tu marca cada semana: carruseles, historias y video UGC con tu paleta y tu logo. Te llega listo al chat, tú apruebas y se publica." />
+<link rel="icon" type="image/png" href="/assets/favicon.png" />
+
+<!-- Fraunces para el display (serif de asta flareada, el gesto del titular) e
+     Inter para todo lo demás. La marca de Bárbara ya usa un serif de alto
+     contraste en su wordmark; Fraunces es el equivalente libre más cercano. -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+<style>
+/* ─────────────────────────────────────────────────────────────────────────
+   Bárbara · landing de producto
+
+   La estructura y el gesto vienen de la referencia que pidió Joaquín: nombre
+   gigante en serif ocupando todo el ancho, garabatos alrededor, nav flotante
+   tipo píldora, botones circulares al costado y una señal de scroll. La PALETA
+   es la de Bárbara —negro, lima y crema—, no la crema/rojo de la referencia.
+
+   Es una página suelta, con su propio CSS: el sitio corporativo es azul y
+   sobrio, y mezclarlos habría teñido a los dos.
+   ───────────────────────────────────────────────────────────────────────── */
+:root{
+  --negro:#0A0A0A; --negro-2:#141414; --lima:#CDFB3E; --lima-baja:#A8D42B;
+  --crema:#F3F1E7; --crema-2:#C9C6B8; --linea:rgba(243,241,231,.14);
+  --radio:18px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--negro);color:var(--crema);
+  font-family:Inter,-apple-system,"Segoe UI",system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;overflow-x:hidden;
+}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:1240px;margin:0 auto;padding:0 24px}
+
+/* ── NAV PÍLDORA ───────────────────────────────────────────────────────── */
+.nav{
+  position:fixed;top:18px;left:50%;transform:translateX(-50%);z-index:50;
+  display:flex;align-items:center;gap:4px;
+  background:rgba(20,20,20,.78);backdrop-filter:blur(14px);
+  border:1px solid var(--linea);border-radius:999px;padding:6px 6px 6px 7px;
+}
+.nav .marca{
+  width:34px;height:34px;border-radius:999px;overflow:hidden;flex:none;
+  background:var(--lima);display:grid;place-items:center;
+}
+.nav .marca img{width:100%;height:100%;object-fit:cover}
+.nav a.enlace{
+  padding:8px 14px;border-radius:999px;font-size:14px;font-weight:500;
+  color:var(--crema-2);transition:background .18s ease,color .18s ease;white-space:nowrap;
+}
+.nav a.enlace:hover{background:rgba(243,241,231,.09);color:var(--crema)}
+.nav a.cta{background:var(--lima);color:#0A0A0A;font-weight:600}
+.nav a.cta:hover{background:#fff}
+
+/* ── HERO ──────────────────────────────────────────────────────────────── */
+.hero{min-height:100svh;display:flex;flex-direction:column;justify-content:center;
+  position:relative;padding:120px 0 90px}
+.eyebrow{
+  font-size:12px;letter-spacing:.18em;text-transform:uppercase;font-weight:600;
+  color:var(--lima);margin-bottom:22px;
+}
+/* El titular ocupa el ancho completo, como en la referencia: el tamaño sale
+   del viewport, no de una escala fija. */
+.titular{
+  font-family:Fraunces,Georgia,serif;font-weight:700;
+  font-size:clamp(64px,15.2vw,232px);line-height:.86;letter-spacing:-.025em;
+  position:relative;display:inline-block;
+}
+.titular .letra{display:inline-block;will-change:transform,opacity}
+.bajada{
+  font-size:clamp(16px,1.9vw,21px);line-height:1.55;color:var(--crema-2);
+  max-width:44ch;margin-top:30px;
+}
+.bajada b{color:var(--crema);font-weight:600}
+.acciones{display:flex;gap:12px;flex-wrap:wrap;margin-top:34px}
+.btn{
+  display:inline-flex;align-items:center;gap:9px;padding:14px 24px;border-radius:999px;
+  font-size:15px;font-weight:600;border:1px solid transparent;cursor:pointer;
+  transition:transform .18s cubic-bezier(.32,.72,0,1),background .18s,box-shadow .18s;
+}
+.btn.solido{background:var(--lima);color:#0A0A0A}
+.btn.solido:hover{background:#fff;transform:translateY(-2px);box-shadow:0 12px 30px -12px rgba(205,251,62,.6)}
+.btn.linea{border-color:var(--linea);color:var(--crema)}
+.btn.linea:hover{border-color:var(--crema);transform:translateY(-2px)}
+
+/* Garabatos alrededor del titular, como la referencia. `pointer-events:none`
+   para que nunca roben un clic al texto que tienen encima. */
+.doodle{position:absolute;pointer-events:none;opacity:0}
+.d1{top:-6%;left:-3%;width:clamp(44px,6vw,86px)}
+.d2{top:6%;left:31%;width:clamp(36px,4.6vw,66px)}
+.d3{top:-14%;left:44%;width:clamp(40px,5.4vw,78px)}
+.d4{top:12%;right:-2%;width:clamp(52px,7vw,104px)}
+.d5{bottom:-2%;left:16%;width:clamp(34px,4.2vw,60px)}
+
+.scroll-cue{
+  position:absolute;bottom:34px;left:50%;transform:translateX(-50%);
+  display:flex;flex-direction:column;align-items:center;gap:9px;
+  font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--crema-2);
+}
+.scroll-cue .flecha{animation:baja 1.9s ease-in-out infinite}
+@keyframes baja{0%,100%{transform:translateY(0)}50%{transform:translateY(7px)}}
+
+/* ── RAIL DE CONTACTO ──────────────────────────────────────────────────── */
+.rail{position:fixed;right:20px;top:50%;transform:translateY(-50%);z-index:45;
+  display:flex;flex-direction:column;gap:10px}
+.rail a{
+  width:46px;height:46px;border-radius:999px;display:grid;place-items:center;
+  background:rgba(20,20,20,.8);border:1px solid var(--linea);backdrop-filter:blur(10px);
+  transition:transform .18s cubic-bezier(.32,.72,0,1),background .18s,border-color .18s;
+}
+.rail a:hover{transform:translateX(-3px) scale(1.06);background:var(--lima);border-color:var(--lima);color:#0A0A0A}
+
+/* ── SECCIONES ─────────────────────────────────────────────────────────── */
+section.bloque{padding:clamp(80px,11vw,150px) 0;position:relative}
+.titulo{
+  font-family:Fraunces,Georgia,serif;font-weight:700;
+  font-size:clamp(34px,5.4vw,68px);line-height:1.02;letter-spacing:-.02em;
+  text-wrap:balance;max-width:18ch;
+}
+.titulo em{font-style:normal;color:var(--lima)}
+.parrafo{font-size:17px;line-height:1.6;color:var(--crema-2);max-width:56ch;margin-top:18px}
+
+.rejilla{display:grid;gap:18px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));margin-top:52px}
+.carta{
+  background:var(--negro-2);border:1px solid var(--linea);border-radius:var(--radio);
+  padding:28px 26px 30px;transition:transform .3s cubic-bezier(.32,.72,0,1),border-color .3s;
+}
+.carta:hover{transform:translateY(-5px);border-color:rgba(205,251,62,.45)}
+.carta .cuota{
+  font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--lima);
+}
+.carta h3{font-family:Fraunces,Georgia,serif;font-size:24px;font-weight:600;margin:12px 0 9px}
+.carta p{font-size:14.5px;line-height:1.55;color:var(--crema-2)}
+
+.visual{
+  margin-top:56px;border-radius:26px;overflow:hidden;border:1px solid var(--linea);
+  background:var(--negro-2);
+}
+.visual img{width:100%;height:auto;display:block}
+
+/* ── PLANES ────────────────────────────────────────────────────────────── */
+.planes{display:grid;gap:18px;grid-template-columns:repeat(auto-fit,minmax(275px,1fr));margin-top:52px;align-items:start}
+.plan{
+  background:var(--negro-2);border:1px solid var(--linea);border-radius:var(--radio);
+  padding:30px 26px 32px;position:relative;
+  transition:transform .3s cubic-bezier(.32,.72,0,1),border-color .3s;
+}
+.plan:hover{transform:translateY(-5px)}
+.plan.destacado{background:var(--lima);color:#0A0A0A;border-color:var(--lima)}
+.plan.destacado .precio small,.plan.destacado li{color:rgba(10,10,10,.72)}
+.plan .etiqueta{
+  position:absolute;top:-11px;left:26px;background:#0A0A0A;color:var(--lima);
+  font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  padding:5px 12px;border-radius:999px;border:1px solid var(--lima);
+}
+.plan h3{font-family:Fraunces,Georgia,serif;font-size:27px;font-weight:600;margin-bottom:4px}
+.plan .precio{font-family:Fraunces,Georgia,serif;font-size:41px;font-weight:700;margin:16px 0 4px;letter-spacing:-.02em}
+.plan .precio small{font-family:Inter,sans-serif;font-size:13px;font-weight:500;color:var(--crema-2);letter-spacing:0}
+.plan ul{list-style:none;margin-top:20px;display:flex;flex-direction:column;gap:11px}
+.plan li{font-size:14.5px;line-height:1.45;color:var(--crema-2);display:flex;gap:10px;align-items:flex-start}
+.plan li::before{content:"";flex:none;width:16px;height:16px;margin-top:1px;border-radius:999px;
+  background:var(--lima);opacity:.9;
+  -webkit-mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='m5 12.5 4.5 4.5L19 7' fill='none' stroke='black' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/></svg>") center/contain no-repeat;
+  mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='m5 12.5 4.5 4.5L19 7' fill='none' stroke='black' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/></svg>") center/contain no-repeat;}
+.plan.destacado li::before{background:#0A0A0A}
+.nota-planes{font-size:13.5px;color:var(--crema-2);margin-top:26px}
+
+/* ── CIERRE ────────────────────────────────────────────────────────────── */
+.cierre{
+  border:1px solid var(--linea);border-radius:28px;background:var(--negro-2);
+  padding:clamp(40px,6vw,72px);text-align:center;position:relative;overflow:hidden;
+}
+.cierre::after{
+  content:"";position:absolute;inset:auto -20% -60% -20%;height:60%;
+  background:radial-gradient(ellipse at center,rgba(205,251,62,.16),transparent 70%);
+  pointer-events:none;
+}
+.cierre .titulo{margin:0 auto;max-width:16ch}
+.cierre .parrafo{margin:18px auto 0;text-align:center}
+.cierre .acciones{justify-content:center}
+
+footer{border-top:1px solid var(--linea);padding:34px 0 46px;margin-top:40px}
+.pie{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--crema-2)}
+.pie a:hover{color:var(--lima)}
+
+/* ── APARICIÓN AL SCROLL ───────────────────────────────────────────────── */
+.rev{opacity:0;transform:translateY(26px);transition:opacity .7s cubic-bezier(.32,.72,0,1),transform .7s cubic-bezier(.32,.72,0,1)}
+.rev.on{opacity:1;transform:none}
+
+/* Quien pidió menos movimiento en su sistema lo pidió en serio (mareo,
+   vestibular): no se anima nada, todo aparece ya puesto. */
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important}
+  .rev{opacity:1;transform:none}
+  .doodle{opacity:1}
+  .titular .letra{opacity:1!important;transform:none!important}
+}
+
+@media (max-width:720px){
+  .rail{right:12px;gap:8px}
+  .rail a{width:40px;height:40px}
+  .nav{top:12px;padding:5px}
+  .nav a.enlace{padding:7px 11px;font-size:13px}
+  .nav .oculta-movil{display:none}
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <!-- La mascota va dibujada, no como foto: la versión con brillo del trailer
+       se vuelve una mancha oscura a 34 px y no se reconoce. -->
+  <span class="marca" aria-hidden="true">
+    <svg width="24" height="24" viewBox="0 0 32 32" fill="none">
+      <path d="M16 4c-4.6 0-7.6 3.2-7.6 8 0 2.3.3 4.4.9 6.2.5 1.6.2 3-.7 4.4-.5.8 0 1.8 1 1.8h2.1" stroke="#0A0A0A" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M16 4c4.6 0 7.6 3.2 7.6 8 0 2.3-.3 4.4-.9 6.2-.5 1.6-.2 3 .7 4.4.5.8 0 1.8-1 1.8h-2.1" stroke="#0A0A0A" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M10.6 11.4c1.8.3 3.6-.5 4.6-2 1.2 1.6 3.2 2.4 5.2 2" stroke="#0A0A0A" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="13" cy="15.6" r="1.25" fill="#0A0A0A"/>
+      <circle cx="19" cy="15.6" r="1.25" fill="#0A0A0A"/>
+      <path d="M14.4 19.4c1 .8 2.2.8 3.2 0" stroke="#0A0A0A" stroke-width="1.9" stroke-linecap="round"/>
+    </svg>
+  </span>
+  <a class="enlace oculta-movil" href="#que-hace">Qué hace</a>
+  <a class="enlace oculta-movil" href="#planes">Planes</a>
+  <a class="cta enlace" href="/contacto/">Quiero Bárbara</a>
+</nav>
+
+<div class="rail">
+  <a href="https://wa.me/56988989824?text=Hola%2C%20quiero%20instalar%20B%C3%A1rbara%20en%20mi%20marca" target="_blank" rel="noopener" aria-label="Escríbenos por WhatsApp" title="WhatsApp">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15L2 22l5.2-1.4A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3.1.8.8-3-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.4-.7-1.7-.8s-.4-.1-.5.1l-.7.9c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.1-.2 0-.4.1-.5l.4-.5c.1-.2.1-.3 0-.5l-.7-1.7c-.2-.4-.4-.4-.5-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.9 11.9 0 0 0 4.6 4c2.2.9 2.2.6 2.6.6a2.6 2.6 0 0 0 1.8-1.2 2.2 2.2 0 0 0 .1-1.2z"/></svg>
+  </a>
+  <a href="mailto:contacto@teamcondorcl.com?subject=Quiero%20B%C3%A1rbara" aria-label="Escríbenos por correo" title="Correo">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2.4"/><path d="m3.5 7 7.3 5.1a2 2 0 0 0 2.4 0L20.5 7"/></svg>
+  </a>
+  <a href="/agendar/" aria-label="Agendar una reunión" title="Agendar">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2.2"/><path d="M3 9.5h18M8 3v4M16 3v4"/></svg>
+  </a>
+</div>
+
+<header class="hero">
+  <div class="wrap">
+    <p class="eyebrow rev">Un producto de condor.ai</p>
+
+    <h1 class="titular" id="titular">
+      <span aria-hidden="true">
+        <!-- Cada letra va en su propio span para que suban escalonadas. El
+             texto real para lectores de pantalla va en el sr-only de abajo. -->
+      </span>
+      <span class="sr" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Bárbara</span>
+
+      <!-- garabatos -->
+      <svg class="doodle d1" viewBox="0 0 60 60" fill="none" aria-hidden="true">
+        <g stroke="#CDFB3E" stroke-width="4.5" stroke-linecap="round">
+          <path d="M30 6v13M12 14l7 10M48 14l-7 10M6 34l13 3M54 34l-13 3"/>
+        </g>
+      </svg>
+      <svg class="doodle d2" viewBox="0 0 60 60" aria-hidden="true">
+        <g fill="#CDFB3E">
+          <circle cx="8" cy="8" r="4"/><circle cx="30" cy="8" r="4"/><circle cx="52" cy="8" r="4"/>
+          <circle cx="8" cy="30" r="4"/><circle cx="30" cy="30" r="4"/><circle cx="52" cy="30" r="4"/>
+          <circle cx="8" cy="52" r="4"/><circle cx="30" cy="52" r="4"/><circle cx="52" cy="52" r="4"/>
+        </g>
+      </svg>
+      <svg class="doodle d3" viewBox="0 0 60 60" aria-hidden="true">
+        <path d="M30 2l7.5 18.5L56 28l-18.5 7.5L30 54l-7.5-18.5L4 28l18.5-7.5z" fill="#CDFB3E"/>
+      </svg>
+      <svg class="doodle d4" viewBox="0 0 60 60" fill="none" aria-hidden="true">
+        <g stroke="#CDFB3E" stroke-width="5" stroke-linecap="round">
+          <path d="M6 16h48M14 30h40M24 44h30"/>
+        </g>
+      </svg>
+      <svg class="doodle d5" viewBox="0 0 60 60" aria-hidden="true">
+        <path d="M30 4l6 16 16 6-16 6-6 16-6-16-16-6 16-6z" fill="none" stroke="#CDFB3E" stroke-width="4.5" stroke-linejoin="round"/>
+      </svg>
+    </h1>
+
+    <p class="bajada rev">
+      Tu <b>agente de IA</b> que crea el contenido de Instagram de tu marca
+      <b>cada semana</b>. Carruseles, historias y video, con tu paleta y tu logo.
+      Te llega listo al chat: tú apruebas y se publica.
+    </p>
+
+    <div class="acciones rev">
+      <a class="btn solido" href="/contacto/">Quiero instalarla en mi marca</a>
+      <a class="btn linea" href="#que-hace">Ver qué hace</a>
+    </div>
+  </div>
+
+  <div class="scroll-cue" aria-hidden="true">
+    <span>Desliza</span>
+    <svg class="flecha" width="16" height="18" viewBox="0 0 16 18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v13M3 10.5 8 15.5l5-5"/></svg>
+  </div>
+</header>
+
+<main>
+  <section class="bloque" id="que-hace">
+    <div class="wrap">
+      <h2 class="titulo rev">No es un chatbot. Es tu <em>equipo de contenido</em>.</h2>
+      <p class="parrafo rev">
+        Bárbara aprende tu marca una vez —colores, logo, tono, qué sí y qué no— y
+        desde ahí produce sola, todas las semanas, sin que tengas que pedírselo.
+      </p>
+
+      <div class="rejilla">
+        <article class="carta rev">
+          <div class="cuota">Hasta 12 al mes</div>
+          <h3>Carruseles</h3>
+          <p>Tips, producto, antes y después. Ella redacta el texto y arma el diseño con tu paleta.</p>
+        </article>
+        <article class="carta rev">
+          <div class="cuota">Hasta 4 al mes</div>
+          <h3>Video UGC</h3>
+          <p>Clips de producto y ambiente con estilo auténtico, listos para publicar como reel.</p>
+        </article>
+        <article class="carta rev">
+          <div class="cuota">Hasta 20 al mes</div>
+          <h3>Historias</h3>
+          <p>Contenido diario para sostener la presencia sin quedarte en blanco ningún día.</p>
+        </article>
+      </div>
+
+      <div class="visual rev">
+        <img src="/assets/barbara/chat.jpg" alt="El contenido de la semana llegando al chat de Bárbara: carrusel, video vertical e historias" loading="lazy" />
+      </div>
+    </div>
+  </section>
+
+  <section class="bloque">
+    <div class="wrap">
+      <h2 class="titulo rev">Llega al chat. Tú <em>apruebas</em>. Se publica.</h2>
+      <p class="parrafo rev">
+        Nada sale sin tu visto bueno. Si algo no te convence, se lo dices por el
+        mismo chat y lo rehace — hasta tres correcciones por pieza, y si aún así
+        no queda, entra una persona del equipo.
+      </p>
+      <div class="visual rev">
+        <img src="/assets/barbara/constelacion.jpg" alt="Todo el contenido que Bárbara produce en un mes para una marca" loading="lazy" />
+      </div>
+    </div>
+  </section>
+
+  <section class="bloque" id="planes">
+    <div class="wrap">
+      <h2 class="titulo rev">Planes</h2>
+      <p class="parrafo rev">Precios de lanzamiento. Los primeros clientes los mantienen de por vida.</p>
+
+      <div class="planes">
+        <article class="plan rev">
+          <h3>Bárbara</h3>
+          <div class="precio">$36.990 <small>/mes</small></div>
+          <ul>
+            <li>Hasta 12 carruseles al mes</li>
+            <li>Texto listo para publicar en cada uno</li>
+            <li>Adaptado a tu paleta y tu logo</li>
+          </ul>
+        </article>
+
+        <article class="plan destacado rev">
+          <span class="etiqueta">Más elegido</span>
+          <h3>Bárbara Go</h3>
+          <div class="precio">$46.990 <small>/mes</small></div>
+          <ul>
+            <li>Todo lo del plan Bárbara</li>
+            <li>Hasta 20 historias al mes</li>
+            <li>4 videos UGC para tu marca</li>
+          </ul>
+        </article>
+
+        <article class="plan rev">
+          <h3>Bárbara Plus</h3>
+          <div class="precio">$54.990 <small>/mes</small></div>
+          <ul>
+            <li>Todo lo del plan Go</li>
+            <li>Gestión de campañas en Meta y Google</li>
+            <li>Chat directo con Bárbara: le pides cambios y responde</li>
+          </ul>
+        </article>
+      </div>
+
+      <p class="nota-planes rev">
+        Todos incluyen soporte y mejoras continuas. Valores en pesos chilenos;
+        también atendemos Colombia y Perú en moneda local.
+      </p>
+    </div>
+  </section>
+
+  <section class="bloque">
+    <div class="wrap">
+      <div class="cierre rev">
+        <h2 class="titulo">La instalamos <em>nosotros</em>.</h2>
+        <p class="parrafo">
+          No tienes que configurar nada. Nos cuentas de tu marca, la entrenamos con
+          tus colores y tu estilo, y en pocos días empieza a publicar. Escríbenos y
+          te contamos cómo sería en tu caso.
+        </p>
+        <div class="acciones">
+          <a class="btn solido" href="/contacto/">Hablemos de mi marca</a>
+          <a class="btn linea" href="https://wa.me/56988989824?text=Hola%2C%20quiero%20instalar%20B%C3%A1rbara%20en%20mi%20marca" target="_blank" rel="noopener">Escribir por WhatsApp</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap pie">
+    <span>Bárbara es un producto de <a href="/">condor.ai</a></span>
+    <span><a href="/productos/">Ver todos los productos</a> · <a href="/contacto/">Contacto</a></span>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var quieto = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* El titular se arma letra por letra para poder escalonar la entrada. Se
+     escribe desde JS y no en el HTML para no dejar el marcado lleno de spans
+     ilegibles; el nombre accesible ya está en el span oculto de al lado. */
+  var titular = document.getElementById("titular");
+  var hueco = titular.querySelector("span[aria-hidden]");
+  "BÁRBARA".split("").forEach(function(ch, i){
+    var s = document.createElement("span");
+    s.className = "letra";
+    s.textContent = ch;
+    if(!quieto){
+      s.style.opacity = "0";
+      s.style.transform = "translateY(.34em)";
+      s.style.transition = "opacity .62s cubic-bezier(.32,.72,0,1) " + (i*0.055) + "s, transform .62s cubic-bezier(.32,.72,0,1) " + (i*0.055) + "s";
+    }
+    hueco.appendChild(s);
+  });
+
+  requestAnimationFrame(function(){
+    titular.querySelectorAll(".letra").forEach(function(s){
+      s.style.opacity = "1"; s.style.transform = "none";
+    });
+    /* Los garabatos entran después del nombre: primero se lee la palabra,
+       después aparece el adorno. Al revés distrae de lo que importa. */
+    var d = titular.querySelectorAll(".doodle");
+    d.forEach(function(el, i){
+      if(quieto){ el.style.opacity = "1"; return; }
+      el.style.transform = "scale(.5) rotate(-18deg)";
+      el.style.transition = "opacity .5s ease " + (0.5 + i*0.09) + "s, transform .5s cubic-bezier(.34,1.56,.64,1) " + (0.5 + i*0.09) + "s";
+      requestAnimationFrame(function(){ el.style.opacity = "1"; el.style.transform = "none"; });
+    });
+    document.querySelectorAll(".hero .rev").forEach(function(el){ el.classList.add("on"); });
+  });
+
+  /* Aparición al hacer scroll. IntersectionObserver y no un listener de
+     scroll: no corre en cada píxel y el navegador lo agenda cuando puede. */
+  var obs = new IntersectionObserver(function(filas){
+    filas.forEach(function(f){
+      if(f.isIntersecting){ f.target.classList.add("on"); obs.unobserve(f.target); }
+    });
+  }, { rootMargin: "0px 0px -12% 0px", threshold: 0.05 });
+  document.querySelectorAll(".rev:not(.on)").forEach(function(el){ obs.observe(el); });
+
+  /* Los garabatos se mueven un poco con el mouse, como en la referencia. Se
+     apaga en pantallas táctiles y con reduced-motion. */
+  if(!quieto && window.matchMedia("(hover: hover)").matches){
+    var doodles = titular.querySelectorAll(".doodle");
+    window.addEventListener("mousemove", function(e){
+      var x = (e.clientX / window.innerWidth - .5);
+      var y = (e.clientY / window.innerHeight - .5);
+      doodles.forEach(function(el, i){
+        var f = 8 + i * 4;
+        el.style.translate = (x * f) + "px " + (y * f) + "px";
+      });
+    }, { passive: true });
+  }
+})();
+</script>
+</body>
+</html>
