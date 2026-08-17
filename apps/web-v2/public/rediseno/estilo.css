@@ -78,7 +78,18 @@ p{margin:0;line-height:1.65;color:var(--ink-2)}
 .topbar::after{content:"";position:absolute;left:0;right:0;top:100%;height:18px;pointer-events:none;
   background:linear-gradient(rgba(255,255,255,.85),transparent)}
 .topbar .wrap{display:flex;align-items:center;gap:22px;padding-block:15px}
-.topbar img.logo{height:28px;width:auto}
+/* `flex:none` en el enlace Y en la imagen, y no solo `width:auto`.
+   El logo es un elemento flex: cuando la barra queda apretada —en teléfono,
+   con el botón de agendar al lado— flex lo ENCOGE por debajo de su ancho
+   natural, porque `flex-shrink` vale 1 por defecto. El resultado era el logo
+   aplastado a la mitad de ancho (45 px en vez de 87), con el ave montada
+   sobre el texto. `width:auto` no protege de eso; `flex:none` sí. */
+/* Regla única para las tres apariciones del logo (barra, cajón y pie): la
+   altura la fija cada contexto, pero el ancho SIEMPRE es el que corresponda a
+   esa altura, y nunca se encoge. */
+img.logo{width:auto;flex:none;max-width:none}
+.topbar .marca-link{flex:none;display:flex;align-items:center}
+.topbar img.logo{height:28px}
 .menu{display:flex;gap:2px;margin-left:auto;align-items:center}
 .menu a{padding:9px 13px;border-radius:6px;font-size:14.5px;font-weight:500;color:var(--ink-2)}
 .menu a:hover{color:var(--ink);background:var(--papel-2)}

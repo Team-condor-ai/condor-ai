@@ -95,7 +95,7 @@ const cab = (t) => `<!DOCTYPE html>
   <button class="burger" aria-label="Abrir menú" aria-expanded="false" aria-controls="cajon">
     <span></span><span></span><span></span>
   </button>
-  <a href="/"><img class="logo" src="/assets/logo.png" alt="condor.ai" /></a>
+  <a class="marca-link" href="/"><img class="logo" src="/assets/logo.png" alt="condor.ai" /></a>
   <nav class="menu">
 ${NAV.map(([u, n]) => `    <a href="${u}"${t.ruta === u ? ' aria-current="page"' : ""}>${n}</a>`).join("\n")}
   </nav>
