@@ -22,7 +22,7 @@ const MODEL = "claude-sonnet-5";
 const CORS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "authorization, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info, x-supabase-api-version",
 };
 const json = (o: unknown, s = 200) =>
   new Response(JSON.stringify(o), {

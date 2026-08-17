@@ -147,6 +147,114 @@ section.bloque{padding:clamp(80px,11vw,150px) 0;position:relative}
 }
 .visual img{width:100%;height:auto;display:block}
 
+/* ── CHAT DE TELEGRAM ──────────────────────────────────────────────────────
+   Está construido en HTML, no es una captura: el texto queda nítido en
+   cualquier pantalla, se lee con lector de pantalla, pesa unos pocos kB y se
+   corrige cambiando una línea en vez de rehacer una imagen. */
+.tg{
+  max-width:400px;margin:0 auto;background:#17212B;border-radius:26px;
+  border:1px solid rgba(255,255,255,.1);overflow:hidden;
+  box-shadow:0 40px 90px -40px rgba(0,0,0,.9);
+}
+.tg-cabecera{
+  display:flex;align-items:center;gap:11px;padding:14px 16px;
+  background:#1F2C3A;border-bottom:1px solid rgba(255,255,255,.06);
+}
+.tg-ava{width:38px;height:38px;border-radius:999px;background:var(--lima);flex:none;display:grid;place-items:center}
+.tg-cabecera b{font-size:14.5px;color:#fff;font-weight:600;display:block;line-height:1.2}
+.tg-cabecera small{font-size:11.5px;color:#7D8E9E}
+.tg-cuerpo{padding:16px 14px 20px;display:flex;flex-direction:column;gap:10px;min-height:430px}
+.burbuja{
+  background:#212D3B;border-radius:14px 14px 14px 4px;padding:11px 13px;
+  max-width:88%;font-size:13.6px;line-height:1.45;color:#E8EEF4;
+  opacity:0;transform:translateY(10px);
+}
+.burbuja.on{opacity:1;transform:none;transition:opacity .45s ease,transform .45s cubic-bezier(.32,.72,0,1)}
+.burbuja .hora{display:block;text-align:right;font-size:10.5px;color:#6C7C8B;margin-top:5px}
+.burbuja .rotulo{font-size:11px;color:var(--lima);font-weight:600;letter-spacing:.04em;text-transform:uppercase;margin-bottom:7px;display:block}
+.tg-tiras{display:flex;gap:5px}
+.tg-tira{flex:1;aspect-ratio:4/5;border-radius:7px;background:linear-gradient(160deg,#2C3B4C,#1B2733);
+  display:grid;place-items:center;font-size:9.5px;color:#8FA3B5;position:relative;overflow:hidden}
+.tg-tira.destacada{background:linear-gradient(160deg,#2A3A1E,#1B2733);color:var(--lima);
+  font-size:10.5px;font-weight:600;text-align:center;padding:6px;line-height:1.25}
+.tg-video{
+  aspect-ratio:16/10;border-radius:9px;background:linear-gradient(150deg,#2A3A1E,#1B2733);
+  display:grid;place-items:center;position:relative;
+}
+.tg-play{width:34px;height:34px;border-radius:999px;background:rgba(205,251,62,.9);display:grid;place-items:center}
+.tg-metricas{display:flex;gap:6px}
+.tg-metrica{flex:1;background:#1B2733;border-radius:9px;padding:9px 8px;text-align:center}
+.tg-metrica b{display:block;font-size:15px;color:var(--lima);font-weight:700;line-height:1.1}
+.tg-metrica span{font-size:9.5px;color:#7D8E9E}
+.tg-escribiendo{display:flex;gap:4px;align-items:center;padding:12px 14px;background:#212D3B;
+  border-radius:14px 14px 14px 4px;width:56px}
+.tg-escribiendo i{width:6px;height:6px;border-radius:999px;background:#7D8E9E;animation:puntito 1.3s infinite}
+.tg-escribiendo i:nth-child(2){animation-delay:.18s}
+.tg-escribiendo i:nth-child(3){animation-delay:.36s}
+@keyframes puntito{0%,60%,100%{opacity:.3;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}
+
+/* ── MASCOTA ANIMADA ───────────────────────────────────────────────────── */
+.mascota-caja{display:grid;place-items:center;padding:20px}
+.mascota{width:min(320px,72vw);height:auto;animation:flota 5.5s ease-in-out infinite}
+@keyframes flota{0%,100%{transform:translateY(0)}50%{transform:translateY(-14px)}}
+.mascota .aro{transform-origin:center;animation:gira 22s linear infinite}
+@keyframes gira{to{transform:rotate(360deg)}}
+.mascota .ojo{transform-origin:center;animation:parpadea 5.5s infinite}
+@keyframes parpadea{0%,94%,100%{transform:scaleY(1)}96%,98%{transform:scaleY(.12)}}
+.mascota .chispa{animation:brilla 2.6s ease-in-out infinite;transform-origin:center}
+.mascota .chispa.b{animation-delay:.9s}
+@keyframes brilla{0%,100%{opacity:.45;transform:scale(.82)}50%{opacity:1;transform:scale(1.12)}}
+
+/* ── CÓMO FUNCIONA (pasos) ─────────────────────────────────────────────── */
+.pasos{display:flex;flex-direction:column;gap:0;margin-top:52px}
+.paso{
+  display:grid;grid-template-columns:78px 1fr;gap:24px;align-items:start;
+  padding:30px 0;border-top:1px solid var(--linea);
+}
+.paso:last-child{border-bottom:1px solid var(--linea)}
+.paso .n{
+  font-family:Fraunces,Georgia,serif;font-size:44px;font-weight:700;color:var(--lima);
+  line-height:1;opacity:.9;
+}
+.paso h3{font-family:Fraunces,Georgia,serif;font-size:24px;font-weight:600;margin-bottom:8px}
+.paso p{font-size:15.5px;line-height:1.6;color:var(--crema-2);max-width:62ch}
+@media (max-width:640px){.paso{grid-template-columns:1fr;gap:10px}.paso .n{font-size:34px}}
+
+/* ── MEMORIA (dos columnas) ────────────────────────────────────────────── */
+.memoria{display:grid;gap:18px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));margin-top:44px}
+.mem{
+  background:var(--negro-2);border:1px solid var(--linea);border-radius:var(--radio);
+  padding:30px 28px;position:relative;overflow:hidden;
+}
+.mem.propia{border-color:rgba(205,251,62,.4)}
+.mem .rotulo{font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--lima)}
+.mem h3{font-family:Fraunces,Georgia,serif;font-size:26px;font-weight:600;margin:12px 0 10px}
+.mem p{font-size:15px;line-height:1.6;color:var(--crema-2)}
+.mem .sello{
+  display:inline-block;margin-top:16px;font-size:12.5px;font-weight:600;
+  padding:6px 12px;border-radius:999px;border:1px solid var(--linea);color:var(--crema-2);
+}
+
+/* ── FAQ ───────────────────────────────────────────────────────────────── */
+.faq{margin-top:46px;border-top:1px solid var(--linea)}
+.faq details{border-bottom:1px solid var(--linea)}
+.faq summary{
+  padding:24px 46px 24px 0;font-size:17.5px;font-weight:600;cursor:pointer;
+  list-style:none;position:relative;transition:color .2s ease;
+}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary:hover{color:var(--lima)}
+.faq summary::after{
+  content:"";position:absolute;right:6px;top:50%;width:14px;height:2px;
+  background:var(--lima);transform:translateY(-50%);
+}
+.faq summary::before{
+  content:"";position:absolute;right:12px;top:50%;width:2px;height:14px;
+  background:var(--lima);transform:translateY(-50%);transition:transform .25s cubic-bezier(.32,.72,0,1);
+}
+.faq details[open] summary::before{transform:translateY(-50%) scaleY(0)}
+.faq details p{font-size:15.5px;line-height:1.65;color:var(--crema-2);padding:0 40px 26px 0;max-width:70ch}
+
 /* ── PLANES ────────────────────────────────────────────────────────────── */
 .planes{display:grid;gap:18px;grid-template-columns:repeat(auto-fit,minmax(275px,1fr));margin-top:52px;align-items:start}
 .plan{
@@ -230,6 +338,7 @@ footer{border-top:1px solid var(--linea);padding:34px 0 46px;margin-top:40px}
     </svg>
   </span>
   <a class="enlace oculta-movil" href="#que-hace">Qué hace</a>
+  <a class="enlace oculta-movil" href="#como-funciona">Cómo funciona</a>
   <a class="enlace oculta-movil" href="#planes">Planes</a>
   <a class="cta enlace" href="/contacto/">Quiero Bárbara</a>
 </nav>
@@ -312,17 +421,17 @@ footer{border-top:1px solid var(--linea);padding:34px 0 46px;margin-top:40px}
 
       <div class="rejilla">
         <article class="carta rev">
-          <div class="cuota">Hasta 12 al mes</div>
+          <div class="cuota">Cada semana</div>
           <h3>Carruseles</h3>
           <p>Tips, producto, antes y después. Ella redacta el texto y arma el diseño con tu paleta.</p>
         </article>
         <article class="carta rev">
-          <div class="cuota">Hasta 4 al mes</div>
+          <div class="cuota">Cada semana</div>
           <h3>Video UGC</h3>
           <p>Clips de producto y ambiente con estilo auténtico, listos para publicar como reel.</p>
         </article>
         <article class="carta rev">
-          <div class="cuota">Hasta 20 al mes</div>
+          <div class="cuota">Todos los días</div>
           <h3>Historias</h3>
           <p>Contenido diario para sostener la presencia sin quedarte en blanco ningún día.</p>
         </article>
@@ -336,14 +445,201 @@ footer{border-top:1px solid var(--linea);padding:34px 0 46px;margin-top:40px}
 
   <section class="bloque">
     <div class="wrap">
-      <h2 class="titulo rev">Llega al chat. Tú <em>apruebas</em>. Se publica.</h2>
+      <h2 class="titulo rev">Llega a tu <em>Telegram</em>. Tú apruebas. Se publica.</h2>
       <p class="parrafo rev">
         Nada sale sin tu visto bueno. Si algo no te convence, se lo dices por el
-        mismo chat y lo rehace — hasta tres correcciones por pieza, y si aún así
-        no queda, entra una persona del equipo.
+        mismo chat y lo rehace las veces que haga falta, y si aún así no queda,
+        entra una persona del equipo.
       </p>
-      <div class="visual rev">
-        <img src="/assets/barbara/constelacion.jpg" alt="Todo el contenido que Bárbara produce en un mes para una marca" loading="lazy" />
+
+      <div class="rev" style="margin-top:56px">
+        <div class="tg" id="tg">
+          <div class="tg-cabecera">
+            <span class="tg-ava">
+              <svg width="24" height="24" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+                <path d="M16 4c-4.6 0-7.6 3.2-7.6 8 0 2.3.3 4.4.9 6.2.5 1.6.2 3-.7 4.4-.5.8 0 1.8 1 1.8h2.1" stroke="#0A0A0A" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M16 4c4.6 0 7.6 3.2 7.6 8 0 2.3-.3 4.4-.9 6.2-.5 1.6-.2 3 .7 4.4.5.8 0 1.8-1 1.8h-2.1" stroke="#0A0A0A" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M10.6 11.4c1.8.3 3.6-.5 4.6-2 1.2 1.6 3.2 2.4 5.2 2" stroke="#0A0A0A" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="13" cy="15.6" r="1.25" fill="#0A0A0A"/><circle cx="19" cy="15.6" r="1.25" fill="#0A0A0A"/>
+                <path d="M14.4 19.4c1 .8 2.2.8 3.2 0" stroke="#0A0A0A" stroke-width="1.9" stroke-linecap="round"/>
+              </svg>
+            </span>
+            <span><b>Bárbara</b><small>en línea</small></span>
+          </div>
+
+          <div class="tg-cuerpo">
+            <div class="burbuja" data-paso="1">
+              ¡Hola! Aquí tienes tu contenido de esta semana 🚀
+              <span class="hora">9:41</span>
+            </div>
+
+            <div class="burbuja" data-paso="2">
+              <span class="rotulo">Carrusel para Instagram</span>
+              <div class="tg-tiras">
+                <span class="tg-tira destacada">3 hábitos que cambian tu marca</span>
+                <span class="tg-tira">02</span>
+                <span class="tg-tira">03</span>
+              </div>
+              <span class="hora">9:41</span>
+            </div>
+
+            <div class="burbuja" data-paso="3">
+              <span class="rotulo">Video vertical · Reel</span>
+              <div class="tg-video">
+                <span class="tg-play">
+                  <svg width="13" height="13" viewBox="0 0 12 12" fill="#0A0A0A" aria-hidden="true"><path d="M2.5 1.5v9l8-4.5z"/></svg>
+                </span>
+              </div>
+              <span class="hora">9:42</span>
+            </div>
+
+            <div class="burbuja" data-paso="4">
+              <span class="rotulo">Cómo le fue a lo de la semana pasada</span>
+              <div class="tg-metricas">
+                <span class="tg-metrica"><b>28,4K</b><span>alcance</span></span>
+                <span class="tg-metrica"><b>3,6K</b><span>interacciones</span></span>
+                <span class="tg-metrica"><b>7,3%</b><span>conversión</span></span>
+              </div>
+              <span class="hora">9:42</span>
+            </div>
+
+            <div class="tg-escribiendo" id="tg-escribiendo" style="opacity:0" aria-hidden="true">
+              <i></i><i></i><i></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="bloque" id="como-funciona">
+    <div class="wrap">
+      <h2 class="titulo rev">Cómo funciona</h2>
+      <p class="parrafo rev">
+        Bárbara no parte de cero cada semana. Aprende tu marca una vez y después
+        aprende de lo que funciona.
+      </p>
+
+      <div class="pasos">
+        <article class="paso rev">
+          <div class="n">01</div>
+          <div>
+            <h3>La entrenamos con tu marca</h3>
+            <p>Nos das tu logo, tus colores y un par de referencias que te gusten. Con eso
+               armamos su <b>brand book</b>: paleta, tipografía, tono y las cosas que tu
+               marca no hace. Ese documento es de ella y solo de ella.</p>
+          </div>
+        </article>
+        <article class="paso rev">
+          <div class="n">02</div>
+          <div>
+            <h3>Produce sola, cada semana</h3>
+            <p>No hay que pedírselo ni recordárselo. Genera el contenido, lo arma con tu
+               identidad y te lo manda al chat listo para revisar.</p>
+          </div>
+        </article>
+        <article class="paso rev">
+          <div class="n">03</div>
+          <div>
+            <h3>Le dices qué cambiar, en el mismo chat</h3>
+            <p>«Más corto», «cambia la foto», «ese color no». Lo rehace ahí mismo, sin
+               tickets ni correos. Y se lo anota: la próxima ya no lo repite.</p>
+          </div>
+        </article>
+        <article class="paso rev">
+          <div class="n">04</div>
+          <div>
+            <h3>Aprende de los resultados</h3>
+            <p>Mira qué publicaciones funcionaron y ajusta lo que propone. Si tus carruseles
+               con pregunta al final rinden mejor, empieza a hacer más de esos.</p>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="bloque">
+    <div class="wrap">
+      <h2 class="titulo rev">Tiene <em>dos memorias</em>. Y no se mezclan.</h2>
+      <p class="parrafo rev">
+        Es la parte que más nos preguntan, así que va explicada en detalle.
+      </p>
+
+      <div class="memoria">
+        <article class="mem propia rev">
+          <span class="rotulo">Memoria de tu marca</span>
+          <h3>Privada, tuya</h3>
+          <p>
+            Tu logo, tus colores, tu tono, tus productos, todo lo que le corregiste y
+            todo lo que publicó. Vive separada de la de cualquier otro cliente y
+            <b>nunca sale de tu marca</b>. Ninguna otra empresa ve tu contenido, tus
+            resultados ni tus correcciones.
+          </p>
+          <span class="sello">🔒 No se comparte con nadie</span>
+        </article>
+
+        <article class="mem rev">
+          <span class="rotulo">Memoria global</span>
+          <h3>Lo que aprende de oficio</h3>
+          <p>
+            Bárbara también aprende del oficio en general: qué formatos rinden, a qué
+            hora conviene publicar, qué estructura de carrusel retiene más. Eso sí se
+            comparte entre todos los clientes — pero <b>solo el patrón, nunca el
+            contenido</b>. Es la diferencia entre «los carruseles que terminan en
+            pregunta funcionan mejor» y saber qué publicó tu competencia.
+          </p>
+          <span class="sello">📈 Solo patrones, cero identidad</span>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="bloque">
+    <div class="wrap">
+      <h2 class="titulo rev">Preguntas <em>frecuentes</em></h2>
+
+      <div class="faq rev">
+        <details>
+          <summary>¿Publica sola en mi Instagram?</summary>
+          <p>No, y es a propósito. Bárbara te manda el contenido al chat y tú apruebas
+             antes de que se publique. La publicación automática existe como paso
+             siguiente, cuando ya le tomaste confianza al contenido y lo pides.</p>
+        </details>
+        <details>
+          <summary>¿Cuántas correcciones puedo pedirle?</summary>
+          <p>Las que necesites. Si después de varias vueltas algo sigue sin quedar,
+             entra una persona del equipo a resolverlo contigo — porque a esa altura
+             el problema normalmente no es la pieza, es que falta afinar el brand book.</p>
+        </details>
+        <details>
+          <summary>¿Necesito saber de diseño o de marketing?</summary>
+          <p>No. Esa es justamente la idea. Le dices lo que quieres en palabras
+             normales y ella se encarga del resto. Y la instalación la hacemos
+             nosotros: no tienes que configurar nada.</p>
+        </details>
+        <details>
+          <summary>¿Y si mi marca todavía no tiene colores ni logo definidos?</summary>
+          <p>Se resuelve en la instalación. Con un par de referencias que te gusten
+             armamos una propuesta de identidad, la revisas, y esa queda como base.
+             Varios clientes llegan justamente así.</p>
+        </details>
+        <details>
+          <summary>¿Los videos salen con una persona hablando?</summary>
+          <p>Por ahora no. El video es estilo UGC: clips de producto y ambiente, con
+             ese aire de grabado con el teléfono que funciona bien en redes. Video con
+             vocero es algo que hacemos aparte, como servicio.</p>
+        </details>
+        <details>
+          <summary>¿Se puede cancelar cuando quiera?</summary>
+          <p>Sí. Es mes a mes, sin permanencia ni multa. Si cancelas, el contenido que
+             ya te entregó es tuyo y lo sigues usando.</p>
+        </details>
+        <details>
+          <summary>¿Cuánto demora en estar funcionando?</summary>
+          <p>Entre la primera conversación y el primer contenido en tu chat suelen
+             pasar pocos días. La mayor parte de ese tiempo es afinar el brand book
+             contigo, no configuración técnica.</p>
+        </details>
       </div>
     </div>
   </section>
@@ -358,7 +654,7 @@ footer{border-top:1px solid var(--linea);padding:34px 0 46px;margin-top:40px}
           <h3>Bárbara</h3>
           <div class="precio">$36.990 <small>/mes</small></div>
           <ul>
-            <li>Hasta 12 carruseles al mes</li>
+            <li>Carruseles cada semana</li>
             <li>Texto listo para publicar en cada uno</li>
             <li>Adaptado a tu paleta y tu logo</li>
           </ul>
@@ -370,8 +666,8 @@ footer{border-top:1px solid var(--linea);padding:34px 0 46px;margin-top:40px}
           <div class="precio">$46.990 <small>/mes</small></div>
           <ul>
             <li>Todo lo del plan Bárbara</li>
-            <li>Hasta 20 historias al mes</li>
-            <li>4 videos UGC para tu marca</li>
+            <li>Historias para todos los días</li>
+            <li>Videos UGC para tu marca</li>
           </ul>
         </article>
 
@@ -396,6 +692,35 @@ footer{border-top:1px solid var(--linea);padding:34px 0 46px;margin-top:40px}
   <section class="bloque">
     <div class="wrap">
       <div class="cierre rev">
+        <div class="mascota-caja">
+          <!-- La mascota de la marca, dibujada y animada: flota, parpadea y le
+               brillan las chispas. Va en SVG y no como video para que pese
+               nada y se vea nítida en cualquier pantalla. -->
+          <svg class="mascota" viewBox="0 0 260 260" fill="none" role="img" aria-label="Bárbara, la agente de IA de contenido">
+            <circle class="aro" cx="130" cy="130" r="104" stroke="#CDFB3E" stroke-width="4"
+              stroke-linecap="round" stroke-dasharray="500 154" opacity=".9"/>
+
+            <!-- Melena completa, en negro. Antes esta capa iba en crema y bajo
+                 el mentón quedaba una mancha clara sin dibujo, como un cuerpo a
+                 medio hacer; en negro lee como el pelo cayendo sobre los
+                 hombros, que es la mascota de la marca. -->
+            <path d="M130 44c-38 0-62 26-62 65 0 19 2.6 36 7.4 50.6 4.4 13 1.8 24.6-5.8 36-4 6-.4 14.6 8 14.6h104.8c8.4 0 12-8.6 8-14.6-7.6-11.4-10.2-23-5.8-36 4.8-14.6 7.4-31.6 7.4-50.6 0-39-24-65-62-65z"
+              fill="#0A0A0A"/>
+            <!-- cara -->
+            <path d="M130 62c-27 0-44 18-44 47 0 30 19 54 44 54s44-24 44-54c0-29-17-47-44-47z" fill="#F3F1E7"/>
+            <!-- flequillo -->
+            <path d="M86 109c14 2.4 28.6-4 37-16 9.6 12.8 25.4 19 41 16 0-29-17-47-44-47s-34 18-34 47z" fill="#0A0A0A"/>
+            <path d="M130 44c-38 0-62 26-62 65 0 19 2.6 36 7.4 50.6 4.4 13 1.8 24.6-5.8 36-4 6-.4 14.6 8 14.6h20V150c-14-8-22-24-22-41 0-29 17-47 54-47s54 18 54 47c0 17-8 33-22 41v60.2h20c8.4 0 12-8.6 8-14.6-7.6-11.4-10.2-23-5.8-36 4.8-14.6 7.4-31.6 7.4-50.6 0-39-24-65-62-65z"
+              fill="#0A0A0A"/>
+            <!-- ojos y boca -->
+            <ellipse class="ojo" cx="112" cy="122" rx="5.6" ry="6.6" fill="#0A0A0A"/>
+            <ellipse class="ojo" cx="148" cy="122" rx="5.6" ry="6.6" fill="#0A0A0A"/>
+            <path d="M118 141c7 6 17 6 24 0" stroke="#0A0A0A" stroke-width="4.6" stroke-linecap="round"/>
+            <!-- chispas -->
+            <path class="chispa" d="M206 60l5.4 13.6L225 79l-13.6 5.4L206 98l-5.4-13.6L187 79l13.6-5.4z" fill="#CDFB3E"/>
+            <path class="chispa b" d="M228 104l3.4 8.6 8.6 3.4-8.6 3.4-3.4 8.6-3.4-8.6-8.6-3.4 8.6-3.4z" fill="#CDFB3E"/>
+          </svg>
+        </div>
         <h2 class="titulo">La instalamos <em>nosotros</em>.</h2>
         <p class="parrafo">
           No tienes que configurar nada. Nos cuentas de tu marca, la entrenamos con
@@ -463,6 +788,38 @@ footer{border-top:1px solid var(--linea);padding:34px 0 46px;margin-top:40px}
     });
   }, { rootMargin: "0px 0px -12% 0px", threshold: 0.05 });
   document.querySelectorAll(".rev:not(.on)").forEach(function(el){ obs.observe(el); });
+
+  /* El chat se "escribe" cuando entra en pantalla: los mensajes aparecen uno a
+     uno con el indicador de escribiendo entremedio, como una conversación de
+     verdad. Se dispara UNA vez —volver a verlo al hacer scroll arriba y abajo
+     sería un tic molesto— y con reduced-motion se muestra todo de una. */
+  var tg = document.getElementById("tg");
+  if (tg) {
+    var burbujas = tg.querySelectorAll(".burbuja");
+    var escribiendo = document.getElementById("tg-escribiendo");
+    if (quieto) {
+      burbujas.forEach(function(b){ b.classList.add("on"); });
+    } else {
+      var obsTg = new IntersectionObserver(function(filas){
+        filas.forEach(function(f){
+          if(!f.isIntersecting) return;
+          obsTg.unobserve(f.target);
+          var i = 0;
+          (function siguiente(){
+            if (i >= burbujas.length) { escribiendo.style.opacity = "0"; return; }
+            escribiendo.style.opacity = "1";
+            setTimeout(function(){
+              escribiendo.style.opacity = "0";
+              burbujas[i].classList.add("on");
+              i++;
+              setTimeout(siguiente, 420);
+            }, i === 0 ? 500 : 780);
+          })();
+        });
+      }, { threshold: 0.35 });
+      obsTg.observe(tg);
+    }
+  }
 
   /* Los garabatos se mueven un poco con el mouse, como en la referencia. Se
      apaga en pantallas táctiles y con reduced-motion. */

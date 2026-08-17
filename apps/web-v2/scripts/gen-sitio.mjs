@@ -56,8 +56,14 @@ const ICO = {
 const icono = (n, clase = "ico") =>
   `<svg class="${clase}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICO[n]}</svg>`;
 
+/* "Inicio" apunta a la raíz, no a `/inicio/`.
+   `/inicio/` NUNCA fue la home: es la página "Quiénes somos" —el pie de
+   página siempre la enlazó con ese nombre— y estaba mal rotulada en el menú,
+   así que apretar "Inicio" te dejaba en una página distinta a condorai.cl.
+   Su dirección propia pasa a ser `/compania/`, que ya existía como copia. */
 const NAV = [
-  ["/inicio/", "Inicio"],
+  ["/", "Inicio"],
+  ["/compania/", "Compañía"],
   ["/equipo/", "Equipo"],
   ["/clientes/", "Clientes"],
   ["/proceso/", "Proceso"],
@@ -131,7 +137,7 @@ const pie = `
     <div><h4>Productos</h4>
       <a href="/productos/">Desarrollo de software</a><a href="/productos/">Asistentes y agentes de IA</a><a href="/productos/">Consultoría e implementación</a></div>
     <div><h4>La empresa</h4>
-      <a href="/inicio/">Quiénes somos</a><a href="/equipo/">Equipo</a><a href="/proceso/">Proceso</a><a href="/clientes/">Clientes</a></div>
+      <a href="/compania/">Quiénes somos</a><a href="/equipo/">Equipo</a><a href="/proceso/">Proceso</a><a href="/clientes/">Clientes</a></div>
     <div><h4>Contacto</h4>
       <a href="/agendar">Agendar una reunión</a>
       <a href="mailto:${CORREO}">${CORREO}</a>
@@ -722,7 +728,7 @@ ${carrusel}
   <div class="cab">
     <div>
       <h2 style="margin-top:20px">Optimizamos procesos de empresas con inteligencia artificial</h2></div>
-    ${verMas("/inicio/", "Ver más")}
+    ${verMas("/compania/", "Ver más")}
   </div>
   <p style="font-size:clamp(16px,1.6vw,19px);max-width:70ch">Ayudamos a empresas a automatizar sus procesos con inteligencia artificial: desde un emprendedor que quiere dejar de perder horas en tareas repetitivas, hasta compañías que ahorran miles de dólares al año en operación. Fundada en 2025, con operación en Chile, Perú y Colombia.</p>
   </div>
@@ -812,15 +818,12 @@ escribir("productos/index.html", cab({
   <p class="bajada">No trabajamos por horas ni revendemos licencias. Cada línea tiene un responsable técnico y un alcance escrito antes de comenzar.</p>
 </div></section>
 
-<section style="padding-bottom:clamp(56px,7vw,96px)"><div class="wrap">
-<div class="lista">${bloquesProducto()}</div>
-</div></section>
-
-<!-- Bárbara es un producto EMPAQUETADO, no una línea de servicio a medida:
-     tiene precio de lista y se instala igual para todos. Por eso va aparte de
-     las tres líneas y con su propia página, que además tiene otra identidad
-     visual (negro y lima, no el azul corporativo). -->
-<section style="padding-bottom:clamp(56px,7vw,96px)"><div class="wrap">
+<!-- Bárbara va ARRIBA de las tres líneas: es el único producto empaquetado
+     —precio de lista, se instala igual para todos— y es lo que más se vende
+     solo. Dejarlo al final lo escondía debajo de tres bloques largos de
+     servicio a medida. Tiene su propia identidad (negro y lima) porque es una
+     marca aparte, no una cuarta línea de servicio. -->
+<section style="padding-bottom:clamp(40px,5vw,64px)"><div class="wrap">
   <a href="/productos/barbara/" class="barbara-tira">
     <div class="barbara-tira-txt">
       <span class="mono-label">Producto · suscripción mensual</span>
@@ -831,6 +834,10 @@ escribir("productos/index.html", cab({
     </div>
     <img src="/assets/barbara/lockup.jpg" alt="Bárbara, agente de IA de contenido" loading="lazy" />
   </a>
+</div></section>
+
+<section style="padding-bottom:clamp(56px,7vw,96px)"><div class="wrap">
+<div class="lista">${bloquesProducto()}</div>
 </div></section>
 
 <section class="seccion oscura"><div class="wrap">
@@ -847,13 +854,14 @@ escribir("productos/index.html", cab({
 ` + cierre("¿Cuál de las tres necesita?") + pie.replace("</body>", JS_COMUN + "</body>"));
 
 /* ── COMPAÑÍA ───────────────────────────────────────────────────────── */
-/* La página se llama Inicio. Se escribe DOS veces: en /inicio/, que es su
-   dirección, y en /compania/, que queda como copia para que cualquier enlace
-   antiguo siga respondiendo 200 en vez de caer al 404. */
+/* La página se llama Compañía y su dirección es /compania/. Se sigue
+   escribiendo también en /inicio/, que era su dirección anterior, para que
+   cualquier enlace viejo —o alguien con la URL guardada— siga respondiendo
+   200 en vez de caer al 404. */
 const paginaInicio = cab({
-  titulo: "Inicio — condor.ai",
+  titulo: "Compañía — condor.ai",
   desc: "condor.ai es una empresa chilena de servicios de software con operación en Chile y Colombia.",
-  ruta: "/inicio/",
+  ruta: "/compania/",
 }) + `
 <section class="cabecera"><div class="wrap">
   <h1>Optimizamos procesos de empresas con inteligencia artificial</h1>
