@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { sb } from "../../lib/supabase";
 import { Ico } from "../../disenio/iconos";
-import { MAX_COLORES_PALETA, type BarbaraBrandBook, type ColorMarca } from "../../agentes-ia/tipos";
+import { MAX_COLORES_PALETA, PLANTILLAS_CARRUSEL, type BarbaraBrandBook, type ColorMarca } from "../../agentes-ia/tipos";
 
 type Props = {
   barbaraClienteId: string;
@@ -26,6 +26,7 @@ export function BrandBookEditor({ barbaraClienteId, negocio, rubro, inicial, onG
   const [paleta, setPaleta] = useState<ColorMarca[]>(inicial?.paleta_colores ?? []);
   const [tipografia, setTipografia] = useState(inicial?.tipografia ?? "");
   const [detalles, setDetalles] = useState(inicial?.detalles ?? "");
+  const [plantilla, setPlantilla] = useState(inicial?.plantilla ?? "editorial");
   const [logoUrl, setLogoUrl] = useState(inicial?.logo_url ?? "");
   const [subiendoLogo, setSubiendoLogo] = useState(false);
 
@@ -74,6 +75,7 @@ export function BrandBookEditor({ barbaraClienteId, negocio, rubro, inicial, onG
         barbara_cliente_id: barbaraClienteId,
         paleta_colores: paleta.filter((c) => c.hex.trim()),
         tipografia: tipografia || null,
+        plantilla,
         logo_url: logoUrl || null,
         detalles: detalles || null,
         actualizado_en: new Date().toISOString(),
@@ -180,6 +182,33 @@ export function BrandBookEditor({ barbaraClienteId, negocio, rubro, inicial, onG
           <p className="conteo" style={{ marginTop: 6 }}>Máximo {MAX_COLORES_PALETA} colores.</p>
         )}
       </section>
+
+      {/* La plantilla decide cómo se ve el carrusel. Los slides se COMPONEN
+          en HTML, no los dibuja un modelo de imagen: así el texto sale bien
+          siempre y el color de marca es el hex exacto, no una aproximación. */}
+      <div>
+        <label className="campo-lbl">Plantilla de carrusel</label>
+        <div className="plantillas">
+          {PLANTILLAS_CARRUSEL.map((p) => (
+            <button
+              type="button"
+              key={p.id}
+              className={"plantilla" + (plantilla === p.id ? " on" : "")}
+              onClick={() => setPlantilla(p.id)}
+            >
+              {/* Miniatura hecha con los colores REALES de la marca: elegir
+                  a ciegas y descubrir el resultado recién en Telegram sería
+                  una prueba por pieza publicada. */}
+              <span className={"mini mini-" + p.id} style={{
+                "--c1": paleta[0]?.hex || "#141414",
+                "--c2": paleta[1]?.hex || "#F4F2EC",
+              } as React.CSSProperties} />
+              <b>{p.nombre}</b>
+              <small>{p.descripcion}</small>
+            </button>
+          ))}
+        </div>
+      </div>
 
       <label className="campo-lbl">
         Tipografía

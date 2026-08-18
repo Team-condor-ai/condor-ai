@@ -37,8 +37,23 @@ export type BarbaraBrandBook = {
   tipografia: string | null;
   logo_url: string | null;
   detalles: string | null;
+  plantilla: string | null;
   actualizado_en: string | null;
 };
+
+/* Las plantillas de carrusel. Tienen que calzar con las de
+   `services/barbara/plantillas.mjs` — si acá aparece una que allá no existe,
+   el motor cae a la de por defecto sin avisar. */
+export const PLANTILLAS_CARRUSEL = [
+  { id: "editorial", nombre: "Editorial",
+    descripcion: "Serif grande sobre fondo claro. Formal y con autoridad." },
+  { id: "bloque", nombre: "Bloque",
+    descripcion: "Color pleno de marca, titular enorme. Directo." },
+  { id: "ficha", nombre: "Ficha",
+    descripcion: "Tarjeta blanca con número. Para listas y pasos." },
+  { id: "foto", nombre: "Foto",
+    descripcion: "Fotografía de fondo con el texto encima." },
+] as const;
 
 export type BarbaraFormulario = {
   id: string;

@@ -15,6 +15,7 @@
 //            publicó hoy" y le pide a Bárbara una versión claramente mejor)
 
 import { tg, claude, textOf, genImagen, genVideo, unirClips, REGLA_TEXTO, supabase } from "./motor.mjs";
+import { componerSlide, PLANTILLAS, PLANTILLA_POR_DEFECTO } from "./plantillas.mjs";
 
 const AK = process.env.ANTHROPIC_API_KEY;
 const TG_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
@@ -36,9 +37,9 @@ const schema = {
   properties: {
     angulo: { type: "string", description: "El ángulo/idea ÚNICO de esta pieza en una frase (para registrar y no repetir)." },
     slides: { type: "array", items: { type: "object", additionalProperties: false, properties: {
-      titulo: { type: "string" },
-      prompt: { type: "string", description: "Prompt EN INGLÉS, art-directed, usando la paleta y tipografía de marca del cliente. Debe especificar el TEXTO EXACTO en español que se verá, como copy FINAL de diseño (solo lo que lee la persona). PROHIBIDO incluir rótulos ni meta-palabras ('titular', 'título', 'subtítulo', 'dato', 'texto', 'slide', 'CTA') ni una palabra seguida de dos puntos como etiqueta. NO logos genéricos de stock, sí puede mencionarse el logo real si se describe explícitamente." },
-    }, required: ["titulo", "prompt"] } },
+      titular: { type: "string", description: "El titular del slide, EN ESPAÑOL, tal cual se va a leer. Corto y con fuerza: 4 a 9 palabras. Sin rótulos ni dos puntos de etiqueta." },
+      cuerpo: { type: "string", description: "Una o dos frases que desarrollan el titular, EN ESPAÑOL, tal cual se van a leer. Máximo 160 caracteres. Puede ir vacío si el titular se basta solo." },
+    }, required: ["titular", "cuerpo"] } },
     caption: { type: "string", description: "Caption para Instagram con hook, valor real para el público objetivo del cliente, tono acorde a su marca, y 5-8 hashtags relevantes a su rubro." },
   },
   required: ["angulo", "slides", "caption"],
@@ -141,6 +142,13 @@ async function generarPara(cliente) {
     : "";
 
 
+  // El primer color de la paleta manda como color de marca; el segundo, si
+  // existe, es el fondo claro. Que el hex sea EXACTO es media ventaja de
+  // componer: un modelo de imagen lo aproxima y la marca queda "parecida".
+  const hexes = (bb.paleta_colores || []).map(c => c.hex).filter(h => /^#[0-9a-f]{6}$/i.test(h));
+  const colorMarca = hexes[0] || "#141414";
+  const colorFondo = hexes[1] || "#F4F2EC";
+
   const paleta = (bb.paleta_colores || []).map(c => `${c.hex}${c.uso ? ` (${c.uso})` : ""}`).join(", ") || "a criterio, coherente con el rubro";
   const tipos = (form.tipo_contenido || []).join(", ") || "contenido general para redes";
   const extraRetry = isRetry ? "\n\n⚠️ ESTE ES UN REINTENTO: el cliente pidió una corrección sobre la versión anterior. Genera una versión CLARAMENTE MEJOR y distinta (mejor diseño, mejor texto, otro enfoque del mismo tema)." : "";
@@ -199,21 +207,31 @@ ${patrones}` : ""}${extraRetry}`;
     const nSlides = TIPO === "historia" ? 1 : 6;
     const dir = await claude(AK, {
       model: "claude-sonnet-4-6", max_tokens: 4000,
-      system: `Eres Bárbara, directora creativa de "${negocio}" (rubro: ${rubro || "no especificado"}). Diseñas ${TIPO === "historia" ? "una historia de Instagram (1 imagen)" : `un carrusel de Instagram (${nSlides} slides)`} de nivel agencia. Sigues la identidad de marca del cliente al pie de la letra. Incluyes el texto exacto a renderizar en cada imagen COMO COPY FINAL: en la imagen SOLO aparece lo que lee la persona, JAMÁS palabras estructurales ni rótulos con dos puntos. NUNCA repites ángulos de las piezas recientes. Responde SOLO con el JSON.`,
+      system: `Eres Bárbara, directora creativa de "${negocio}" (rubro: ${rubro || "no especificado"}). Diseñas ${TIPO === "historia" ? "una historia de Instagram (1 imagen)" : `un carrusel de Instagram (${nSlides} slides)`} de nivel agencia. Sigues la identidad de marca del cliente al pie de la letra. Escribes la COPY FINAL de cada slide: el titular y el cuerpo tal cual los va a leer la persona. El diseño lo pone una plantilla de marca, así que NO describes imágenes ni composición — solo escribes las palabras, y tienen que sostenerse solas. NUNCA repites ángulos de las piezas recientes. Responde SOLO con el JSON.`,
       output_config: { format: { type: "json_schema", schema } },
       messages: [{ role: "user", content: `${contexto}\n\nCrea ${TIPO === "historia" ? "la historia" : `el carrusel de ${nSlides} slides`} con un ángulo NUEVO, fiel a la marca.` }],
     });
     plan_contenido = JSON.parse(textOf(dir));
     const slides = (plan_contenido.slides || []).slice(0, nSlides);
 
+    // Los slides se COMPONEN, no se dibujan. Ver `plantillas.mjs`: un carrusel
+    // es una pieza tipográfica, y componerla en HTML deja el texto siempre
+    // correcto (tildes, eñes), el hex de marca exacto y el costo en cero.
+    const plantilla = PLANTILLAS[bb.plantilla] ? bb.plantilla : PLANTILLA_POR_DEFECTO;
     const imgs = [];
     for (let i = 0; i < slides.length; i++) {
       try {
-        const url = genImagen(slides[i].prompt + "\n\n" + REGLA_TEXTO, i);
-        const buf = Buffer.from(await (await fetch(url)).arrayBuffer());
-        imgs.push(buf);
+        imgs.push(componerSlide(plantilla, {
+          titular: slides[i].titular,
+          cuerpo: slides[i].cuerpo,
+          marca: negocio,
+          indice: i + 1,
+          total: slides.length,
+          color: colorMarca,
+          color2: colorFondo,
+          tipografia: bb.tipografia || "",
+        }));
       } catch (e) {
-        if (e.permanent) throw e;
         console.log(`[${negocio}] slide ${i + 1} falló:`, String(e).slice(0, 140));
       }
     }

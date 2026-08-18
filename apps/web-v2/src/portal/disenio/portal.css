@@ -433,3 +433,35 @@ textarea.campo{resize:vertical;min-height:56px}
 @media(max-width:560px){
   .regla{flex-direction:column;align-items:stretch}
 }
+
+/* ── Plantillas de carrusel ──────────────────────────────────────────────
+   Cada tarjeta muestra una miniatura pintada con los colores REALES de la
+   marca. Elegir a ciegas y ver el resultado recién en Telegram convertiría
+   cada pieza publicada en la prueba. */
+.plantillas{display:grid;gap:10px;margin-top:8px;
+  grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+.plantilla{display:flex;flex-direction:column;gap:6px;padding:10px;
+  background:var(--panel);border:1px solid var(--borde);border-radius:12px;
+  cursor:pointer;text-align:left;transition:border-color .15s ease}
+.plantilla:hover{border-color:var(--texto-3)}
+.plantilla.on{border-color:var(--azul);box-shadow:0 0 0 2px var(--azul-suave)}
+.plantilla b{font-size:13px}
+.plantilla small{font-size:11.5px;color:var(--texto-2);line-height:1.35}
+
+.mini{display:block;height:76px;border-radius:8px;position:relative;
+  overflow:hidden;border:1px solid var(--borde)}
+/* Las barras grises son el texto: no se lee, se reconoce la composición. */
+.mini::before,.mini::after{content:"";position:absolute;border-radius:2px}
+.mini-editorial{background:var(--c2)}
+.mini-editorial::before{left:12px;top:22px;width:52%;height:8px;background:#141414}
+.mini-editorial::after{left:12px;top:36px;width:38%;height:5px;background:#8b857a}
+.mini-bloque{background:var(--c1)}
+.mini-bloque::before{left:12px;top:24px;width:62%;height:10px;background:#fff;opacity:.92}
+.mini-bloque::after{left:12px;top:40px;width:42%;height:5px;background:#fff;opacity:.6}
+.mini-ficha{background:var(--c1);display:grid;place-items:center}
+.mini-ficha::before{left:14px;top:14px;right:14px;bottom:14px;background:#fff;
+  border-radius:6px;width:auto;height:auto}
+.mini-ficha::after{left:24px;top:34px;width:44%;height:8px;background:#141414;z-index:1}
+.mini-foto{background:linear-gradient(160deg,#9aa39b,#3d4440)}
+.mini-foto::before{left:12px;bottom:24px;width:56%;height:9px;background:#fff;opacity:.95}
+.mini-foto::after{left:12px;bottom:14px;width:34%;height:5px;background:#fff;opacity:.65}
