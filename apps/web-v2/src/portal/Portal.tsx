@@ -22,6 +22,7 @@ import { Productos } from "./staff/Productos";
 import { Reuniones } from "./staff/Reuniones";
 import { Suscripciones } from "./staff/Suscripciones";
 import { Biblioteca } from "./staff/Biblioteca";
+import { Mcp } from "./staff/Mcp";
 import { Cobros } from "./staff/Cobros";
 import { Correos } from "./staff/Correos";
 import { Mapa } from "./staff/Mapa";
@@ -56,6 +57,7 @@ const MENU_STAFF: Entrada[] = [
   { a: "/acceso/suscripciones", texto: "Suscripciones", icono: "repetir" },
   { a: "/acceso/reuniones", texto: "Reuniones", icono: "reuniones" },
   { a: "/acceso/biblioteca", texto: "Biblioteca", icono: "biblioteca" },
+  { a: "/acceso/mcp", texto: "MCP / CLI", icono: "mcp" },
   { a: "/acceso/herramientas", texto: "Herramientas", icono: "documentos" },
   { a: "/acceso/correos", texto: "Correos", icono: "correos" },
   { a: "/acceso/mapa", texto: "Mapa", icono: "grafo" },
@@ -159,6 +161,7 @@ export default function Portal() {
           <Route path="reuniones" element={<Reuniones />} />
           <Route path="suscripciones" element={<Suscripciones />} />
           <Route path="biblioteca" element={<Biblioteca />} />
+          <Route path="mcp" element={<Mcp />} />
           <Route path="cobros" element={<Cobros />} />
           <Route path="herramientas" element={dif(<Herramientas />)} />
           <Route path="correos" element={<Correos />} />

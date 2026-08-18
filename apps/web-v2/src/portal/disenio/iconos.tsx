@@ -240,6 +240,13 @@ export const Ico = {
       <circle cx="15.5" cy="8.5" r="1.1" fill="currentColor" stroke="none" />
     </Svg>
   ),
+  mcp: (p: Props = {}) => (
+    <Svg {...p}>
+      <path d="m8 9-3 3 3 3" />
+      <path d="m16 9 3 3-3 3" />
+      <rect x="4" y="4" width="16" height="16" rx="1.5" />
+    </Svg>
+  ),
 };
 
 export type NombreIcono = keyof typeof Ico;

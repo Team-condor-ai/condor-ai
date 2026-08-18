@@ -1,0 +1,10 @@
+{
+  "name": "condor-mcp",
+  "version": "1.0.0",
+  "description": "Servidor MCP para leer y escribir en el portal de Cóndor (reuniones, biblioteca) desde Claude.",
+  "type": "module",
+  "bin": { "condor-mcp": "servidor.mjs" },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0"
+  }
+}
