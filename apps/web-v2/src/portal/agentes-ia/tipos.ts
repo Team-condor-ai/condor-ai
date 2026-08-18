@@ -126,3 +126,36 @@ export const TIPOS_CONTENIDO = [
 
 /** Máximo de colores en la paleta de marca — pedido explícito: "hasta ~6". */
 export const MAX_COLORES_PALETA = 6;
+
+/**
+ * Los nodos de memoria del módulo "Memoria" (estilo Obsidian): gustos, datos
+ * y el perfil sintetizado. Las CORRECCIONES viven aparte, en `barbara_reglas`
+ * — esta tabla es para lo que no tenía casa todavía.
+ */
+export type BarbaraMemoriaNodo = {
+  id: string;
+  barbara_cliente_id: string;
+  tipo: "gusto" | "dato" | "perfil";
+  titulo: string;
+  contenido: string;
+  peso: number;
+  activo: boolean;
+  origen: string | null;
+  creado_en: string;
+  actualizado_en: string;
+};
+
+/** Un tipo de nodo del grafo de memoria, unificando las 3 fuentes reales:
+ *  `barbara_reglas` (correcciones), `barbara_memoria_nodos` (gusto/dato/perfil)
+ *  y `barbara_patrones` activos (patrón global). Coincide con la paleta que
+ *  ya usa `ReglasAprendidas.tsx` para las categorías de una regla. */
+export const TIPO_NODO_MEMORIA: Record<
+  "correccion" | "gusto" | "dato" | "perfil" | "patron",
+  { nombre: string; color: string }
+> = {
+  correccion: { nombre: "Corrección", color: "#5B8DEF" },
+  gusto: { nombre: "Gusto", color: "#3FA45E" },
+  dato: { nombre: "Dato", color: "#8A8F98" },
+  perfil: { nombre: "Perfil", color: "#B36BE8" },
+  patron: { nombre: "Patrón global", color: "#E9AC17" },
+};

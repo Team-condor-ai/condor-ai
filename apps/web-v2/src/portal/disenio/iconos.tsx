@@ -247,6 +247,18 @@ export const Ico = {
       <rect x="4" y="4" width="16" height="16" rx="1.5" />
     </Svg>
   ),
+  memoria: (p: Props = {}) => (
+    <Svg {...p}>
+      <circle cx="12" cy="12" r="2.4" />
+      <circle cx="12" cy="4" r="1.6" />
+      <circle cx="19.5" cy="8.5" r="1.6" />
+      <circle cx="19.5" cy="16.5" r="1.6" />
+      <circle cx="12" cy="20.5" r="1.6" />
+      <circle cx="4.5" cy="16.5" r="1.6" />
+      <circle cx="4.5" cy="8.5" r="1.6" />
+      <path d="M12 6.3V9.8M17.9 9.6l-3.4 2M17.9 15.2l-3.4-2M12 18v-3.6M6.1 15.2l3.4-2M6.1 9.6l3.4 2" />
+    </Svg>
+  ),
 };
 
 export type NombreIcono = keyof typeof Ico;

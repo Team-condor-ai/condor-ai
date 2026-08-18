@@ -27,6 +27,7 @@ import { Cobros } from "./staff/Cobros";
 import { Correos } from "./staff/Correos";
 import { Mapa } from "./staff/Mapa";
 import { AgentesIA } from "./staff/agentes-ia/AgentesIA";
+import { Memoria } from "./staff/memoria/Memoria";
 import { FichaBarbaraCliente } from "./staff/agentes-ia/FichaBarbaraCliente";
 
 import { MiPlan } from "./cliente/MiPlan";
@@ -66,6 +67,7 @@ const MENU_STAFF: Entrada[] = [
   // así que el nivel "Bárbara" vive DENTRO de la página (chips, pensado para
   // más agentes a futuro) y "Bárbara Clientes" es la lista que se ve ahí.
   { a: "/acceso/agentes-ia", texto: "Agentes IA", icono: "agentesia" },
+  { a: "/acceso/memoria", texto: "Memoria", icono: "memoria" },
 ];
 
 const MENU_CLIENTE_BASE: Entrada[] = [
@@ -167,6 +169,7 @@ export default function Portal() {
           <Route path="correos" element={<Correos />} />
           <Route path="mapa" element={<Mapa />} />
           <Route path="agentes-ia" element={<AgentesIA />} />
+          <Route path="memoria" element={<Memoria />} />
           <Route path="agentes-ia/:id" element={<FichaBarbaraCliente />} />
           <Route path="*" element={<Navigate to="/acceso/clientes" replace />} />
         </Routes>

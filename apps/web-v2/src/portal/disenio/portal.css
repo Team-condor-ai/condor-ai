@@ -494,3 +494,44 @@ textarea.campo{resize:vertical;min-height:56px}
 .plantilla-item-info{padding:11px 13px}
 .plantilla-item-info b{font-size:13.5px;display:block;margin-bottom:2px}
 .plantilla-item-info span{font-size:12px;color:var(--texto-2);line-height:1.4}
+
+/* ── Módulo Memoria (grafo estilo Obsidian) ──────────────────────────────
+   Layout radial a mano, sin física: 5 categorías fijas alrededor del
+   cliente, sus nodos en abanico. Ver GrafoMemoria.tsx para el porqué. */
+.memoria-selector{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+.memoria-chip{display:flex;align-items:center;padding:8px 14px;
+  border-radius:999px;border:1px solid var(--borde);background:var(--panel);
+  cursor:pointer;font-size:13.5px;color:var(--texto-2);
+  transition:border-color .15s ease,color .15s ease}
+.memoria-chip:hover{border-color:var(--texto-3)}
+.memoria-chip.on{border-color:var(--azul);color:var(--texto);
+  background:var(--azul-suave);font-weight:600}
+
+.grafo-envoltorio{display:grid;grid-template-columns:1fr 300px;gap:16px;
+  align-items:start}
+@media(max-width:860px){.grafo-envoltorio{grid-template-columns:1fr}}
+
+.grafo-caja{position:relative;background:var(--panel);border:1px solid var(--borde);
+  border-radius:16px;padding:8px;min-height:420px}
+.grafo-svg{width:100%;height:auto;display:block}
+.grafo-linea-hub{stroke:var(--borde);stroke-width:1.5}
+.grafo-linea-hoja{stroke:var(--borde);stroke-width:1;opacity:.75}
+.grafo-linea-hoja.on{stroke:var(--azul);opacity:1;stroke-width:1.6}
+.grafo-nodo{cursor:pointer;transition:opacity .12s ease}
+.grafo-nodo:hover{opacity:1 !important}
+.grafo-nodo-centro{fill:var(--panel-2);stroke:var(--texto);stroke-width:2}
+.grafo-etiqueta-centro{font-size:13px;font-weight:700;fill:var(--texto)}
+.grafo-etiqueta-hub{font-size:11px;font-weight:700;letter-spacing:.03em;
+  text-transform:uppercase}
+.grafo-vacio{position:absolute;inset:0;display:flex;align-items:center;
+  justify-content:center;text-align:center;padding:0 60px}
+
+.grafo-panel{background:var(--panel);border:1px solid var(--borde);
+  border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:12px;
+  min-height:420px}
+.grafo-detalle{display:flex;flex-direction:column;gap:8px}
+.grafo-detalle-texto{font-size:14px;line-height:1.5;color:var(--texto)}
+.grafo-sep{border:0;border-top:1px solid var(--borde-suave);margin:2px 0}
+.grafo-acciones{display:flex;gap:6px;flex-wrap:wrap}
+.grafo-form{display:flex;flex-direction:column;gap:10px;
+  padding-top:8px;border-top:1px solid var(--borde-suave)}
