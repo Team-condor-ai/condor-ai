@@ -478,3 +478,18 @@ textarea.campo{resize:vertical;min-height:56px}
   vertical-align:top;color:var(--texto-2)}
 .mcp-tabla tr:last-child td{border-bottom:0}
 .mcp-tabla td:first-child{width:46%;color:var(--texto)}
+
+/* ── Catálogo de plantillas (Agentes IA → Bárbara) ───────────────────────
+   Las miniaturas son renders REALES del motor, no un mockup: lo que se ve
+   acá es lo que le llega al cliente. */
+.plantillas-catalogo{display:grid;gap:14px;
+  grid-template-columns:repeat(auto-fill,minmax(190px,1fr))}
+.plantilla-item{background:var(--panel);border:1px solid var(--borde);
+  border-radius:14px;overflow:hidden}
+.plantilla-item-img{aspect-ratio:4/5;background:var(--panel-2);overflow:hidden}
+.plantilla-item-img img{width:100%;height:100%;object-fit:cover;display:block}
+.plantilla-item-sinimg{width:100%;height:100%;display:grid;place-items:center;
+  color:var(--texto-3);font-size:12px;text-align:center;padding:12px}
+.plantilla-item-info{padding:11px 13px}
+.plantilla-item-info b{font-size:13.5px;display:block;margin-bottom:2px}
+.plantilla-item-info span{font-size:12px;color:var(--texto-2);line-height:1.4}

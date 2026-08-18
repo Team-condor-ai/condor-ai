@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>3 plantillas de carrusel gratis — Bárbara — condor.ai</title>
+<meta name="description" content="Tres plantillas de carrusel para Instagram, listas para usar, gratis. Las mismas que arma Bárbara cada semana — con tu marca en piloto automático." />
+<link rel="icon" type="image/png" href="/assets/favicon.png" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+<style>
+/* ─────────────────────────────────────────────────────────────────────────
+   Plantillas gratis de Bárbara — mismo sistema visual que la landing de
+   producto (negro/lima/crema, Fraunces + Inter): esta página es la puerta de
+   entrada para las primeras empresas, tiene que sentirse la misma marca, no
+   una página de captura genérica pegada al lado.
+   ───────────────────────────────────────────────────────────────────────── */
+:root{
+  --negro:#0A0A0A; --negro-2:#141414; --lima:#CDFB3E; --lima-baja:#A8D42B;
+  --crema:#F3F1E7; --crema-2:#C9C6B8; --linea:rgba(243,241,231,.14);
+  --radio:18px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--negro);color:var(--crema);
+  font-family:Inter,-apple-system,"Segoe UI",system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;overflow-x:hidden;
+}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+img{max-width:100%;display:block}
+
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms !important;transition-duration:.01ms !important}}
+
+/* ── NAV PÍLDORA (idéntica a la landing) ─────────────────────────────── */
+.nav{position:fixed;top:18px;left:50%;transform:translateX(-50%);z-index:50;
+  display:flex;align-items:center;gap:4px;background:rgba(20,20,20,.78);
+  backdrop-filter:blur(14px);border:1px solid var(--linea);border-radius:999px;
+  padding:6px 6px 6px 7px}
+.nav .marca{width:34px;height:34px;border-radius:999px;overflow:hidden;flex:none;
+  background:var(--lima);display:grid;place-items:center}
+.nav a.enlace{padding:8px 14px;border-radius:999px;font-size:14px;font-weight:500;
+  color:var(--crema-2);transition:background .18s ease,color .18s ease;white-space:nowrap}
+.nav a.enlace:hover{background:rgba(243,241,231,.09);color:var(--crema)}
+.nav a.cta{background:var(--lima);color:#0A0A0A;font-weight:600;padding:8px 16px;
+  border-radius:999px;margin-left:2px}
+@media(max-width:640px){.nav .oculta-movil{display:none}}
+
+/* ── HERO ─────────────────────────────────────────────────────────────── */
+.hero{padding:150px 0 70px;text-align:center}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12px;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--lima);
+  border:1px solid var(--linea);border-radius:999px;padding:7px 15px;margin-bottom:26px}
+.eyebrow::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--lima)}
+h1{font-family:Fraunces,Georgia,serif;font-weight:700;
+  font-size:clamp(38px,6.2vw,74px);line-height:1.02;letter-spacing:-.02em;
+  max-width:16ch;margin:0 auto}
+h1 em{font-style:italic;color:var(--lima)}
+.bajada{font-size:clamp(16px,1.9vw,20px);line-height:1.6;color:var(--crema-2);
+  max-width:46ch;margin:26px auto 0}
+
+/* ── GALERÍA ──────────────────────────────────────────────────────────── */
+.galeria{padding:30px 0 20px}
+.sets{display:grid;gap:22px;grid-template-columns:repeat(3,1fr);margin-top:30px}
+@media(max-width:900px){.sets{grid-template-columns:1fr;max-width:420px;margin-left:auto;margin-right:auto}}
+.set{background:var(--negro-2);border:1px solid var(--linea);border-radius:var(--radio);
+  overflow:hidden}
+.set .tira{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;
+  -webkit-overflow-scrolling:touch}
+.set .tira img{flex:0 0 100%;scroll-snap-align:start;aspect-ratio:4/5;object-fit:cover}
+.set .info{padding:16px 18px 18px}
+.set .info b{font-size:15px;display:block;margin-bottom:3px}
+.set .info span{font-size:12.5px;color:var(--crema-2)}
+.puntos{display:flex;gap:5px;justify-content:center;padding:10px 0 4px}
+.puntos i{width:5px;height:5px;border-radius:50%;background:var(--linea)}
+
+/* ── FORMULARIO DE DESBLOQUEO ─────────────────────────────────────────── */
+.candado{max-width:520px;margin:56px auto 0;background:var(--negro-2);
+  border:1px solid var(--linea);border-radius:24px;padding:34px 32px;text-align:center}
+.candado h2{font-family:Fraunces,Georgia,serif;font-weight:700;font-size:26px;
+  margin-bottom:10px}
+.candado p{color:var(--crema-2);font-size:14.5px;line-height:1.55;margin-bottom:22px}
+.form{display:flex;flex-direction:column;gap:10px;text-align:left}
+.form label{font-size:12px;color:var(--crema-2);font-weight:600}
+.form input{width:100%;padding:12px 14px;border-radius:11px;border:1px solid var(--linea);
+  background:#181818;color:var(--crema);font:inherit;outline:none;margin-top:5px}
+.form input:focus{border-color:var(--lima)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:13px 20px;border-radius:11px;border:0;cursor:pointer;font:inherit;
+  font-weight:600;font-size:15px;transition:transform .15s ease,filter .15s ease}
+.btn:active{transform:scale(.98)}
+.btn.solido{background:var(--lima);color:#0A0A0A}
+.btn.solido:hover{filter:brightness(1.08)}
+.btn:disabled{opacity:.5;cursor:default}
+.err{color:#ff8a7a;font-size:13px;margin-top:2px}
+.legal{font-size:11.5px;color:var(--crema-2);opacity:.7;margin-top:14px}
+
+.listo{display:none}
+.listo.on{display:block}
+.listo h2{font-family:Fraunces,Georgia,serif;font-weight:700;font-size:26px;margin-bottom:8px}
+.listo p{color:var(--crema-2);font-size:14.5px;margin-bottom:20px}
+
+/* ── CTA final ────────────────────────────────────────────────────────── */
+.cierre{padding:90px 0;text-align:center}
+.cierre h2{font-family:Fraunces,Georgia,serif;font-weight:700;
+  font-size:clamp(28px,4vw,44px);max-width:20ch;margin:0 auto 16px}
+.cierre p{color:var(--crema-2);font-size:16px;max-width:46ch;margin:0 auto 28px}
+
+footer{border-top:1px solid var(--linea);padding:26px 0 40px}
+.pie{display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;
+  font-size:13px;color:var(--crema-2)}
+.pie a:hover{color:var(--crema)}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <span class="marca" aria-hidden="true">
+    <svg width="24" height="24" viewBox="0 0 32 32" fill="none">
+      <path d="M16 4c-4.6 0-7.6 3.2-7.6 8 0 2.3.3 4.4.9 6.2.5 1.6.2 3-.7 4.4-.5.8 0 1.8 1 1.8h2.1" stroke="#0A0A0A" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M16 4c4.6 0 7.6 3.2 7.6 8 0 2.3-.3 4.4-.9 6.2-.5 1.6-.2 3 .7 4.4.5.8 0 1.8-1 1.8h-2.1" stroke="#0A0A0A" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M10.6 11.4c1.8.3 3.6-.5 4.6-2 1.2 1.6 3.2 2.4 5.2 2" stroke="#0A0A0A" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="13" cy="15.6" r="1.25" fill="#0A0A0A"/>
+      <circle cx="19" cy="15.6" r="1.25" fill="#0A0A0A"/>
+      <path d="M14.4 19.4c1 .8 2.2.8 3.2 0" stroke="#0A0A0A" stroke-width="1.9" stroke-linecap="round"/>
+    </svg>
+  </span>
+  <a class="enlace oculta-movil" href="/productos/barbara/">Bárbara</a>
+  <a class="enlace oculta-movil" href="#plantillas">Las plantillas</a>
+  <a class="cta" href="#desbloquear">Descargar gratis</a>
+</nav>
+
+<main class="wrap">
+  <section class="hero">
+    <span class="eyebrow">Gratis · sin tarjeta</span>
+    <h1>3 plantillas de carrusel que <em>sí</em> se guardan</h1>
+    <p class="bajada">Las mismas familias de diseño que usa Bárbara cada semana para
+      sus clientes — con tu marca, listas para editar en Canva o donde trabajes.</p>
+  </section>
+
+  <section class="galeria" id="plantillas">
+    <div class="sets">
+      <article class="set">
+        <div class="tira" data-tira>
+          <img src="ejemplos/editorial-1.png" alt="Plantilla Editorial, slide 1" loading="lazy" />
+          <img src="ejemplos/editorial-2.png" alt="Plantilla Editorial, slide 2" loading="lazy" />
+          <img src="ejemplos/editorial-3.png" alt="Plantilla Editorial, slide 3" loading="lazy" />
+        </div>
+        <div class="puntos"><i></i><i></i><i></i></div>
+        <div class="info"><b>Editorial</b><span>Serif, mucho aire. Formal y con autoridad.</span></div>
+      </article>
+      <article class="set">
+        <div class="tira" data-tira>
+          <img src="ejemplos/bloque-1.png" alt="Plantilla Bloque, slide 1" loading="lazy" />
+          <img src="ejemplos/bloque-2.png" alt="Plantilla Bloque, slide 2" loading="lazy" />
+          <img src="ejemplos/bloque-3.png" alt="Plantilla Bloque, slide 3" loading="lazy" />
+        </div>
+        <div class="puntos"><i></i><i></i><i></i></div>
+        <div class="info"><b>Bloque</b><span>Color pleno, titular enorme. Directo.</span></div>
+      </article>
+      <article class="set">
+        <div class="tira" data-tira>
+          <img src="ejemplos/ficha-1.png" alt="Plantilla Ficha, slide 1" loading="lazy" />
+          <img src="ejemplos/ficha-2.png" alt="Plantilla Ficha, slide 2" loading="lazy" />
+          <img src="ejemplos/ficha-3.png" alt="Plantilla Ficha, slide 3" loading="lazy" />
+        </div>
+        <div class="puntos"><i></i><i></i><i></i></div>
+        <div class="info"><b>Ficha</b><span>Tarjeta con número. Para listas y pasos.</span></div>
+      </article>
+    </div>
+  </section>
+
+  <section class="candado" id="desbloquear">
+    <form class="form" id="form-lead">
+      <h2>Descárgalas gratis</h2>
+      <p>9 slides en PNG a resolución completa, en un solo zip. Te dejamos tu
+        correo por si quieres saber cuándo abrimos más cupos para instalar a
+        Bárbara — nada de spam.</p>
+      <div>
+        <label for="email">Tu correo</label>
+        <input type="email" id="email" required placeholder="tú@tunegocio.cl" />
+      </div>
+      <div>
+        <label for="negocio">Tu negocio <span style="opacity:.6">(opcional)</span></label>
+        <input type="text" id="negocio" placeholder="Nombre de tu marca" />
+      </div>
+      <button class="btn solido" type="submit" id="btn-enviar" style="margin-top:6px">
+        Descargar las 3 plantillas
+      </button>
+      <p class="err" id="err" hidden></p>
+      <p class="legal">Solo lo usamos para avisarte de Bárbara. Puedes pedir que
+        lo borremos cuando quieras.</p>
+    </form>
+
+    <div class="listo" id="listo">
+      <h2>Listo — ya es tuyo</h2>
+      <p>Si la descarga no partió sola, tócala acá:</p>
+      <a class="btn solido" href="carruseles-gratis-barbara.zip" download id="link-descarga">
+        Descargar el zip
+      </a>
+    </div>
+  </section>
+
+  <section class="cierre">
+    <h2>Esto lo hace Bárbara cada semana, sola</h2>
+    <p>Con tu paleta, tu logo y tu tono — llega listo a tu chat, tú apruebas y
+      se publica. Estamos instalando a las primeras empresas ahora.</p>
+    <a class="btn solido" href="/productos/barbara/#planes">Quiero instalar a Bárbara</a>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap pie">
+    <span>Bárbara es un producto de <a href="/">condor.ai</a></span>
+    <span><a href="/productos/barbara/">Volver a Bárbara</a> · <a href="/contacto/">Contacto</a></span>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var form = document.getElementById("form-lead");
+  var candado = document.getElementById("desbloquear");
+  var listo = document.getElementById("listo");
+  var err = document.getElementById("err");
+  var boton = document.getElementById("btn-enviar");
+
+  form.addEventListener("submit", function(e){
+    e.preventDefault();
+    err.hidden = true;
+    boton.disabled = true;
+    boton.textContent = "Un segundo…";
+
+    var email = document.getElementById("email").value.trim();
+    var negocio = document.getElementById("negocio").value.trim();
+
+    fetch("https://ogmvdthxwcmvqjlxhpsr.supabase.co/functions/v1/capturar-lead-plantillas", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        // El proyecto no oculta la clave anon: es pública por diseño de
+        // Supabase, solo identifica el proyecto ante el gateway.
+        "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9nbXZkdGh4d2NtdnFqbHhocHNyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE2NDEwMTksImV4cCI6MjA5NzIxNzAxOX0.wo6zSUlMejjYu1hSweZcWEBBdCvBgVNWg3xtLzFTIrI",
+      },
+      body: JSON.stringify({ email: email, negocio: negocio }),
+    })
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        if (d.error) throw new Error(d.error);
+        form.hidden = true;
+        listo.classList.add("on");
+        // Dispara la descarga sola; el botón de respaldo queda para
+        // navegadores que bloquean la descarga automática.
+        document.getElementById("link-descarga").click();
+      })
+      .catch(function(e){
+        err.textContent = "No se pudo: " + e.message + ". Prueba de nuevo.";
+        err.hidden = false;
+        boton.disabled = false;
+        boton.textContent = "Descargar las 3 plantillas";
+      });
+  });
+})();
+</script>
+</body>
+</html>
