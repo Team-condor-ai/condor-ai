@@ -113,6 +113,30 @@ async function generarPara(cliente) {
   );
   const recientes = recientesRaw.map(e => `- [${e.fecha} ${e.tipo}] ${e.angulo}`).join("\n") || "(sin historial)";
 
+  // LO QUE LA MARCA YA CORRIGIO. Es la memoria individual: reglas destiladas
+  // de lo que el cliente pidio cambiar, ordenadas por cuantas veces insistio.
+  // Sin esto Barbara repetia el mismo error para siempre — la correccion se
+  // guardaba en `barbara_chats` y nadie volvia a leer esa tabla nunca.
+  const reglasRaw = await db.get(
+    `barbara_reglas?barbara_cliente_id=eq.${barbaraId}&activa=eq.true` +
+    `&select=regla,veces_reforzada&order=veces_reforzada.desc&limit=25`
+  ).catch(() => []);
+  const reglas = reglasRaw.length
+    ? reglasRaw.map(r => `- ${r.regla}${r.veces_reforzada > 1 ? ` (lo pidio ${r.veces_reforzada} veces)` : ""}`).join(String.fromCharCode(10))
+    : "(todavia no corrigio nada)";
+
+  // MEMORIA GLOBAL: patrones aprendidos entre todos los clientes. Solo entran
+  // los marcados `activo`, que hoy son cero a proposito — con pocos clientes
+  // un patron cruzado es ruido, y aprender de ruido es peor que no aprender.
+  // El tubo queda armado para cuando haya volumen.
+  const patronesRaw = await db.get(
+    `barbara_patrones?activo=eq.true&select=patron&order=muestras.desc&limit=10`
+  ).catch(() => []);
+  const patrones = patronesRaw.length
+    ? patronesRaw.map(p => `- ${p.patron}`).join(String.fromCharCode(10))
+    : "";
+
+
   const paleta = (bb.paleta_colores || []).map(c => `${c.hex}${c.uso ? ` (${c.uso})` : ""}`).join(", ") || "a criterio, coherente con el rubro";
   const tipos = (form.tipo_contenido || []).join(", ") || "contenido general para redes";
   const extraRetry = isRetry ? "\n\n⚠️ ESTE ES UN REINTENTO: el cliente pidió una corrección sobre la versión anterior. Genera una versión CLARAMENTE MEJOR y distinta (mejor diseño, mejor texto, otro enfoque del mismo tema)." : "";
@@ -129,7 +153,13 @@ Ejemplos de referencia que le gustan: ${form.ejemplos_referencia || "ninguno"}
 Producto/servicio a destacar hoy: ${form.producto_destacar || "el negocio en general"}
 
 PIEZAS RECIENTES DE ESTE CLIENTE (NO repitas estos ángulos, innova):
-${recientes}${extraRetry}`;
+${recientes}
+
+LO QUE ESTA MARCA YA TE CORRIGIO (respetalo SIEMPRE, es lo que mas pesa):
+${reglas}${patrones ? `
+
+LO QUE FUNCIONA EN GENERAL (patrones de rendimiento, no reglas de esta marca):
+${patrones}` : ""}${extraRetry}`;
 
   let plan_contenido, mediaCaption;
 

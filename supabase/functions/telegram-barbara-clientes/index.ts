@@ -145,6 +145,20 @@ Deno.serve(async (req) => {
   });
   if (errInsert) console.error("error insertando barbara_chats:", errInsert.message);
 
+  // Destilar la corrección en una regla duradera de la marca.
+  //
+  // SIN ESPERAR RESPUESTA, Y ES A PROPOSITO: si la IA tarda o falla, la
+  // corrección ya quedó guardada y el reintento se dispara igual. Aprender
+  // es valioso, pero nunca al precio de que el cliente se quede esperando.
+  fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/barbara-destilar-regla`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+    },
+    body: JSON.stringify({ barbara_cliente_id: barbaraClienteId, texto }),
+  }).catch((e) => console.error("destilar regla:", String(e).slice(0, 120)));
+
   // 5) Contar el intento de corrección (crea la fila si es la primera vez).
   const { data: correccion } = await sb
     .from("barbara_correcciones")
