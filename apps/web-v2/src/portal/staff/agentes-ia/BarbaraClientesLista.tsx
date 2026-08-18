@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { sb, fecha } from "../../lib/supabase";
 import { Ico } from "../../disenio/iconos";
 import { AgregarBarbaraCliente } from "./AgregarBarbaraCliente";
-import type { BarbaraClienteFila } from "../../agentes-ia/tipos";
+import { infoPlan, type BarbaraClienteFila } from "../../agentes-ia/tipos";
 
 /**
  * Lista de clientes de Bárbara: negocio, rubro, plan, activo/inactivo y si
@@ -74,7 +74,9 @@ export function BarbaraClientesLista() {
                       </Link>
                     </td>
                     <td>{f.rubro || "—"}</td>
-                    <td style={{ textTransform: "capitalize" }}>{f.plan}</td>
+                    <td>
+                      <span className={"pill " + infoPlan(f.plan).pill}>{infoPlan(f.plan).nombre}</span>
+                    </td>
                     <td>
                       <span className={"pill " + (f.activo ? "ok" : "gris")}>
                         {f.activo ? "Activo" : "Inactivo"}

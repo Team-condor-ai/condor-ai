@@ -8,6 +8,8 @@ import { BrandBookEditor } from "./BrandBookEditor";
 import { ReglasAprendidas } from "../../agentes-ia/ReglasAprendidas";
 import {
   BARBARA_PLANES,
+  BARBARA_PLAN_INFO,
+  infoPlan,
   TIPOS_CONTENIDO,
   type BarbaraBrandBook,
   type BarbaraCliente,
@@ -158,6 +160,7 @@ export function FichaBarbaraCliente() {
           {Ico.volver({ t: 16 })}
         </Link>
         <h1>{d.negocio}</h1>
+        <span className={"pill " + infoPlan(d.cliente.plan).pill}>{infoPlan(d.cliente.plan).nombre}</span>
         <span className={"pill " + (d.cliente.activo ? "ok" : "gris")}>
           {d.cliente.activo ? "Activo" : "Inactivo"}
         </span>
@@ -185,8 +188,9 @@ export function FichaBarbaraCliente() {
               Plan
               <select className="campo" value={plan} onChange={(e) => setPlan(e.target.value)}>
                 {BARBARA_PLANES.map((p) => (
-                  <option key={p} value={p} style={{ textTransform: "capitalize" }}>
-                    {p}
+                  <option key={p} value={p}>
+                    {BARBARA_PLAN_INFO[p].nombre}
+                    {BARBARA_PLAN_INFO[p].nota ? ` — ${BARBARA_PLAN_INFO[p].nota}` : ""}
                   </option>
                 ))}
               </select>

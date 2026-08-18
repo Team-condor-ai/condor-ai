@@ -87,6 +87,35 @@ export type BarbaraCorrecciones = {
 
 export const BARBARA_PLANES = ["barbara", "go", "plus"] as const;
 
+/**
+ * Cómo se muestra cada plan en toda la app — un solo lugar para el nombre,
+ * el color del badge y la nota que lo distingue. Antes el plan se pintaba
+ * como texto plano en minúscula (`barbara`/`go`/`plus`) y ni siquiera se
+ * elegía al agregar un cliente: quedaba en "barbara" por defecto en
+ * silencio. Acá se le da nombre propio y color a cada uno para que se vea
+ * de un vistazo, sin tener que abrir la ficha.
+ */
+export const BARBARA_PLAN_INFO: Record<
+  (typeof BARBARA_PLANES)[number],
+  { nombre: string; pill: "gris" | "azul" | "ok"; nota?: string }
+> = {
+  barbara: { nombre: "Bárbara", pill: "gris" },
+  go: { nombre: "Go", pill: "azul" },
+  plus: { nombre: "Plus", pill: "ok", nota: "responde el chat" },
+};
+
+/** `plan` llega como `string` plano desde la base (no hay CHECK constraint).
+ * Si algún día aparece un valor que no es de los 3 conocidos, esto evita que
+ * la pantalla reviente — se muestra tal cual llegó, sin color asignado. */
+export function infoPlan(plan: string) {
+  return (
+    BARBARA_PLAN_INFO[plan as keyof typeof BARBARA_PLAN_INFO] ?? {
+      nombre: plan,
+      pill: "gris" as const,
+    }
+  );
+}
+
 export const TIPOS_CONTENIDO = [
   { id: "ugc", texto: "UGC" },
   { id: "informativo", texto: "Informativo" },

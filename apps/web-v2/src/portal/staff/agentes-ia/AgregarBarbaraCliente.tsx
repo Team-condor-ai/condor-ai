@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { sb } from "../../lib/supabase";
 import { Ico } from "../../disenio/iconos";
+import { BARBARA_PLANES, BARBARA_PLAN_INFO } from "../../agentes-ia/tipos";
 import type { Cliente } from "../tipos";
 
 type Paso = "elegir" | "vincular" | "crear";
@@ -24,6 +25,11 @@ type Props = {
 export function AgregarBarbaraCliente({ cerrar, guardado }: Props) {
   const navega = useNavigate();
   const [paso, setPaso] = useState<Paso>("elegir");
+
+  // El plan se elige ANTES de vincular o crear, en el mismo paso: antes se
+  // agregaba el cliente sin preguntarlo nunca y quedaba en "barbara" por
+  // defecto en silencio, aunque hubiera pagado Go o Plus.
+  const [plan, setPlan] = useState<(typeof BARBARA_PLANES)[number]>("barbara");
 
   // --- Vincular cliente existente ---
   const [busca, setBusca] = useState("");
@@ -88,7 +94,7 @@ export function AgregarBarbaraCliente({ cerrar, guardado }: Props) {
     setVinculando(true);
     const { data, error, status } = await sb
       .from("barbara_clientes")
-      .insert({ cliente_id: c.id })
+      .insert({ cliente_id: c.id, plan })
       .select("id")
       .single();
     setVinculando(false);
@@ -125,7 +131,7 @@ export function AgregarBarbaraCliente({ cerrar, guardado }: Props) {
 
     const { data: nuevaFicha, error: errBarbara, status } = await sb
       .from("barbara_clientes")
-      .insert({ cliente_id: nuevo.id })
+      .insert({ cliente_id: nuevo.id, plan })
       .select("id")
       .single();
     setCreando(false);
@@ -171,6 +177,22 @@ export function AgregarBarbaraCliente({ cerrar, guardado }: Props) {
             </>
           ) : paso === "elegir" ? (
             <>
+              <label className="campo-lbl">
+                Plan de Bárbara
+                <select
+                  className="campo"
+                  value={plan}
+                  onChange={(e) => setPlan(e.target.value as (typeof BARBARA_PLANES)[number])}
+                >
+                  {BARBARA_PLANES.map((p) => (
+                    <option key={p} value={p}>
+                      {BARBARA_PLAN_INFO[p].nombre}
+                      {BARBARA_PLAN_INFO[p].nota ? ` — ${BARBARA_PLAN_INFO[p].nota}` : ""}
+                    </option>
+                  ))}
+                </select>
+                <small>Con cuál plan pagó — se aplica al cliente que elijas o crees abajo.</small>
+              </label>
               <p className="parrafo" style={{ color: "var(--texto-2)" }}>
                 Elige cómo agregar al cliente. No se puede seguir sin elegir
                 una de las dos.
@@ -200,6 +222,9 @@ export function AgregarBarbaraCliente({ cerrar, guardado }: Props) {
             </>
           ) : paso === "vincular" ? (
             <>
+              <p className="parrafo" style={{ color: "var(--texto-2)", marginBottom: 10 }}>
+                Plan: <span className={"pill " + BARBARA_PLAN_INFO[plan].pill}>{BARBARA_PLAN_INFO[plan].nombre}</span>
+              </p>
               <div className="mini-busca">
                 {Ico.buscar({ t: 15 })}
                 <input
@@ -235,6 +260,9 @@ export function AgregarBarbaraCliente({ cerrar, guardado }: Props) {
             </>
           ) : (
             <form onSubmit={crearDesdeCero} style={{ display: "flex", flexDirection: "column", gap: 13 }}>
+              <p className="parrafo" style={{ color: "var(--texto-2)", margin: 0 }}>
+                Plan: <span className={"pill " + BARBARA_PLAN_INFO[plan].pill}>{BARBARA_PLAN_INFO[plan].nombre}</span>
+              </p>
               <label className="campo-lbl">
                 Negocio
                 <input

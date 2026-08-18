@@ -103,6 +103,7 @@ textarea.campo{resize:vertical;min-height:56px}
 .pill.warn{background:var(--warn-bg);color:var(--warn-tx);border-color:var(--warn-bd)}
 .pill.mal{background:var(--mal-bg);color:var(--mal-tx);border-color:var(--mal-bd)}
 .pill.gris{background:var(--gris-bg);color:var(--gris-tx);border-color:var(--gris-bd)}
+.pill.azul{background:var(--azul-suave);color:var(--azul);border-color:var(--azul-borde)}
 
 /* ───── BLOQUES DE FICHA ───── */
 .bloque{margin-bottom:22px}

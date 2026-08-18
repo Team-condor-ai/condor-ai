@@ -3,7 +3,7 @@ import { sb } from "../lib/supabase";
 import { ChatVisor } from "../agentes-ia/ChatVisor";
 import { FormularioBarbara } from "./FormularioBarbara";
 import { ReglasAprendidas } from "../agentes-ia/ReglasAprendidas";
-import { TIPOS_CONTENIDO, type BarbaraCliente, type BarbaraFormulario } from "../agentes-ia/tipos";
+import { infoPlan, TIPOS_CONTENIDO, type BarbaraCliente, type BarbaraFormulario } from "../agentes-ia/tipos";
 
 type Cargado = {
   id: string;
@@ -79,7 +79,14 @@ export function Barbara() {
           <div className="rejilla-datos">
             <div className="dato">
               <small>Plan</small>
-              <b style={{ textTransform: "capitalize" }}>{d.plan}</b>
+              <b>
+                <span className={"pill " + infoPlan(d.plan).pill}>{infoPlan(d.plan).nombre}</span>
+                {infoPlan(d.plan).nota ? (
+                  <span style={{ color: "var(--texto-3)", fontWeight: 400, marginLeft: 7, fontSize: 12.5 }}>
+                    {infoPlan(d.plan).nota}
+                  </span>
+                ) : null}
+              </b>
             </div>
             <div className="dato">
               <small>Rubro</small>
