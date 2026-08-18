@@ -4,7 +4,7 @@
 // son el contenido propio de Cóndor y siguen intactas y separadas).
 //
 // Genera carruseles, historias (imagen, nano_banana_2) y video UGC de
-// producto sin vocera fija (seedance1_5, ver motor.mjs).
+// UGC con persona a camara, sin vocera FIJA (seedance1_5, ver motor.mjs).
 //
 // Secrets: ANTHROPIC_API_KEY, TELEGRAM_BOT_TOKEN, SUPABASE_URL,
 //          SUPABASE_SERVICE_ROLE_KEY
@@ -44,20 +44,24 @@ const schema = {
   required: ["angulo", "slides", "caption"],
 };
 
-// UGC de producto SIN vocera fija: a diferencia del UGC de Cóndor
-// (reels.mjs, Veo 3.1 + avatar.png de la misma mujer siempre), un cliente
-// nuevo no tiene una vocera propia todavía — así que esto son clips
-// "amateur" de producto/negocio (uso, detalle, ambiente), no un monólogo
-// hablado a cámara. Si algún día el cliente sube su propia vocera, se
-// puede sumar `--image <referencia>` a genVideo() sin tocar este esquema.
+// UGC: UNA PERSONA MOSTRANDO EL PRODUCTO Y HABLANDO DE ÉL A CÁMARA.
+// Ese es el género completo — no son tomas de producto y ambiente.
+//
+// "Sin vocera fija" (como lo dice el modelo de negocio) significa que la
+// persona CAMBIA entre piezas, a diferencia del UGC propio de Cóndor
+// (reels.mjs, Veo 3.1 + avatar.png: siempre la misma mujer). NO significa
+// "sin persona".
+//
+// Corregido el 17-ago-2026 por Joaquín: el motor venía generando tomas de
+// producto sin nadie hablando, que es otro formato y no es lo que se vende.
 const schemaUGC = {
   type: "object", additionalProperties: false,
   properties: {
     angulo: { type: "string", description: "Ángulo/idea ÚNICO de este UGC en una frase (para no repetir)." },
     clips: {
-      type: "array", description: "2 o 3 tomas de 4-6s, en orden, estilo UGC amateur grabado con celular (nada de look publicitario pulido).",
+      type: "array", description: "2 o 3 tomas de 4-6s, en orden, estilo UGC grabado con celular: una persona mostrando el producto y hablándole a la cámara (nada de look publicitario pulido).",
       items: { type: "object", additionalProperties: false, properties: {
-        escena: { type: "string", description: "Prompt EN INGLÉS de la toma: producto/servicio/ambiente del negocio, estilo grabado a mano con celular, luz natural, sin actores hablando a cámara." },
+        escena: { type: "string", description: "Prompt EN INGLÉS de la toma: una persona real sosteniendo/usando el producto y hablándole directamente a la cámara, estilo selfie grabado a mano con celular, luz natural, look casero y genuino (NO publicitario)." },
         duracion: { type: "number", description: "Duración en segundos, entre 4 y 6." },
       }, required: ["escena", "duracion"] },
     },
@@ -132,7 +136,7 @@ ${recientes}${extraRetry}`;
   if (TIPO === "ugc") {
     const dir = await claude(AK, {
       model: "claude-sonnet-4-6", max_tokens: 2500,
-      system: `Eres Bárbara, directora creativa de "${negocio}" (rubro: ${rubro || "no especificado"}). Diriges un video UGC vertical 9:16 (2-3 tomas de 4-6s, grabado estilo amateur con celular, SIN vocera hablando a cámara — son tomas de producto/negocio/ambiente). Sigues la identidad de marca del cliente. NUNCA repites ángulos de las piezas recientes. Responde SOLO con el JSON.`,
+      system: `Eres Bárbara, directora creativa de "${negocio}" (rubro: ${rubro || "no especificado"}). Diriges un video UGC vertical 9:16 (2-3 tomas de 4-6s): UNA PERSONA mostrando el producto o servicio y HABLÁNDOLE A LA CÁMARA, estilo grabado con su propio celular — casero y genuino, nunca un comercial pulido. La persona puede cambiar entre piezas. Sigues la identidad de marca del cliente. NUNCA repites ángulos de las piezas recientes. Responde SOLO con el JSON.`,
       output_config: { format: { type: "json_schema", schema: schemaUGC } },
       messages: [{ role: "user", content: `${contexto}\n\nCrea el UGC con un ángulo NUEVO, fiel a la marca.` }],
     });
