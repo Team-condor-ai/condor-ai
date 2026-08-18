@@ -102,11 +102,15 @@ async function generarPara(cliente) {
 
   // Bloqueo por 3 reintentos de corrección: si está bloqueado, no se genera
   // contenido nuevo hasta que staff lo desbloquee desde el portal.
-  const bloqueo = await db.get(`barbara_correcciones?barbara_cliente_id=eq.${barbaraId}&select=bloqueado`);
+  const bloqueo = await db.get(
+    `barbara_correcciones?barbara_cliente_id=eq.${barbaraId}&select=bloqueado,intentos_usados`);
   if (bloqueo[0]?.bloqueado) {
     console.log(`[${negocio}] bloqueado por reintentos de corrección — staff debe desbloquear en el portal.`);
     return;
   }
+  // Cuántas correcciones acumuló la pieza que está por cerrarse. Se lee ANTES
+  // de generar la nueva, que es cuando el número todavía es el de la anterior.
+  const correccionesPrevias = bloqueo[0]?.intentos_usados ?? 0;
 
   const recientesRaw = await db.get(
     `barbara_memoria?barbara_cliente_id=eq.${barbaraId}&select=fecha,tipo,angulo&order=creado_en.desc&limit=15`
@@ -231,6 +235,45 @@ ${patrones}` : ""}${extraRetry}`;
     text: `🤖 *Bárbara* — contenido listo para revisar y aprobar.\n\n📝 *Caption:*\n\n${mediaCaption || ""}\n\n_Si quieres cambios, responde a este mensaje describiéndolos (máximo 3 correcciones antes de derivar a soporte)._`,
     parse_mode: "Markdown",
   });
+
+  // CIERRE DE LA PIEZA ANTERIOR. Se hace acá, al empezar una nueva, porque el
+  // cliente nunca dice "me gustó": solo escribe cuando quiere cambios. El
+  // silencio ES la aprobación, pero recién se puede dar por buena cuando ya
+  // pasó el turno de esa pieza. Sin este cierre, `aprobada_sin_cambios` se
+  // queda en NULL para siempre y no hay de dónde aprender.
+  //
+  // Solo en piezas nuevas: un reintento es LA MISMA pieza, y darla por
+  // cerrada ahí contaría dos veces la misma historia.
+  if (!isRetry) {
+    const previa = await db.get(
+      `barbara_memoria?barbara_cliente_id=eq.${barbaraId}&aprobada_sin_cambios=is.null` +
+      `&select=id,correcciones_pedidas&order=creado_en.desc&limit=1`
+    ).catch(() => []);
+    if (previa[0]) {
+      // Se mira el contador DE ESA PIEZA, no el del cliente. El del cliente
+      // suma todas las correcciones desde el último reinicio, y un reintento
+      // crea su propia fila: usando el contador del cliente, esa fila nueva
+      // heredaría las correcciones de la anterior y quedaría marcada como
+      // corregida sin que nadie la hubiera corregido. Dato falso, y encima
+      // uno del que después aprende la memoria global.
+      const suyas = previa[0].correcciones_pedidas ?? 0;
+      await db.patch(`barbara_memoria?id=eq.${previa[0].id}`, {
+        aprobada_sin_cambios: suyas === 0,
+      }).catch((e) => console.error("no se pudo cerrar la pieza previa:", String(e).slice(0, 120)));
+    }
+
+    // REINICIO DEL CONTADOR. Las 3 correcciones son POR PIEZA, no por cliente
+    // de por vida: sin esto, quien gastó sus 3 en la primera semana quedaba
+    // bloqueado para siempre y solo un humano podía destrabarlo desde el
+    // portal. El bloqueo real (`bloqueado`) lo sigue levantando staff — eso no
+    // se toca, porque significa "hubo un problema que alguien debe mirar".
+    if (correccionesPrevias > 0) {
+      await db.patch(`barbara_correcciones?barbara_cliente_id=eq.${barbaraId}`, {
+        intentos_usados: 0,
+        actualizado_en: new Date().toISOString(),
+      }).catch((e) => console.error("no se pudo reiniciar el contador:", String(e).slice(0, 120)));
+    }
+  }
 
   await db.post("barbara_memoria", {
     barbara_cliente_id: barbaraId,

@@ -402,3 +402,34 @@ textarea.campo{resize:vertical;min-height:56px}
   .pestana{font-size:12px;padding:9px 6px}
   .campo.codigo{font-size:22px;letter-spacing:.22em;padding-left:calc(13px + .22em)}
 }
+
+/* ── Lo que Bárbara aprendió ─────────────────────────────────────────────
+   Sirve para dos listas con la misma forma: las reglas de una marca
+   (`ReglasAprendidas`) y los patrones globales (`PatronesGlobales`). Se
+   comparten los estilos a propósito — son la misma idea a dos escalas, y que
+   se vean igual ayuda a entender que una es la versión global de la otra. */
+.tenue{color:var(--texto-2);font-size:13px;margin:0}
+
+.lista-reglas{list-style:none;margin:0;padding:0;display:flex;
+  flex-direction:column;gap:8px}
+.regla{display:flex;align-items:flex-start;gap:12px;padding:12px 14px;
+  background:var(--panel);border:1px solid var(--borde);border-radius:12px}
+/* Apagada sigue a la vista, no desaparece: saber que se aprendió algo
+   equivocado —y de dónde salió— es justo lo que sirve para corregirlo. */
+.regla.apagada{opacity:.5}
+.regla.apagada .regla-txt > span:first-child{text-decoration:line-through}
+.regla-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
+.regla-txt > span:first-child{font-size:14px;line-height:1.45}
+.regla-meta{display:flex;flex-wrap:wrap;align-items:center;gap:7px}
+.etiqueta-cat{font-size:10.5px;font-weight:700;letter-spacing:.04em;
+  text-transform:uppercase;color:#fff;background:#8A8F98;
+  padding:2px 7px;border-radius:999px}
+.regla-meta .veces{font-size:11.5px;color:var(--texto-2)}
+/* El texto original del que salió la regla. Se corta en una línea: es para
+   auditar cuando algo parece raro, no para leerlo siempre. */
+.regla-meta .origen{font-size:11.5px;color:var(--texto-3);font-style:italic;
+  max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+@media(max-width:560px){
+  .regla{flex-direction:column;align-items:stretch}
+}

@@ -206,7 +206,37 @@ Deno.serve(async (req) => {
     return new Response("ok", { status: 200 });
   }
 
-  // 7) Intento 1 o 2: disparar el reintento y confirmar al cliente.
+  // 7) Anotar en LA PIEZA que hubo que corregirla.
+  //
+  //    `barbara_correcciones` cuenta por cliente y se reinicia con cada pieza
+  //    nueva, así que ahí el dato se pierde. Acá queda pegado a la pieza para
+  //    siempre, y es de lo único que puede aprender la memoria global: qué
+  //    tenían en común las que pasaron a la primera y las que no.
+  //
+  //    Sin `await` a propósito: si esto falla o tarda, la corrección ya quedó
+  //    registrada y el reintento se dispara igual. Aprender no puede costarle
+  //    al cliente que su corrección se demore.
+  sb.from("barbara_memoria")
+    .select("id, correcciones_pedidas")
+    .eq("barbara_cliente_id", barbaraClienteId)
+    .order("creado_en", { ascending: false })
+    .limit(1)
+    .maybeSingle()
+    .then(({ data: pieza }: any) => {
+      if (!pieza) return;
+      return sb
+        .from("barbara_memoria")
+        .update({
+          correcciones_pedidas: (pieza.correcciones_pedidas ?? 0) + 1,
+          // Ya no puede contar como "aprobada sin cambios": el cliente pidió
+          // uno. Se cierra acá mismo en vez de esperar a la pieza siguiente.
+          aprobada_sin_cambios: false,
+        })
+        .eq("id", pieza.id);
+    })
+    .catch((e: unknown) => console.error("marcar pieza:", String(e).slice(0, 120)));
+
+  // 8) Intento 1 o 2: disparar el reintento y confirmar al cliente.
   const disparado = await dispararReintento(sb, barbaraClienteId);
   await tgSend(
     chatId,

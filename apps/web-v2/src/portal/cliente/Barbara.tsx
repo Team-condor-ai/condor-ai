@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { sb } from "../lib/supabase";
 import { ChatVisor } from "../agentes-ia/ChatVisor";
 import { FormularioBarbara } from "./FormularioBarbara";
+import { ReglasAprendidas } from "../agentes-ia/ReglasAprendidas";
 import { TIPOS_CONTENIDO, type BarbaraCliente, type BarbaraFormulario } from "../agentes-ia/tipos";
 
 type Cargado = {
@@ -118,6 +119,19 @@ export function Barbara() {
           <button className="btn solido" onClick={() => setEditando(true)}>
             Editar formulario de entrada
           </button>
+        </section>
+
+        {/* Que el cliente vea lo que Bárbara aprendió de SU marca es parte de
+            por qué el producto se siente propio: comprueba que lo escucharon.
+            No puede apagarlas — eso lo revisa el equipo. */}
+        <section className="bloque">
+          <h3>Lo que Bárbara aprendió de tu marca</h3>
+          <p className="parrafo" style={{ color: "var(--texto-2)" }}>
+            Cada vez que pides un cambio por Telegram, Bárbara guarda la
+            preferencia detrás de ese cambio para no repetir el error. Esto es
+            solo tuyo: nunca se comparte con otras marcas.
+          </p>
+          <ReglasAprendidas barbaraClienteId={d.id} />
         </section>
 
         <section className="bloque">

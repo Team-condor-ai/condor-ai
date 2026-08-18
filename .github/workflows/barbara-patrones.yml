@@ -1,0 +1,48 @@
+name: Barbara patrones - memoria global
+
+# Destila patrones de rendimiento entre TODOS los clientes y los escribe en
+# `barbara_patrones`, que el motor lee en cada generación. Hasta ahora esa
+# tabla la leía el motor pero no la escribía nadie: el tubo estaba conectado
+# a una tabla vacía.
+#
+# SEMANAL Y NO DIARIO A PROPOSITO
+# ---------------------------------------------------------------------------
+# El material que analiza son piezas ya cerradas (aprobadas o corregidas), y
+# eso crece de a pocas por día. Correrlo diario gastaría una llamada a Claude
+# para volver a mirar casi el mismo conjunto.
+#
+# No necesita Higgsfield: no genera imágenes ni video, solo lee y razona.
+
+on:
+  schedule:
+    # Lunes 09:00 Chile = 13:00 UTC (invierno UTC-4). Antes de la semana, para
+    # que si alguien enciende un patrón, alcance a influir en el contenido.
+    - cron: '0 13 * * 1'
+  workflow_dispatch:
+    inputs:
+      aplicar:
+        description: 'poner 1 para GUARDAR los patrones (vacío = solo mostrar)'
+        required: false
+        default: ''
+
+jobs:
+  barbara-patrones:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Destilar patrones globales
+        # En el cron guarda; a mano, solo si se pide. Así el disparo manual
+        # sirve para mirar sin comprometerse.
+        run: |
+          if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ inputs.aplicar }}" = "1" ]; then
+            node services/barbara/patrones.mjs --aplicar
+          else
+            node services/barbara/patrones.mjs
+          fi
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}

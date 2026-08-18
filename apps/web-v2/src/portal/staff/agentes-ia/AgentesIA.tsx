@@ -1,4 +1,5 @@
 import { BarbaraClientesLista } from "./BarbaraClientesLista";
+import { PatronesGlobales } from "./PatronesGlobales";
 
 /**
  * "Agentes IA" — pensado para más agentes a futuro, no solo Bárbara.
@@ -26,6 +27,11 @@ export function AgentesIA() {
 
         <h3 style={{ marginTop: 18 }}>Bárbara Clientes</h3>
         <BarbaraClientesLista />
+
+        {/* La memoria global vive acá y no dentro de un cliente: no es de
+            ninguno en particular, es lo que Bárbara aprendió de todos. */}
+        <h3 style={{ marginTop: 26 }}>Memoria global</h3>
+        <PatronesGlobales />
       </div>
     </>
   );

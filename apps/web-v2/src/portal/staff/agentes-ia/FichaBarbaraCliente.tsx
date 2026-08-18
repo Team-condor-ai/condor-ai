@@ -5,6 +5,7 @@ import { Ico } from "../../disenio/iconos";
 import { useSesion } from "../../auth/sesion";
 import { ChatVisor } from "../../agentes-ia/ChatVisor";
 import { BrandBookEditor } from "./BrandBookEditor";
+import { ReglasAprendidas } from "../../agentes-ia/ReglasAprendidas";
 import {
   BARBARA_PLANES,
   TIPOS_CONTENIDO,
@@ -38,7 +39,7 @@ export function FichaBarbaraCliente() {
   const [d, setD] = useState<Cargado | null>(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
-  const [tab, setTab] = useState<"marca" | "formulario">("marca");
+  const [tab, setTab] = useState<"marca" | "formulario" | "aprendido">("marca");
 
   // Edición de datos básicos
   const [plan, setPlan] = useState("barbara");
@@ -248,6 +249,13 @@ export function FichaBarbaraCliente() {
             >
               Formulario de entrada
             </button>
+            <button
+              type="button"
+              className={"pestana" + (tab === "aprendido" ? " on" : "")}
+              onClick={() => setTab("aprendido")}
+            >
+              Lo aprendido
+            </button>
           </div>
 
           {tab === "marca" ? (
@@ -258,8 +266,12 @@ export function FichaBarbaraCliente() {
               inicial={d.brandBook}
               onGuardado={cargar}
             />
-          ) : (
+          ) : tab === "formulario" ? (
             <FormularioSoloLectura formulario={d.formulario} />
+          ) : (
+            /* Staff SÍ puede apagar una regla: una mal destilada empeora todo
+               el contenido siguiente. El cliente solo la ve. */
+            <ReglasAprendidas barbaraClienteId={d.cliente.id} puedeApagar />
           )}
         </section>
 
