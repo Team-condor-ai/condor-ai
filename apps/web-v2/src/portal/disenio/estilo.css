@@ -56,21 +56,24 @@
    del archivo queda idéntico al original. ─────────────────────────────── */
 .portal-app *{box-sizing:border-box}
 html,body{margin:0}
+html:has(.portal-app),body:has(.portal-app),#root:has(.portal-app){
+  min-height:100%;background:var(--fondo);
+}
 .portal-app{
   background:var(--fondo);color:var(--texto);
   font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",system-ui,Roboto,sans-serif;
   font-size:13.5px;line-height:1.45;-webkit-font-smoothing:antialiased;letter-spacing:-.005em;
-  min-height:100vh;
+  min-height:100vh;min-height:100dvh;background:var(--fondo);
 }
 .portal-app svg{display:block;flex:none}
 .portal-app button{font-family:inherit;letter-spacing:inherit;color:inherit}
-.app{display:flex;min-height:100vh}
+.app{display:flex;min-height:100vh;min-height:100dvh;align-items:stretch}
 
 /* ───── LATERAL ───── */
 aside{
   width:220px;flex:none;background:var(--lateral);border-right:1px solid var(--borde);
   display:flex;flex-direction:column;padding:14px 10px;gap:12px;
-  position:sticky;top:0;height:100vh;
+  position:sticky;top:0;height:100vh;height:100dvh;min-height:0;overflow:hidden;
 }
 .logo{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:4px 6px 6px}
 /* El lockup lleva el texto "condor.ai" en negro. `invert(1)` a secas lo
@@ -89,7 +92,11 @@ aside{
   background:var(--panel);border:1px solid var(--borde);border-radius:9px;color:var(--texto-3)}
 .buscador input{border:0;background:none;outline:none;flex:1;min-width:0;font:inherit;color:var(--texto)}
 .buscador input::placeholder{color:var(--texto-3)}
-.menu{flex:1;display:flex;flex-direction:column;gap:2px}
+.menu{flex:1;min-height:0;display:flex;flex-direction:column;gap:2px;
+  overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;scrollbar-width:thin;
+  scrollbar-color:var(--borde) transparent;padding-right:3px}
+.menu::-webkit-scrollbar{width:5px}
+.menu::-webkit-scrollbar-thumb{background:var(--borde);border-radius:999px}
 .nav-item{display:flex;align-items:center;gap:10px;width:100%;padding:9px 10px;border:0;
   background:none;cursor:pointer;border-radius:9px;font-size:13.5px;font-weight:500;text-align:left}
 .nav-item span{flex:1}
@@ -105,7 +112,7 @@ aside{
 .tarjeta-user small{font-size:11.5px;color:var(--texto-2)}
 
 /* ───── PRINCIPAL ───── */
-main{flex:1;min-width:0;padding:12px 14px 24px 4px}
+main{flex:1;min-width:0;min-height:100vh;min-height:100dvh;padding:12px 14px 24px 4px;background:var(--fondo)}
 .lienzo{background:var(--panel);border:1px solid var(--borde);border-radius:14px;
   box-shadow:var(--sombra);overflow:hidden}
 .barra{display:flex;align-items:center;gap:10px;padding:13px 16px;

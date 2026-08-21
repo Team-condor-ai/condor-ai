@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components -- catálogo estático de SVG, no módulo de pantalla */
 /**
  * Iconos del portal. SVG inline, uno por concepto.
  *
@@ -41,6 +42,19 @@ function Svg({
 }
 
 export const Ico = {
+  /** El ave real de Cóndor.AI, recortada desde el isotipo oficial. A 20 px la
+   * versión raster conserva mejor las plumas y el degradado que simplificarla
+   * a una mancha monocroma. */
+  condor: (p: Props = {}) => (
+    <img
+      src="/assets/favicon.png"
+      width={p.t ?? 21}
+      height={p.t ?? 21}
+      alt=""
+      aria-hidden="true"
+      style={{ display: "block", objectFit: "contain", flex: "none" }}
+    />
+  ),
   clientes: (p: Props = {}) => (
     <Svg {...p}>
       <path d="M16 20v-1.6a3.4 3.4 0 0 0-3.4-3.4H6.4A3.4 3.4 0 0 0 3 18.4V20" />
@@ -115,6 +129,79 @@ export const Ico = {
   mas: (p: Props = {}) => (
     <Svg {...p}>
       <path d="M12 5v14M5 12h14" />
+    </Svg>
+  ),
+  /** Columnas de un tablero: por hacer, en curso, hecho. */
+  tablero: (p: Props = {}) => (
+    <Svg {...p}>
+      <rect x="3" y="4" width="5.2" height="16" rx="1.6" />
+      <rect x="9.4" y="4" width="5.2" height="11" rx="1.6" />
+      <rect x="15.8" y="4" width="5.2" height="7" rx="1.6" />
+    </Svg>
+  ),
+  /** Diana: una meta con su centro. */
+  meta: (p: Props = {}) => (
+    <Svg {...p}>
+      <circle cx="12" cy="12" r="8.4" />
+      <circle cx="12" cy="12" r="4.6" />
+      <circle cx="12" cy="12" r="1" />
+    </Svg>
+  ),
+  /** Libro mayor: contabilidad. */
+  libro: (p: Props = {}) => (
+    <Svg {...p}>
+      <path d="M4 5.6A2.6 2.6 0 0 1 6.6 3H19v15.4H6.6A2.6 2.6 0 0 0 4 21z" />
+      <path d="M8 7.6h7M8 11h7M8 14.4h4" />
+    </Svg>
+  ),
+  /** Bárbara: pelo largo y un destello. Es una persona, no un engranaje —
+   *  el agente tiene cara en el material de marca y acá también. */
+  barbara: (p: Props = {}) => (
+    <Svg {...p} g={1.55}>
+      <path d="M6.1 13.2C5.2 8 7.1 3.7 11.8 3.7c4.8 0 7 4.2 6.1 9.5-.2 1.3-.8 2.3-1.7 3v3.4M7.8 16.2v3.4" />
+      <path d="M6.2 11.7c-.9 2.7-1.2 6.1-.4 9.1M17.7 11.7c.9 2.7 1.2 6.1.4 9.1" />
+      <path d="M8.1 8.7c2.1-.4 3.4-1.7 3.9-3.5.6 1.7 1.8 2.8 3.8 3.4" />
+      <path d="M8.8 10.3c.45-.45 1.15-.45 1.6 0M13.8 10.3c.6-.55 1.4-.35 1.65.15" />
+      <path d="M13.8 10.55l1.7-.1" />
+      <path d="M10.3 13.1c1.1.9 2.3.9 3.4 0" />
+      <path d="M5.2 21c.5-2.5 2.8-4.1 6.8-4.1s6.3 1.6 6.8 4.1" />
+      <path d="M20 3.2l.45 1.15 1.15.45-1.15.45L20 6.4l-.45-1.15-1.15-.45 1.15-.45z" />
+    </Svg>
+  ),
+  /** Rat.IA: silueta angular basada en el isotipo real — hocico, oreja y
+   *  cola quebrada. Se mantiene monocroma para funcionar en ambos temas. */
+  ratia: (p: Props = {}) => (
+    <Svg {...p} t={p.t ?? 21} g={1.45}>
+      <path
+        fill="currentColor"
+        stroke="none"
+        d="M2.2 15.3 7.2 11.7 6.5 7.5l4.4-.8-2.2 4.2 3.9-1.8 3.2 2.2-3.1 4.2 4.8-.7 2.3-4.4-3.8-2 1.2-1.2 4.8 2.5-3.1 6.9-10.3 1.2 2.8-3.3-6.1 1.1 3.2-2.6-4.1.8z"
+      />
+      <circle cx="7.25" cy="12.3" r="1.05" fill="var(--panel)" stroke="none" />
+      <path d="m16.1 8.4 5.3-4.2" />
+    </Svg>
+  ),
+  /** Los tres puntitos: "hay más acciones acá". Verticales, que es como se
+   *  lee dentro de una fila de tabla. */
+  puntos: (p: Props = {}) => (
+    <Svg {...p} g={2.2}>
+      <circle cx="12" cy="5" r=".6" />
+      <circle cx="12" cy="12" r=".6" />
+      <circle cx="12" cy="19" r=".6" />
+    </Svg>
+  ),
+  /** Burbuja de conversación. Para Telegram y WhatsApp: un teléfono ahí
+   *  promete una llamada, que no es lo que pasa al tocarlo. */
+  chat: (p: Props = {}) => (
+    <Svg {...p}>
+      <path d="M20 11.5a7.5 7.5 0 0 1-10.9 6.7L4 19.5l1.4-4.4A7.5 7.5 0 1 1 20 11.5z" />
+    </Svg>
+  ),
+  /** Galón hacia abajo: pliega y despliega. Apunta al lado en el que va a
+   *  moverse el contenido, no al estado actual. */
+  galon: (p: Props = {}) => (
+    <Svg {...p} g={2}>
+      <path d="M6 9l6 6 6-6" />
     </Svg>
   ),
   volver: (p: Props = {}) => (

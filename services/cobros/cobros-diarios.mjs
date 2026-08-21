@@ -2,8 +2,9 @@
 // Corre 1 vez al día (GitHub Actions). Usa service role (ignora RLS).
 //
 // Qué hace cada día, solo para clientes ACTIVOS (no archivados/borrados):
-//  1. Recordatorio mensual: si hoy es su día de cobro (proximo_cobro == hoy), le manda
-//     un correo bonito recordándole pagar su mensualidad en el portal.
+//  1. Recordatorio mensual: por cada COBRO mensual cuyo día de cobro es hoy, le
+//     manda un correo recordándole pagarlo en el portal. Un cliente puede tener
+//     varios, cada uno con su fecha y su monto.
 //  2. Alerta de impago: si pasaron > 2 días desde que le llegó el cobro y no pagó
 //     (mensualidad vencida > 2 días, o un cobro manual pendiente > 2 días), marca al
 //     cliente como "irresponsable" con los días sin pagar y avisa por correo al ADMIN
@@ -42,9 +43,9 @@ const wrap = (titulo, cuerpo) => `<!DOCTYPE html><html><body style="margin:0;bac
       <tr><td style="background:#fafafa;padding:16px;text-align:center;font-size:12px;color:#999">${titulo}</td></tr>
     </table></td></tr></table></body></html>`;
 
-const correoRecordatorio = (c) => wrap("condor.ai · recordatorio de pago", `
+const correoRecordatorio = (c, cobro) => wrap("condor.ai · recordatorio de pago", `
   <p style="font-size:16px;color:#1a1a1a;margin:0 0 14px">Hola${c.negocio ? " " + c.negocio : ""} 👋</p>
-  <p style="font-size:15px;color:#444;line-height:1.6;margin:0 0 22px">Hoy corresponde el pago de tu <b>mensualidad</b> de condor.ai (${c.moneda || "CLP"} ${Number(c.mensual_monto || 0).toLocaleString()}). Puedes pagarla de forma segura en tu portal con un clic:</p>
+  <p style="font-size:15px;color:#444;line-height:1.6;margin:0 0 22px">Hoy corresponde el pago de <b>${cobro.titulo || "tu mensualidad"}</b> de condor.ai (${cobro.moneda || c.moneda || "CLP"} ${Number(cobro.monto || 0).toLocaleString()}). Puedes pagarla de forma segura en tu portal con un clic:</p>
   <table cellpadding="0" cellspacing="0" style="margin:0 auto 22px"><tr><td style="border-radius:999px;background:linear-gradient(115deg,#2747ff,#7a5bff,#ff3b4e)">
     <a href="${PORTAL}" style="display:inline-block;padding:14px 32px;color:#fff;font-weight:700;text-decoration:none;border-radius:999px">Pagar en mi portal →</a></td></tr></table>
   <p style="font-size:13px;color:#888;text-align:center">🔒 Pago seguro con Mercado Pago. ¿Dudas? WhatsApp +56 9 8898 9824.</p>`);
@@ -55,25 +56,50 @@ const correoAdmin = (c, dias) => wrap("condor.ai · alerta de impago", `
   <p style="font-size:15px;color:#1a1a1a;line-height:1.7;margin:0 0 18px"><b>${c.negocio || c.email}</b><br>Correo: ${c.email}<br>Días sin pagar: <b>${dias}</b></p>
   <p style="font-size:14px;color:#444">Ya quedó marcado como <b>irresponsable</b> en el panel. Puedes escribirle o gestionar el cobro manualmente.</p>
   <table cellpadding="0" cellspacing="0" style="margin:18px auto 0"><tr><td style="border-radius:999px;background:#2747ff">
-    <a href="https://condorai.cl/admin.html" style="display:inline-block;padding:12px 28px;color:#fff;font-weight:700;text-decoration:none;border-radius:999px">Abrir el panel →</a></td></tr></table>`);
+    <a href="https://condorai.cl/acceso/clientes" style="display:inline-block;padding:12px 28px;color:#fff;font-weight:700;text-decoration:none;border-radius:999px">Abrir el panel →</a></td></tr></table>`);
 
 // ---- Proceso ----
+//
+// RECORRE COBROS, NO CLIENTES (21-ago-2026)
+// ---------------------------------------------------------------------------
+// Antes la mensualidad era una columna del cliente, así que bastaba mirar
+// `clientes.proximo_cobro`. Ahora un cliente puede tener varios cobros
+// mensuales, cada uno con su fecha y su monto: si se siguiera mirando la
+// ficha, solo se cobraría uno de ellos y los demás no avisarían nunca.
+//
+// La mora se calcula POR COBRO y después se agrega al cliente, porque
+// "irresponsable" es una etiqueta de la persona, no de la factura.
 const clientes = await sget("clientes?archivado=eq.false&select=*");
+const cobros = await sget("cobros?select=*");
 const pagosPend = await sget("pagos?estado=eq.pendiente&select=cliente_id,cobro_enviado_en,tipo");
 let recordatorios = 0, alertas = 0, reseteos = 0;
 
 for (const c of clientes) {
   let diasMora = 0;
 
-  // A) Mensualidad vencida
-  if (c.mensual_monto > 0 && c.proximo_cobro) {
-    const venc = new Date(c.proximo_cobro + "T00:00:00Z");
+  // A) Cobros mensuales vencidos
+  //
+  // Se miran los que están cobrando o esperando autorización. Un cobro
+  // 'pausada' o 'cancelada' no debe generar mora: se pausó a propósito.
+  const mensuales = cobros.filter(
+    (x) => x.cliente_id === c.id && x.tipo === "mensual" &&
+           (x.estado === "activa" || x.estado === "pendiente") && x.proximo_cobro,
+  );
+
+  for (const m of mensuales) {
+    const venc = new Date(m.proximo_cobro + "T00:00:00Z");
     const d = diasEntre(hoy, venc);
-    if (d > UMBRAL && c.mensual_estado !== "al_dia") diasMora = Math.max(diasMora, d);
-    // Recordatorio el día exacto del cobro
-    if (c.proximo_cobro === hoyISO && c.ultimo_recordatorio_en !== hoyISO) {
-      if (await enviar(c.email, "Recordatorio: tu mensualidad de condor.ai", correoRecordatorio(c))) {
-        await spatch(`clientes?id=eq.${c.id}`, { ultimo_recordatorio_en: hoyISO });
+    if (d > UMBRAL) diasMora = Math.max(diasMora, d);
+
+    // Recordatorio el día exacto del cobro, marcado en el COBRO y no en el
+    // cliente: si no, el primero que avisa deja a los otros sin recordatorio.
+    //
+    // NO se le recuerda a quien tiene suscripción automática (`mp_preapproval_id`):
+    // Mercado Pago le cobra solo. Mandarle "paga en tu portal" lo empujaría a
+    // pagar dos veces el mismo mes.
+    if (!m.mp_preapproval_id && m.proximo_cobro === hoyISO && m.ultimo_recordatorio_en !== hoyISO) {
+      if (await enviar(c.email, "Recordatorio: tu mensualidad de condor.ai", correoRecordatorio(c, m))) {
+        await spatch(`cobros?id=eq.${m.id}`, { ultimo_recordatorio_en: hoyISO });
         recordatorios++;
       }
     }
@@ -97,4 +123,4 @@ for (const c of clientes) {
   }
 }
 
-console.log(`OK cobros: ${recordatorios} recordatorios, ${alertas} alertas a admin, ${reseteos} reseteos. ${clientes.length} clientes activos.`);
+console.log(`OK cobros: ${recordatorios} recordatorios, ${alertas} alertas a admin, ${reseteos} reseteos. ${clientes.length} clientes activos, ${cobros.length} cobros.`);

@@ -1,8 +1,13 @@
 // condor.ai · Edge Function "crear-pago"
-// Crea un cobro en Mercado Pago con el MONTO EXACTO de la ficha del cliente.
-// - setup   -> pago único (preference)
+// Lleva a Mercado Pago un cobro de la tabla `cobros` (21-ago-2026).
+// - unico   -> pago de una vez (preference)
 // - mensual -> suscripción que se cobra sola (preapproval)
 // Devuelve el init_point (URL del checkout de MP) para redirigir al cliente.
+//
+// EL MONTO SALE DEL COBRO, NO DE LA FICHA NI DEL NAVEGADOR
+// Hasta el 21-ago el monto salía de `clientes.setup_monto`/`mensual_monto`, que
+// solo daban para un trato por cliente. Ahora cada cobro es una fila propia con
+// su monto, su título y su historial de pagos.
 //
 // Secreto: MP_ACCESS_TOKEN  (de la cuenta Mercado Pago)
 // Deploy:  supabase functions deploy crear-pago --project-ref <ref>   (CON verificación de JWT)
@@ -58,6 +63,29 @@ async function enviarCorreo(to: string, subject: string, html: string) {
   } catch { return false; }
 }
 
+// Crea un cobro nuevo y lo numera dentro del cliente.
+//
+// El número es POR CLIENTE y no se reusa: es lo que identifica al cobro cuando
+// no tiene título ("Cobro 3"). Por eso se toma del último y se suma uno, en vez
+// de contar las filas — si alguna se anula, contar daría un número repetido.
+async function crearCobro(sb: any, cliente: any, tipo: string, titulo: string, monto: number, porQuien: string) {
+  const { data: ultimo } = await sb.from("cobros")
+    .select("numero").eq("cliente_id", cliente.id)
+    .order("numero", { ascending: false }).limit(1).maybeSingle();
+  const { data, error } = await sb.from("cobros").insert({
+    cliente_id: cliente.id,
+    numero: (Number(ultimo?.numero) || 0) + 1,
+    tipo,
+    titulo: titulo || null,
+    monto: Math.round(monto),
+    moneda: cliente.moneda || "CLP",
+    estado: "pendiente",
+    creado_por: porQuien,
+  }).select().single();
+  if (error) { console.error("crearCobro:", error.message); return null; }
+  return data;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
   if (req.method !== "POST") return json({ error: "método no permitido" }, 405);
@@ -66,10 +94,15 @@ Deno.serve(async (req) => {
   if (!MP) return json({ error: "Falta configurar MP_ACCESS_TOKEN" }, 500);
 
   let tipo = "setup", clienteId: string | null = null, enviarCorreoFlag = false;
+  // La forma nueva de pedir un cobro: el id de la fila de `cobros`. Todo lo
+  // demás (tipo/monto/concepto) es el camino viejo, que se sigue aceptando
+  // mientras las pantallas terminan de migrar — ver `resolver el cobro`.
+  let cobroId: string | null = null;
   // Solo se usan si quien llama es ADMIN — ver el bloque de más abajo.
   let montoPedido: number | null = null, conceptoPedido = "";
   try {
     const b = await req.json();
+    if (b?.cobro_id) cobroId = String(b.cobro_id);
     if (b?.tipo) tipo = b.tipo;
     if (b?.cliente_id) clienteId = b.cliente_id;
     if (b?.enviar_correo) enviarCorreoFlag = true;
@@ -106,34 +139,106 @@ Deno.serve(async (req) => {
   else cliente = (await sb.from("clientes").select("*").eq("email", user.email).maybeSingle()).data;
   if (!cliente) return json({ error: "cliente no encontrado" }, 404);
 
-  // EL MONTO LIBRE ES SOLO PARA ADMINS, Y ESO ES LA PROTECCIÓN ENTERA
+  // RESOLVER EL COBRO — Y LA PROTECCIÓN DEL MONTO, QUE NO SE RELAJA
   // ---------------------------------------------------------------------------
   // Si el monto pudiera venir del navegador para cualquiera, un cliente con la
-  // consola abierta se cobraría $1 a sí mismo. Para un admin no hay tal riesgo:
-  // ya puede editar la ficha y poner el monto que quiera. Por eso `monto` y
-  // `concepto` del cuerpo se aceptan SOLO si `esAdmin`; para todos los demás se
-  // ignoran en silencio y manda la ficha, igual que antes.
-  const montoFicha = tipo === "mensual" ? (cliente.mensual_monto || 0) : (cliente.setup_monto || 0);
-  const monto = (esAdmin && montoPedido && montoPedido > 0) ? Math.round(montoPedido) : montoFicha;
-  const moneda = cliente.moneda || "CLP";
-  const concepto = (esAdmin && conceptoPedido) || cliente.concepto || `condor.ai · ${tipo}`;
-  if (!monto || monto <= 0) return json({ error: "monto no definido para este cliente" }, 400);
+  // consola abierta se cobraría $1 a sí mismo. Por eso el monto se lee SIEMPRE
+  // de la fila de `cobros`, que solo un admin puede escribir.
+  //
+  // Un admin sí puede pedir un monto libre — ya puede editar la ficha, no hay
+  // nada que proteger ahí—, pero al hacerlo se CREA un cobro. Así queda escrito
+  // qué se cobró y por cuánto, en vez de perderse dentro de un parámetro.
+  let cobro: any = null;
 
-  // Registrar el pago como pendiente (su id = external_reference)
-  const { data: pago, error: ep } = await sb.from("pagos")
-    .insert({ cliente_id: cliente.id, tipo, monto, estado: "pendiente", detalle: conceptoPedido || null })
-    .select().single();
-  if (ep) return json({ error: "no se pudo registrar el pago: " + ep.message }, 500);
+  if (cobroId) {
+    cobro = (await sb.from("cobros").select("*").eq("id", cobroId).maybeSingle()).data;
+    if (!cobro) return json({ error: "cobro no encontrado" }, 404);
+    // Un cliente logueado solo puede pagar SUS cobros. Sin esta línea, mandando
+    // el id de otro cobro se podría generar el link de pago de un tercero.
+    if (cobro.cliente_id !== cliente.id) return json({ error: "ese cobro no es de este cliente" }, 403);
+  } else {
+    // CAMINO VIEJO (las pantallas que todavía llaman con `tipo`). Se resuelve
+    // contra `cobros` igual, para que ningún cobro quede fuera del modelo nuevo.
+    const esMensual = tipo === "mensual";
+    const libre = (esAdmin && montoPedido && montoPedido > 0) ? Math.round(montoPedido) : 0;
+
+    // UN MONTO PEDIDO SIEMPRE CREA UN COBRO, TAMBIÉN EN MENSUAL
+    // Si se reusara el cobro mensual que ya existe, pedir una mensualidad
+    // distinta cobraría el monto viejo sin decir nada. Y una mensualidad de
+    // otro monto no es el mismo trato: es otra suscripción.
+    if (libre) {
+      cobro = await crearCobro(
+        sb, cliente, esMensual ? "mensual" : "unico",
+        conceptoPedido || (esMensual ? "Mensualidad" : "Setup"),
+        libre, user.email,
+      );
+      if (!cobro) return json({ error: "no se pudo crear el cobro" }, 500);
+    } else if (esMensual) {
+      cobro = (await sb.from("cobros").select("*")
+        .eq("cliente_id", cliente.id).eq("tipo", "mensual").neq("estado", "cancelada")
+        .order("numero", { ascending: false }).limit(1).maybeSingle()).data;
+    } else {
+      cobro = (await sb.from("cobros").select("*")
+        .eq("cliente_id", cliente.id).eq("tipo", "unico").eq("titulo", "Setup")
+        .limit(1).maybeSingle()).data;
+    }
+
+    // No había cobro que reusar: se crea desde lo que diga la ficha vieja.
+    if (!cobro) {
+      const montoNuevo = esMensual ? (cliente.mensual_monto || 0) : (cliente.setup_monto || 0);
+      if (!montoNuevo || montoNuevo <= 0) return json({ error: "monto no definido para este cobro" }, 400);
+      cobro = await crearCobro(
+        sb, cliente, esMensual ? "mensual" : "unico",
+        esMensual ? "Mensualidad" : "Setup", montoNuevo, user.email,
+      );
+      if (!cobro) return json({ error: "no se pudo crear el cobro" }, 500);
+    }
+  }
+
+  if (cobro.estado === "anulado" || cobro.estado === "cancelada")
+    return json({ error: "ese cobro está anulado" }, 400);
+
+  const tipoCobro: string = cobro.tipo;
+  const monto = Number(cobro.monto) || 0;
+  const moneda = cobro.moneda || cliente.moneda || "CLP";
+  const concepto = cobro.titulo || cliente.concepto || `condor.ai · cobro ${cobro.numero}`;
+  if (monto <= 0) return json({ error: "el cobro no tiene monto" }, 400);
+
+  // AUTORIZAR UNA SUSCRIPCIÓN NO ES UN PAGO
+  // ---------------------------------------------------------------------------
+  // En un cobro único se registra la fila de `pagos` acá mismo: ese link ES la
+  // plata, y su id viaja como `external_reference`.
+  //
+  // En un mensual NO se registra nada todavía. Lo que se está creando es el
+  // permiso para cobrar; los meses llegan después, uno por uno, por
+  // `subscription_authorized_payment`. Anotar la autorización como pago dejaría
+  // una fila de plata que nunca entró, y además ocuparía el primer mes: el
+  // índice único (cobro_id, periodo) rechazaría el cobro real de ese mes.
+  //
+  // Por eso la suscripción se referencia por el COBRO y no por un pago.
+  let pago: { id: string } | null = null;
+  if (tipoCobro !== "mensual") {
+    const { data, error: ep } = await sb.from("pagos")
+      .insert({
+        cliente_id: cliente.id, cobro_id: cobro.id, tipo: tipoCobro,
+        monto, estado: "pendiente", detalle: concepto,
+      })
+      .select().single();
+    if (ep) return json({ error: "no se pudo registrar el pago: " + ep.message }, 500);
+    pago = data;
+  }
+
+  const referencia = pago ? pago.id : `cobro:${cobro.id}`;
 
   try {
     let initPoint = "";
-    if (tipo === "mensual") {
+    if (tipoCobro === "mensual") {
       // Suscripción (cobro automático mensual)
       const r = await fetch("https://api.mercadopago.com/preapproval", {
         method: "POST", headers: { Authorization: "Bearer " + MP, "Content-Type": "application/json" },
         body: JSON.stringify({
           reason: concepto + " (mensualidad)",
-          external_reference: pago.id,
+          external_reference: referencia,
           payer_email: cliente.email,
           back_url: PORTAL,
           auto_recurring: { frequency: 1, frequency_type: "months", transaction_amount: monto, currency_id: moneda },
@@ -143,6 +248,13 @@ Deno.serve(async (req) => {
       const d = await r.json();
       if (!r.ok) return json({ error: "MP: " + JSON.stringify(d).slice(0, 300) }, 502);
       initPoint = d.init_point;
+
+      // GUARDAR EL ID DE LA SUSCRIPCIÓN NO ES OPCIONAL
+      // Antes se descartaba, y sin él no había forma de pausar, cancelar ni
+      // reconocer los cobros mensuales que MP hace solo: el webhook resuelve
+      // cada cobro recurrente por este id. El estado se queda en 'pendiente'
+      // hasta que el cliente autorice — decirlo activo antes sería mentir.
+      if (d.id) await sb.from("cobros").update({ mp_preapproval_id: String(d.id) }).eq("id", cobro.id);
     } else {
       // Pago único (setup u otro)
       const r = await fetch("https://api.mercadopago.com/checkout/preferences", {
@@ -153,8 +265,8 @@ Deno.serve(async (req) => {
           back_urls: { success: PORTAL, failure: PORTAL, pending: PORTAL },
           auto_return: "approved",
           notification_url: WEBHOOK,
-          external_reference: pago.id,
-          metadata: { cliente_id: cliente.id, tipo },
+          external_reference: referencia,
+          metadata: { cliente_id: cliente.id, cobro_id: cobro.id, tipo: tipoCobro },
         }),
       });
       const d = await r.json();
@@ -164,19 +276,21 @@ Deno.serve(async (req) => {
 
     // El link se guarda para poder volver a copiarlo o reenviarlo sin generar
     // un cobro nuevo — si no, cada "no me llegó" dejaría una fila duplicada.
-    await sb.from("pagos").update({ link: initPoint }).eq("id", pago.id);
+    if (pago) await sb.from("pagos").update({ link: initPoint }).eq("id", pago.id);
+    // También en el cobro: es ahí donde la ficha busca "reenviar el link".
+    await sb.from("cobros").update({ link: initPoint }).eq("id", cobro.id);
 
     // Si el admin pidió enviar el cobro por correo: email bonito al cliente + marcar cobro_enviado_en
     let correoEnviado = false;
     if (enviarCorreoFlag && esAdmin && cliente.email) {
       correoEnviado = await enviarCorreo(
         cliente.email,
-        tipo === "mensual" ? "Tu mensualidad de condor.ai" : "Tu pago de condor.ai está listo 🦅",
-        emailCobro(cliente, tipo, monto, moneda, initPoint, conceptoPedido),
+        tipoCobro === "mensual" ? "Tu mensualidad de condor.ai" : "Tu pago de condor.ai está listo 🦅",
+        emailCobro(cliente, tipoCobro, monto, moneda, initPoint, cobro.titulo || ""),
       );
-      await sb.from("pagos").update({ cobro_enviado_en: new Date().toISOString() }).eq("id", pago.id);
+      if (pago) await sb.from("pagos").update({ cobro_enviado_en: new Date().toISOString() }).eq("id", pago.id);
     }
-    return json({ init_point: initPoint, correo_enviado: correoEnviado, pago_id: pago.id });
+    return json({ init_point: initPoint, correo_enviado: correoEnviado, pago_id: pago ? pago.id : null, cobro_id: cobro.id });
   } catch (e) {
     return json({ error: String(e).slice(0, 200) }, 500);
   }

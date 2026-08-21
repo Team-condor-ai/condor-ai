@@ -58,6 +58,7 @@ export function EditorReunion({ cerrar, guardado }: Props) {
     setGuardando(true);
     setError("");
     setAviso("");
+    let advertencia = "";
 
     const { data: sesion } = await sb.auth.getUser();
     const yo = sesion?.user?.id;
@@ -86,7 +87,8 @@ export function EditorReunion({ cerrar, guardado }: Props) {
       const { error: errInv } = await sb.from("reuniones_admins").insert(
         invitados.map((admin_id) => ({ reunion_id: creada.id, admin_id })),
       );
-      if (errInv) setAviso(`Reunión guardada, pero los invitados fallaron: ${errInv.message}`);
+      if (errInv)
+        advertencia = `Reunión guardada, pero los invitados fallaron: ${errInv.message}`;
     }
 
     const elegidos = equipo.filter((p) => invitados.includes(p.id));
@@ -103,14 +105,15 @@ export function EditorReunion({ cerrar, guardado }: Props) {
         },
       });
       if (errAviso) {
-        setAviso("Reunión guardada, pero no se pudo enviar el aviso por correo/Telegram.");
+        advertencia ||= "Reunión guardada, pero no se pudo enviar el aviso por correo/Telegram.";
       }
     } catch {
-      setAviso("Reunión guardada, pero no se pudo enviar el aviso por correo/Telegram.");
+      advertencia ||= "Reunión guardada, pero no se pudo enviar el aviso por correo/Telegram.";
     }
 
     setGuardando(false);
-    if (!aviso) guardado();
+    if (advertencia) setAviso(advertencia);
+    else guardado();
   }
 
   return (

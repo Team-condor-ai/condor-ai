@@ -14,13 +14,14 @@ import "./disenio/acceso.css";
 
 import { useSesion, salir } from "./auth/sesion";
 import { Login } from "./auth/Login";
-import { Lateral, type Entrada } from "./disenio/Lateral";
+import { Lateral, type Entrada, type Grupo } from "./disenio/Lateral";
 import { Ico } from "./disenio/iconos";
 import { Clientes } from "./staff/Clientes";
-import { FichaCliente } from "./staff/FichaCliente";
+import { Dashboard } from "./staff/Dashboard";
+import { Ratia } from "./staff/ratia/Ratia";
 import { Productos } from "./staff/Productos";
-import { Reuniones } from "./staff/Reuniones";
-import { Suscripciones } from "./staff/Suscripciones";
+import { Contabilidad } from "./staff/contabilidad/Contabilidad";
+import { Organizacion } from "./staff/organizacion/Organizacion";
 import { Biblioteca } from "./staff/Biblioteca";
 import { Mcp } from "./staff/Mcp";
 import { Cobros } from "./staff/Cobros";
@@ -51,23 +52,78 @@ const MisBoletas = lazy(() =>
 const cargando = <div className="cuerpo"><p className="vacio">Cargando…</p></div>;
 const dif = (n: React.ReactNode) => <Suspense fallback={cargando}>{n}</Suspense>;
 
-const MENU_STAFF: Entrada[] = [
-  { a: "/acceso/clientes", texto: "Clientes", icono: "clientes" },
-  { a: "/acceso/productos", texto: "Productos", icono: "producto" },
-  { a: "/acceso/cobros", texto: "Cobros", icono: "cobros" },
-  { a: "/acceso/suscripciones", texto: "Suscripciones", icono: "repetir" },
-  { a: "/acceso/reuniones", texto: "Reuniones", icono: "reuniones" },
-  { a: "/acceso/biblioteca", texto: "Biblioteca", icono: "biblioteca" },
-  { a: "/acceso/mcp", texto: "MCP / CLI", icono: "mcp" },
-  { a: "/acceso/herramientas", texto: "Herramientas", icono: "documentos" },
-  { a: "/acceso/correos", texto: "Correos", icono: "correos" },
-  { a: "/acceso/mapa", texto: "Mapa", icono: "grafo" },
-  // "Agentes IA" es un solo ítem de menú aunque la jerarquía del encargo sea
-  // "Agentes IA > Bárbara > Bárbara Clientes" — el menú lateral no anida,
-  // así que el nivel "Bárbara" vive DENTRO de la página (chips, pensado para
-  // más agentes a futuro) y "Bárbara Clientes" es la lista que se ve ahí.
-  { a: "/acceso/agentes-ia", texto: "Agentes IA", icono: "agentesia" },
-  { a: "/acceso/memoria", texto: "Memoria", icono: "memoria" },
+/**
+ * El menu del equipo, en bloques con nombre.
+ *
+ * POR QUE DEJO DE SER UNA LISTA PLANA (21-ago-2026)
+ * ---------------------------------------------------------------------------
+ * Eran doce entradas seguidas, sin jerarquia: para encontrar una habia que
+ * leerlas todas. Agrupadas por para-que-sirve se salta directo al bloque, y
+ * cada bloque se puede plegar cuando no se usa.
+ *
+ * "Clientes" ahora tiene dos: la cartera de la agencia y los suscriptores de
+ * Rat.IA, que son negocios distintos y no se mezclan.
+ */
+const MENU_STAFF: Grupo[] = [
+  {
+    titulo: "Resumen",
+    icono: "panel",
+    entradas: [{ a: "/acceso/dashboard", texto: "Panel", icono: "panel" }],
+  },
+  {
+    titulo: "Clientes",
+    icono: "clientes",
+    entradas: [
+      { a: "/acceso/clientes", texto: "Cóndor.AI", icono: "condor" },
+      { a: "/acceso/ratia", texto: "Rat.IA", icono: "ratia" },
+    ],
+  },
+  {
+    titulo: "Finanzas y contabilidad",
+    icono: "libro",
+    entradas: [
+      { a: "/acceso/cobros", texto: "Cobros", icono: "cobros" },
+      { a: "/acceso/productos", texto: "Productos", icono: "producto" },
+      { a: "/acceso/contabilidad", texto: "Contabilidad", icono: "libro" },
+    ],
+  },
+  {
+    titulo: "Organización",
+    icono: "tablero",
+    entradas: [
+      { a: "/acceso/organizacion/tablero", texto: "Tablero", icono: "tablero" },
+      { a: "/acceso/organizacion/calendario", texto: "Calendario", icono: "reuniones" },
+      { a: "/acceso/organizacion/metas", texto: "Metas", icono: "meta" },
+    ],
+  },
+  {
+    titulo: "Agentes IA",
+    icono: "barbara",
+    entradas: [
+      // "Agentes IA > Barbara > Barbara Clientes" es la jerarquia del encargo;
+      // el menu no anida un tercer nivel, asi que "Barbara" vive DENTRO de la
+      // pagina como chip, pensado para cuando haya un segundo agente.
+      { a: "/acceso/agentes-ia", texto: "Bárbara", icono: "barbara" },
+      { a: "/acceso/memoria", texto: "Memoria", icono: "memoria" },
+    ],
+  },
+  {
+    titulo: "Operación",
+    icono: "reuniones",
+    entradas: [
+      { a: "/acceso/correos", texto: "Correos", icono: "correos" },
+      { a: "/acceso/herramientas", texto: "Herramientas", icono: "documentos" },
+      { a: "/acceso/biblioteca", texto: "Biblioteca", icono: "biblioteca" },
+    ],
+  },
+  {
+    titulo: "Sistema",
+    icono: "ajustes",
+    entradas: [
+      { a: "/acceso/mapa", texto: "Mapa", icono: "grafo" },
+      { a: "/acceso/mcp", texto: "MCP / CLI", icono: "mcp" },
+    ],
+  },
 ];
 
 const MENU_CLIENTE_BASE: Entrada[] = [
@@ -84,7 +140,7 @@ function Marco({
   detalle,
   children,
 }: {
-  menu: Entrada[];
+  menu: Grupo[];
   nombre: string;
   detalle: string;
   children: React.ReactNode;
@@ -95,7 +151,7 @@ function Marco({
   return (
     <div className="app">
       <Lateral
-        entradas={menu}
+        grupos={menu}
         nombre={nombre}
         detalle={detalle}
         abierto={abierto}
@@ -157,11 +213,14 @@ export default function Portal() {
     return envolver(
       <Marco menu={MENU_STAFF} nombre={nombre} detalle="Equipo Cóndor">
         <Routes>
+          <Route path="dashboard" element={<Dashboard />} />
           <Route path="clientes" element={<Clientes />} />
-          <Route path="clientes/:id" element={<FichaCliente />} />
+          <Route path="ratia" element={<Ratia />} />
           <Route path="productos" element={<Productos />} />
-          <Route path="reuniones" element={<Reuniones />} />
-          <Route path="suscripciones" element={<Suscripciones />} />
+          <Route path="contabilidad" element={<Contabilidad />} />
+          <Route path="organizacion/:vista" element={<Organizacion />} />
+          <Route path="reuniones" element={<Navigate to="/acceso/organizacion/calendario" replace />} />
+          <Route path="suscripciones" element={<Navigate to="/acceso/cobros" replace />} />
           <Route path="biblioteca" element={<Biblioteca />} />
           <Route path="mcp" element={<Mcp />} />
           <Route path="cobros" element={<Cobros />} />
@@ -171,7 +230,7 @@ export default function Portal() {
           <Route path="agentes-ia" element={<AgentesIA />} />
           <Route path="memoria" element={<Memoria />} />
           <Route path="agentes-ia/:id" element={<FichaBarbaraCliente />} />
-          <Route path="*" element={<Navigate to="/acceso/clientes" replace />} />
+          <Route path="*" element={<Navigate to="/acceso/dashboard" replace />} />
         </Routes>
       </Marco>,
     );
@@ -181,9 +240,14 @@ export default function Portal() {
   // está (pedido explícito). La ruta igual queda montada: si alguien la
   // visita a mano sin tener Bárbara, `Barbara.tsx` muestra su propio
   // mensaje de "todavía no tienes Bárbara activada" en vez de romper.
-  const menuCliente = tieneBarbara
-    ? [...MENU_CLIENTE_BASE, ITEM_BARBARA, ITEM_CUENTA]
-    : [...MENU_CLIENTE_BASE, ITEM_CUENTA];
+  const menuCliente: Grupo[] = [
+    {
+      titulo: "Mi servicio",
+      icono: "plan",
+      entradas: tieneBarbara ? [...MENU_CLIENTE_BASE, ITEM_BARBARA] : MENU_CLIENTE_BASE,
+    },
+    { titulo: "Cuenta", icono: "ajustes", entradas: [ITEM_CUENTA] },
+  ];
 
   return envolver(
     <Marco menu={menuCliente} nombre={nombre} detalle={correo}>

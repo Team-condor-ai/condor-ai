@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { sb, plata, enlaceWeb } from "../lib/supabase";
-import type { Cliente, Producto } from "./tipos";
+import type { Cliente, ClienteProducto, Producto } from "./tipos";
 
 type Nodo = {
   id: string;
@@ -36,8 +36,10 @@ type Arco = { a: string; b: string };
 export function Mapa() {
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [productos, setProductos] = useState<Producto[]>([]);
+  const [asignaciones, setAsignaciones] = useState<ClienteProducto[]>([]);
   const [cargando, setCargando] = useState(true);
   const [activo, setActivo] = useState<Nodo | null>(null);
+  const activoId = useRef<string | null>(null);
   const lienzo = useRef<HTMLCanvasElement>(null);
   const navega = useNavigate();
 
@@ -48,9 +50,15 @@ export function Mapa() {
     Promise.all([
       sb.from("clientes").select("*"),
       sb.from("productos").select("*"),
-    ]).then(([resClientes, resProductos]) => {
-      setClientes(((resClientes.data ?? []) as Cliente[]).filter((c) => !c.archivado));
-      setProductos(((resProductos.data ?? []) as Producto[]).filter((p) => p.activo));
+      sb.from("cliente_productos").select("*").neq("estado", "finalizado"),
+    ]).then(([resClientes, resProductos, resAsignaciones]) => {
+      setClientes(
+        ((resClientes.data ?? []) as Cliente[]).filter((c) => !c.archivado),
+      );
+      setProductos(
+        ((resProductos.data ?? []) as Producto[]).filter((p) => p.activo),
+      );
+      setAsignaciones((resAsignaciones.data ?? []) as ClienteProducto[]);
       setCargando(false);
     });
   }, []);
@@ -58,24 +66,33 @@ export function Mapa() {
   const { nodos, arcos } = useMemo(() => {
     const n: Nodo[] = [];
     const a: Arco[] = [];
-    const suelto = () => (Math.random() - 0.5) * 260;
+    let semilla = 0;
+    const suelto = () => ((semilla++ * 73) % 257) - 128;
 
     n.push({
       id: "condor",
       tipo: "centro",
       txt: "CÓNDOR AI",
       r: 26,
-      x: 0, y: 0, vx: 0, vy: 0,
+      x: 0,
+      y: 0,
+      vx: 0,
+      vy: 0,
     });
 
-    const planes = [...new Set(clientes.map((c) => c.plan).filter(Boolean))] as string[];
+    const planes = [
+      ...new Set(clientes.map((c) => c.plan).filter(Boolean)),
+    ] as string[];
     for (const p of planes) {
       n.push({
         id: "plan:" + p,
         tipo: "plan",
         txt: p,
         r: 15,
-        x: suelto(), y: suelto(), vx: 0, vy: 0,
+        x: suelto(),
+        y: suelto(),
+        vx: 0,
+        vy: 0,
       });
       a.push({ a: "condor", b: "plan:" + p });
     }
@@ -91,15 +108,17 @@ export function Mapa() {
         // ve quién sostiene el negocio, que es la pregunta que uno le hace a
         // un mapa así.
         r: 7 + Math.min(11, Math.sqrt(Math.max(0, c.mensual_monto ?? 0)) / 22),
-        x: suelto(), y: suelto(), vx: 0, vy: 0,
+        x: suelto(),
+        y: suelto(),
+        vx: 0,
+        vy: 0,
         ref: c,
       });
       a.push({ a: padre, b: c.id });
     }
 
-    // Los productos cuelgan del centro, no de los planes: son lo que Cóndor
-    // ofrece, no una forma de agrupar clientes. Cuando un producto tenga
-    // clientes asociados, acá irían esos arcos.
+    // Los productos cuelgan del centro y sus asignaciones reales los conectan
+    // con clientes. El mapa pasa de catálogo decorativo a cerebro operativo.
     for (const p of productos) {
       n.push({
         id: "producto:" + p.id,
@@ -107,22 +126,36 @@ export function Mapa() {
         txt: p.nombre,
         sub: p.repo_url ? "repo ↗" : undefined,
         r: 13,
-        x: suelto(), y: suelto(), vx: 0, vy: 0,
+        x: suelto(),
+        y: suelto(),
+        vx: 0,
+        vy: 0,
         producto: p,
       });
       a.push({ a: "condor", b: "producto:" + p.id });
     }
 
+    const idsCliente = new Set(clientes.map((c) => c.id));
+    const idsProducto = new Set(productos.map((p) => p.id));
+    for (const ap of asignaciones) {
+      if (idsCliente.has(ap.cliente_id) && idsProducto.has(ap.producto_id))
+        a.push({ a: "producto:" + ap.producto_id, b: ap.cliente_id });
+    }
+
     return { nodos: n, arcos: a };
-  }, [clientes, productos]);
+  }, [asignaciones, clientes, productos]);
 
   useEffect(() => {
     const cv = lienzo.current;
     if (!cv || !nodos.length) return;
+    // La física muta esta copia local; los valores producidos por React se
+    // mantienen inmutables y cada montaje de la simulación parte limpio.
+    const vivos = nodos.map((n) => ({ ...n }));
     const ctx = cv.getContext("2d")!;
     let corriendo = true;
-    let cam = { x: 0, y: 0, z: 1 };
+    const cam = { x: 0, y: 0, z: 1 };
     let arrastre: { x: number; y: number } | null = null;
+    let arrastreNodo: Nodo | null = null;
 
     const css = getComputedStyle(document.documentElement);
     const col = (v: string) => css.getPropertyValue(v).trim() || "#888";
@@ -139,43 +172,63 @@ export function Mapa() {
     const alMedir = () => (caja = medir());
     window.addEventListener("resize", alMedir);
 
-    const quieto = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const quieto = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
 
     function paso() {
       // Repulsión entre todos los nodos
-      for (let i = 0; i < nodos.length; i++)
-        for (let j = i + 1; j < nodos.length; j++) {
-          const a = nodos[i], b = nodos[j];
-          let dx = b.x - a.x, dy = b.y - a.y;
-          let d2 = dx * dx + dy * dy || 0.01;
+      for (let i = 0; i < vivos.length; i++)
+        for (let j = i + 1; j < vivos.length; j++) {
+          const a = vivos[i],
+            b = vivos[j];
+          const dx = b.x - a.x,
+            dy = b.y - a.y;
+          const d2 = dx * dx + dy * dy || 0.01;
           const d = Math.sqrt(d2);
           const f = 2200 / d2;
-          const ux = dx / d, uy = dy / d;
-          a.vx -= ux * f; a.vy -= uy * f;
-          b.vx += ux * f; b.vy += uy * f;
+          const ux = dx / d,
+            uy = dy / d;
+          a.vx -= ux * f;
+          a.vy -= uy * f;
+          b.vx += ux * f;
+          b.vy += uy * f;
         }
       // Resortes de las aristas
       for (const e of arcos) {
-        const a = nodos.find((n) => n.id === e.a)!;
-        const b = nodos.find((n) => n.id === e.b)!;
-        const dx = b.x - a.x, dy = b.y - a.y;
+        const a = vivos.find((n) => n.id === e.a)!;
+        const b = vivos.find((n) => n.id === e.b)!;
+        const dx = b.x - a.x,
+          dy = b.y - a.y;
         const d = Math.hypot(dx, dy) || 0.01;
         const f = (d - 118) * 0.012;
-        const ux = dx / d, uy = dy / d;
-        a.vx += ux * f; a.vy += uy * f;
-        b.vx -= ux * f; b.vy -= uy * f;
+        const ux = dx / d,
+          uy = dy / d;
+        a.vx += ux * f;
+        a.vy += uy * f;
+        b.vx -= ux * f;
+        b.vy -= uy * f;
       }
-      for (const n of nodos) {
-        if (n.tipo === "centro") { n.x = 0; n.y = 0; n.vx = 0; n.vy = 0; continue; }
+      for (const n of vivos) {
+        if (n.tipo === "centro") {
+          n.x = 0;
+          n.y = 0;
+          n.vx = 0;
+          n.vy = 0;
+          continue;
+        }
         n.vx -= n.x * 0.0016;
         n.vy -= n.y * 0.0016;
-        n.vx *= 0.86; n.vy *= 0.86;
-        n.x += n.vx; n.y += n.vy;
+        n.vx *= 0.86;
+        n.vy *= 0.86;
+        n.x += n.vx;
+        n.y += n.vy;
       }
     }
 
     function pintar() {
-      const w = caja.width, h = caja.height;
+      const w = caja.width,
+        h = caja.height;
       ctx.clearRect(0, 0, w, h);
       ctx.save();
       ctx.translate(w / 2 + cam.x, h / 2 + cam.y);
@@ -184,27 +237,30 @@ export function Mapa() {
       ctx.strokeStyle = col("--borde");
       ctx.lineWidth = 1;
       for (const e of arcos) {
-        const a = nodos.find((n) => n.id === e.a)!;
-        const b = nodos.find((n) => n.id === e.b)!;
+        const a = vivos.find((n) => n.id === e.a)!;
+        const b = vivos.find((n) => n.id === e.b)!;
         ctx.beginPath();
         ctx.moveTo(a.x, a.y);
         ctx.lineTo(b.x, b.y);
         ctx.stroke();
       }
 
-      for (const n of nodos) {
+      for (const n of vivos) {
         ctx.beginPath();
         ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
         ctx.fillStyle =
-          n.tipo === "centro" ? col("--texto")
-          : n.tipo === "plan" ? col("--texto-2")
-          // Los productos van con el color de acento para distinguirlos de un
-          // vistazo: son otra clase de cosa que los clientes, no otro tamaño.
-          : n.tipo === "producto" ? col("--azul")
-          : col("--panel");
+          n.tipo === "centro"
+            ? col("--texto")
+            : n.tipo === "plan"
+              ? "#8B5CF6"
+              : // Los productos van con el color de acento para distinguirlos de un
+                // vistazo: son otra clase de cosa que los clientes, no otro tamaño.
+                n.tipo === "producto"
+                ? col("--azul")
+                : "#2CA66F";
         ctx.fill();
-        ctx.strokeStyle = activo?.id === n.id ? col("--texto") : col("--borde");
-        ctx.lineWidth = activo?.id === n.id ? 2 : 1;
+        ctx.strokeStyle = activoId.current === n.id ? col("--texto") : col("--borde");
+        ctx.lineWidth = activoId.current === n.id ? 2 : 1;
         ctx.stroke();
 
         ctx.fillStyle = col("--texto");
@@ -221,8 +277,10 @@ export function Mapa() {
       pintar();
       requestAnimationFrame(bucle);
     }
-    if (quieto) { for (let i = 0; i < 220; i++) paso(); pintar(); }
-    else bucle();
+    if (quieto) {
+      for (let i = 0; i < 220; i++) paso();
+      pintar();
+    } else bucle();
 
     function aMundo(ev: MouseEvent) {
       const r = cv!.getBoundingClientRect();
@@ -231,19 +289,51 @@ export function Mapa() {
         y: (ev.clientY - r.top - r.height / 2 - cam.y) / cam.z,
       };
     }
-    const alBajar = (e: MouseEvent) => (arrastre = { x: e.clientX - cam.x, y: e.clientY - cam.y });
-    const alSubir = () => (arrastre = null);
-    const alMover = (e: MouseEvent) => {
-      if (arrastre) { cam.x = e.clientX - arrastre.x; cam.y = e.clientY - arrastre.y; return; }
+    const alBajar = (e: MouseEvent) => {
       const p = aMundo(e);
-      const bajo = nodos.find((n) => Math.hypot(n.x - p.x, n.y - p.y) < n.r + 5);
+      arrastreNodo =
+        vivos.find((n) => Math.hypot(n.x - p.x, n.y - p.y) < n.r + 7) ?? null;
+      if (arrastreNodo) {
+        arrastreNodo.vx = 0;
+        arrastreNodo.vy = 0;
+        cv!.style.cursor = "grabbing";
+      } else arrastre = { x: e.clientX - cam.x, y: e.clientY - cam.y };
+    };
+    const alSubir = () => {
+      arrastre = null;
+      arrastreNodo = null;
+    };
+    const alMover = (e: MouseEvent) => {
+      if (arrastreNodo) {
+        const p = aMundo(e);
+        arrastreNodo.x = p.x;
+        arrastreNodo.y = p.y;
+        arrastreNodo.vx = 0;
+        arrastreNodo.vy = 0;
+        return;
+      }
+      if (arrastre) {
+        cam.x = e.clientX - arrastre.x;
+        cam.y = e.clientY - arrastre.y;
+        return;
+      }
+      const p = aMundo(e);
+      const bajo = vivos.find(
+        (n) => Math.hypot(n.x - p.x, n.y - p.y) < n.r + 5,
+      );
       cv!.style.cursor = bajo ? "pointer" : "grab";
-      setActivo(bajo ?? null);
+      const siguiente = bajo?.id ?? null;
+      if (activoId.current !== siguiente) {
+        activoId.current = siguiente;
+        setActivo(bajo ?? null);
+      }
     };
     const alClic = (e: MouseEvent) => {
       const p = aMundo(e);
-      const bajo = nodos.find((n) => Math.hypot(n.x - p.x, n.y - p.y) < n.r + 5);
-      if (bajo?.tipo === "cliente") navega(`/acceso/clientes/${bajo.id}`);
+      const bajo = vivos.find(
+        (n) => Math.hypot(n.x - p.x, n.y - p.y) < n.r + 5,
+      );
+      if (bajo?.tipo === "cliente") navega(`/acceso/clientes?ver=${bajo.id}`);
       // Un producto no tiene ficha propia todavía, así que el clic abre su
       // repositorio si lo tiene; si no, lleva al catálogo.
       else if (bajo?.tipo === "producto") {
@@ -254,7 +344,10 @@ export function Mapa() {
     };
     const alRodar = (e: WheelEvent) => {
       e.preventDefault();
-      cam.z = Math.min(2.6, Math.max(0.35, cam.z * (e.deltaY > 0 ? 0.92 : 1.08)));
+      cam.z = Math.min(
+        2.6,
+        Math.max(0.35, cam.z * (e.deltaY > 0 ? 0.92 : 1.08)),
+      );
     };
 
     cv.addEventListener("mousedown", alBajar);
@@ -272,12 +365,17 @@ export function Mapa() {
       cv.removeEventListener("click", alClic);
       cv.removeEventListener("wheel", alRodar);
     };
-  }, [nodos, arcos, activo, navega]);
+  }, [nodos, arcos, navega]);
 
   return (
     <>
       <div className="barra">
-        <h1>Mapa</h1>
+        <div>
+          <h1>El cerebro de Cóndor</h1>
+          <small className="subtitulo-barra">
+            Una vista viva de cómo se conecta el negocio
+          </small>
+        </div>
         <span className="conteo">
           {clientes.length} clientes · arrastra, rueda para acercar
         </span>
@@ -290,12 +388,28 @@ export function Mapa() {
         ) : (
           <div className="mapa-caja">
             <canvas ref={lienzo} className="mapa" />
+            <div className="mapa-leyenda">
+              <span>
+                <i className="centro" /> Cóndor
+              </span>
+              <span>
+                <i className="producto" /> Productos
+              </span>
+              <span>
+                <i className="plan" /> Planes
+              </span>
+              <span>
+                <i className="cliente" /> Clientes
+              </span>
+            </div>
             {activo?.ref && (
               <div className="mapa-ficha">
                 <b>{activo.txt}</b>
                 <small>{activo.ref.plan || "sin plan"}</small>
                 <small>{activo.sub} al mes</small>
-                <small style={{ color: "var(--texto-3)" }}>Clic para abrir</small>
+                <small style={{ color: "var(--texto-3)" }}>
+                  Clic para abrir
+                </small>
               </div>
             )}
           </div>

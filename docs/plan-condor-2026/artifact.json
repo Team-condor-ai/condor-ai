@@ -1,0 +1,158 @@
+{
+  "surface": "report",
+  "manifest": {
+    "version": 1,
+    "surface": "report",
+    "title": "Plan de producto para Cóndor",
+    "description": "Auditoría del producto actual, herramientas faltantes y secuencia recomendada de implementación.",
+    "generatedAt": "2026-08-21T17:24:54-04:00",
+    "cards": [],
+    "charts": [
+      {
+        "id": "priority_order",
+        "title": "Distribución de herramientas por prioridad",
+        "subtitle": "Cantidad de módulos recomendados en cada capa; no representa impacto ni esfuerzo medido.",
+        "type": "bar",
+        "dataset": "priority_summary",
+        "source": {
+          "id": "priority_summary_snapshot",
+          "label": "Conteo de la hoja de ruta revisada",
+          "query": {
+            "engine": "snapshot",
+            "sql": "SELECT prioridad, modulos FROM snapshot.priority_summary",
+            "description": "Cuenta los módulos propuestos en cada capa de prioridad.",
+            "executed_at": "2026-08-21T17:24:54-04:00",
+            "tables_used": ["snapshot.priority_summary"]
+          }
+        },
+        "encodings": {
+          "x": { "field": "prioridad", "type": "nominal", "label": "Prioridad" },
+          "y": { "field": "modulos", "type": "quantitative", "label": "Herramientas", "format": "number" }
+        },
+        "yAxisTitle": "Cantidad de herramientas",
+        "valueFormat": "number",
+        "layout": "full"
+      }
+    ],
+    "tables": [],
+    "sources": [
+      {
+        "id": "roadmap_evidence",
+        "label": "Auditoría de Cóndor y documentación oficial",
+        "path": "docs/plan-condor-2026/evidence.md",
+        "query": {
+          "engine": "snapshot",
+          "sql": "SELECT prioridad, prioridad_nivel, etiqueta_corta, herramienta, valor, alcance, decision FROM snapshot.roadmap",
+          "description": "Lee la matriz ordinal revisada que acompaña la auditoría de producto.",
+          "executed_at": "2026-08-21T17:24:54-04:00",
+          "tables_used": ["snapshot.roadmap"]
+        }
+      }
+    ],
+    "blocks": [
+      { "id": "title", "type": "markdown", "body": "# Plan de producto para Cóndor" },
+      {
+        "id": "executive_summary",
+        "type": "markdown",
+        "body": "## Executive Summary\n\n- **Cóndor ya tiene un buen núcleo operativo.** Clientes, cobros, productos, contabilidad, Meta Ads, organización, calendario y email marketing están presentes; la siguiente etapa debe conectar esos módulos, no sumar pestañas aisladas.\n- **La prioridad inmediata es hacer confiable el dinero.** Conciliación bancaria, DTE del SII, control de acceso, auditoría y cierre por período son la base para que un contador use el sistema sin depender de verificaciones externas.\n- **El siguiente salto es unir venta, entrega y margen.** Un pipeline comercial debe alimentar la proyección; horas, capacidad y costos reales deben explicar la rentabilidad por cliente y producto.\n- **Soporte y analítica vienen después.** Tickets/SLA, centro de integraciones y presupuesto contra real agregan valor cuando las fuentes financieras y operativas ya son confiables."
+      },
+      {
+        "id": "baseline",
+        "type": "markdown",
+        "sourceId": "roadmap_evidence",
+        "body": "## El producto ya cubre la operación diaria, pero no el cierre del ciclo\n\nLa aplicación registra clientes, cobros, productos, asientos, campañas y trabajo interno. El vacío no está en capturar más datos sueltos: está entre **vender → entregar → cobrar → conciliar → facturar tributariamente → medir margen**. La arquitectura futura debe tratar ese recorrido como un solo flujo con identificadores compartidos para cliente, producto, oportunidad, proyecto, cobro, DTE y movimiento bancario."
+      },
+      {
+        "id": "priority_intro",
+        "type": "markdown",
+        "body": "## Qué construir o integrar primero\n\nLa tabla separa tres niveles: **P0** evita errores financieros o de seguridad; **P1** mejora crecimiento y rentabilidad; **P2** escala servicio y control. No se asignan semanas todavía porque faltan capacidad técnica, analítica de uso y decisiones de proveedor."
+      },
+      {
+        "id": "priority_chart_context",
+        "type": "markdown",
+        "body": "La visualización muestra el tamaño de cada capa de la hoja de ruta: **P0** contiene tres fundamentos, **P1** concentra cinco capacidades de crecimiento y **P2** reúne tres herramientas de escala. El conteo describe alcance; no estima retorno, riesgo ni esfuerzo."
+      },
+      { "id": "priority_chart", "type": "chart", "chartId": "priority_order", "layout": "full" },
+      {
+        "id": "roadmap_detail",
+        "type": "markdown",
+        "sourceId": "roadmap_evidence",
+        "body": "## Alcance mínimo comercial por herramienta\n\n### P0 · Base confiable\n\n- **Seguridad y cierre:** RBAC/RLS, bitácora por registro, aprobaciones, períodos cerrados y reapertura controlada.\n- **Banco y tesorería:** feed API más CSV de respaldo, coincidencia 1:1 y múltiple, reglas, pendientes, diferencias y reporte de conciliación.\n- **DTE del SII:** emisión, estado, XML/PDF, folios, referencias, envío al cliente y vínculo con cobro/asiento; conviene integrar un proveedor certificado.\n\n### P1 · Crecimiento con margen\n\n- **Pipeline y forecast:** oportunidad, etapa, probabilidad, monto, producto, origen, responsable, próxima acción y cierre esperado.\n- **Proyectos y rentabilidad:** horas, costo/tarifa, presupuesto, hitos, gastos y margen por cliente, producto, proyecto, tarea y persona.\n- **Capacidad:** disponibilidad, carga semanal, ausencias, asignación tentativa, utilización y demanda por rol, montado sobre calendario y proyectos.\n- **Cuentas por pagar:** proveedor, vencimiento, cuotas, centro de costo, adjunto, aprobación, pago parcial y asiento automático.\n- **Presupuesto contra real:** versiones, aprobación, escenarios, desviación por cuenta/centro, forecast actualizado y comentarios.\n\n### P2 · Escala y servicio\n\n- **Tickets/SLA:** email y portal, prioridad, producto, responsable, tiempos de respuesta/resolución, CSAT y escalamiento.\n- **Centro de integraciones:** última sincronización, cursor, reintentos, error, volumen, duplicados y alerta por conector.\n- **Búsqueda e inbox:** búsqueda transversal y pendientes asignables, leídos y pospuestos."
+      },
+      {
+        "id": "external_patterns",
+        "type": "markdown",
+        "body": "## Los estándares externos validan estos huecos\n\nLa [API de Fintoc](https://docs.fintoc.com/v2023-11-15/reference/movements-list) permite traer movimientos bancarios; el patrón comercial es emparejarlos con registros existentes antes de crear nuevos, como documenta [QuickBooks](https://quickbooks.intuit.com/learn-support/en-us/help-article/bank-feeds/match-online-bank-transactions-quickbooks-online/L6qyw0PvP_US_en_US). El [SII](https://www.sii.cl/destacados/factura_electronica/index.html) exige DTE válidos, firma/certificado y procesos de emisión que un simple comprobante interno no reemplaza.\n\nPara crecimiento, [HubSpot](https://knowledge.hubspot.com/forecast/set-up-the-forecast-tool) estructura forecast por etapa y probabilidad; [Harvest](https://support.getharvest.com/hc/en-us/articles/25342727197581-Profitability-report) desglosa rentabilidad por cliente, proyecto, equipo y tarea; [Float](https://support.float.com/en/articles/13847946-capacity-planning-and-resource-scheduling) conecta asignación con disponibilidad. Para servicio, [Zendesk](https://support.zendesk.com/hc/en-us/articles/5600997516058-About-SLA-policies-and-how-they-work) mide respuesta y resolución por prioridad. Son patrones a adaptar, no productos que Cóndor deba copiar literalmente."
+      },
+      {
+        "id": "architecture",
+        "type": "markdown",
+        "body": "## Arquitectura recomendada: un núcleo y conectores reemplazables\n\n1. **Núcleo transaccional en Supabase:** clientes, productos, oportunidades, proyectos, cobros, DTE, asientos y movimientos bancarios con relaciones explícitas.\n2. **Libro contable como fuente financiera:** ninguna integración debe modificar saldos directamente; crea propuestas o asientos balanceados con origen y referencia.\n3. **Conectores idempotentes:** Meta, banco, pagos, email y SII guardan cursor de sincronización, identificador externo, estado, reintentos y último error.\n4. **Capa de reglas:** coincidencia bancaria, categorización, aprobaciones, SLA y automatizaciones se configuran sin cambiar código.\n5. **Seguridad por rol:** dueño, contador, operaciones, comercial, agente y cliente ven y ejecutan acciones distintas mediante RLS/RBAC; las llaves de servicio nunca llegan al navegador."
+      },
+      {
+        "id": "projection",
+        "type": "markdown",
+        "body": "## La nueva proyección es el primer componente del sistema de planificación\n\nEl Panel ya incorpora un simulador separado de **6 a 24 meses**. Permite editar fuga mensual, altas, crecimiento, ajuste de precios, ventas únicas, cobranza, costos fijos y variables, Meta Ads, inflación, nómina, impuestos, deuda, inversión y caja inicial. Compara Base, Expansión y Estrés sobre MRR, ingresos, egresos, resultado y caja. La tasa de impuesto parte en cero y debe configurarse con el contador según el régimen; el modelo no calcula IVA.\n\nLa siguiente iteración debe guardar versiones de planes en la base, bloquear una versión aprobada como presupuesto y mostrar cada mes **presupuesto vs. real vs. forecast actualizado**. Cuando exista pipeline, las oportunidades ponderadas reemplazarán parte de las altas manuales; cuando exista conciliación, la caja inicial dejará de depender únicamente del libro no conciliado."
+      },
+      {
+        "id": "recommendations",
+        "type": "markdown",
+        "body": "## Recomendaciones y secuencia\n\n1. **Fase 0 — Confiabilidad:** auditoría RLS/RBAC, bitácora de cambios, aprobaciones y cierre contable por período.\n2. **Fase 1 — Tesorería y tributación:** feed bancario con importación CSV de respaldo, conciliación, cuentas por pagar y proveedor DTE certificado por el SII.\n3. **Fase 2 — Ingresos:** oportunidades, etapas, probabilidad, cotización, producto propuesto y forecast ponderado conectado al simulador.\n4. **Fase 3 — Entrega rentable:** proyectos por cliente/producto, horas, costo por persona, capacidad, presupuesto y margen real.\n5. **Fase 4 — Servicio y control:** tickets/SLA, portal de solicitudes, presupuesto contra real, centro de integraciones y alertas de calidad.\n\n**Criterio de avance:** no iniciar una fase si la anterior no tiene dueño de datos, estados definidos, auditoría, manejo de errores y al menos una métrica de adopción y calidad."
+      },
+      {
+        "id": "questions",
+        "type": "markdown",
+        "body": "## Preguntas que pueden cambiar el orden\n\n- ¿Cóndor será solo una herramienta interna o también un producto multiempresa? La segunda opción obliga a diseñar tenant, permisos y aislamiento antes de nuevas funciones.\n- ¿Qué banco y proveedor DTE usarán? Esto define cobertura, certificación, costos y tiempos.\n- ¿Los servicios se cobran principalmente como mensualidad fija, por proyecto o por horas? La respuesta cambia el modelo de rentabilidad.\n- ¿Cuántas personas usarán comercial, contabilidad y operaciones? Sin esa capacidad no conviene prometer fechas.\n- ¿Qué decisiones reales toman hoy fuera de Cóndor en hojas de cálculo o WhatsApp? Esas salidas manuales deben medir la prioridad final."
+      },
+      {
+        "id": "caveats",
+        "type": "markdown",
+        "body": "## Caveats y supuestos\n\nLa revisión se basa en el repositorio local y documentación oficial disponible al 21 de agosto de 2026. No hubo entrevistas ni telemetría de uso, y no se estimó esfuerzo. Por eso el orden es una recomendación de arquitectura y riesgo, no un cronograma comprometido. No se incluye un gráfico de prioridad: sin datos medidos de impacto, frecuencia y esfuerzo, una visualización numérica daría precisión falsa."
+      }
+    ]
+  },
+  "snapshot": {
+    "version": 1,
+    "generatedAt": "2026-08-21T17:24:54-04:00",
+    "status": "ready",
+    "datasets": {
+      "priority_summary": [
+        { "prioridad": "P0 · Fundamentos", "modulos": 3 },
+        { "prioridad": "P1 · Crecimiento", "modulos": 5 },
+        { "prioridad": "P2 · Escala", "modulos": 3 }
+      ],
+      "roadmap": [
+        { "prioridad": "P0", "prioridad_nivel": 3, "etiqueta_corta": "Seguridad", "herramienta": "Roles, permisos, auditoría y cierre", "valor": "Evita acceso indebido y cambios retroactivos; hace defendible el libro.", "alcance": "RBAC/RLS, bitácora por registro, aprobaciones, períodos cerrados y reapertura controlada.", "decision": "Construir sobre Supabase antes de escalar usuarios." },
+        { "prioridad": "P0", "prioridad_nivel": 3, "etiqueta_corta": "Banco", "herramienta": "Conciliación bancaria y tesorería", "valor": "Convierte el saldo contable en caja verificable y reduce duplicados.", "alcance": "Feed API, CSV, matching 1:1 y múltiple, reglas, pendientes, diferencias y reporte de conciliación.", "decision": "Integrar Fintoc o equivalente; mantener importación CSV." },
+        { "prioridad": "P0", "prioridad_nivel": 3, "etiqueta_corta": "DTE", "herramienta": "DTE / facturación SII", "valor": "Cierra legalmente el flujo desde cobro a factura, nota de crédito o débito.", "alcance": "Emisión, estado SII, XML/PDF, folios, referencias, envío al cliente y vínculo con pago/asiento.", "decision": "Preferir proveedor certificado; no construir certificación propia al inicio." },
+        { "prioridad": "P1", "prioridad_nivel": 2, "etiqueta_corta": "Pipeline", "herramienta": "Pipeline comercial y forecast", "valor": "Da visibilidad a ingresos futuros y hace accionable la proyección.", "alcance": "Oportunidad, etapa, probabilidad, monto, producto, origen, responsable, próxima acción y cierre esperado.", "decision": "Construir nativo y conectar al simulador financiero." },
+        { "prioridad": "P1", "prioridad_nivel": 2, "etiqueta_corta": "Margen", "herramienta": "Proyectos, horas y rentabilidad", "valor": "Explica qué clientes y productos ganan dinero después del costo humano.", "alcance": "Horas, costo/tarifa, presupuesto, hitos, gastos, margen por cliente/producto/proyecto y alertas.", "decision": "Construir liviano; importar horas desde calendario como ayuda." },
+        { "prioridad": "P1", "prioridad_nivel": 2, "etiqueta_corta": "Capacidad", "herramienta": "Capacidad y asignación", "valor": "Evita sobreventa y muestra cuándo contratar o redistribuir trabajo.", "alcance": "Disponibilidad, carga semanal, ausencias, asignación tentativa, utilización y demanda por rol.", "decision": "Añadir sobre proyectos y calendario, no como tablero independiente." },
+        { "prioridad": "P1", "prioridad_nivel": 2, "etiqueta_corta": "CxP", "herramienta": "Cuentas por pagar y gastos documentados", "valor": "Da trazabilidad a obligaciones antes de que el dinero salga.", "alcance": "Proveedor, vencimiento, cuotas, centro de costo, adjunto, aprobación, pago parcial y asiento automático.", "decision": "Construir como extensión de Contabilidad." },
+        { "prioridad": "P1", "prioridad_nivel": 2, "etiqueta_corta": "Ppto.", "herramienta": "Presupuesto vs. real", "valor": "Transforma la proyección en un proceso mensual de gestión.", "alcance": "Versiones, aprobación, escenarios, desviación por cuenta/centro, forecast actualizado y comentarios.", "decision": "Extender el simulador ya implementado." },
+        { "prioridad": "P2", "prioridad_nivel": 1, "etiqueta_corta": "SLA", "herramienta": "Tickets, SLA y portal de solicitudes", "valor": "Ordena postventa, urgencias y compromisos con clientes.", "alcance": "Canal email/portal, prioridad, producto, responsable, tiempos de respuesta/resolución, CSAT y escalamiento.", "decision": "Construir cuando volumen y equipo justifiquen SLA." },
+        { "prioridad": "P2", "prioridad_nivel": 1, "etiqueta_corta": "Integración", "herramienta": "Centro de integraciones y calidad", "valor": "Permite saber qué automatización falló antes de que el dato llegue incompleto.", "alcance": "Estado, última sincronización, cursor, reintento, error, volumen, duplicados y alerta por conector.", "decision": "Construir una vista común sobre los workflows existentes." },
+        { "prioridad": "P2", "prioridad_nivel": 1, "etiqueta_corta": "Búsqueda", "herramienta": "Búsqueda global e inbox operativo", "valor": "Reduce navegación y centraliza pendientes de todos los módulos.", "alcance": "Buscar cliente/producto/cobro/tarea/documento; alertas asignables, leídas y pospuestas.", "decision": "Construir después de estabilizar identificadores y permisos." }
+      ]
+    }
+  },
+  "sources": [
+    {
+      "id": "roadmap_evidence",
+      "label": "Auditoría de Cóndor y documentación oficial",
+      "path": "docs/plan-condor-2026/evidence.md",
+      "query": {
+        "engine": "snapshot",
+        "sql": "SELECT prioridad, prioridad_nivel, etiqueta_corta, herramienta, valor, alcance, decision FROM snapshot.roadmap",
+        "description": "Lee la matriz ordinal revisada que acompaña la auditoría de producto.",
+        "executed_at": "2026-08-21T17:24:54-04:00",
+        "tables_used": ["snapshot.roadmap"]
+      }
+    }
+  ],
+  "package_info": {
+    "root": "docs/plan-condor-2026",
+    "manifestPath": "artifact.json",
+    "snapshotPath": "artifact.json"
+  }
+}

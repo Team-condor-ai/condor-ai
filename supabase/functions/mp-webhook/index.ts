@@ -136,6 +136,128 @@ async function marcarLeadPagado(sb: any, leadId: string, mpId: string, p: any) {
 }
 
 
+// Deja el cobro al día tras un pago aprobado.
+//
+// PUENTE TEMPORAL HACIA LAS COLUMNAS VIEJAS
+// ---------------------------------------------------------------------------
+// `clientes.setup_estado` / `mensual_estado` / `proximo_cobro` quedaron sin uso
+// el 21-ago (ahora el estado vive en `cobros`), pero varias pantallas del
+// portal todavía las leen. Se siguen escribiendo para que no muestren un estado
+// viejo. Este bloque se borra junto con la migración que elimina esas columnas.
+async function marcarCobroPagado(sb: any, pago: any) {
+  const limpiar = { irresponsable: false, dias_sin_pagar: 0, alerta_admin_en: null };
+  const prox = new Date(); prox.setMonth(prox.getMonth() + 1);
+  const proxISO = prox.toISOString().slice(0, 10);
+
+  let esMensual = pago.tipo === "mensual";
+
+  if (pago.cobro_id) {
+    const { data: cobro } = await sb.from("cobros").select("tipo").eq("id", pago.cobro_id).maybeSingle();
+    if (cobro) esMensual = cobro.tipo === "mensual";
+    // Un mensual no se "paga": queda activo y corre su próxima fecha. Un único
+    // sí se cierra — es su único pago.
+    await sb.from("cobros")
+      .update(esMensual ? { estado: "activa", proximo_cobro: proxISO } : { estado: "pagado" })
+      .eq("id", pago.cobro_id);
+  }
+
+  if (esMensual) {
+    await sb.from("clientes")
+      .update({ mensual_estado: "al_dia", proximo_cobro: proxISO, ...limpiar })
+      .eq("id", pago.cliente_id);
+  } else if (pago.tipo === "setup") {
+    await sb.from("clientes").update({ setup_estado: "pagado", ...limpiar }).eq("id", pago.cliente_id);
+  } else {
+    // Un cobro suelto nunca tuvo columna en la ficha; solo levanta la mora.
+    await sb.from("clientes").update(limpiar).eq("id", pago.cliente_id);
+  }
+}
+
+// El cliente autorizó la suscripción: el cobro queda activo y se guarda el id
+// de Mercado Pago. AUTORIZAR NO ES COBRAR — no se registra ningún pago acá; los
+// meses entran uno por uno por `subscription_authorized_payment`.
+async function activarCobroMensual(sb: any, cobroId: string, preapprovalId: string) {
+  const { data: cobro } = await sb.from("cobros").select("*").eq("id", cobroId).maybeSingle();
+  if (!cobro) { console.warn("preapproval sin cobro local:", cobroId); return; }
+  // Reintento de MP sobre algo que ya estaba activo: no hay nada que hacer.
+  if (cobro.estado === "activa" && cobro.mp_preapproval_id === preapprovalId) return;
+
+  const prox = cobro.proximo_cobro || new Date().toISOString().slice(0, 10);
+  await sb.from("cobros").update({
+    estado: "activa", mp_preapproval_id: preapprovalId, proximo_cobro: prox,
+  }).eq("id", cobroId);
+
+  // Puente temporal — ver la nota de `marcarCobroPagado`.
+  await sb.from("clientes").update({
+    mensual_estado: "al_dia", proximo_cobro: prox,
+    irresponsable: false, dias_sin_pagar: 0, alerta_admin_en: null,
+  }).eq("id", cobro.cliente_id);
+}
+
+// UN PAGO POR MES — Y HASTA HOY NO SE GUARDABA NINGUNO
+// ---------------------------------------------------------------------------
+// Mercado Pago avisa cada cobro de una suscripción con el tema
+// `subscription_authorized_payment`. El webhook no lo manejaba: marcaba pagada
+// la fila de la AUTORIZACIÓN y nada más. O sea que una suscripción de un año
+// dejaba 1 pago registrado en vez de 12, y el historial del cliente mostraba un
+// solo cobro por meses de plata que sí se había cobrado.
+async function registrarCobroMensual(sb: any, apId: string, MP: string) {
+  const r = await fetch("https://api.mercadopago.com/authorized_payments/" + apId, {
+    headers: { Authorization: "Bearer " + MP },
+  });
+  if (!r.ok) { console.error("authorized_payment no encontrado:", apId); return; }
+  const ap = await r.json();
+
+  // Solo cuenta el que de verdad se cobró. `scheduled` y `recycling` son
+  // intentos: registrarlos daría por pagado un mes que todavía no entró.
+  if (ap.status !== "processed") return;
+  if (ap.payment && ap.payment.status !== "approved") return;
+
+  const preapprovalId = String(ap.preapproval_id || "");
+  if (!preapprovalId) return;
+
+  const { data: cobro } = await sb.from("cobros").select("*")
+    .eq("mp_preapproval_id", preapprovalId).maybeSingle();
+  if (!cobro) { console.warn("cobro mensual sin fila local:", preapprovalId); return; }
+
+  // El período marca QUÉ MES se cobró. `debit_date` es la fecha que MP tenía
+  // agendada; si no viene, hoy. El índice único (cobro_id, periodo) hace que un
+  // reintento de MP no deje dos filas del mismo mes.
+  const base = ap.debit_date ? new Date(ap.debit_date) : new Date();
+  const periodo = base.toISOString().slice(0, 8) + "01";
+
+  const { error } = await sb.from("pagos").insert({
+    cliente_id: cobro.cliente_id,
+    cobro_id: cobro.id,
+    tipo: "mensual",
+    monto: Math.round(Number(ap.transaction_amount) || Number(cobro.monto) || 0),
+    estado: "pagado",
+    mp_id: String((ap.payment && ap.payment.id) || apId),
+    detalle: cobro.titulo || "Mensualidad",
+    fecha: base.toISOString().slice(0, 10),
+    metodo: "Mercado Pago",
+    periodo,
+  });
+
+  // 23505 = ese mes ya estaba registrado. Es el camino normal de un reintento
+  // de MP, no un error: se sale sin volver a avisar.
+  if (error) {
+    if (!String(error.code).includes("23505")) console.error("cobro mensual:", error.message);
+    return;
+  }
+
+  const prox = new Date(base); prox.setMonth(prox.getMonth() + 1);
+  const proxISO = prox.toISOString().slice(0, 10);
+  await sb.from("cobros").update({ estado: "activa", proximo_cobro: proxISO }).eq("id", cobro.id);
+  // Puente temporal — ver la nota de `marcarCobroPagado`.
+  await sb.from("clientes").update({
+    mensual_estado: "al_dia", proximo_cobro: proxISO,
+    irresponsable: false, dias_sin_pagar: 0, alerta_admin_en: null,
+  }).eq("id", cobro.cliente_id);
+
+  await avisarPago(sb, cobro.cliente_id, "mensual");
+}
+
 // ── FIRMA DE MERCADO PAGO ────────────────────────────────────────────────
 //
 // El webhook es público a la fuerza: MP lo llama sin sesión. Eso NO permite
@@ -199,7 +321,15 @@ Deno.serve(async (req) => {
   }
 
   try {
-    if (type.includes("payment") && id) {
+    // ⚠️ EL ORDEN DE ESTAS RAMAS NO ES INDIFERENTE
+    // El tema del cobro mensual es `subscription_authorized_payment`, e
+    // `includes("payment")` también lo captura. Si la rama de pagos fuera
+    // primero, cada cobro mensual entraría ahí, buscaría un pago por un
+    // `external_reference` que no existe y se perdería en silencio — que es
+    // exactamente el bug que esto viene a cerrar.
+    if (type.includes("authorized_payment") && id) {
+      await registrarCobroMensual(sb, String(id), MP);
+    } else if (type.includes("payment") && id) {
       const r = await fetch("https://api.mercadopago.com/v1/payments/" + id, { headers: { Authorization: "Bearer " + MP } });
       const p = await r.json();
       // Campaña: los cobros de 'pago-lead' vienen como "lead:<id>" (el lead aún no es cliente del portal)
@@ -213,11 +343,9 @@ Deno.serve(async (req) => {
         const { data: antes } = await sb.from("pagos").select("estado").eq("id", p.external_reference).maybeSingle();
         const yaEstaba = antes?.estado === "pagado";
         await sb.from("pagos").update({ estado: "pagado", mp_id: String(id) }).eq("id", p.external_reference);
-        const { data: pago } = await sb.from("pagos").select("cliente_id,tipo").eq("id", p.external_reference).maybeSingle();
+        const { data: pago } = await sb.from("pagos").select("cliente_id,tipo,cobro_id").eq("id", p.external_reference).maybeSingle();
         if (pago && !yaEstaba) {
-          const limpiar = { irresponsable: false, dias_sin_pagar: 0, alerta_admin_en: null };
-          if (pago.tipo === "setup") await sb.from("clientes").update({ setup_estado: "pagado", ...limpiar }).eq("id", pago.cliente_id);
-          else { const prox = new Date(); prox.setMonth(prox.getMonth() + 1); await sb.from("clientes").update({ mensual_estado: "al_dia", proximo_cobro: prox.toISOString().slice(0, 10), ...limpiar }).eq("id", pago.cliente_id); }
+          await marcarCobroPagado(sb, pago);
           await avisarPago(sb, pago.cliente_id, pago.tipo);
         }
       }
@@ -228,14 +356,42 @@ Deno.serve(async (req) => {
       // nuestro porque nadie la creó desde el portal. Se reconoce por el plan.
       if (pa.status === "authorized" && pa.preapproval_plan_id && !pa.external_reference) {
         await registrarSuscriptor(sb, pa, String(id));
+      } else if (pa.status === "authorized" && String(pa.external_reference || "").startsWith("cobro:")) {
+        // FORMA NUEVA (21-ago): la suscripción referencia al COBRO, no a un pago.
+        await activarCobroMensual(sb, String(pa.external_reference).slice(6), String(id));
       } else if ((pa.status === "authorized") && pa.external_reference) {
+        // FORMA VIEJA: `external_reference` era el id de un pago que `crear-pago`
+        // creaba para la autorización. Se conserva por los links que ya estén en
+        // manos de un cliente; se puede borrar cuando no quede ninguno vivo.
         await sb.from("pagos").update({ estado: "pagado", mp_id: String(id) }).eq("id", pa.external_reference);
-        const { data: pago } = await sb.from("pagos").select("cliente_id").eq("id", pa.external_reference).maybeSingle();
+        const { data: pago } = await sb.from("pagos").select("cliente_id,tipo,cobro_id").eq("id", pa.external_reference).maybeSingle();
         if (pago) {
-          const prox = new Date(); prox.setMonth(prox.getMonth() + 1);
-          await sb.from("clientes").update({ mensual_estado: "al_dia", proximo_cobro: prox.toISOString().slice(0, 10), irresponsable: false, dias_sin_pagar: 0, alerta_admin_en: null }).eq("id", pago.cliente_id);
+          // Recién acá se guarda el id de la suscripción si `crear-pago` no
+          // alcanzó a hacerlo: sin él, ningún cobro mensual futuro se puede
+          // asociar a este cobro.
+          if (pago.cobro_id) {
+            await sb.from("cobros")
+              .update({ mp_preapproval_id: String(id) })
+              .eq("id", pago.cobro_id).is("mp_preapproval_id", null);
+          }
+          await marcarCobroPagado(sb, pago);
           await avisarPago(sb, pago.cliente_id, "mensual");
         }
+      } else if (pa.status === "cancelled") {
+        // Suscripción dada de baja en Mercado Pago: el cobro deja de estar
+        // activo, o el portal seguiría diciendo que cobra todos los meses.
+        // Se resuelve por el id de MP, que sirve para las dos formas de
+        // referencia; y si no, se cae a la referencia vieja.
+        const ref = String(pa.external_reference || "");
+        let cobroId = "";
+        const { data: porMp } = await sb.from("cobros").select("id").eq("mp_preapproval_id", String(id)).maybeSingle();
+        if (porMp) cobroId = porMp.id;
+        else if (ref.startsWith("cobro:")) cobroId = ref.slice(6);
+        else if (ref) {
+          const { data: pago } = await sb.from("pagos").select("cobro_id").eq("id", ref).maybeSingle();
+          if (pago?.cobro_id) cobroId = pago.cobro_id;
+        }
+        if (cobroId) await sb.from("cobros").update({ estado: "cancelada" }).eq("id", cobroId);
       }
     }
   } catch (e) { console.error("webhook error:", e); }

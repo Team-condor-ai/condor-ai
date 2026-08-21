@@ -1,13 +1,6 @@
 import { useEffect, useState } from "react";
 import { sb } from "../lib/supabase";
-import {
-  ESTADOS_MENSUAL,
-  ESTADOS_SETUP,
-  MONEDAS,
-  PLANES,
-  type Cliente,
-  type Producto,
-} from "./tipos";
+import { CATALOGO_PLANES, MONEDAS, type Cliente, type Producto } from "./tipos";
 
 type Props = {
   cliente: Cliente | null;
@@ -16,51 +9,46 @@ type Props = {
 };
 
 /**
- * Alta y edición de cliente. `cliente === null` significa "nuevo".
+ * Alta y configuración de un cliente. `cliente === null` significa "nuevo".
  *
- * LA FICHA CONFIGURA EL TRATO, NO LO ASUME
+ * CREAR PIDE POCO; CONFIGURAR PIDE TODO
  * ---------------------------------------------------------------------------
- * Antes todo cliente mostraba setup Y mensualidad, con sus montos, estados y
- * links de pago — aunque no cobrara ninguno de los dos. Eso obligaba a dejar
- * ceros y campos vacíos que igual ocupaban pantalla, y no distinguía "paga 0"
- * de "no paga esto".
+ * Dar de alta a alguien necesita un nombre y nada más. Todo lo demás —el
+ * contacto, la web, las notas— se sabe después, y pedirlo por adelantado
+ * llena la ficha de campos vacíos que igual ocupan pantalla. Por eso el
+ * formulario de alta es corto y el botón "Configurar cliente" de la ficha
+ * abre el mismo formulario con todo.
  *
- * Ahora se declara primero QUÉ cobra el cliente, y solo entonces aparece lo
- * que corresponda. Un cliente de encargos sueltos (los trabajos que Howden
- * pide cada tanto, por ejemplo) se guarda sin setup ni mensualidad, y sus
- * cobros se anotan uno a uno desde su ficha.
+ * UN SOLO "NOMBRE"
+ * ---------------------------------------------------------------------------
+ * Antes se pedían "Nombre de contacto" y "Negocio" al crear, y nadie tenía
+ * claro cuál iba en las listas. Ahora se pide UNO, que es el que se muestra en
+ * todas partes (`negocio`), y la persona de contacto queda como un dato más de
+ * la configuración.
+ *
+ * Los cobros NO viven acá: son una tabla propia y se agregan desde la ficha.
  */
 export function EditorCliente({ cliente, cerrar, guardado }: Props) {
+  const esNuevo = !cliente;
+
   const [f, setF] = useState({
-    email: cliente?.email ?? "",
-    nombre: cliente?.nombre ?? "",
     negocio: cliente?.negocio ?? "",
+    nombre: cliente?.nombre ?? "",
+    email: cliente?.email ?? "",
+    telefono: cliente?.telefono ?? "",
     plan: cliente?.plan ?? "",
     concepto: cliente?.concepto ?? "",
-    setup_monto: cliente?.setup_monto ?? 0,
-    mensual_monto: cliente?.mensual_monto ?? 0,
     moneda: cliente?.moneda ?? "CLP",
-    setup_estado: cliente?.setup_estado ?? "pendiente",
-    mensual_estado: cliente?.mensual_estado ?? "pendiente",
-    proximo_cobro: cliente?.proximo_cobro ?? "",
-    link_setup: cliente?.link_setup ?? "",
-    link_mensual: cliente?.link_mensual ?? "",
-    link_paypal: cliente?.link_paypal ?? "",
     web_url: cliente?.web_url ?? "",
     notas: cliente?.notas ?? "",
   });
-  // Un cliente nuevo parte cobrando ambos porque es el caso más común, pero
-  // uno existente respeta lo que ya tenía guardado.
-  const [cobraSetup, setCobraSetup] = useState(cliente?.cobra_setup ?? true);
-  const [cobraMensual, setCobraMensual] = useState(cliente?.cobra_mensual ?? true);
 
   const [productos, setProductos] = useState<Producto[]>([]);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState("");
 
-  // El catálogo de productos alimenta las sugerencias del plan: si ya vendiste
-  // "Bárbara" antes, aparece; si este cliente lleva algo nuevo, se escribe y
-  // ya está. El campo es libre, la lista es solo un atajo.
+  // El catálogo de productos suma sus nombres al desplegable: si ya se vendió
+  // algo que no está en la lista fija, aparece igual.
   useEffect(() => {
     sb.from("productos")
       .select("*")
@@ -75,30 +63,21 @@ export function EditorCliente({ cliente, cerrar, guardado }: Props) {
 
   async function enviar(ev: React.FormEvent) {
     ev.preventDefault();
+    if (!f.negocio.trim()) { setError("Ponle un nombre al cliente."); return; }
     setGuardando(true);
     setError("");
 
     const fila = {
       ...f,
+      negocio: f.negocio.trim(),
       // El correo vacío viaja como null, no como "": es lo que distingue
       // "no tiene correo" de "tiene un correo en blanco", y `email` dejó de
       // ser obligatorio en la base justamente para permitir el primer caso.
       email: f.email.trim().toLowerCase() || null,
       nombre: f.nombre.trim() || null,
+      telefono: f.telefono.trim() || null,
       plan: f.plan.trim() || null,
-      cobra_setup: cobraSetup,
-      cobra_mensual: cobraMensual,
-      // Lo que no se cobra se guarda en cero y sin link, para que no quede un
-      // monto viejo escondido si mañana alguien vuelve a activar la casilla.
-      setup_monto: cobraSetup ? Number(f.setup_monto) || 0 : 0,
-      mensual_monto: cobraMensual ? Number(f.mensual_monto) || 0 : 0,
-      link_setup: cobraSetup ? f.link_setup : "",
-      link_mensual: cobraMensual ? f.link_mensual : "",
       notas: f.notas.trim() || null,
-      // Una fecha vacía tiene que viajar como null, no como "": Postgres
-      // rechaza la cadena vacía en una columna `date` y el error que devuelve
-      // ("invalid input syntax for type date") no dice cuál campo fue.
-      proximo_cobro: (cobraMensual && f.proximo_cobro) || null,
     };
 
     const q = cliente
@@ -110,259 +89,178 @@ export function EditorCliente({ cliente, cerrar, guardado }: Props) {
     else guardado();
   }
 
-  const sinCobroFijo = !cobraSetup && !cobraMensual;
+  const campoPlan = (
+    <label className="campo-lbl">
+      Plan o servicio
+      {/* Campo libre + desplegable con lo que ya ofrecemos. Es un `select`
+          aparte y no un `datalist` porque el datalist no muestra la flecha en
+          todos los navegadores: la lista existía y nadie sabía que estaba. */}
+      <span style={{ display: "flex", gap: 8, alignItems: "stretch" }}>
+        <input
+          className="campo"
+          style={{ flex: 1, minWidth: 0 }}
+          placeholder="Escribe uno, o elige de la lista →"
+          value={f.plan}
+          onChange={(e) => set("plan", e.target.value)}
+        />
+        <select
+          className="campo"
+          style={{ width: 132, flex: "none" }}
+          value=""
+          onChange={(e) => e.target.value && set("plan", e.target.value)}
+          aria-label="Elegir de los planes que ya ofrecemos"
+        >
+          <option value="">Elegir…</option>
+          {CATALOGO_PLANES.map((g) => (
+            <optgroup key={g.grupo} label={g.grupo}>
+              {g.planes.map((p) => <option key={p}>{p}</option>)}
+            </optgroup>
+          ))}
+          {productos.length > 0 && (
+            <optgroup label="Del catálogo">
+              {productos.map((p) => <option key={p.id}>{p.nombre}</option>)}
+            </optgroup>
+          )}
+        </select>
+      </span>
+    </label>
+  );
 
   return (
     <div className="velo" onClick={cerrar}>
-      <form
-        className="panel-modal"
-        onClick={(e) => e.stopPropagation()}
-        onSubmit={enviar}
-      >
+      <form className="panel-modal" onClick={(e) => e.stopPropagation()} onSubmit={enviar}>
         <header>
-          <h2>{cliente ? "Editar cliente" : "Nuevo cliente"}</h2>
+          <h2>{esNuevo ? "Nuevo cliente" : "Configurar cliente"}</h2>
         </header>
 
         <div className="contenido">
-          <div className="dos">
-            <label className="campo-lbl">
-              Nombre de contacto
-              <input
-                className="campo"
-                placeholder="Ej: Carmen Reyes"
-                value={f.nombre}
-                onChange={(e) => set("nombre", e.target.value)}
-              />
-            </label>
-            <label className="campo-lbl">
-              Negocio
-              <input
-                className="campo"
-                value={f.negocio}
-                onChange={(e) => set("negocio", e.target.value)}
-              />
-            </label>
-          </div>
-
           <label className="campo-lbl">
-            Correo <span style={{ fontWeight: 400, opacity: 0.7 }}>· opcional</span>
+            Nombre
             <input
               className="campo"
-              type="email"
-              value={f.email}
-              onChange={(e) => set("email", e.target.value)}
+              required
+              autoFocus
+              placeholder="Ej: Tecnobox"
+              value={f.negocio}
+              onChange={(e) => set("negocio", e.target.value)}
             />
-            {/* El aviso cambia según lo que haya escrito: repetir siempre la
-                misma frase hace que nadie la lea. Sin correo se dice la
-                consecuencia concreta, no una regla abstracta. */}
-            <small style={f.email.trim() ? undefined : { color: "var(--mal-tx)" }}>
-              {f.email.trim()
-                ? "Con este correo inicia sesión en el portal de clientes."
-                : "Sin correo, este cliente NO tendrá acceso al portal de clientes. Se administra solo desde acá."}
-            </small>
+            <small>Es el nombre con el que aparece en todo el portal.</small>
           </label>
 
           <div className="dos">
             <label className="campo-lbl">
-              Plan o servicio
+              Correo <span style={{ fontWeight: 400, opacity: 0.7 }}>· opcional</span>
               <input
                 className="campo"
-                list="lista-planes"
-                placeholder="Escribe uno nuevo o elige del catálogo"
-                value={f.plan}
-                onChange={(e) => set("plan", e.target.value)}
+                type="email"
+                value={f.email}
+                onChange={(e) => set("email", e.target.value)}
               />
-              <datalist id="lista-planes">
-                {productos.map((p) => (
-                  <option key={p.id} value={p.nombre} />
-                ))}
-                {PLANES.map((p) => (
-                  <option key={p} value={p} />
-                ))}
-              </datalist>
+              {/* El aviso cambia según lo que haya escrito: repetir siempre la
+                  misma frase hace que nadie la lea. Sin correo se dice la
+                  consecuencia concreta, no una regla abstracta. */}
+              <small style={f.email.trim() ? undefined : { color: "var(--mal-tx)" }}>
+                {f.email.trim()
+                  ? "Con este correo inicia sesión en el portal de clientes."
+                  : "Sin correo NO entra al portal de clientes. Se administra solo desde acá."}
+              </small>
             </label>
             <label className="campo-lbl">
-              Moneda
-              <select
+              Teléfono <span style={{ fontWeight: 400, opacity: 0.7 }}>· opcional</span>
+              <input
                 className="campo"
-                value={f.moneda}
-                onChange={(e) => set("moneda", e.target.value)}
-              >
-                {MONEDAS.map((m) => (
-                  <option key={m}>{m}</option>
-                ))}
-              </select>
+                type="tel"
+                placeholder="+56 9 1234 5678"
+                value={f.telefono}
+                onChange={(e) => set("telefono", e.target.value)}
+              />
+              <small>Con código de país, para que el enlace a WhatsApp funcione.</small>
             </label>
           </div>
 
-          <label className="campo-lbl">
-            Servicio ofrecido
-            <textarea
+          {/* El plan va en su propia fila, no compartiendo `.dos` con la
+              moneda: entre el campo de texto y el desplegable no cabían en
+              media pantalla y el texto quedaba cortado a la mitad. */}
+          {campoPlan}
+
+          <label className="campo-lbl" style={{ maxWidth: 240 }}>
+            Moneda
+            <select
               className="campo"
-              rows={2}
-              placeholder="Landing + Videos IA + Campañas Meta"
-              value={f.concepto}
-              onChange={(e) => set("concepto", e.target.value)}
-            />
-            <small>Esto es lo que el cliente ve como "qué incluye".</small>
+              value={f.moneda}
+              onChange={(e) => set("moneda", e.target.value)}
+            >
+              {MONEDAS.map((m) => <option key={m}>{m}</option>)}
+            </select>
+            <small>Es la que se le propone a cada cobro nuevo.</small>
           </label>
 
-          <section className="bloque" style={{ marginBottom: 8 }}>
-            <h3>Cómo se le cobra</h3>
-            <div className="chips" style={{ marginBottom: 4 }}>
-              <button
-                type="button"
-                className={"chip" + (cobraSetup ? " on" : "")}
-                onClick={() => setCobraSetup((v) => !v)}
-              >
-                Cobra setup
-              </button>
-              <button
-                type="button"
-                className={"chip" + (cobraMensual ? " on" : "")}
-                onClick={() => setCobraMensual((v) => !v)}
-              >
-                Cobra mensualidad
-              </button>
-            </div>
-            {sinCobroFijo && (
-              <p className="conteo">
-                Sin cobro fijo: los trabajos se anotan uno a uno desde la ficha del
-                cliente, con su monto y forma de pago.
-              </p>
-            )}
-          </section>
-
-          {cobraSetup && (
-            <div className="dos">
-              <label className="campo-lbl">
-                Setup
-                <input
-                  className="campo"
-                  type="number"
-                  min={0}
-                  value={f.setup_monto}
-                  onChange={(e) => set("setup_monto", Number(e.target.value))}
-                />
-              </label>
-              <label className="campo-lbl">
-                Estado del setup
-                <select
-                  className="campo"
-                  value={f.setup_estado}
-                  onChange={(e) => set("setup_estado", e.target.value)}
-                >
-                  {ESTADOS_SETUP.map((s) => (
-                    <option key={s}>{s}</option>
-                  ))}
-                </select>
-              </label>
-            </div>
-          )}
-
-          {cobraMensual && (
+          {/* Lo que sigue solo aparece al CONFIGURAR: para dar de alta a
+              alguien no hace falta, y pedirlo por adelantado deja campos
+              vacíos que igual ocupan pantalla. */}
+          {!esNuevo && (
             <>
-              <div className="dos">
-                <label className="campo-lbl">
-                  Mensualidad
-                  <input
-                    className="campo"
-                    type="number"
-                    min={0}
-                    value={f.mensual_monto}
-                    onChange={(e) => set("mensual_monto", Number(e.target.value))}
-                  />
-                </label>
-                <label className="campo-lbl">
-                  Estado mensual
-                  <select
-                    className="campo"
-                    value={f.mensual_estado}
-                    onChange={(e) => set("mensual_estado", e.target.value)}
-                  >
-                    {ESTADOS_MENSUAL.map((s) => (
-                      <option key={s}>{s}</option>
-                    ))}
-                  </select>
-                </label>
-              </div>
-
               <label className="campo-lbl">
-                Próximo cobro
+                Persona de contacto <span style={{ fontWeight: 400, opacity: 0.7 }}>· opcional</span>
                 <input
                   className="campo"
-                  type="date"
-                  value={f.proximo_cobro ?? ""}
-                  onChange={(e) => set("proximo_cobro", e.target.value)}
+                  placeholder="Ej: Carmen Reyes"
+                  value={f.nombre}
+                  onChange={(e) => set("nombre", e.target.value)}
                 />
+                <small>Con quién se habla. El nombre de arriba es el del cliente.</small>
+              </label>
+
+              <label className="campo-lbl">
+                Servicio ofrecido
+                <textarea
+                  className="campo"
+                  rows={2}
+                  placeholder="Landing + Videos IA + Campañas Meta"
+                  value={f.concepto}
+                  onChange={(e) => set("concepto", e.target.value)}
+                />
+                <small>Esto es lo que el cliente ve como "qué incluye".</small>
+              </label>
+
+              <label className="campo-lbl">
+                Página web
+                <input
+                  className="campo"
+                  placeholder="tecnobox.cl"
+                  value={f.web_url}
+                  onChange={(e) => set("web_url", e.target.value)}
+                />
+              </label>
+
+              <label className="campo-lbl">
+                Notas internas
+                <textarea
+                  className="campo"
+                  rows={3}
+                  placeholder="Lo que convenga recordar de este cliente."
+                  value={f.notas}
+                  onChange={(e) => set("notas", e.target.value)}
+                />
+                <small>Solo las ve el equipo; el cliente nunca las lee.</small>
               </label>
             </>
           )}
 
-          {(cobraSetup || cobraMensual) && (
-            <section className="bloque" style={{ marginBottom: 8 }}>
-              <h3>Links de pago (opcionales)</h3>
-              {cobraSetup && (
-                <label className="campo-lbl">
-                  Link de pago · setup
-                  <input
-                    className="campo"
-                    value={f.link_setup}
-                    onChange={(e) => set("link_setup", e.target.value)}
-                  />
-                </label>
-              )}
-              {cobraMensual && (
-                <label className="campo-lbl">
-                  Link de pago · mensual
-                  <input
-                    className="campo"
-                    value={f.link_mensual}
-                    onChange={(e) => set("link_mensual", e.target.value)}
-                  />
-                </label>
-              )}
-              <label className="campo-lbl">
-                Link PayPal
-                <input
-                  className="campo"
-                  value={f.link_paypal}
-                  onChange={(e) => set("link_paypal", e.target.value)}
-                />
-              </label>
-            </section>
+          {esNuevo && (
+            <p className="tenue">
+              Se crea sin cobros. Después, desde su ficha, puedes configurarlo
+              entero y agregarle los cobros que haga falta.
+            </p>
           )}
-
-          <label className="campo-lbl">
-            Web entregada
-            <input
-              className="campo"
-              value={f.web_url}
-              onChange={(e) => set("web_url", e.target.value)}
-            />
-          </label>
-
-          <label className="campo-lbl">
-            Notas internas
-            <textarea
-              className="campo"
-              rows={2}
-              placeholder="Cómo se factura, con quién se coordina, acuerdos…"
-              value={f.notas}
-              onChange={(e) => set("notas", e.target.value)}
-            />
-            <small>Solo las ve el equipo, nunca el cliente.</small>
-          </label>
 
           {error && <p className="error">{error}</p>}
         </div>
 
         <footer>
-          <button type="button" className="btn" onClick={cerrar}>
-            Cancelar
-          </button>
+          <button type="button" className="btn" onClick={cerrar}>Cancelar</button>
           <button className="btn solido" disabled={guardando}>
-            {guardando ? "Guardando…" : "Guardar"}
+            {guardando ? "Guardando…" : esNuevo ? "Crear cliente" : "Guardar"}
           </button>
         </footer>
       </form>

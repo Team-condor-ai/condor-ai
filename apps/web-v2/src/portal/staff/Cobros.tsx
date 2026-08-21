@@ -1,216 +1,338 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { sb, plata, fecha } from "../lib/supabase";
-import type { Cliente, Pago } from "./tipos";
+import { Ico } from "../disenio/iconos";
+import { useCambio } from "../lib/cambio";
+import {
+  nombreCobro,
+  type Cliente,
+  type Cobro,
+  type Pago,
+  type Producto,
+} from "./tipos";
 
-/**
- * Cobros con MercadoPago.
- *
- * EL MONTO NO SE ESCRIBE ACÁ
- * ---------------------------------------------------------------------------
- * `crear-pago` toma el monto de la ficha del cliente, no del navegador. Es
- * deliberado y no conviene "mejorarlo": si el monto viajara desde el front,
- * cualquiera con la consola abierta podría cobrarse $1. Para cambiar lo que
- * se cobra hay que editar la ficha.
- *
- * La función además valida que quien llama sea admin y crea la fila en
- * `pagos` como pendiente; el webhook la pasa a pagada.
- */
+type Tipo = "todos" | "unico" | "mensual";
+type Estado = "todos" | "pagado" | "pendiente" | "rechazado";
+
 export function Cobros() {
-  const [clientes, setClientes] = useState<Cliente[]>([]);
   const [pagos, setPagos] = useState<Pago[]>([]);
+  const [cobros, setCobros] = useState<Cobro[]>([]);
+  const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [productos, setProductos] = useState<Producto[]>([]);
   const [cargando, setCargando] = useState(true);
-  const [trabajando, setTrabajando] = useState("");
   const [error, setError] = useState("");
-  const [aviso, setAviso] = useState("");
+  const [busca, setBusca] = useState("");
+  const [tipo, setTipo] = useState<Tipo>("todos");
+  const [estado, setEstado] = useState<Estado>("todos");
+  const [desde, setDesde] = useState("");
+  const [momentoCarga] = useState(() => Date.now());
+  const cambio = useCambio();
 
-  async function cargar() {
-    const [{ data: cs }, { data: ps }] = await Promise.all([
-      sb.from("clientes").select("*").order("proximo_cobro"),
-      sb.from("pagos").select("*").order("creado_en", { ascending: false }),
-    ]);
-    setClientes(((cs ?? []) as Cliente[]).filter((c) => !c.archivado));
-    setPagos((ps ?? []) as Pago[]);
-    setCargando(false);
-  }
-  useEffect(() => { cargar(); }, []);
+  useEffect(() => {
+    (async () => {
+      const [pa, co, cl, pr] = await Promise.all([
+        sb.from("pagos").select("*").order("creado_en", { ascending: false }),
+        sb.from("cobros").select("*"),
+        sb.from("clientes").select("*"),
+        sb.from("productos").select("*"),
+      ]);
+      if (pa.error) setError(pa.error.message);
+      setPagos((pa.data ?? []) as Pago[]);
+      setCobros((co.data ?? []) as Cobro[]);
+      setClientes((cl.data ?? []) as Cliente[]);
+      setProductos((pr.data ?? []) as Producto[]);
+      setCargando(false);
+    })();
+  }, []);
+
+  const cm = useMemo(() => new Map(cobros.map((x) => [x.id, x])), [cobros]);
+  const clm = useMemo(
+    () => new Map(clientes.map((x) => [x.id, x])),
+    [clientes],
+  );
+  const pm = useMemo(
+    () => new Map(productos.map((x) => [x.id, x])),
+    [productos],
+  );
+  const visibles = useMemo(() => {
+    const q = busca.trim().toLowerCase();
+    return pagos.filter((p) => {
+      const c = p.cobro_id ? cm.get(p.cobro_id) : undefined;
+      const cli = clm.get(p.cliente_id);
+      const prod = c?.producto_id ? pm.get(c.producto_id) : undefined;
+      const cuando = p.fecha ?? p.creado_en ?? "";
+      return (
+        (tipo === "todos" || (c?.tipo ?? p.tipo) === tipo) &&
+        (estado === "todos" || p.estado === estado) &&
+        (!desde || cuando.slice(0, 10) >= desde) &&
+        (!q ||
+          [
+            cli?.negocio,
+            cli?.nombre,
+            cli?.email,
+            prod?.nombre,
+            c ? nombreCobro(c) : p.detalle,
+            p.mp_id,
+            p.metodo,
+          ].some((x) =>
+            String(x ?? "")
+              .toLowerCase()
+              .includes(q),
+          ))
+      );
+    });
+  }, [pagos, cm, clm, pm, tipo, estado, desde, busca]);
 
   const resumen = useMemo(() => {
-    const pagados = pagos.filter((p) => p.estado === "pagado");
     const mes = new Date().toISOString().slice(0, 7);
+    const hace30 = new Date(momentoCarga - 30 * 86400000).toISOString();
+    const pagados = pagos.filter((p) => p.estado === "pagado");
+    const monto = (lista: Pago[]) =>
+      lista.reduce((t, p) => {
+        const co = p.cobro_id ? cm.get(p.cobro_id) : undefined;
+        return t + cambio.aCLP(p.monto, co?.moneda);
+      }, 0);
+    const mesPagados = pagados.filter((p) =>
+      (p.fecha ?? p.creado_en ?? "").startsWith(mes),
+    );
+    const procesados = pagos.filter((p) =>
+      ["pagado", "rechazado"].includes(p.estado ?? ""),
+    );
     return {
-      recurrente: clientes
-        .filter((c) => c.mensual_estado === "al_dia")
-        .reduce((t, c) => t + (c.mensual_monto ?? 0), 0),
-      esteMes: pagados
-        .filter((p) => (p.creado_en ?? "").startsWith(mes))
-        .reduce((t, p) => t + (p.monto ?? 0), 0),
-      pendientes: pagos.filter((p) => p.estado === "pendiente").length,
-      vencidos: clientes.filter((c) => c.mensual_estado === "vencido").length,
+      mes: monto(mesPagados),
+      mensualidades: monto(
+        mesPagados.filter(
+          (p) => (p.cobro_id ? cm.get(p.cobro_id)?.tipo : p.tipo) === "mensual",
+        ),
+      ),
+      ultimos30: pagados.filter((p) => (p.creado_en ?? p.fecha ?? "") >= hace30)
+        .length,
+      exito: procesados.length
+        ? (procesados.filter((p) => p.estado === "pagado").length /
+            procesados.length) *
+          100
+        : null,
     };
-  }, [clientes, pagos]);
+  }, [pagos, cm, cambio, momentoCarga]);
 
-  async function cobrar(c: Cliente, tipo: "setup" | "mensual", correo: boolean) {
-    setError(""); setAviso(""); setTrabajando(c.id + tipo);
-    try {
-      const { data, error } = await sb.functions.invoke("crear-pago", {
-        body: { cliente_id: c.id, tipo, enviar_correo: correo },
-      });
-      if (error) throw error;
-      const link = (data as { init_point?: string })?.init_point;
-      if (!link) throw new Error("La función no devolvió el link de pago.");
-      setAviso(
-        correo
-          ? `Cobro enviado a ${c.email}.`
-          : `Link listo para ${c.negocio || c.nombre || c.email || "Sin nombre"}.`,
-      );
-      if (!correo) window.open(link, "_blank", "noopener");
-      cargar();
-    } catch (e) {
-      const m = e instanceof Error ? e.message : String(e);
-      setError(
-        /not found|404/i.test(m)
-          ? "Falta desplegar la Edge Function `crear-pago`. No se cobró nada."
-          : m,
-      );
-    } finally {
-      setTrabajando("");
-    }
+  function exportar() {
+    const esc = (v: unknown) => `"${String(v ?? "").replaceAll('"', '""')}"`;
+    const filas = visibles.map((p) => {
+      const c = p.cobro_id ? cm.get(p.cobro_id) : undefined;
+      const cli = clm.get(p.cliente_id);
+      const prod = c?.producto_id ? pm.get(c.producto_id) : undefined;
+      return [
+        p.fecha ?? p.creado_en,
+        cli?.negocio ?? cli?.nombre,
+        prod?.nombre,
+        c ? nombreCobro(c) : p.detalle,
+        c?.tipo ?? p.tipo,
+        p.periodo,
+        p.metodo,
+        p.mp_id,
+        p.monto,
+        c?.moneda ?? "CLP",
+        p.estado,
+      ]
+        .map(esc)
+        .join(",");
+    });
+    const csv = [
+      "fecha,cliente,producto,cobro,tipo,periodo,metodo,referencia,monto,moneda,estado",
+      ...filas,
+    ].join("\n");
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(
+      new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" }),
+    );
+    a.download = `cobros-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
   }
-
-  if (cargando)
-    return <div className="cuerpo"><p className="vacio">Cargando…</p></div>;
 
   return (
     <>
       <div className="barra">
-        <h1>Cobros</h1>
+        <div>
+          <h1>Cobros</h1>
+          <small className="subtitulo-barra">
+            Historial inalterable de pagos y mensualidades
+          </small>
+        </div>
+        <button className="btn" onClick={exportar} disabled={!visibles.length}>
+          {Ico.descargar({ t: 15 })} Exportar CSV
+        </button>
       </div>
-
       <div className="cuerpo">
-        <div className="rejilla-datos" style={{ marginBottom: 20 }}>
-          <div className="dato">
-            <small>Recurrente al mes</small>
-            <b>{plata(resumen.recurrente)}</b>
+        {error && <p className="error">{error}</p>}
+        <div className="kpis">
+          <div className="kpi">
+            <div className="tile">{Ico.cobros({ t: 18 })}</div>
+            <div className="cifra">
+              <b>{plata(resumen.mes)}</b>
+            </div>
+            <p>Cobrado este mes</p>
           </div>
-          <div className="dato">
-            <small>Cobrado este mes</small>
-            <b>{plata(resumen.esteMes)}</b>
+          <div className="kpi">
+            <div className="tile">{Ico.repetir({ t: 18 })}</div>
+            <div className="cifra">
+              <b>{plata(resumen.mensualidades)}</b>
+            </div>
+            <p>Mensualidades cobradas este mes</p>
           </div>
-          <div className="dato">
-            <small>Pagos pendientes</small>
-            <b>{resumen.pendientes}</b>
+          <div className="kpi">
+            <div className="tile">{Ico.boletas({ t: 18 })}</div>
+            <div className="cifra">
+              <b>{resumen.ultimos30}</b>
+            </div>
+            <p>Pagos efectivos · últimos 30 días</p>
           </div>
-          <div className="dato">
-            <small>Clientes vencidos</small>
-            <b>{resumen.vencidos}</b>
+          <div className="kpi">
+            <div className="tile">{Ico.cheque({ t: 18 })}</div>
+            <div className="cifra">
+              <b>
+                {resumen.exito === null ? "—" : `${resumen.exito.toFixed(1)}%`}
+              </b>
+            </div>
+            <p>Tasa histórica de pagos exitosos</p>
           </div>
         </div>
-
-        {error && <p className="error">{error}</p>}
-        {aviso && <p className="ok-msg">{aviso}</p>}
-
-        <section className="bloque">
-          <h3>Cobrar</h3>
-          <div className="tabla-caja">
+        <div className="filtros-cobros">
+          <div className="mini-busca">
+            {Ico.buscar({ t: 15 })}
+            <input
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+              placeholder="Cliente, producto, referencia…"
+            />
+          </div>
+          <select
+            className="campo compacto"
+            value={tipo}
+            onChange={(e) => setTipo(e.target.value as Tipo)}
+          >
+            <option value="todos">Todos los tipos</option>
+            <option value="unico">Pagos únicos</option>
+            <option value="mensual">Mensualidades</option>
+          </select>
+          <select
+            className="campo compacto"
+            value={estado}
+            onChange={(e) => setEstado(e.target.value as Estado)}
+          >
+            <option value="todos">Todos los estados</option>
+            <option value="pagado">Pagados</option>
+            <option value="pendiente">Pendientes</option>
+            <option value="rechazado">Rechazados</option>
+          </select>
+          <label className="filtro-fecha">
+            Desde
+            <input
+              className="campo compacto"
+              type="date"
+              value={desde}
+              onChange={(e) => setDesde(e.target.value)}
+            />
+          </label>
+        </div>
+        {cargando ? (
+          <p className="vacio">Cargando…</p>
+        ) : visibles.length === 0 ? (
+          <p className="vacio">
+            No hay movimientos que coincidan con los filtros.
+          </p>
+        ) : (
+          <div className="tabla-caja scroll-x">
             <table>
               <thead>
                 <tr>
+                  <th>Fecha</th>
                   <th>Cliente</th>
-                  <th className="num">Setup</th>
-                  <th className="num">Mensual</th>
-                  <th>Próximo cobro</th>
-                  <th>Cobrar</th>
+                  <th>Producto / cobro</th>
+                  <th>Tipo</th>
+                  <th>Medio y referencia</th>
+                  <th className="num">Monto</th>
+                  <th>Estado</th>
                 </tr>
               </thead>
               <tbody>
-                {clientes.map((c) => (
-                  <tr key={c.id}>
-                    <td>
-                      <Link to={`/acceso/clientes/${c.id}`} className="enlace-tabla">
-                        <b>{c.negocio || c.nombre || c.email || "Sin nombre"}</b>
-                        <small>{c.email}</small>
-                      </Link>
-                    </td>
-                    <td className="num">
-                      {plata(c.setup_monto, c.moneda)}
-                      <br />
-                      <span className={"pill " + (c.setup_estado === "pagado" ? "ok" : "warn")}>
-                        {c.setup_estado ?? "—"}
-                      </span>
-                    </td>
-                    <td className="num">
-                      {plata(c.mensual_monto, c.moneda)}
-                      <br />
-                      <span className={"pill " + (c.mensual_estado === "al_dia" ? "ok" : c.mensual_estado === "vencido" ? "mal" : "warn")}>
-                        {(c.mensual_estado ?? "—").replace("_", " ")}
-                      </span>
-                    </td>
-                    <td>{fecha(c.proximo_cobro)}</td>
-                    <td>
-                      <div className="botonera">
-                        {(["setup", "mensual"] as const).map((t) => (
-                          <button
-                            key={t}
-                            className="btn chico"
-                            disabled={!!trabajando}
-                            onClick={() => cobrar(c, t, true)}
-                            title={`Enviar el cobro de ${t} por correo`}
-                          >
-                            {trabajando === c.id + t ? "…" : t}
-                          </button>
-                        ))}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                {visibles.map((p) => {
+                  const c = p.cobro_id ? cm.get(p.cobro_id) : undefined;
+                  const cli = clm.get(p.cliente_id);
+                  const prod = c?.producto_id
+                    ? pm.get(c.producto_id)
+                    : undefined;
+                  const t = c?.tipo ?? p.tipo;
+                  return (
+                    <tr key={p.id}>
+                      <td>
+                        <b>{fecha(p.fecha ?? p.creado_en)}</b>
+                        {p.periodo && <small>Período {fecha(p.periodo)}</small>}
+                      </td>
+                      <td>
+                        <Link
+                          className="enlace-tabla"
+                          to={`/acceso/clientes?ver=${p.cliente_id}`}
+                        >
+                          <b>
+                            {cli?.negocio || cli?.nombre || "Cliente eliminado"}
+                          </b>
+                          <small>{cli?.email || "sin correo"}</small>
+                        </Link>
+                      </td>
+                      <td>
+                        <b>
+                          {prod?.nombre ||
+                            (c ? nombreCobro(c) : p.detalle) ||
+                            "Cobro eliminado"}
+                        </b>
+                        {prod && c && <small>{nombreCobro(c)}</small>}
+                      </td>
+                      <td>
+                        <span
+                          className={
+                            "pill " + (t === "mensual" ? "azul" : "gris")
+                          }
+                        >
+                          {t === "mensual" ? "mensualidad" : "pago único"}
+                        </span>
+                      </td>
+                      <td>
+                        {p.metodo || "—"}
+                        <small>
+                          {p.mp_id
+                            ? `Ref. ${p.mp_id}`
+                            : p.detalle || "sin referencia"}
+                        </small>
+                      </td>
+                      <td className="num">
+                        <b>{plata(p.monto, c?.moneda)}</b>
+                      </td>
+                      <td>
+                        <span
+                          className={
+                            "pill " +
+                            (p.estado === "pagado"
+                              ? "ok"
+                              : p.estado === "rechazado"
+                                ? "mal"
+                                : "warn")
+                          }
+                        >
+                          {p.estado || "pendiente"}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
-          <p className="parrafo" style={{ color: "var(--texto-3)", marginTop: 10 }}>
-            El monto sale de la ficha del cliente, no de esta pantalla. Para
-            cambiarlo, edita la ficha.
-          </p>
-        </section>
-
-        <section className="bloque">
-          <h3>Últimos movimientos</h3>
-          {pagos.length === 0 ? (
-            <p className="vacio">Todavía no hay pagos registrados.</p>
-          ) : (
-            <div className="tabla-caja">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Fecha</th>
-                    <th>Cliente</th>
-                    <th>Tipo</th>
-                    <th className="num">Monto</th>
-                    <th>Estado</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pagos.slice(0, 25).map((p) => {
-                    const c = clientes.find((x) => x.id === p.cliente_id);
-                    return (
-                      <tr key={p.id}>
-                        <td>{fecha(p.creado_en)}</td>
-                        <td>{c?.negocio || c?.nombre || c?.email || "—"}</td>
-                        <td>{p.tipo ?? "—"}</td>
-                        <td className="num">{plata(p.monto, c?.moneda)}</td>
-                        <td>
-                          <span className={"pill " + (p.estado === "pagado" ? "ok" : p.estado === "rechazado" ? "mal" : "warn")}>
-                            {p.estado ?? "—"}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </section>
+        )}
+        <p className="nota-auditoria">
+          Este historial muestra hechos de pago. Los acuerdos pendientes, links
+          y suscripciones activas se administran dentro de cada cliente.
+        </p>
       </div>
     </>
   );
