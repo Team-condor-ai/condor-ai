@@ -32,7 +32,7 @@ const TEMAS = {
   lunes: {
     titulo: "📰 Noticiero IA — la semana en IA",
     investiga: true,
-    instruccion: "Carrusel NOTICIERO con las 3-4 noticias de IA más importantes de los últimos 7 días (reales, de la búsqueda web), explicadas para un dueño de negocio.",
+    instruccion: "Investiga exactamente 7 noticias de IA de los últimos 7 días (reales, de la búsqueda web), contrasta su vigencia y crea un carrusel NOTICIERO seleccionando las 3-4 más importantes, explicadas para un dueño de negocio.",
     template: `EDITORIAL TECH NEWSLETTER style (tipo "The Rundown AI"): fondo crema #f2efe6, texto NEGRO, UN acento verde menta #9ef0c0 como marcador detrás de 1-2 palabras clave. Tipografía rounded grotesque bold, muy legible. Portada con foto cinematográfica real + efecto papel rasgado. Cada slide: foto real arriba y debajo el copy como diseño editorial (una frase grande + una cifra clave resaltada + una línea corta de cierre "Cómo afecta"). Minimal, premium, serio. Badge de número arriba a la derecha. NO colorido, NO clip-art.`,
   },
   miercoles: {

@@ -1,0 +1,30 @@
+name: Blotato - diagnóstico seguro
+
+on:
+  workflow_dispatch:
+    inputs:
+      accion:
+        description: "me | cuentas"
+        required: true
+        default: "cuentas"
+        type: choice
+        options:
+          - cuentas
+          - me
+
+permissions:
+  contents: read
+
+jobs:
+  diagnostico:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Verificar conexión sin publicar
+        env:
+          BLOTATO_API_KEY: ${{ secrets.BLOTATO_API_KEY }}
+        run: node services/barbara/blotato-cli.mjs "${{ inputs.accion }}"
+
