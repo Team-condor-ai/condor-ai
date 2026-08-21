@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import gsap from "gsap";
 import { Ico } from "./iconos";
 
@@ -43,7 +43,9 @@ export function PanelLateral({
     typeof window !== "undefined" &&
     window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  useEffect(() => {
+  // Layout effect: coloca el cajón fuera de pantalla antes del primer paint.
+  // Con useEffect aparecía abierto un fotograma y luego "saltaba" al inicio.
+  useLayoutEffect(() => {
     const el = panel.current, v = velo.current;
     if (!el || !v) return;
     if (quieto) {

@@ -46,8 +46,8 @@ export function Ratia() {
   const [orden, setOrden] = useState("recientes");
   const [viendo, setViendo] = useState<SuscriptorRatia | null>(null);
 
-  async function cargar() {
-    setCargando(true);
+  async function cargar(silencioso = false) {
+    if (!silencioso) setCargando(true);
     const [{ data: s, error: es }, { data: i }] = await Promise.all([
       sb.from("suscriptores_ratia").select("*").order("creado_en", { ascending: false }),
       sb.from("ingresos_ratia").select("*").order("creado_en", { ascending: false }),
@@ -56,7 +56,7 @@ export function Ratia() {
     else setError("");
     setSuscriptores((s ?? []) as SuscriptorRatia[]);
     setIngresos((i ?? []) as IngresoRatia[]);
-    setCargando(false);
+    if (!silencioso) setCargando(false);
   }
 
   useEffect(() => {
@@ -147,7 +147,7 @@ export function Ratia() {
     if (!window.confirm(`¿Eliminar a "${s.nombre}"?\n\nSus ingresos ya registrados NO se borran: quedan en la contabilidad.`)) return;
     const { error } = await sb.from("suscriptores_ratia").delete().eq("id", s.id);
     if (error) setError(error.message);
-    else cargar();
+    else void cargar(true);
   }
 
   return (
@@ -332,8 +332,13 @@ export function Ratia() {
       {viendo && (
         <PanelSuscriptor
           suscriptor={viendo}
-          cerrar={() => { setViendo(null); cargar(); }}
-          cambiado={cargar}
+          cerrar={() => setViendo(null)}
+          cambiado={(actualizado) => {
+            setViendo(actualizado);
+            setSuscriptores((lista) =>
+              lista.map((s) => (s.id === actualizado.id ? actualizado : s)),
+            );
+          }}
         />
       )}
 
@@ -341,7 +346,7 @@ export function Ratia() {
         <EditorSuscriptor
           suscriptor={editando === "nuevo" ? null : editando}
           cerrar={() => setEditando(null)}
-          guardado={() => { setEditando(null); cargar(); }}
+          guardado={() => { setEditando(null); void cargar(true); }}
         />
       )}
     </>

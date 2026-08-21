@@ -72,8 +72,8 @@ export function ContenidoCliente({
   const [cobrando, setCobrando] = useState<Cobro | null>(null);
   const [asignandoProducto, setAsignandoProducto] = useState(false);
 
-  async function cargar() {
-    setCargando(true);
+  async function cargar(silencioso = false) {
+    if (!silencioso) setCargando(true);
     const { data, error } = await sb
       .from("clientes")
       .select("*")
@@ -116,7 +116,7 @@ export function ContenidoCliente({
       setError(
         "No se pudieron cargar los productos asignados: " + eap.message,
       );
-    setCargando(false);
+    if (!silencioso) setCargando(false);
   }
 
   useEffect(() => {
@@ -173,7 +173,33 @@ export function ContenidoCliente({
       .update({ estado })
       .eq("id", cobro.id);
     if (error) setError(error.message);
-    else cargar();
+    else void cargar(true);
+  }
+
+  async function eliminarPagoPendiente(pago: Pago) {
+    if (pago.estado && pago.estado !== "pendiente") return;
+    const ok = window.confirm(
+      "¿Eliminar este pago pendiente?\n\n" +
+        "Se quitará del historial interno, pero un link activo en Mercado Pago no se cancela con esta acción.",
+    );
+    if (!ok) return;
+    const anterior = pagos;
+    setPagos((lista) => lista.filter((p) => p.id !== pago.id));
+    const { data: eliminado, error: fallo } = await sb
+      .from("pagos")
+      .delete()
+      .eq("id", pago.id)
+      .or("estado.is.null,estado.eq.pendiente")
+      .select("id")
+      .maybeSingle();
+    if (fallo || !eliminado) {
+      setPagos(anterior);
+      setError(
+        fallo
+          ? "No se pudo eliminar el pago pendiente: " + fallo.message
+          : "El pago ya no está pendiente y no se eliminó.",
+      );
+    }
   }
 
   async function estadoProducto(asignacion: ClienteProducto, estado: string) {
@@ -185,7 +211,7 @@ export function ContenidoCliente({
       })
       .eq("id", asignacion.id);
     if (error) setError(error.message);
-    else cargar();
+    else void cargar(true);
   }
 
   async function quitarProducto(asignacion: ClienteProducto) {
@@ -201,7 +227,7 @@ export function ContenidoCliente({
       .delete()
       .eq("id", asignacion.id);
     if (error) setError(error.message);
-    else cargar();
+    else void cargar(true);
   }
 
   if (cargando) return <p className="vacio">Cargando…</p>;
@@ -588,6 +614,7 @@ export function ContenidoCliente({
                                   <th>Cómo</th>
                                   <th className="num">Monto</th>
                                   <th>Estado</th>
+                                  <th aria-label="Acciones"></th>
                                 </tr>
                               </thead>
                               <tbody>
@@ -621,6 +648,18 @@ export function ContenidoCliente({
                                       >
                                         {p.estado ?? "—"}
                                       </span>
+                                    </td>
+                                    <td className="acciones">
+                                      {(!p.estado || p.estado === "pendiente") && (
+                                        <button
+                                          className="icono-btn peligro"
+                                          onClick={() => void eliminarPagoPendiente(p)}
+                                          title="Eliminar pago pendiente"
+                                          aria-label="Eliminar pago pendiente"
+                                        >
+                                          {Ico.eliminar({ t: 14 })}
+                                        </button>
+                                      )}
                                     </td>
                                   </tr>
                                 ))}
@@ -662,6 +701,18 @@ export function ContenidoCliente({
                         {p.estado ?? "—"}
                       </span>
                     </td>
+                    <td className="acciones">
+                      {(!p.estado || p.estado === "pendiente") && (
+                        <button
+                          className="icono-btn peligro"
+                          onClick={() => void eliminarPagoPendiente(p)}
+                          title="Eliminar pago pendiente"
+                          aria-label="Eliminar pago pendiente"
+                        >
+                          {Ico.eliminar({ t: 14 })}
+                        </button>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -678,7 +729,7 @@ export function ContenidoCliente({
           cerrar={() => setEditandoCobro(null)}
           guardado={() => {
             setEditandoCobro(null);
-            cargar();
+            void cargar(true);
           }}
         />
       )}
@@ -690,7 +741,7 @@ export function ContenidoCliente({
           cerrar={() => setAnotandoEn(null)}
           guardado={() => {
             setAnotandoEn(null);
-            cargar();
+            void cargar(true);
           }}
         />
       )}
@@ -711,7 +762,7 @@ export function ContenidoCliente({
           cerrar={() => setAsignandoProducto(false)}
           guardado={() => {
             setAsignandoProducto(false);
-            cargar();
+            void cargar(true);
           }}
         />
       )}

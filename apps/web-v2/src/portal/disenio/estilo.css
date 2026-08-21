@@ -76,17 +76,11 @@ aside{
   position:sticky;top:0;height:100vh;height:100dvh;min-height:0;overflow:hidden;
 }
 .logo{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:4px 6px 6px}
-/* El lockup lleva el texto "condor.ai" en negro. `invert(1)` a secas lo
-   volvería legible en oscuro pero también daría vuelta los colores del ave
-   (el azul saldría naranjo); `hue-rotate(180deg)` los devuelve a su tono, que
-   es el truco estándar para imágenes en modo oscuro. */
-.logo .marca{width:132px;height:auto;display:block}
-:root[data-theme="dark"] .logo .marca{filter:invert(1) hue-rotate(180deg)}
-@media (prefers-color-scheme:dark){
-  :root:not([data-theme="light"]) .logo .marca{filter:invert(1) hue-rotate(180deg)}
-}
+.logo-lockup{display:flex;align-items:center;gap:4px;color:var(--texto);line-height:1}
+.logo-lockup .logo-ave{display:block;width:42px;height:35px;overflow:hidden;flex:none}
+.logo-lockup .logo-ave img{display:block;width:132px;max-width:none;height:auto;filter:none}
+.logo-lockup b{font-size:21px;font-weight:780;letter-spacing:-.065em;white-space:nowrap}
 .logo img.icono-app{width:30px;height:30px;object-fit:contain;filter:var(--logo-filtro)}
-.logo b{font-size:13px;font-weight:750;letter-spacing:.01em;line-height:1.1}
 .logo small{display:block;font-size:8.5px;letter-spacing:.14em;color:var(--texto-3);font-weight:600;padding-left:2px}
 .buscador{display:flex;align-items:center;gap:8px;padding:7px 9px;
   background:var(--panel);border:1px solid var(--borde);border-radius:9px;color:var(--texto-3)}

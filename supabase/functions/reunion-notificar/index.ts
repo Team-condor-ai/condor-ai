@@ -27,17 +27,23 @@ const escIcs = (s: string) => String(s || "").replace(/\\/g, "\\\\").replace(/;/
 // base64 seguro para UTF-8 (Deno)
 const b64utf8 = (s: string) => btoa(unescape(encodeURIComponent(s)));
 
-function buildICS(titulo: string, descripcion: string, ini: Date, fin: Date) {
+function buildICS(titulo: string, descripcion: string, inicios: Date[], duracionMin: number) {
+  const eventos = inicios.flatMap((ini) => {
+    const fin = new Date(ini.getTime() + duracionMin * 60000);
+    return [
+      "BEGIN:VEVENT",
+      "UID:" + crypto.randomUUID() + "@condorai.cl",
+      "DTSTAMP:" + fmtCal(new Date()),
+      "DTSTART:" + fmtCal(ini),
+      "DTEND:" + fmtCal(fin),
+      "SUMMARY:" + escIcs(titulo),
+      "DESCRIPTION:" + escIcs(descripcion),
+      "END:VEVENT",
+    ];
+  });
   return [
     "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//condor.ai//reuniones//ES", "CALSCALE:GREGORIAN",
-    "BEGIN:VEVENT",
-    "UID:" + crypto.randomUUID() + "@condorai.cl",
-    "DTSTAMP:" + fmtCal(new Date()),
-    "DTSTART:" + fmtCal(ini),
-    "DTEND:" + fmtCal(fin),
-    "SUMMARY:" + escIcs(titulo),
-    "DESCRIPTION:" + escIcs(descripcion),
-    "END:VEVENT", "END:VCALENDAR",
+    ...eventos, "END:VCALENDAR",
   ].join("\r\n");
 }
 
@@ -52,13 +58,16 @@ function gcalLink(titulo: string, descripcion: string, ini: Date, fin: Date) {
 async function enviarEmails(
   invitados: Array<{ nombre?: string; email?: string }>,
   titulo: string, fechaTxt: string, dur: string, cliente: string, descripcion: string,
-  ini: Date, fin: Date,
+  inicios: Date[], duracionMin: number,
 ) {
   const KEY = Deno.env.get("RESEND_API_KEY");
   const FROM = Deno.env.get("EMAIL_FROM");
   if (!KEY || !FROM) return { enviados: 0, motivo: "Resend no configurado" };
 
-  const ics = buildICS(titulo, [cliente && `Cliente: ${cliente}`, descripcion].filter(Boolean).join("\n"), ini, fin);
+  const ini = inicios[0];
+  const fin = new Date(ini.getTime() + duracionMin * 60000);
+  const esSerie = inicios.length > 1;
+  const ics = buildICS(titulo, [cliente && `Cliente: ${cliente}`, descripcion].filter(Boolean).join("\n"), inicios, duracionMin);
   const icsB64 = b64utf8(ics);
   const gcal = gcalLink(titulo, [cliente && `Cliente: ${cliente}`, descripcion].filter(Boolean).join(" — "), ini, fin);
   let enviados = 0;
@@ -69,10 +78,11 @@ async function enviarEmails(
       <p>Hola ${inv.nombre || ""} 👋, tienes una reunión agendada:</p>
       <p style="font-size:17px;font-weight:bold;margin:14px 0 4px">${titulo || "Reunión"}</p>
       <p style="margin:0">🗓️ ${fechaTxt} (${dur})</p>
+      ${esSerie ? `<p style="margin:4px 0;color:#555">${inicios.length} reuniones en esta serie</p>` : ""}
       ${cliente ? `<p style="margin:4px 0">👤 Cliente: ${cliente}</p>` : ""}
       ${descripcion ? `<p style="margin:8px 0;white-space:pre-line">📝 ${descripcion}</p>` : ""}
       <p style="margin-top:20px"><a href="${gcal}" target="_blank" style="background:#1f2bff;color:#fff;padding:12px 22px;border-radius:8px;text-decoration:none;font-weight:bold">📅 Añadir a Google Calendar</a></p>
-      <p style="color:#666;font-size:13px;margin-top:10px">Para Apple Calendar / Outlook: abre el archivo <b>reunion.ics</b> adjunto.</p>
+      <p style="color:#666;font-size:13px;margin-top:10px">Abre el archivo <b>reunion.ics</b> adjunto${esSerie ? " para importar todas las fechas de la serie" : " para Apple Calendar / Outlook"}.</p>
       <p style="color:#999;font-size:12px;margin-top:26px">condor.ai · Portal del equipo 🦅</p>
     </div>`;
     try {
@@ -115,8 +125,12 @@ Deno.serve(async (req) => {
   // 3) Datos comunes
   const ini = new Date(b.fecha_hora);
   const dur_min = b.duracion_min || 60;
-  const fin = new Date(ini.getTime() + dur_min * 60000);
-  const fecha = ini.toLocaleString("es-CL", { timeZone: "America/Santiago", weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
+  const inicios = (Array.isArray(b.ocurrencias) ? b.ocurrencias : [b.fecha_hora])
+    .map((valor: unknown) => new Date(String(valor)))
+    .filter((valor: Date) => !Number.isNaN(valor.getTime()));
+  if (!inicios.length) return json({ error: "fecha inválida" }, 400);
+  const fechaUnica = ini.toLocaleString("es-CL", { timeZone: "America/Santiago", weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
+  const fecha = b.resumen_recurrencia || fechaUnica;
   const dur = dur_min >= 60 ? `${dur_min / 60}h` : `${dur_min} min`;
   const invitados = Array.isArray(b.invitados) ? b.invitados.filter(Boolean) : [];
 
@@ -146,7 +160,7 @@ Deno.serve(async (req) => {
 
   // 3b) Email individual a cada invitado con botón Google Calendar + .ics adjunto
   const invitadosEmail = Array.isArray(b.invitados_email) ? b.invitados_email : [];
-  const emails = await enviarEmails(invitadosEmail, b.titulo || "Reunión", fecha, dur, b.cliente || "", b.descripcion || "", ini, fin);
+  const emails = await enviarEmails(invitadosEmail, b.titulo || "Reunión", fecha, dur, b.cliente || "", b.descripcion || "", inicios, dur_min);
 
   return json({ ok: true, telegram, emails });
 });

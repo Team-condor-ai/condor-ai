@@ -27,7 +27,7 @@ export function PanelSuscriptor({
 }: {
   suscriptor: SuscriptorRatia;
   cerrar: () => void;
-  cambiado: () => void;
+  cambiado: (suscriptor: SuscriptorRatia) => void;
 }) {
   const [s, setS] = useState(suscriptor);
   const [ingresos, setIngresos] = useState<IngresoRatia[]>([]);
@@ -51,8 +51,9 @@ export function PanelSuscriptor({
   async function guardar(campos: Partial<SuscriptorRatia>) {
     const { error } = await sb.from("suscriptores_ratia").update(campos).eq("id", s.id);
     if (error) return error.message;
-    setS((p) => ({ ...p, ...campos }));
-    cambiado();
+    const actualizado = { ...s, ...campos };
+    setS(actualizado);
+    cambiado(actualizado);
     return null;
   }
 

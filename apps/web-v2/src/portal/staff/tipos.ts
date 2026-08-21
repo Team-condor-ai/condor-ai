@@ -150,6 +150,10 @@ export type Reunion = {
   meet_url: string | null;
   creado_por: string | null;
   created_at: string | null;
+  serie_id: string | null;
+  recurrencia_reglas: Array<{ dia: number; hora: string }> | null;
+  recurrencia_desde: string | null;
+  recurrencia_hasta: string | null;
 };
 
 /** Perfiles del equipo, para elegir invitados (ver reuniones.sql). */

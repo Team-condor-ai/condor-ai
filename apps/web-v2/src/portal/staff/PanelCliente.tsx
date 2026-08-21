@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { PanelLateral } from "../disenio/PanelLateral";
 import { ContenidoCliente } from "./FichaCliente";
 import type { Cliente } from "./tipos";
@@ -17,9 +17,24 @@ import type { Cliente } from "./tipos";
  * Es el ÚNICO camino: no hay página del cliente. Dos formas de ver lo mismo
  * obligan a mantener las dos, y a la larga una queda atrás.
  */
-export function PanelCliente({ id, cerrar }: { id: string; cerrar: () => void }) {
+export function PanelCliente({
+  id,
+  cerrar,
+  cambiado,
+}: {
+  id: string;
+  cerrar: () => void;
+  cambiado?: () => void;
+}) {
   const [c, setC] = useState<Cliente | null>(null);
+  const primeraCarga = useRef(true);
   const nombre = c ? c.negocio || c.nombre || c.email || "Sin nombre" : "Cargando…";
+
+  function recibir(cliente: Cliente | null) {
+    setC(cliente);
+    if (primeraCarga.current) primeraCarga.current = false;
+    else cambiado?.();
+  }
 
   return (
     <PanelLateral
@@ -27,7 +42,7 @@ export function PanelCliente({ id, cerrar }: { id: string; cerrar: () => void })
       bajada={`${c?.plan || "Sin plan"}${c?.email ? ` · ${c.email}` : ""}`}
       cerrar={cerrar}
     >
-      <ContenidoCliente id={id} alCargar={setC} />
+      <ContenidoCliente id={id} alCargar={recibir} />
     </PanelLateral>
   );
 }

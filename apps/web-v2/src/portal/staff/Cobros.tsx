@@ -150,13 +150,40 @@ export function Cobros() {
     URL.revokeObjectURL(a.href);
   }
 
+  async function eliminarPendiente(pago: Pago) {
+    if (pago.estado && pago.estado !== "pendiente") return;
+    const cli = clm.get(pago.cliente_id);
+    const ok = window.confirm(
+      `¿Eliminar este pago pendiente de ${cli?.negocio || cli?.nombre || "el cliente"}?\n\n` +
+        "Esto limpia el registro interno, pero no cancela un link o intento de cobro que siga activo en Mercado Pago.",
+    );
+    if (!ok) return;
+    const anterior = pagos;
+    setPagos((lista) => lista.filter((x) => x.id !== pago.id));
+    const { data: eliminado, error: fallo } = await sb
+      .from("pagos")
+      .delete()
+      .eq("id", pago.id)
+      .or("estado.is.null,estado.eq.pendiente")
+      .select("id")
+      .maybeSingle();
+    if (fallo || !eliminado) {
+      setPagos(anterior);
+      setError(
+        fallo
+          ? "No se pudo eliminar el pago pendiente: " + fallo.message
+          : "El pago ya no está pendiente y no se eliminó.",
+      );
+    }
+  }
+
   return (
     <>
       <div className="barra">
         <div>
           <h1>Cobros</h1>
           <small className="subtitulo-barra">
-            Historial inalterable de pagos y mensualidades
+            Historial de pagos y mensualidades; depura intentos pendientes
           </small>
         </div>
         <button className="btn" onClick={exportar} disabled={!visibles.length}>
@@ -253,6 +280,7 @@ export function Cobros() {
                   <th>Medio y referencia</th>
                   <th className="num">Monto</th>
                   <th>Estado</th>
+                  <th aria-label="Acciones"></th>
                 </tr>
               </thead>
               <tbody>
@@ -322,6 +350,18 @@ export function Cobros() {
                           {p.estado || "pendiente"}
                         </span>
                       </td>
+                      <td className="acciones">
+                        {(!p.estado || p.estado === "pendiente") && (
+                          <button
+                            className="icono-btn peligro"
+                            onClick={() => void eliminarPendiente(p)}
+                            title="Eliminar pago pendiente"
+                            aria-label="Eliminar pago pendiente"
+                          >
+                            {Ico.eliminar({ t: 14 })}
+                          </button>
+                        )}
+                      </td>
                     </tr>
                   );
                 })}
@@ -330,8 +370,9 @@ export function Cobros() {
           </div>
         )}
         <p className="nota-auditoria">
-          Este historial muestra hechos de pago. Los acuerdos pendientes, links
-          y suscripciones activas se administran dentro de cada cliente.
+          Los pagos efectivos y rechazados quedan como historial. Sólo los
+          intentos que aún están pendientes se pueden eliminar; borrar uno no
+          cancela su link en el proveedor de pago.
         </p>
       </div>
     </>

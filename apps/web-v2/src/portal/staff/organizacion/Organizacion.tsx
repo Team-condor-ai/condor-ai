@@ -22,7 +22,9 @@ type Tarea = {
   asignado_a: string | null;
   cliente_id: string | null;
   inicio: string | null;
+  inicio_hora: string | null;
   vence: string | null;
+  vence_hora: string | null;
   etiquetas: string[];
   orden: number;
   hecha_en: string | null;
@@ -50,6 +52,15 @@ const COLUMNAS: { id: EstadoTarea; titulo: string; ayuda: string }[] = [
   { id: "bloqueada", titulo: "Bloqueadas", ayuda: "Necesitan destrabe" },
   { id: "hecha", titulo: "Terminadas", ayuda: "Cerradas" },
 ];
+
+function PrioridadTarea({ nivel, compacta = false }: { nivel: Prioridad; compacta?: boolean }) {
+  return (
+    <span className={`prioridad ${nivel}${compacta ? " compacta" : ""}`}>
+      <i aria-hidden="true" />
+      <span>{nivel}</span>
+    </span>
+  );
+}
 
 function sumarDias(fecha: string, dias: number) {
   const d = new Date(`${fecha}T12:00:00`);
@@ -80,8 +91,8 @@ export function Organizacion() {
   const [editandoReunion, setEditandoReunion] = useState(false);
   const [filtro, setFiltro] = useState<"todas" | "mias" | "vencidas">("todas");
 
-  async function cargar() {
-    setCargando(true);
+  async function cargar(silencioso = false) {
+    if (!silencioso) setCargando(true);
     const [ta, me, cl, co, pa, ra, re] = await Promise.all([
       sb.from("tareas").select("*").order("orden"),
       sb.from("metas").select("*").order("creado_en", { ascending: false }),
@@ -103,7 +114,7 @@ export function Organizacion() {
     setPagos((pa.data ?? []) as Pago[]);
     setRatia((ra.data ?? []) as SuscriptorRatia[]);
     setReuniones((re.data ?? []) as Reunion[]);
-    setCargando(false);
+    if (!silencioso) setCargando(false);
   }
   useEffect(() => {
     const timer = window.setTimeout(() => void cargar(), 0);
@@ -272,9 +283,7 @@ export function Organizacion() {
                           onClick={() => setEditando(t)}
                         >
                           <div className="tarea-arriba">
-                            <span className={`prioridad ${t.prioridad}`}>
-                              {t.prioridad}
-                            </span>
+                            <PrioridadTarea nivel={t.prioridad} />
                             {t.vence && (
                               <time
                                 className={
@@ -328,7 +337,26 @@ export function Organizacion() {
             reuniones={reuniones}
             cliente={cliente}
             abrir={setEditando}
-            recargar={cargar}
+            actualizarTarea={(id, cambios) =>
+              setTareas((lista) =>
+                lista.map((t) => (t.id === id ? { ...t, ...cambios } : t)),
+              )
+            }
+            actualizarReunion={(id, cambios) =>
+              setReuniones((lista) =>
+                lista.map((r) => (r.id === id ? { ...r, ...cambios } : r)),
+              )
+            }
+            quitarReunion={(id) =>
+              setReuniones((lista) => lista.filter((r) => r.id !== id))
+            }
+            restaurarReunion={(reunion) =>
+              setReuniones((lista) =>
+                [...lista, reunion].sort(
+                  (a, b) => +new Date(a.fecha_hora) - +new Date(b.fecha_hora),
+                ),
+              )
+            }
             error={setError}
           />
         ) : (
@@ -342,7 +370,7 @@ export function Organizacion() {
           cerrar={() => setEditando(null)}
           guardado={() => {
             setEditando(null);
-            cargar();
+            void cargar(true);
           }}
         />
       )}
@@ -352,7 +380,7 @@ export function Organizacion() {
           cerrar={() => setEditandoMeta(null)}
           guardado={() => {
             setEditandoMeta(null);
-            cargar();
+            void cargar(true);
           }}
         />
       )}
@@ -361,7 +389,7 @@ export function Organizacion() {
           cerrar={() => setEditandoReunion(false)}
           guardado={() => {
             setEditandoReunion(false);
-            cargar();
+            void cargar(true);
           }}
         />
       )}
@@ -374,14 +402,20 @@ function Calendario({
   reuniones,
   cliente,
   abrir,
-  recargar,
+  actualizarTarea,
+  actualizarReunion,
+  quitarReunion,
+  restaurarReunion,
   error,
 }: {
   tareas: Tarea[];
   reuniones: Reunion[];
   cliente: Map<string, Cliente>;
   abrir: (t: Tarea) => void;
-  recargar: () => void;
+  actualizarTarea: (id: string, cambios: Partial<Tarea>) => void;
+  actualizarReunion: (id: string, cambios: Partial<Reunion>) => void;
+  quitarReunion: (id: string) => void;
+  restaurarReunion: (reunion: Reunion) => void;
   error: (mensaje: string) => void;
 }) {
   const [mes, setMes] = useState(() => new Date());
@@ -390,14 +424,20 @@ function Calendario({
     id: string;
     tipo: "tarea" | "reunion";
     valor: number;
+    inicio?: string;
+    fin?: string;
   } | null>(null);
   const anio = mes.getFullYear(),
     m = mes.getMonth();
   const inicio = new Date(anio, m, 1);
   const dias = new Date(anio, m + 1, 0).getDate();
+  const huecosIniciales = inicio.getDay();
+  // Seis semanas siempre: el mes no queda visualmente truncado cuando su
+  // último día cae antes del sábado.
   const celdas = [
-    ...Array(inicio.getDay()).fill(null),
+    ...Array(huecosIniciales).fill(null),
     ...Array.from({ length: dias }, (_, i) => i + 1),
+    ...Array(42 - huecosIniciales - dias).fill(null),
   ];
   const clave = (d: number) =>
     `${anio}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
@@ -410,23 +450,45 @@ function Calendario({
       hour: "2-digit",
       minute: "2-digit",
     });
+  const hoy = fechaLocal(new Date().toISOString());
+
+  const inicioVisibleTarea = (t: Tarea) => {
+    if (ajustando?.tipo === "tarea" && ajustando.id === t.id && ajustando.inicio)
+      return ajustando.inicio;
+    return t.inicio ?? t.vence;
+  };
+  const finVisibleTarea = (t: Tarea) => {
+    const inicioT = t.inicio ?? t.vence;
+    if (!inicioT) return null;
+    if (ajustando?.tipo === "tarea" && ajustando.id === t.id && ajustando.fin)
+      return ajustando.fin;
+    return t.vence ?? inicioT;
+  };
 
   async function guardarTarea(t: Tarea, inicioNuevo: string, finNuevo: string) {
+    const anterior = { inicio: t.inicio, vence: t.vence };
+    actualizarTarea(t.id, { inicio: inicioNuevo, vence: finNuevo });
     const { error: fallo } = await sb
       .from("tareas")
       .update({ inicio: inicioNuevo, vence: finNuevo })
       .eq("id", t.id);
-    if (fallo) error(fallo.message);
-    else recargar();
+    if (fallo) {
+      actualizarTarea(t.id, anterior);
+      error(fallo.message);
+    }
   }
 
   async function guardarReunion(r: Reunion, cambios: Partial<Reunion>) {
+    const anterior = { ...r };
+    actualizarReunion(r.id, cambios);
     const { error: fallo } = await sb
       .from("reuniones")
       .update(cambios)
       .eq("id", r.id);
-    if (fallo) error(fallo.message);
-    else recargar();
+    if (fallo) {
+      actualizarReunion(r.id, anterior);
+      error(fallo.message);
+    }
   }
 
   async function soltar(e: React.DragEvent, destino: string) {
@@ -474,42 +536,143 @@ function Calendario({
     void guardarReunion(r, { duracion_min: minutos });
   }
 
-  function iniciarResize(
-    e: React.PointerEvent,
-    tipo: "tarea" | "reunion",
-    item: Tarea | Reunion,
+  function iniciarResizeTarea(
+    e: React.PointerEvent<HTMLSpanElement>,
+    tarea: Tarea,
+    borde: "inicio" | "fin",
   ) {
     e.preventDefault();
     e.stopPropagation();
+    const baseInicio = tarea.inicio ?? tarea.vence;
+    if (!baseInicio) return;
+    const baseFin = tarea.vence ?? baseInicio;
+    const semana = e.currentTarget.closest<HTMLElement>(".cal-semana");
+    const anchoDia = Math.max(1, (semana?.getBoundingClientRect().width ?? 700) / 7);
     const origen = e.clientX;
-    const base =
-      tipo === "tarea"
-        ? diferenciaDias(
-            (item as Tarea).inicio ?? (item as Tarea).vence ?? clave(1),
-            (item as Tarea).vence ?? (item as Tarea).inicio ?? clave(1),
-          ) + 1
-        : (item as Reunion).duracion_min ?? 60;
     let pasos = 0;
-    setAjustando({ id: item.id, tipo, valor: base });
+    let nuevoInicio = baseInicio;
+    let nuevoFin = baseFin;
+    document.body.classList.add("cal-redimensionando");
+    setAjustando({
+      id: tarea.id,
+      tipo: "tarea",
+      valor: diferenciaDias(baseInicio, baseFin) + 1,
+      inicio: baseInicio,
+      fin: baseFin,
+    });
     const mover = (ev: PointerEvent) => {
-      pasos = Math.round((ev.clientX - origen) / 34);
-      const valor =
-        tipo === "tarea"
-          ? Math.max(1, base + pasos)
-          : Math.min(12 * 60, Math.max(15, base + pasos * 15));
-      setAjustando({ id: item.id, tipo, valor });
+      pasos = Math.round((ev.clientX - origen) / anchoDia);
+      if (borde === "inicio") {
+        const candidato = sumarDias(baseInicio, pasos);
+        nuevoInicio = candidato > baseFin ? baseFin : candidato;
+        nuevoFin = baseFin;
+      } else {
+        const candidato = sumarDias(baseFin, pasos);
+        nuevoInicio = baseInicio;
+        nuevoFin = candidato < baseInicio ? baseInicio : candidato;
+      }
+      setAjustando({
+        id: tarea.id,
+        tipo: "tarea",
+        valor: diferenciaDias(nuevoInicio, nuevoFin) + 1,
+        inicio: nuevoInicio,
+        fin: nuevoFin,
+      });
     };
     const terminar = () => {
       window.removeEventListener("pointermove", mover);
       window.removeEventListener("pointerup", terminar);
+      window.removeEventListener("pointercancel", terminar);
+      document.body.classList.remove("cal-redimensionando");
       setAjustando(null);
       if (!pasos) return;
-      if (tipo === "tarea") redimensionarTarea(item as Tarea, pasos);
-      else redimensionarReunion(item as Reunion, pasos);
+      void guardarTarea(tarea, nuevoInicio, nuevoFin);
     };
     window.addEventListener("pointermove", mover);
     window.addEventListener("pointerup", terminar, { once: true });
+    window.addEventListener("pointercancel", terminar, { once: true });
   }
+
+  function iniciarResizeReunion(
+    e: React.PointerEvent<HTMLSpanElement>,
+    reunion: Reunion,
+  ) {
+    e.preventDefault();
+    e.stopPropagation();
+    const origen = e.clientY;
+    const base = reunion.duracion_min ?? 60;
+    let pasos = 0;
+    setAjustando({ id: reunion.id, tipo: "reunion", valor: base });
+    const mover = (ev: PointerEvent) => {
+      pasos = Math.round((ev.clientY - origen) / 12);
+      setAjustando({
+        id: reunion.id,
+        tipo: "reunion",
+        valor: Math.min(12 * 60, Math.max(15, base + pasos * 15)),
+      });
+    };
+    const terminar = () => {
+      window.removeEventListener("pointermove", mover);
+      window.removeEventListener("pointerup", terminar);
+      window.removeEventListener("pointercancel", terminar);
+      setAjustando(null);
+      if (pasos) redimensionarReunion(reunion, pasos);
+    };
+    window.addEventListener("pointermove", mover);
+    window.addEventListener("pointerup", terminar, { once: true });
+    window.addEventListener("pointercancel", terminar, { once: true });
+  }
+
+  function segmentosDeSemana(diasSemana: Array<number | null>) {
+    const fechas = diasSemana
+      .filter((d): d is number => d !== null)
+      .map(clave);
+    if (!fechas.length) return { segmentos: [], carriles: 0 };
+    const desdeSemana = fechas[0];
+    const hastaSemana = fechas.at(-1)!;
+    const crudos = tareas
+      .map((tarea) => {
+        const inicioT = inicioVisibleTarea(tarea);
+        const finT = finVisibleTarea(tarea);
+        if (!inicioT || !finT || finT < desdeSemana || inicioT > hastaSemana)
+          return null;
+        const inicioSegmento = inicioT < desdeSemana ? desdeSemana : inicioT;
+        const finSegmento = finT > hastaSemana ? hastaSemana : finT;
+        const columnaInicio = diasSemana.findIndex(
+          (d) => d !== null && clave(d) === inicioSegmento,
+        );
+        const columnaFin = diasSemana.findIndex(
+          (d) => d !== null && clave(d) === finSegmento,
+        );
+        if (columnaInicio < 0 || columnaFin < 0) return null;
+        return {
+          tarea,
+          inicioT,
+          finT,
+          columnaInicio,
+          columnaFin,
+          continuaAntes: inicioT < inicioSegmento,
+          continuaDespues: finT > finSegmento,
+        };
+      })
+      .filter((x): x is NonNullable<typeof x> => x !== null)
+      .sort(
+        (a, b) =>
+          a.columnaInicio - b.columnaInicio || b.columnaFin - a.columnaFin,
+      );
+
+    const finPorCarril: number[] = [];
+    const segmentos = crudos.map((segmento) => {
+      let carril = finPorCarril.findIndex(
+        (finAnterior) => segmento.columnaInicio > finAnterior,
+      );
+      if (carril < 0) carril = finPorCarril.length;
+      finPorCarril[carril] = segmento.columnaFin;
+      return { ...segmento, carril };
+    });
+    return { segmentos, carriles: finPorCarril.length };
+  }
+
   const proximas = reuniones
     .filter((r) => new Date(r.fecha_hora).getTime() >= ahora)
     .sort((a, b) => +new Date(a.fecha_hora) - +new Date(b.fecha_hora));
@@ -519,12 +682,15 @@ function Calendario({
 
   async function eliminar(r: Reunion) {
     if (!window.confirm(`¿Eliminar la reunión "${r.titulo}"?`)) return;
+    quitarReunion(r.id);
     const { error: fallo } = await sb
       .from("reuniones")
       .delete()
       .eq("id", r.id);
-    if (fallo) error(fallo.message);
-    else recargar();
+    if (fallo) {
+      restaurarReunion(r);
+      error(fallo.message);
+    }
   }
 
   return (
@@ -548,103 +714,144 @@ function Calendario({
           >
             {Ico.volver({ t: 15 })}
           </button>
+          <button className="btn chico cal-hoy-btn" onClick={() => setMes(new Date())}>
+            Hoy
+          </button>
         </header>
         <div className="cal-leyenda">
           <span><i className="tarea" /> Tareas</span>
           <span><i className="reunion" /> Reuniones</span>
         </div>
         <p className="cal-ayuda">
-          Arrastra un bloque para cambiarlo de fecha. Estira su borde derecho
-          para ajustar días o minutos · con teclado: Shift + ← / →.
+          Arrastra una tarea para moverla; toma sus costados para cambiar inicio
+          o término. En reuniones, estira el borde inferior para ajustar minutos.
         </p>
         <div className="cal-grid">
           {["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"].map((x) => (
             <b className="cal-dia" key={x}>{x}</b>
           ))}
-          {celdas.map((d, i) => (
-            <div
-              className={"cal-celda" + (!d ? " vacia" : "")}
-              key={i}
-              onDragOver={(e) => d && e.preventDefault()}
-              onDrop={(e) => d && soltar(e, clave(d))}
-            >
-              {d && (
-                <>
-                  <span>{d}</span>
-                  {reuniones
-                    .filter((r) => fechaLocal(r.fecha_hora) === clave(d))
-                    .map((r) => (
-                      <a
-                        key={r.id}
-                        className="evento reunion"
-                        href={r.meet_url || undefined}
-                        target={r.meet_url ? "_blank" : undefined}
-                        rel={r.meet_url ? "noreferrer" : undefined}
-                        title={r.meet_url ? "Entrar a la videollamada" : r.descripcion || undefined}
-                        style={
-                          {
-                            "--duracion-evento": `${Math.min(100, ((ajustando?.id === r.id ? ajustando.valor : r.duracion_min ?? 60) / 180) * 100)}%`,
-                          } as React.CSSProperties
-                        }
-                        draggable
-                        onDragStart={(e) => {
-                          e.dataTransfer.effectAllowed = "move";
-                          const dato = JSON.stringify({ tipo: "reunion", id: r.id, desde: clave(d) });
-                          e.dataTransfer.setData(
-                            "application/condor-cal",
-                            dato,
-                          );
-                          e.dataTransfer.setData("text/plain", dato);
-                        }}
-                        onKeyDown={(e) => {
-                          if (!e.shiftKey) return;
-                          if (e.key === "ArrowRight") {
-                            e.preventDefault();
-                            redimensionarReunion(r, 1);
-                          }
-                          if (e.key === "ArrowLeft") {
-                            e.preventDefault();
-                            redimensionarReunion(r, -1);
-                          }
-                        }}
-                      >
-                        <b>{hora(r.fecha_hora)} · {r.titulo}</b>
-                        <small>
-                          {r.cliente || "Cóndor"} · {ajustando?.id === r.id
-                            ? ajustando.valor
-                            : r.duracion_min ?? 60} min
-                        </small>
-                        <span
-                          className="evento-resize"
-                          aria-hidden="true"
-                          title="Arrastra para cambiar la duración"
-                          onPointerDown={(e) => iniciarResize(e, "reunion", r)}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                          }}
-                        />
-                      </a>
-                    ))}
-                  {tareas
-                    .filter((t) => {
-                      const inicioT = t.inicio ?? t.vence;
-                      const finT = t.vence ?? t.inicio;
-                      return !!inicioT && !!finT && clave(d) >= inicioT && clave(d) <= finT;
-                    })
-                    .map((t) => (
+          {Array.from({ length: 6 }, (_, semanaIndex) => {
+            const diasSemana = celdas.slice(semanaIndex * 7, semanaIndex * 7 + 7);
+            const { segmentos, carriles } = segmentosDeSemana(diasSemana);
+            return (
+              <div
+                className="cal-semana"
+                key={semanaIndex}
+                style={{ "--alto-tareas": `${carriles * 46}px` } as React.CSSProperties}
+              >
+                <div className="cal-semana-celdas">
+                  {diasSemana.map((d, i) => (
+                    <div
+                      className={
+                        "cal-celda" +
+                        (!d
+                          ? " vacia"
+                          : clave(d) === hoy
+                            ? " hoy"
+                            : clave(d) < hoy
+                              ? " pasada"
+                              : " futura")
+                      }
+                      key={i}
+                      onDragOver={(e) => d && e.preventDefault()}
+                      onDrop={(e) => d && soltar(e, clave(d))}
+                    >
+                      {d && (
+                        <>
+                          <span aria-current={clave(d) === hoy ? "date" : undefined}>
+                            {d}
+                          </span>
+                          {reuniones
+                            .filter((r) => fechaLocal(r.fecha_hora) === clave(d))
+                            .map((r) => (
+                              <a
+                                key={r.id}
+                                className={`evento reunion${new Date(r.fecha_hora).getTime() < ahora ? " evento-pasado" : ""}`}
+                                href={r.meet_url || undefined}
+                                target={r.meet_url ? "_blank" : undefined}
+                                rel={r.meet_url ? "noreferrer" : undefined}
+                                title={
+                                  r.meet_url
+                                    ? "Entrar a la videollamada"
+                                    : r.descripcion || undefined
+                                }
+                                style={
+                                  {
+                                    "--duracion-evento": `${Math.min(100, ((ajustando?.id === r.id ? ajustando.valor : r.duracion_min ?? 60) / 180) * 100)}%`,
+                                    minHeight: `${Math.min(88, 36 + ((ajustando?.id === r.id ? ajustando.valor : r.duracion_min ?? 60) / 15) * 2)}px`,
+                                  } as React.CSSProperties
+                                }
+                                draggable
+                                onDragStart={(e) => {
+                                  e.dataTransfer.effectAllowed = "move";
+                                  const dato = JSON.stringify({
+                                    tipo: "reunion",
+                                    id: r.id,
+                                    desde: clave(d),
+                                  });
+                                  e.dataTransfer.setData("application/condor-cal", dato);
+                                  e.dataTransfer.setData("text/plain", dato);
+                                }}
+                                onKeyDown={(e) => {
+                                  if (!e.shiftKey) return;
+                                  if (e.key === "ArrowRight") {
+                                    e.preventDefault();
+                                    redimensionarReunion(r, 1);
+                                  }
+                                  if (e.key === "ArrowLeft") {
+                                    e.preventDefault();
+                                    redimensionarReunion(r, -1);
+                                  }
+                                }}
+                              >
+                                <b>{hora(r.fecha_hora)} · {r.titulo}</b>
+                                <small>
+                                  {r.cliente || "Cóndor"} · {ajustando?.id === r.id
+                                    ? ajustando.valor
+                                    : r.duracion_min ?? 60} min
+                                </small>
+                                <span
+                                  className="evento-resize vertical"
+                                  aria-hidden="true"
+                                  title="Arrastra hacia arriba o abajo para cambiar la duración"
+                                  onPointerDown={(e) => iniciarResizeReunion(e, r)}
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                  }}
+                                />
+                              </a>
+                            ))}
+                        </>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="cal-tareas-capa" aria-label="Tareas de la semana">
+                  {segmentos.map((segmento) => {
+                    const { tarea: t } = segmento;
+                    const terminoEnPasado = segmento.finT < hoy;
+                    const vencida = terminoEnPasado && t.estado !== "hecha";
+                    return (
                       <button
-                        key={t.id}
-                        className={`evento tarea ${t.prioridad}${clave(d) !== (t.inicio ?? t.vence) ? " continua-antes" : ""}${clave(d) !== (t.vence ?? t.inicio) ? " continua-despues" : ""}`}
+                        key={`${t.id}-${semanaIndex}`}
+                        className={`evento tarea calendario-span ${t.prioridad}${segmento.continuaAntes ? " continua-antes" : ""}${segmento.continuaDespues ? " continua-despues" : ""}${ajustando?.id === t.id ? " ajustando" : ""}${vencida ? " tarea-vencida" : terminoEnPasado ? " tarea-pasada" : ""}`}
+                        style={{
+                          left: `calc(${(segmento.columnaInicio / 7) * 100}% + 3px)`,
+                          width: `calc(${((segmento.columnaFin - segmento.columnaInicio + 1) / 7) * 100}% - 6px)`,
+                          top: `${segmento.carril * 46}px`,
+                        }}
                         onClick={() => abrir(t)}
-                        draggable
+                        draggable={ajustando?.id !== t.id}
                         onDragStart={(e) => {
                           e.dataTransfer.effectAllowed = "move";
-                          const dato = JSON.stringify({ tipo: "tarea", id: t.id, desde: clave(d) });
-                          e.dataTransfer.setData(
-                            "application/condor-cal",
-                            dato,
-                          );
+                          const dato = JSON.stringify({
+                            tipo: "tarea",
+                            id: t.id,
+                            desde: segmento.inicioT,
+                          });
+                          e.dataTransfer.setData("application/condor-cal", dato);
                           e.dataTransfer.setData("text/plain", dato);
                         }}
                         onKeyDown={(e) => {
@@ -659,30 +866,43 @@ function Calendario({
                           }
                         }}
                       >
-                        <b>{t.titulo}</b>
-                        <small>
-                          {t.cliente_id
-                            ? cliente.get(t.cliente_id)?.negocio
-                            : t.asignado_a || "Cóndor"}
-                        </small>
-                        {clave(d) === (t.vence ?? t.inicio) && (
+                        {!segmento.continuaAntes && (
                           <span
-                            className="evento-resize"
+                            className="evento-resize lateral izq"
                             aria-hidden="true"
-                            title="Arrastra para ampliar o acortar días"
-                            onPointerDown={(e) => iniciarResize(e, "tarea", t)}
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                            }}
+                            title="Mover el inicio"
+                            onPointerDown={(e) => iniciarResizeTarea(e, t, "inicio")}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        )}
+                        <span className="evento-tarea-contenido">
+                          <b title={t.titulo}>{t.titulo}</b>
+                          <span className="evento-tarea-meta">
+                            <PrioridadTarea nivel={t.prioridad} compacta />
+                            <small>
+                              {t.inicio_hora ? `${t.inicio_hora.slice(0, 5)} · ` : ""}
+                              {t.cliente_id
+                                ? cliente.get(t.cliente_id)?.negocio
+                                : t.asignado_a || "Cóndor"}
+                            </small>
+                          </span>
+                        </span>
+                        {!segmento.continuaDespues && (
+                          <span
+                            className="evento-resize lateral der"
+                            aria-hidden="true"
+                            title="Mover el término"
+                            onPointerDown={(e) => iniciarResizeTarea(e, t, "fin")}
+                            onClick={(e) => e.stopPropagation()}
                           />
                         )}
                       </button>
-                    ))}
-                </>
-              )}
-            </div>
-          ))}
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </section>
       {proximas.length === 0 && (
@@ -849,7 +1069,9 @@ function EditorTarea({
     asignado_a: tarea?.asignado_a ?? "",
     cliente_id: tarea?.cliente_id ?? "",
     inicio: tarea?.inicio ?? tarea?.vence ?? "",
+    inicio_hora: tarea?.inicio_hora?.slice(0, 5) ?? "",
     vence: tarea?.vence ?? "",
+    vence_hora: tarea?.vence_hora?.slice(0, 5) ?? "",
     etiquetas: (tarea?.etiquetas ?? []).join(", "),
   });
   const [error, setError] = useState("");
@@ -863,7 +1085,9 @@ function EditorTarea({
       asignado_a: f.asignado_a.trim() || null,
       cliente_id: f.cliente_id || null,
       inicio: f.inicio || f.vence || null,
+      inicio_hora: f.inicio_hora || null,
       vence: f.vence || f.inicio || null,
+      vence_hora: f.vence_hora || null,
       etiquetas: f.etiquetas
         .split(",")
         .map((x) => x.trim())
@@ -950,7 +1174,26 @@ function EditorTarea({
               />
             </label>
             <label className="campo-lbl">
-              Comienza
+              Cliente
+              <select
+                className="campo"
+                value={f.cliente_id}
+                onChange={(e) => set("cliente_id", e.target.value)}
+              >
+                <option value="">Trabajo interno de Cóndor</option>
+                {clientes
+                  .filter((c) => !c.archivado)
+                  .map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.negocio || c.nombre}
+                    </option>
+                  ))}
+              </select>
+            </label>
+          </div>
+          <div className="dos horario-editor">
+            <label className="campo-lbl">
+              Fecha de inicio
               <input
                 className="campo"
                 type="date"
@@ -958,35 +1201,42 @@ function EditorTarea({
                 onChange={(e) => set("inicio", e.target.value)}
               />
             </label>
+            <label className="campo-lbl">
+              Hora de inicio
+              <input
+                className="campo"
+                type="time"
+                step="300"
+                value={f.inicio_hora}
+                onChange={(e) => set("inicio_hora", e.target.value)}
+              />
+            </label>
           </div>
-          <label className="campo-lbl">
-            Termina / vence
-            <input
-              className="campo"
-              type="date"
-              min={f.inicio || undefined}
-              value={f.vence}
-              onChange={(e) => set("vence", e.target.value)}
-            />
-            <small>En el calendario puedes mover el bloque o estirarlo desde su borde derecho.</small>
-          </label>
-          <label className="campo-lbl">
-            Cliente
-            <select
-              className="campo"
-              value={f.cliente_id}
-              onChange={(e) => set("cliente_id", e.target.value)}
-            >
-              <option value="">Trabajo interno de Cóndor</option>
-              {clientes
-                .filter((c) => !c.archivado)
-                .map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.negocio || c.nombre}
-                  </option>
-                ))}
-            </select>
-          </label>
+          <div className="dos horario-editor">
+            <label className="campo-lbl">
+              Fecha de término
+              <input
+                className="campo"
+                type="date"
+                min={f.inicio || undefined}
+                value={f.vence}
+                onChange={(e) => set("vence", e.target.value)}
+              />
+            </label>
+            <label className="campo-lbl">
+              Hora de término
+              <input
+                className="campo"
+                type="time"
+                step="300"
+                value={f.vence_hora}
+                onChange={(e) => set("vence_hora", e.target.value)}
+              />
+            </label>
+          </div>
+          <small className="ayuda-horario">
+            Las horas son opcionales. En el calendario puedes mover el bloque o estirarlo desde ambos costados.
+          </small>
           <label className="campo-lbl">
             Etiquetas
             <input

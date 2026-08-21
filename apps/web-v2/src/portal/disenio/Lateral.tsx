@@ -95,9 +95,14 @@ export function Lateral({ grupos, nombre, detalle, onSalir, abierto, cerrar }: P
   return (
     <aside className={abierto ? "abierto" : ""}>
       <div className="logo">
-        {/* El lockup horizontal de la marca, el mismo del sitio público. Lleva
-            "condor.ai" escrito, así que debajo solo queda "PORTAL". */}
-        <img className="marca" src="/assets/logo.png" alt="condor.ai" />
+        {/* El ave se recorta del asset original y queda sin filtros. El texto se
+            compone aparte para adaptarse al tema sin lavar los azules y rojos. */}
+        <span className="logo-lockup" aria-label="condor.ai">
+          <span className="logo-ave" aria-hidden="true">
+            <img src="/assets/logo.png" alt="" />
+          </span>
+          <b>condor.ai</b>
+        </span>
         <small>PORTAL</small>
       </div>
 

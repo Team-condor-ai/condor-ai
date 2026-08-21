@@ -57,8 +57,8 @@ export function Clientes() {
   const [viendo, setViendo] = useState<string | null>(() => params.get("ver"));
   const verCliente = (id: string | null) => setViendo(id);
 
-  async function cargar() {
-    setCargando(true);
+  async function cargar(silencioso = false) {
+    if (!silencioso) setCargando(true);
     const [{ data, error }, { data: co, error: eco }, { data: pa }] = await Promise.all([
       sb.from("clientes").select("*").order("creado_en", { ascending: false }),
       sb.from("cobros").select("*"),
@@ -75,7 +75,7 @@ export function Clientes() {
     setFilas((data ?? []) as Cliente[]);
     setCobros((co ?? []) as Cobro[]);
     setPagos((pa ?? []) as PagoResumen[]);
-    setCargando(false);
+    if (!silencioso) setCargando(false);
   }
 
   useEffect(() => {
@@ -196,7 +196,7 @@ export function Clientes() {
     // que se fue sigue siendo contabilidad.
     const { error } = await sb.from("clientes").update({ archivado: valor }).eq("id", c.id);
     if (error) setError(error.message);
-    else cargar();
+    else void cargar(true);
   }
 
   async function eliminar(c: Cliente) {
@@ -213,7 +213,7 @@ export function Clientes() {
     if (!ok) return;
     const { error } = await sb.from("clientes").delete().eq("id", c.id);
     if (error) setError(error.message);
-    else cargar();
+    else void cargar(true);
   }
 
   return (
@@ -367,12 +367,8 @@ export function Clientes() {
       {viendo && (
         <PanelCliente
           id={viendo}
-          cerrar={() => {
-            setViendo(null);
-            // Al cerrar se recarga: adentro se pudo cambiar el plan, agregar un
-            // cobro o anotar un pago, y la lista muestra justo esas columnas.
-            cargar();
-          }}
+          cerrar={() => setViendo(null)}
+          cambiado={() => void cargar(true)}
         />
       )}
 
@@ -382,7 +378,7 @@ export function Clientes() {
           cerrar={() => setEditando(null)}
           guardado={() => {
             setEditando(null);
-            cargar();
+            void cargar(true);
           }}
         />
       )}

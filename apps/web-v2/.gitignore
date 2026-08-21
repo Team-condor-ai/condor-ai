@@ -11,6 +11,8 @@ node_modules
 dist
 dist-ssr
 .vite
+.wrangler/
+.wrangler-dry-run/
 *.local
 
 # Editor directories and files
