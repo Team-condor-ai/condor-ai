@@ -16,13 +16,69 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const REPO = "joaquinmunozs/condor-ai";
+// El repo pasó a la organización el 21-ago-2026. La API de GitHub redirige
+// el nombre viejo, pero un 301 en un POST es frágil: se apunta al nuevo.
+const REPO = "Team-condor-ai/condor-ai";
 const WORKFLOW = "barbara-clientes.yml";
 const MAX_INTENTOS = 3;
 
 const TG_TOKEN = Deno.env.get("TELEGRAM_BOT_TOKEN") || "";
 const WEBHOOK_SECRET = Deno.env.get("TELEGRAM_WEBHOOK_SECRET") || "";
 const GH_TOKEN = Deno.env.get("GITHUB_DISPATCH_TOKEN") || "";
+const OPENAI_KEY = Deno.env.get("OPENAI_API_KEY") || "";
+
+// ── Notas de voz ──────────────────────────────────────────────────────────
+//
+// POR QUÉ IMPORTA MÁS DE LO QUE PARECE
+// Un cliente que escribe pone "ponle más color". El mismo cliente, en una
+// nota de voz de 40 segundos, explica que su público es adulto mayor, que el
+// azul le recuerda a la competencia y que la semana pasada le funcionó mejor
+// el otro. Es 10x más contexto por menos trabajo de su parte — y para un
+// producto cuyo diferencial es aprender, esa es la materia prima más rica que
+// hay.
+//
+// ANTES DE ESTO SE PERDÍAN ENTERAS. El webhook cortaba en `if (!texto)`, y
+// una nota de voz no trae `text`: el cliente mandaba su corrección y no
+// pasaba absolutamente nada. Ni se registraba, ni contaba como intento, ni
+// disparaba reintento. Silencio total.
+//
+// El costo no es un criterio: US$0,003 por minuto (~3 CLP una nota de voz).
+// Se elige `gpt-4o-mini-transcribe` por eso; si el español chileno con jerga
+// sale mal, subir a `gpt-4o-transcribe` es cambiar una palabra.
+async function transcribir(fileId: string): Promise<string> {
+  if (!OPENAI_KEY) {
+    console.error("OPENAI_API_KEY sin configurar: la nota de voz se pierde.");
+    return "";
+  }
+  try {
+    const meta = await (await fetch(
+      `https://api.telegram.org/bot${TG_TOKEN}/getFile?file_id=${fileId}`)).json();
+    const ruta = meta?.result?.file_path;
+    if (!ruta) { console.error("getFile sin file_path:", JSON.stringify(meta).slice(0, 200)); return ""; }
+
+    const audio = await (await fetch(
+      `https://api.telegram.org/file/bot${TG_TOKEN}/${ruta}`)).arrayBuffer();
+
+    const fd = new FormData();
+    fd.append("file", new Blob([audio]), ruta.split("/").pop() || "voz.ogg");
+    fd.append("model", "gpt-4o-mini-transcribe");
+    // Sin esto transcribe en el idioma que le parezca; el cliente habla español.
+    fd.append("language", "es");
+
+    const r = await fetch("https://api.openai.com/v1/audio/transcriptions", {
+      method: "POST",
+      headers: { Authorization: "Bearer " + OPENAI_KEY },
+      body: fd,
+    });
+    if (!r.ok) { console.error("transcripción falló:", r.status, (await r.text()).slice(0, 200)); return ""; }
+    const j = await r.json();
+    return String(j.text || "").trim();
+  } catch (e) {
+    console.error("transcribir error:", e);
+    return "";
+  }
+}
+
 
 async function tgSend(chatId: number | string, text: string) {
   try {
@@ -99,9 +155,12 @@ Deno.serve(async (req) => {
 
   const msg = update?.message;
   const chatId = msg?.chat?.id;
-  const texto = (msg?.text || "").trim();
+  let texto = (msg?.text || "").trim();
   const telegramMessageId = msg?.message_id != null ? String(msg.message_id) : null;
-  if (!chatId || !texto) return new Response("ok", { status: 200 });
+  // Una nota de voz no trae `text`. Antes esta línea la descartaba en
+  // silencio: el cliente mandaba su corrección hablada y no pasaba nada.
+  const fileVoz = msg?.voice?.file_id || msg?.audio?.file_id || msg?.video_note?.file_id || null;
+  if (!chatId || (!texto && !fileVoz)) return new Response("ok", { status: 200 });
 
   const sb = createClient(
     Deno.env.get("SUPABASE_URL")!,
@@ -134,6 +193,22 @@ Deno.serve(async (req) => {
       .eq("telegram_message_id", telegramMessageId)
       .maybeSingle();
     if (yaExiste) return new Response("ok", { status: 200 });
+  }
+
+  // TRANSCRIBIR RECIÉN ACÁ, y no arriba, a propósito: ya sabemos que el chat
+  // es de un cliente y que el mensaje no es un reintento de Telegram. Hacerlo
+  // antes significaría pagar por transcribir mensajes de chats ajenos y
+  // duplicados. Es poca plata, pero es plata que no compra nada.
+  if (!texto && fileVoz) {
+    texto = await transcribir(fileVoz);
+    if (!texto) {
+      await tgSend(chatId, "🎤 No pude entender el audio. ¿Me lo escribes?");
+      return new Response("ok", { status: 200 });
+    }
+    // Devolverle lo que se entendió NO es cortesía: si transcribió mal, lo
+    // corrige acá mismo en vez de recibir una pieza equivocada y gastar uno
+    // de sus 3 intentos en un malentendido.
+    await tgSend(chatId, `🎤 Entendí: _${texto}_`);
   }
 
   // 4) Registrar el mensaje del cliente en el espejo del chat.
