@@ -16,6 +16,7 @@
 
 import { tg, claude, textOf, genImagen, genVideo, unirClips, REGLA_TEXTO, supabase } from "./motor.mjs";
 import { componerSlide, PLANTILLAS, PLANTILLA_POR_DEFECTO } from "./plantillas.mjs";
+import { piezaAnterior, leerPedido, extraerCambios, instrucciones, verificar, faltantes } from "./correccion.mjs";
 
 const AK = process.env.ANTHROPIC_API_KEY;
 const TG_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
@@ -151,7 +152,24 @@ async function generarPara(cliente) {
 
   const paleta = (bb.paleta_colores || []).map(c => `${c.hex}${c.uso ? ` (${c.uso})` : ""}`).join(", ") || "a criterio, coherente con el rubro";
   const tipos = (form.tipo_contenido || []).join(", ") || "contenido general para redes";
-  const extraRetry = isRetry ? "\n\n⚠️ ESTE ES UN REINTENTO: el cliente pidió una corrección sobre la versión anterior. Genera una versión CLARAMENTE MEJOR y distinta (mejor diseño, mejor texto, otro enfoque del mismo tema)." : "";
+  // CORRECCIÓN DIRIGIDA. Antes acá había una sola línea que le decía al
+  // modelo "genera una versión claramente mejor y distinta", sin pasarle ni
+  // el pedido del cliente ni la pieza anterior. Eso no corrige: rehace.
+  // Ver el encabezado de `correccion.mjs`.
+  let previa = null, correccion = { cambios: [], es_correccion: false };
+  if (isRetry) {
+    previa = await piezaAnterior(db, barbaraId, TIPO);
+    const mensajes = await leerPedido(db, barbaraId, previa?.creado_en);
+    correccion = await extraerCambios(AK, mensajes, previa);
+    console.log(`[${negocio}] corrección: ${correccion.cambios.length} cambio(s) pedido(s)` +
+      (correccion.cambios.length ? " — " + correccion.cambios.map(c => c.que).join(", ") : ""));
+  }
+  // Si es reintento pero no se entendió ningún cambio concreto (mensaje vago
+  // o perdido), se cae al comportamiento viejo en vez de quedarse sin
+  // instrucciones: rehacer es peor que corregir, pero no entregar es peor aún.
+  const extraRetry = !isRetry ? ""
+    : correccion.cambios.length ? instrucciones(correccion.cambios, previa)
+    : "\n\n⚠️ ESTE ES UN REINTENTO: el cliente pidió una corrección pero no se pudo interpretar qué. Genera una versión CLARAMENTE MEJOR del mismo tema.";
   const contexto = `Marca: ${negocio} (rubro: ${rubro || "no especificado"})
 Paleta de marca: ${paleta}
 Tipografía de marca: ${bb.tipografia || "a criterio, legible y editorial"}
@@ -173,16 +191,55 @@ ${reglas}${patrones ? `
 LO QUE FUNCIONA EN GENERAL (patrones de rendimiento, no reglas de esta marca):
 ${patrones}` : ""}${extraRetry}`;
 
+  // VERIFICAR ANTES DE GASTAR. Se comprueba el PLAN (el JSON), no la pieza
+  // compuesta, y por dos razones que importan en pesos y en paciencia:
+  //
+  //   · Un carrusel se compone DESDE este JSON (ver plantillas.mjs), así que
+  //     el JSON es la pieza: verificarlo es verificarla.
+  //   · Un UGC son 2-3 clips de Seedance (~131 CLP cada uno). Descubrir
+  //     recién ahí que la corrección no se cumplió sería pagar por una pieza
+  //     que hay que rehacer igual.
+  //
+  // Y si falta algo, se reintenta UNA vez pidiendo solo lo que faltó. Ese
+  // reintento es de texto, cuesta centavos y NO gasta uno de los 3 intentos
+  // del cliente: sus intentos son para cuando la pieza no le gusta, no para
+  // cuando Bárbara no entendió.
+  async function asegurarCorreccion(pedirPlan, plan) {
+    if (!correccion.cambios.length || !previa?.contenido) return { plan, cumplidos: null };
+    let v = await verificar(AK, correccion.cambios, previa.contenido, plan);
+    let falta = faltantes(correccion.cambios, v.resultados);
+    if (falta.length) {
+      console.log(`[${negocio}] faltaron ${falta.length} punto(s), reintento interno: ` +
+        falta.map(f => f.que).join(", "));
+      const insistir = "\n\nLA VERSIÓN QUE ACABAS DE PROPONER NO CUMPLE ESTOS PUNTOS:\n" +
+        falta.map(f => `  · ${f.que} → ${f.accion}${f.motivo ? ` (${f.motivo})` : ""}`).join("\n") +
+        "\n\nHazlos ahora, sin tocar nada más de lo que ya estaba bien.";
+      try {
+        const plan2 = await pedirPlan(insistir);
+        const v2 = await verificar(AK, correccion.cambios, previa.contenido, plan2);
+        const falta2 = faltantes(correccion.cambios, v2.resultados);
+        if (falta2.length <= falta.length) { plan = plan2; v = v2; falta = falta2; }
+      } catch (e) {
+        console.log(`[${negocio}] el reintento interno falló, sigo con la primera versión:`, String(e).slice(0, 120));
+      }
+    }
+    if (v.cambio_de_mas) console.log(`[${negocio}] ojo, cambió algo que nadie pidió: ${v.cambio_de_mas}`);
+    return { plan, cumplidos: v.resultados, falta };
+  }
+  let verificacion = { cumplidos: null, falta: [] };
+
   let plan_contenido, mediaCaption;
 
   if (TIPO === "ugc") {
-    const dir = await claude(AK, {
+    const pedirPlanUGC = async (extra = "") => JSON.parse(textOf(await claude(AK, {
       model: "claude-sonnet-4-6", max_tokens: 2500,
       system: `Eres Bárbara, directora creativa de "${negocio}" (rubro: ${rubro || "no especificado"}). Diriges un video UGC vertical 9:16 (2-3 tomas de 4-6s): UNA PERSONA mostrando el producto o servicio y HABLÁNDOLE A LA CÁMARA, estilo grabado con su propio celular — casero y genuino, nunca un comercial pulido. La persona puede cambiar entre piezas. Sigues la identidad de marca del cliente. NUNCA repites ángulos de las piezas recientes. Responde SOLO con el JSON.`,
       output_config: { format: { type: "json_schema", schema: schemaUGC } },
-      messages: [{ role: "user", content: `${contexto}\n\nCrea el UGC con un ángulo NUEVO, fiel a la marca.` }],
-    });
-    plan_contenido = JSON.parse(textOf(dir));
+      messages: [{ role: "user", content: `${contexto}${extra}\n\nCrea el UGC con un ángulo NUEVO, fiel a la marca.` }],
+    })));
+    plan_contenido = await pedirPlanUGC("");
+    verificacion = await asegurarCorreccion(pedirPlanUGC, plan_contenido);
+    plan_contenido = verificacion.plan || plan_contenido;
     const clips = (plan_contenido.clips || []).slice(0, 3);
     const urls = [];
     for (let i = 0; i < clips.length; i++) {
@@ -205,13 +262,15 @@ ${patrones}` : ""}${extraRetry}`;
     mediaCaption = plan_contenido.caption;
   } else {
     const nSlides = TIPO === "historia" ? 1 : 6;
-    const dir = await claude(AK, {
+    const pedirPlanSlides = async (extra = "") => JSON.parse(textOf(await claude(AK, {
       model: "claude-sonnet-4-6", max_tokens: 4000,
       system: `Eres Bárbara, directora creativa de "${negocio}" (rubro: ${rubro || "no especificado"}). Diseñas ${TIPO === "historia" ? "una historia de Instagram (1 imagen)" : `un carrusel de Instagram (${nSlides} slides)`} de nivel agencia. Sigues la identidad de marca del cliente al pie de la letra. Escribes la COPY FINAL de cada slide: el titular y el cuerpo tal cual los va a leer la persona. El diseño lo pone una plantilla de marca, así que NO describes imágenes ni composición — solo escribes las palabras, y tienen que sostenerse solas. NUNCA repites ángulos de las piezas recientes. Responde SOLO con el JSON.`,
       output_config: { format: { type: "json_schema", schema } },
-      messages: [{ role: "user", content: `${contexto}\n\nCrea ${TIPO === "historia" ? "la historia" : `el carrusel de ${nSlides} slides`} con un ángulo NUEVO, fiel a la marca.` }],
-    });
-    plan_contenido = JSON.parse(textOf(dir));
+      messages: [{ role: "user", content: `${contexto}${extra}\n\nCrea ${TIPO === "historia" ? "la historia" : `el carrusel de ${nSlides} slides`} con un ángulo NUEVO, fiel a la marca.` }],
+    })));
+    plan_contenido = await pedirPlanSlides("");
+    verificacion = await asegurarCorreccion(pedirPlanSlides, plan_contenido);
+    plan_contenido = verificacion.plan || plan_contenido;
     const slides = (plan_contenido.slides || []).slice(0, nSlides);
 
     // Los slides se COMPONEN, no se dibujan. Ver `plantillas.mjs`: un carrusel
@@ -299,7 +358,33 @@ ${patrones}` : ""}${extraRetry}`;
     tipo: TIPO,
     angulo: plan_contenido.angulo || "",
     titulo: negocio,
+    // El plan ES la pieza: los carruseles se componen desde este JSON. Sin
+    // guardarlo, el próximo reintento no tiene qué corregir y vuelve a
+    // empezar de cero, que es el bug que esto vino a arreglar.
+    contenido: plan_contenido,
+    cambios_pedidos: correccion.cambios.length ? correccion.cambios : null,
+    cambios_cumplidos: verificacion.cumplidos || null,
+    corrige_a: isRetry && previa ? previa.id : null,
   });
+
+  // AVISARLE A STAFF SI LA CORRECCIÓN NO SE LOGRÓ.
+  //
+  // Antes, al agotarse los 3 intentos el cliente quedaba `bloqueado` y no
+  // pasaba nada más: nadie se enteraba. Es el mismo modo de falla silenciosa
+  // que ya costó caro cuando las 3 correcciones eran por cliente de por vida
+  // — el sistema se traba y solo se descubre porque el cliente reclama.
+  //
+  // Ahora queda registrado QUÉ se pidió y QUÉ no se pudo hacer, para que el
+  // portal lo muestre y alguien se haga cargo con el detalle a la vista.
+  if (verificacion.falta?.length) {
+    await db.patch(`barbara_correcciones?barbara_cliente_id=eq.${barbaraId}`, {
+      ultimo_pedido: correccion.cambios.map(c => `${c.que}: ${c.accion}`).join(" | ").slice(0, 500),
+      ultimo_faltante: verificacion.falta,
+      avisado_staff_en: new Date().toISOString(),
+    }).catch((e) => console.error("no se pudo registrar el faltante:", String(e).slice(0, 120)));
+    console.log(`[${negocio}] ⚠️ quedaron ${verificacion.falta.length} punto(s) sin cumplir:`,
+      verificacion.falta.map(f => f.que).join(", "));
+  }
   console.log(`[${negocio}] OK — ${TIPO} generado, ángulo: ${plan_contenido.angulo}`);
 }
 
