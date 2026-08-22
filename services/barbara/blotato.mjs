@@ -94,6 +94,7 @@ export function crearClienteBlotato({
     obtenerUsuario: () => request("GET", "/users/me"),
     listarCuentas: () => request("GET", "/users/me/accounts"),
     listarSubcuentas: (accountId) => request("GET", `/users/me/accounts/${encodeURIComponent(requerido(accountId, "accountId"))}/subaccounts`),
+    subirMedia: (url) => request("POST", "/media", { url: limpiarUrl(url) }),
     crearPublicacion: (payload) => request("POST", "/posts", payload),
     obtenerPublicacion: (postSubmissionId) => request("GET", `/posts/${encodeURIComponent(requerido(postSubmissionId, "postSubmissionId"))}`),
   };
@@ -111,4 +112,3 @@ export async function esperarPublicacion(cliente, postSubmissionId, {
   }
   throw new BlotatoError(`Tiempo de espera agotado para ${postSubmissionId}`);
 }
-

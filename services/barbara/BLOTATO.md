@@ -4,10 +4,10 @@ Esta integración agrega el adaptador de publicación, pero **no publica automá
 
 ## Estado del flujo
 
-1. Bárbara genera carruseles y los envía a Telegram para revisión.
-2. `blotato-cli.mjs` puede validar la cuenta y construir una publicación en seco.
-3. La publicación real exige `BLOTATO_CONFIRMAR_PUBLICACION=PUBLICAR` en esa ejecución.
-4. Todavía falta conectar la aprobación de Telegram/Condor con la publicación real. No debe activarse antes de definir el mecanismo de aprobación y disponer de URLs persistentes para las imágenes aprobadas.
+1. Bárbara genera carruseles, guarda un artefacto privado durante 30 días y los envía a Telegram para revisión.
+2. `blotato-cli.mjs` valida la cuenta y permite construir una publicación en seco.
+3. `Aprobar barbara` dispara un workflow separado que descarga exactamente el artefacto revisado, reserva un bloqueo anti-duplicados, sube la media a Blotato y publica el carrusel.
+4. La publicación real exige `BLOTATO_CONFIRMAR_PUBLICACION=PUBLICAR` y un `BLOTATO_INSTAGRAM_ACCOUNT_ID` válido.
 
 ## Configuración segura
 
@@ -18,7 +18,7 @@ Cuando exista la cuenta:
 1. Conectar Instagram de Cóndor y las demás redes acordadas desde Blotato.
 2. Guardar la clave como secret de GitHub `BLOTATO_API_KEY`; nunca en `.env`, código, logs ni documentación.
 3. Ejecutar manualmente el workflow `Blotato - diagnóstico` con la acción `cuentas`.
-4. Copiar el `accountId` de la cuenta correcta a un GitHub variable `BLOTATO_ACCOUNT_ID` cuando se habilite el flujo definitivo.
+4. Copiar el `accountId` de Instagram a la GitHub variable `BLOTATO_INSTAGRAM_ACCOUNT_ID`.
 
 Para Facebook también se necesita el identificador de página en `target.pageId`. `content.platform` y `target.targetType` deben coincidir.
 
@@ -65,7 +65,6 @@ Opcionales:
 - Aprobación manual o publicación automática.
 - Cadencia y horarios por red.
 - Reglas del caption por tipo de contenido.
-- Almacenamiento persistente de las imágenes aprobadas y bitácora de publicación.
+- Retención definitiva y bitácora comercial de publicaciones más allá de los 30 días del artefacto temporal.
 
-Recomendación para la primera versión: generar → revisar en Telegram/Condor → aprobar explícitamente → publicar el mismo artefacto mediante una cola persistente. Así la pieza publicada es exactamente la que se revisó.
-
+Flujo implementado para la primera versión: generar → revisar en Telegram → aprobar explícitamente → publicar el mismo artefacto privado. Así la pieza publicada es exactamente la que se revisó.

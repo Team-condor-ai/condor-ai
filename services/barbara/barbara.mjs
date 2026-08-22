@@ -9,7 +9,7 @@
 // Variables: DIA (lunes|miercoles|viernes|test) · RETRY=1 (reintento del comando "Denuevo barbara")
 
 import { execFileSync } from "node:child_process";
-import { readFileSync, writeFileSync, existsSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 
 const AK = process.env.ANTHROPIC_API_KEY;
 const TG = process.env.TELEGRAM_BOT_TOKEN;
@@ -19,6 +19,7 @@ const isRetry = process.env.RETRY === "1";
 
 const N_SLIDES = 6;
 const LOG = "services/barbara/content-log.json";
+const OUTBOX = process.env.BARBARA_OUTBOX_DIR;
 
 // Día → tipo
 const rawDia = (process.env.DIA || "").trim().toLowerCase();
@@ -187,7 +188,29 @@ async function main() {
   }
   if (!imgs.length) throw new Error("No se generó ninguna imagen");
 
-  // 5) Enviar a Telegram
+  // 5) Guardar exactamente la pieza revisada como artefacto privado de GitHub.
+  // La publicación posterior usa estas mismas imágenes; nunca regenera contenido al aprobar.
+  const runId = process.env.GITHUB_RUN_ID || "local";
+  if (OUTBOX) {
+    mkdirSync(OUTBOX, { recursive: true });
+    const files = imgs.map((buf, i) => {
+      const nombre = `slide-${String(i + 1).padStart(2, "0")}.png`;
+      writeFileSync(`${OUTBOX}/${nombre}`, buf);
+      return nombre;
+    });
+    writeFileSync(`${OUTBOX}/manifest.json`, JSON.stringify({
+      version: 1,
+      runId,
+      generatedAt: new Date().toISOString(),
+      type: "carousel",
+      platform: "instagram",
+      caption: plan.caption || "",
+      angle: plan.angulo || "",
+      files,
+    }, null, 2) + "\n");
+  }
+
+  // 6) Enviar a Telegram
   for (let i = 0; i < imgs.length; i++) {
     const fd = new FormData();
     fd.append("chat_id", CHAT);
@@ -196,10 +219,10 @@ async function main() {
     const j = await (await tg("sendPhoto", fd, true)).json();
     if (!j.ok) throw new Error("Telegram sendPhoto: " + (j.description || ""));
   }
-  await tg("sendMessage", { chat_id: CHAT, text: `🤖 *Barbara* — ${tema.titulo}\nListo para revisar y subir.\n\n📝 *Caption:*\n\n${plan.caption || ""}\n\n_Si quedó mal, responde "Denuevo barbara" en el grupo._`, parse_mode: "Markdown" });
+  await tg("sendMessage", { chat_id: CHAT, text: `🤖 *Barbara* — ${tema.titulo}\nListo para revisar. ID: \`${runId}\`\n\n📝 *Caption:*\n\n${plan.caption || ""}\n\n_Si quedó mal: "Denuevo barbara". Si está aprobado: "Aprobar barbara"._`, parse_mode: "Markdown" });
 
-  // 6) Registrar en memoria (anti-repetición)
-  guardarEnLog({ fecha: new Date().toISOString().slice(0, 10), tipo: dia, angulo: plan.angulo || slides[0]?.titulo || "", titulo: tema.titulo });
+  // 7) Registrar en memoria (anti-repetición + artefacto aprobable)
+  guardarEnLog({ fecha: new Date().toISOString().slice(0, 10), tipo: dia, angulo: plan.angulo || slides[0]?.titulo || "", titulo: tema.titulo, runId });
   console.log("OK", dia, "| ángulo:", plan.angulo);
 }
 

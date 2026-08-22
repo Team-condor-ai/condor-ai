@@ -22,8 +22,8 @@ jobs:
   barbara:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: '22'
       - name: Instalar CLI de Higgsfield
@@ -73,6 +73,14 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           DIA: ${{ github.event.inputs.dia }}
           RETRY: ${{ github.event.inputs.retry }}
+          BARBARA_OUTBOX_DIR: .barbara-outbox
+      - name: Guardar pieza aprobable
+        uses: actions/upload-artifact@v4
+        with:
+          name: barbara-${{ github.run_id }}
+          path: .barbara-outbox
+          if-no-files-found: error
+          retention-days: 30
       - name: Persistir credenciales rotadas + memoria
         if: always()
         env:

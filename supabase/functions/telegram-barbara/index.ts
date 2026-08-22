@@ -1,44 +1,71 @@
-// condor.ai · Edge Function "telegram-barbara"
-// Webhook de Telegram: escucha el grupo y, si alguien escribe "Denuevo barbara",
-// dispara un REINTENTO del último contenido que Barbara generó (mejorándolo).
-//
-// Cómo sabe qué reintentar: lee barbara/content-log.json del repo (último registro)
-// y dispara el workflow correspondiente (barbara.yml o reels.yml) con retry=1.
-//
-// Deploy: supabase functions deploy telegram-barbara --no-verify-jwt
-// Secretos: GH_TOKEN (PAT con permiso 'actions:write' sobre el repo), TELEGRAM_BOT_TOKEN
-// Luego registrar el webhook (ver PASOS abajo en el repo).
+// condor.ai · Webhook de Telegram para revisar contenido de Bárbara.
+// "Denuevo barbara" regenera la última pieza.
+// "Aprobar barbara" publica exactamente el artefacto revisado mediante Blotato.
 
-const REPO = "joaquinmunozs/condorweb-diagnostico";
+const REPO = Deno.env.get("GH_REPO") || "Team-condor-ai/condor-ai";
 const GH = Deno.env.get("GH_TOKEN");
 const TG = Deno.env.get("TELEGRAM_BOT_TOKEN");
+const CHAT_PERMITIDO = Deno.env.get("TELEGRAM_CHAT_ID");
+
+type UltimoContenido = {
+  tipo: string;
+  runId?: string;
+  workflowReintento: string;
+  inputsReintento: Record<string, string>;
+};
 
 async function tgSend(chatId: number | string, text: string) {
   await fetch(`https://api.telegram.org/bot${TG}/sendMessage`, {
-    method: "POST", headers: { "Content-Type": "application/json" },
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ chat_id: chatId, text }),
   });
 }
 
-// Lee el último registro del content-log para saber qué tipo reintentar
-async function ultimoContenido(): Promise<{ workflow: string; input: Record<string, string> } | null> {
+function githubHeaders() {
+  return {
+    Authorization: `Bearer ${GH}`,
+    Accept: "application/vnd.github+json",
+    "X-GitHub-Api-Version": "2022-11-28",
+    "User-Agent": "condor-barbara",
+  };
+}
+
+async function ultimoContenido(): Promise<UltimoContenido | null> {
   try {
-    const r = await fetch(`https://raw.githubusercontent.com/${REPO}/main/barbara/content-log.json?t=${Date.now()}`);
-    const log = await r.json();
+    const r = await fetch(`https://api.github.com/repos/${REPO}/contents/services/barbara/content-log.json?ref=main&t=${Date.now()}`, {
+      headers: githubHeaders(),
+    });
+    if (!r.ok) return null;
+    const archivo = await r.json();
+    const texto = atob(String(archivo.content || "").replace(/\s/g, ""));
+    const log = JSON.parse(texto);
     const last = (log || [])[log.length - 1];
     if (!last) return null;
     const tipo = String(last.tipo || "");
     if (tipo.startsWith("reel-")) {
-      return { workflow: "reels.yml", input: { tipo: tipo.replace("reel-", ""), retry: "1" } };
+      return {
+        tipo,
+        runId: last.runId ? String(last.runId) : undefined,
+        workflowReintento: "reels.yml",
+        inputsReintento: { tipo: tipo.replace("reel-", ""), retry: "1" },
+      };
     }
-    return { workflow: "barbara.yml", input: { dia: tipo, retry: "1" } };
-  } catch { return null; }
+    return {
+      tipo,
+      runId: last.runId ? String(last.runId) : undefined,
+      workflowReintento: "barbara.yml",
+      inputsReintento: { dia: tipo, retry: "1" },
+    };
+  } catch {
+    return null;
+  }
 }
 
 async function dispararWorkflow(workflow: string, inputs: Record<string, string>) {
   const r = await fetch(`https://api.github.com/repos/${REPO}/actions/workflows/${workflow}/dispatches`, {
     method: "POST",
-    headers: { Authorization: "Bearer " + GH, Accept: "application/vnd.github+json", "Content-Type": "application/json", "User-Agent": "condor-barbara" },
+    headers: { ...githubHeaders(), "Content-Type": "application/json" },
     body: JSON.stringify({ ref: "main", inputs }),
   });
   return r.ok;
@@ -50,17 +77,43 @@ Deno.serve(async (req) => {
   try { update = await req.json(); } catch { return new Response("ok"); }
 
   const msg = update?.message || update?.channel_post;
-  const texto = (msg?.text || "").trim().toLowerCase();
+  const texto = String(msg?.text || "").trim().toLowerCase();
   const chatId = msg?.chat?.id;
   if (!chatId) return new Response("ok");
 
+  // Solo el grupo configurado puede disparar workflows y publicaciones.
+  if (!CHAT_PERMITIDO || String(chatId) !== String(CHAT_PERMITIDO)) return new Response("ok");
+
   if (texto === "denuevo barbara" || texto === "de nuevo barbara") {
     const ultimo = await ultimoContenido();
-    if (!ultimo) { await tgSend(chatId, "🤔 No encuentro el último contenido para reintentar. Genera uno primero."); return new Response("ok"); }
-    const ok = await dispararWorkflow(ultimo.workflow, ultimo.input);
+    if (!ultimo) {
+      await tgSend(chatId, "🤔 No encuentro el último contenido para reintentar. Genera uno primero.");
+      return new Response("ok");
+    }
+    const ok = await dispararWorkflow(ultimo.workflowReintento, ultimo.inputsReintento);
     await tgSend(chatId, ok
-      ? "🔄 Dale, Barbara está rehaciendo el último contenido mejorado. En unos minutos te lo mando de nuevo. 🦅"
-      : "⚠️ No pude disparar el reintento (revisa el GH_TOKEN).");
+      ? "🔄 Bárbara está rehaciendo el último contenido. En unos minutos llegará la nueva versión."
+      : "⚠️ No pude disparar el reintento. Revisa GH_TOKEN y sus permisos.");
   }
+
+  if (texto === "aprobar barbara") {
+    const ultimo = await ultimoContenido();
+    if (!ultimo?.runId) {
+      await tgSend(chatId, "⚠️ La última pieza no tiene un artefacto publicable. Genera una nueva con el flujo actualizado.");
+      return new Response("ok");
+    }
+    if (ultimo.tipo.startsWith("reel-")) {
+      await tgSend(chatId, "⚠️ La aprobación automática de reels aún no está habilitada. Esta primera versión publica carruseles.");
+      return new Response("ok");
+    }
+    const ok = await dispararWorkflow("barbara-publicar-blotato.yml", {
+      run_id: ultimo.runId,
+      confirmacion: "PUBLICAR",
+    });
+    await tgSend(chatId, ok
+      ? `✅ Pieza ${ultimo.runId} aprobada. Blotato está procesando la publicación.`
+      : "⚠️ No pude iniciar la publicación. Revisa la cuenta de Blotato y GH_TOKEN.");
+  }
+
   return new Response("ok");
 });

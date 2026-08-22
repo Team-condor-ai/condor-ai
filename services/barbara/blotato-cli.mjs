@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { readFileSync } from "node:fs";
 import { construirPayloadPublicacion, crearClienteBlotato, esperarPublicacion } from "./blotato.mjs";
+import { publicarOutbox } from "./blotato-outbox.mjs";
 
 const [comando = "ayuda", argumento] = process.argv.slice(2);
 
@@ -38,7 +39,7 @@ function imprimir(data) {
 
 async function main() {
   if (comando === "ayuda" || comando === "--help" || comando === "-h") {
-    console.log("Uso: node services/barbara/blotato-cli.mjs <me|cuentas|subcuentas|dry-run|publicar|estado> [id]");
+    console.log("Uso: node services/barbara/blotato-cli.mjs <me|cuentas|subcuentas|dry-run|publicar|publicar-outbox|estado> [id|directorio]");
     return;
   }
 
@@ -47,7 +48,7 @@ async function main() {
     return;
   }
 
-  if (comando === "publicar" && process.env.BLOTATO_CONFIRMAR_PUBLICACION !== "PUBLICAR") {
+  if (["publicar", "publicar-outbox"].includes(comando) && process.env.BLOTATO_CONFIRMAR_PUBLICACION !== "PUBLICAR") {
     throw new Error("Publicación bloqueada. Define BLOTATO_CONFIRMAR_PUBLICACION=PUBLICAR de forma explícita.");
   }
 
@@ -61,6 +62,20 @@ async function main() {
     const resultado = await cliente.crearPublicacion(payloadDesdeEntorno());
     imprimir(resultado);
     if (process.env.BLOTATO_ESPERAR_RESULTADO === "1" && resultado?.postSubmissionId) {
+      imprimir(await esperarPublicacion(cliente, resultado.postSubmissionId));
+    }
+    return;
+  }
+
+  if (comando === "publicar-outbox") {
+    const resultado = await publicarOutbox(cliente, {
+      directorio: argumento || process.env.BARBARA_OUTBOX_DIR || ".barbara-outbox",
+      accountId: process.env.BLOTATO_ACCOUNT_ID,
+      scheduledTime: process.env.BLOTATO_SCHEDULED_TIME || undefined,
+      useNextFreeSlot: booleanEnv("BLOTATO_USE_NEXT_FREE_SLOT"),
+    });
+    imprimir(resultado);
+    if (resultado?.postSubmissionId) {
       imprimir(await esperarPublicacion(cliente, resultado.postSubmissionId));
     }
     return;

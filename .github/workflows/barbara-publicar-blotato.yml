@@ -1,0 +1,68 @@
+name: Barbara - publicar pieza aprobada
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: "ID del run que generó la pieza revisada"
+        required: true
+        type: string
+      confirmacion:
+        description: "Confirmación explícita"
+        required: true
+        type: choice
+        options:
+          - PUBLICAR
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: barbara-publicar-${{ inputs.run_id }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+      - name: Descargar exactamente la pieza revisada
+        uses: actions/download-artifact@v4
+        with:
+          name: barbara-${{ inputs.run_id }}
+          path: .barbara-outbox
+          github-token: ${{ github.token }}
+          run-id: ${{ inputs.run_id }}
+      - name: Validar cuenta y evitar una publicación duplicada
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ACCOUNT_ID: ${{ vars.BLOTATO_INSTAGRAM_ACCOUNT_ID }}
+          SOURCE_RUN_ID: ${{ inputs.run_id }}
+        run: |
+          if [ -z "$ACCOUNT_ID" ]; then
+            echo "Falta la variable BLOTATO_INSTAGRAM_ACCOUNT_ID"
+            exit 1
+          fi
+          COUNT=$(gh api -X GET "repos/${{ github.repository }}/actions/artifacts" -f "name=barbara-publicacion-${SOURCE_RUN_ID}" --jq '.total_count')
+          if [ "$COUNT" != "0" ]; then
+            echo "La pieza ${SOURCE_RUN_ID} ya tiene una publicación iniciada. Se bloquea el duplicado."
+            exit 1
+          fi
+          mkdir -p .blotato-lock
+          printf '{"sourceRunId":"%s","lockedAt":"%s"}\n' "$SOURCE_RUN_ID" "$(date -u +%FT%TZ)" > .blotato-lock/lock.json
+      - name: Reservar publicación única
+        uses: actions/upload-artifact@v4
+        with:
+          name: barbara-publicacion-${{ inputs.run_id }}
+          path: .blotato-lock/lock.json
+          if-no-files-found: error
+          retention-days: 90
+      - name: Publicar carrusel aprobado y verificar resultado
+        env:
+          BLOTATO_API_KEY: ${{ secrets.BLOTATO_API_KEY }}
+          BLOTATO_ACCOUNT_ID: ${{ vars.BLOTATO_INSTAGRAM_ACCOUNT_ID }}
+          BLOTATO_CONFIRMAR_PUBLICACION: ${{ inputs.confirmacion }}
+        run: node services/barbara/blotato-cli.mjs publicar-outbox .barbara-outbox

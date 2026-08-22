@@ -40,6 +40,22 @@ test("cliente usa el header oficial y no filtra la clave en la respuesta", async
   assert.equal(peticion.options.headers["blotato-api-key"], "secreto-prueba");
 });
 
+test("sube media mediante el endpoint oficial", async () => {
+  let peticion;
+  const cliente = crearClienteBlotato({
+    apiKey: "x",
+    fetchImpl: async (url, options) => {
+      peticion = { url, options };
+      return new Response(JSON.stringify({ url: "https://database.blotato.com/media.png" }), { status: 201 });
+    },
+  });
+
+  const dataUrl = "data:image/png;base64,AAAA";
+  assert.equal((await cliente.subirMedia(dataUrl)).url, "https://database.blotato.com/media.png");
+  assert.equal(peticion.url, "https://backend.blotato.com/v2/media");
+  assert.deepEqual(JSON.parse(peticion.options.body), { url: dataUrl });
+});
+
 test("cliente conserva el error HTTP para diagnóstico", async () => {
   const cliente = crearClienteBlotato({
     apiKey: "x",
@@ -48,4 +64,3 @@ test("cliente conserva el error HTTP para diagnóstico", async () => {
 
   await assert.rejects(cliente.listarCuentas(), (error) => error.status === 401 && /unauthorized/.test(error.message));
 });
-
