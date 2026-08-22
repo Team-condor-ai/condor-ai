@@ -113,7 +113,7 @@ export function RegistrarMovimiento({
               Monto
               <input
                 className="campo" type="number" min={0} required
-                value={monto} onChange={(e) => setMonto(Number(e.target.value))}
+                value={monto || ""} onChange={(e) => setMonto(Number(e.target.value))}
               />
             </label>
             <label className="campo-lbl">

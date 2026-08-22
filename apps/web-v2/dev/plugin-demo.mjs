@@ -141,7 +141,7 @@ function comoRLS(tabla, filas, quien, datos) {
   const mio = datos.clientes.find((c) => (c.email ?? "").toLowerCase() === quien.email.toLowerCase());
   if (!mio) return [];
   if (tabla === "clientes") return filas.filter((f) => f.id === mio.id);
-  if (tabla === "cobros" || tabla === "pagos" || tabla === "cliente_productos")
+  if (tabla === "cobros" || tabla === "pagos")
     return filas.filter((f) => f.cliente_id === mio.id);
   return filas;
 }
@@ -240,29 +240,6 @@ export function pluginPortalDemo() {
               id: uuid(), creado_en: new Date().toISOString(), ...f,
             }));
             filas.push(...nuevas);
-            // Imita el trigger real: cobrar un producto también lo deja
-            // asignado al cliente, sin duplicar una asignación manual previa.
-            if (tabla === "cobros") {
-              for (const cobro of nuevas.filter((f) => f.producto_id)) {
-                const existe = datos.cliente_productos.some(
-                  (p) =>
-                    p.cliente_id === cobro.cliente_id &&
-                    p.producto_id === cobro.producto_id,
-                );
-                if (!existe)
-                  datos.cliente_productos.push({
-                    id: uuid(),
-                    cliente_id: cobro.cliente_id,
-                    producto_id: cobro.producto_id,
-                    estado: "activo",
-                    inicio: new Date().toISOString().slice(0, 10),
-                    fin: null,
-                    notas: null,
-                    creado_por: null,
-                    creado_en: new Date().toISOString(),
-                  });
-              }
-            }
             return json(res, unico ? nuevas[0] : nuevas, 201);
           }
           if (req.method === "PATCH") {
@@ -278,7 +255,6 @@ export function pluginPortalDemo() {
             if (tabla === "clientes") {
               datos.cobros = datos.cobros.filter((c) => !fuera.has(c.cliente_id));
               datos.pagos = datos.pagos.filter((p) => !fuera.has(p.cliente_id));
-              datos.cliente_productos = datos.cliente_productos.filter((p) => !fuera.has(p.cliente_id));
             }
             return json(res, []);
           }
@@ -292,18 +268,48 @@ export function pluginPortalDemo() {
             const b = (await cuerpoJson(req)) ?? {};
             const cobro = datos.cobros.find((c) => c.id === b.cobro_id);
             if (!cobro) return json(res, { error: "cobro no encontrado" }, 404);
-            const link = `https://www.mercadopago.cl/checkout/demo?cobro=${cobro.numero}`;
+            const paymentId = String(990000000 + Number(cobro.numero));
+            const link = `http://localhost:${PUERTO}/acceso/pago/resultado?cobro_id=${cobro.id}` +
+              (cobro.tipo === "mensual" ? "" : `&payment_id=${paymentId}`);
             cobro.link = link;
-            if (cobro.tipo === "mensual") cobro.mp_preapproval_id = "demo-" + cobro.numero;
+            if (cobro.tipo === "mensual") {
+              cobro.mp_preapproval_id = "demo-" + cobro.numero;
+              cobro.estado = "activa";
+            }
             else {
-              datos.pagos.unshift({
-                id: uuid(), cliente_id: cobro.cliente_id, cobro_id: cobro.id,
-                tipo: cobro.tipo, monto: cobro.monto, estado: "pendiente", mp_id: null,
-                detalle: cobro.titulo, fecha: null, metodo: "Mercado Pago", link,
-                periodo: null, cobro_enviado_en: null, creado_en: new Date().toISOString(),
-              });
+              const anterior = datos.pagos.find((p) => p.cobro_id === cobro.id && p.estado === "pendiente");
+              if (!anterior) datos.pagos.unshift({
+                  id: uuid(), cliente_id: cobro.cliente_id, cobro_id: cobro.id,
+                  tipo: cobro.tipo, monto: cobro.monto, estado: "pendiente", mp_id: paymentId,
+                  detalle: cobro.titulo, fecha: null, metodo: "Mercado Pago", link,
+                  periodo: null, cobro_enviado_en: null, creado_en: new Date().toISOString(),
+                });
             }
             return json(res, { init_point: link, correo_enviado: !!b.enviar_correo, cobro_id: cobro.id });
+          }
+          if (fn === "verificar-pago") {
+            const b = (await cuerpoJson(req)) ?? {};
+            const pago = datos.pagos.find((p) => String(p.mp_id) === String(b.payment_id));
+            if (!pago) return json(res, { error: "pago demo no encontrado" }, 404);
+            pago.estado = "pagado";
+            pago.fecha = new Date().toISOString().slice(0, 10);
+            pago.mp_status_detail = "accredited";
+            pago.mp_net_received = pago.monto;
+            const cobro = datos.cobros.find((c) => c.id === pago.cobro_id);
+            if (cobro?.tipo === "unico") cobro.estado = "pagado";
+            return json(res, {
+              ok: true, estado: "pagado", pago_id: pago.id, cobro_id: pago.cobro_id,
+              monto: pago.monto, moneda: cobro?.moneda || "CLP", detalle: pago.detalle,
+              fecha: pago.fecha, demo: true,
+            });
+          }
+          if (fn === "gestionar-suscripcion") {
+            const b = (await cuerpoJson(req)) ?? {};
+            const cobro = datos.cobros.find((c) => c.id === b.cobro_id);
+            if (!cobro) return json(res, { error: "suscripción no encontrada" }, 404);
+            cobro.estado = b.accion === "pausar" ? "pausada" : b.accion === "reanudar" ? "activa" : "cancelada";
+            if (b.accion === "cancelar") cobro.link = null;
+            return json(res, { ok: true, estado: cobro.estado, demo: true });
           }
           if (fn === "enviar-correos") {
             const b = (await cuerpoJson(req)) ?? {};

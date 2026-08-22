@@ -14,9 +14,12 @@
 // El cliente debe estar logueado en el portal; se identifica por su correo.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import {
+  portalBase,
+  validarMonedaCuenta,
+  webhookUrl,
+} from "../_shared/mercadopago.ts";
 
-const PORTAL = "https://condorai.cl/portal.html";
-const WEBHOOK = "https://ogmvdthxwcmvqjlxhpsr.supabase.co/functions/v1/mp-webhook";
 const EMAIL_FROM = Deno.env.get("EMAIL_FROM") || "condor.ai <onboarding@resend.dev>";
 const CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "POST, OPTIONS", "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info, x-supabase-api-version" };
 const json = (o: unknown, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "Content-Type": "application/json", ...CORS } });
@@ -43,7 +46,7 @@ function emailCobro(cliente: any, tipo: string, monto: number, moneda: string, l
           <a href="${link}" style="display:inline-block;padding:15px 34px;color:#fff;font-size:16px;font-weight:700;text-decoration:none;border-radius:999px">Pagar ${moneda} ${Number(monto).toLocaleString()} →</a>
         </td></tr></table>
         <p style="font-size:13px;color:#888;line-height:1.6;margin:0 0 6px;text-align:center">🔒 Pago 100% seguro procesado por Mercado Pago.<br>Nunca vemos ni guardamos los datos de tu tarjeta.</p>
-        <p style="font-size:13px;color:#888;line-height:1.6;margin:18px 0 0">¿Dudas? Escríbenos por WhatsApp al +56 9 8898 9824 o entra a <a href="${PORTAL}" style="color:#2747ff">tu portal</a>.</p>
+        <p style="font-size:13px;color:#888;line-height:1.6;margin:18px 0 0">¿Dudas? Escríbenos por WhatsApp al +56 9 8898 9824 o entra a <a href="${portalBase()}" style="color:#2747ff">tu portal</a>.</p>
       </td></tr>
       <tr><td style="background:#fafafa;padding:18px 32px;text-align:center;font-size:12px;color:#999">condor.ai · Inteligencia artificial para hacer crecer tu negocio</td></tr>
     </table>
@@ -94,6 +97,7 @@ Deno.serve(async (req) => {
   if (!MP) return json({ error: "Falta configurar MP_ACCESS_TOKEN" }, 500);
 
   let tipo = "setup", clienteId: string | null = null, enviarCorreoFlag = false;
+  let forzarNuevo = false;
   // La forma nueva de pedir un cobro: el id de la fila de `cobros`. Todo lo
   // demás (tipo/monto/concepto) es el camino viejo, que se sigue aceptando
   // mientras las pantallas terminan de migrar — ver `resolver el cobro`.
@@ -106,6 +110,7 @@ Deno.serve(async (req) => {
     if (b?.tipo) tipo = b.tipo;
     if (b?.cliente_id) clienteId = b.cliente_id;
     if (b?.enviar_correo) enviarCorreoFlag = true;
+    if (b?.forzar_nuevo) forzarNuevo = true;
     if (b?.monto != null) montoPedido = Number(b.monto);
     if (b?.concepto) conceptoPedido = String(b.concepto).slice(0, 200);
   } catch { /* default */ }
@@ -199,10 +204,81 @@ Deno.serve(async (req) => {
     return json({ error: "ese cobro está anulado" }, 400);
 
   const tipoCobro: string = cobro.tipo;
-  const monto = Number(cobro.monto) || 0;
+  let monto = Number(cobro.monto) || 0;
   const moneda = cobro.moneda || cliente.moneda || "CLP";
   const concepto = cobro.titulo || cliente.concepto || `condor.ai · cobro ${cobro.numero}`;
+  if (tipoCobro !== "mensual") {
+    const { data: abonados } = await sb.from("pagos")
+      .select("monto")
+      .eq("cobro_id", cobro.id)
+      .eq("estado", "pagado");
+    const recibido = (abonados || []).reduce((s: number, p: any) => s + Number(p.monto || 0), 0);
+    monto = Math.max(0, monto - recibido);
+  }
   if (monto <= 0) return json({ error: "el cobro no tiene monto" }, 400);
+
+  let cuentaMp: { id: string; sitio: string; moneda: string };
+  try {
+    cuentaMp = await validarMonedaCuenta(MP, moneda);
+  } catch (e) {
+    return json({ error: e instanceof Error ? e.message : String(e) }, 400);
+  }
+
+  // Cada preferencia nueva deja un intento pendiente. Se reutiliza el enlace
+  // mientras siga vigente; solo el equipo puede reemplazar explícitamente un
+  // enlace creado con otra cuenta durante una migración.
+  if (cobro.link && !forzarNuevo) {
+    if (!cobro.mp_cuenta_id || cobro.mp_cuenta_id !== cuentaMp.id) {
+      return json({
+        error: esAdmin
+          ? "este enlace pertenece a la integración anterior; regenéralo en la cuenta actual"
+          : "este enlace está siendo renovado por el equipo; inténtalo nuevamente más tarde",
+      }, 409);
+    }
+    if (tipoCobro === "mensual") {
+      return json({ init_point: cobro.link, correo_enviado: false, cobro_id: cobro.id, reutilizado: true });
+    }
+    const { data: intento } = await sb.from("pagos")
+      .select("id,monto,link")
+      .eq("cobro_id", cobro.id)
+      .eq("estado", "pendiente")
+      .order("creado_en", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (intento && intento.link === cobro.link && Number(intento.monto) === monto) {
+      return json({
+        init_point: cobro.link,
+        correo_enviado: false,
+        pago_id: intento.id,
+        cobro_id: cobro.id,
+        reutilizado: true,
+      });
+    }
+    // Un abono cambió el saldo o el enlace viene de la cuenta antigua.
+    // El intento queda como historial no cobrado y se crea uno por el saldo.
+    await sb.from("pagos").update({
+      estado: "rechazado",
+      mp_status_detail: "link_reemplazado_por_saldo",
+      mp_ultima_sincronizacion: new Date().toISOString(),
+    }).eq("cobro_id", cobro.id).eq("estado", "pendiente");
+  }
+  if (forzarNuevo && !esAdmin) {
+    return json({ error: "solo el equipo puede reemplazar un link" }, 403);
+  }
+  if (
+    forzarNuevo && tipoCobro === "mensual" &&
+    cobro.mp_preapproval_id && cobro.estado === "activa"
+  ) {
+    return json({ error: "cancela la suscripción activa antes de crear otra" }, 409);
+  }
+
+  if (forzarNuevo && tipoCobro !== "mensual") {
+    await sb.from("pagos").update({
+      estado: "rechazado",
+      mp_status_detail: "link_reemplazado",
+      mp_ultima_sincronizacion: new Date().toISOString(),
+    }).eq("cobro_id", cobro.id).eq("estado", "pendiente");
+  }
 
   // AUTORIZAR UNA SUSCRIPCIÓN NO ES UN PAGO
   // ---------------------------------------------------------------------------
@@ -229,18 +305,23 @@ Deno.serve(async (req) => {
   }
 
   const referencia = pago ? pago.id : `cobro:${cobro.id}`;
+  const retorno = `${portalBase()}/pago/resultado?cobro_id=${encodeURIComponent(cobro.id)}`;
 
   try {
     let initPoint = "";
     if (tipoCobro === "mensual") {
       // Suscripción (cobro automático mensual)
       const r = await fetch("https://api.mercadopago.com/preapproval", {
-        method: "POST", headers: { Authorization: "Bearer " + MP, "Content-Type": "application/json" },
+        method: "POST", headers: {
+          Authorization: "Bearer " + MP,
+          "Content-Type": "application/json",
+          "X-Idempotency-Key": `condor-suscripcion-${cobro.id}-${crypto.randomUUID()}`,
+        },
         body: JSON.stringify({
           reason: concepto + " (mensualidad)",
           external_reference: referencia,
           payer_email: cliente.email,
-          back_url: PORTAL,
+          back_url: retorno,
           auto_recurring: { frequency: 1, frequency_type: "months", transaction_amount: monto, currency_id: moneda },
           status: "pending",
         }),
@@ -248,30 +329,55 @@ Deno.serve(async (req) => {
       const d = await r.json();
       if (!r.ok) return json({ error: "MP: " + JSON.stringify(d).slice(0, 300) }, 502);
       initPoint = d.init_point;
+      if (!initPoint) throw new Error("Mercado Pago no devolvió el enlace de suscripción.");
 
       // GUARDAR EL ID DE LA SUSCRIPCIÓN NO ES OPCIONAL
       // Antes se descartaba, y sin él no había forma de pausar, cancelar ni
       // reconocer los cobros mensuales que MP hace solo: el webhook resuelve
       // cada cobro recurrente por este id. El estado se queda en 'pendiente'
       // hasta que el cliente autorice — decirlo activo antes sería mentir.
-      if (d.id) await sb.from("cobros").update({ mp_preapproval_id: String(d.id) }).eq("id", cobro.id);
+      if (d.id) await sb.from("cobros").update({
+        mp_preapproval_id: String(d.id),
+        mp_cuenta_id: cuentaMp.id,
+        mp_checkout_creado_en: new Date().toISOString(),
+      }).eq("id", cobro.id);
     } else {
       // Pago único (setup u otro)
       const r = await fetch("https://api.mercadopago.com/checkout/preferences", {
-        method: "POST", headers: { Authorization: "Bearer " + MP, "Content-Type": "application/json" },
+        method: "POST", headers: {
+          Authorization: "Bearer " + MP,
+          "Content-Type": "application/json",
+          "X-Idempotency-Key": `condor-pago-${pago!.id}`,
+        },
         body: JSON.stringify({
           items: [{ title: concepto, quantity: 1, unit_price: monto, currency_id: moneda }],
           payer: { email: cliente.email },
-          back_urls: { success: PORTAL, failure: PORTAL, pending: PORTAL },
+          back_urls: { success: retorno, failure: retorno, pending: retorno },
           auto_return: "approved",
-          notification_url: WEBHOOK,
+          notification_url: webhookUrl(),
           external_reference: referencia,
+          statement_descriptor: "CONDOR AI",
           metadata: { cliente_id: cliente.id, cobro_id: cobro.id, tipo: tipoCobro },
         }),
       });
       const d = await r.json();
-      if (!r.ok) return json({ error: "MP: " + JSON.stringify(d).slice(0, 300) }, 502);
-      initPoint = d.init_point;
+      if (!r.ok) {
+        await sb.from("pagos").update({
+          estado: "rechazado",
+          mp_status_detail: "checkout_rechazado_por_mp",
+          mp_ultima_sincronizacion: new Date().toISOString(),
+        }).eq("id", pago!.id);
+        return json({ error: "MP: " + JSON.stringify(d).slice(0, 300) }, 502);
+      }
+      initPoint = Deno.env.get("MP_ENVIRONMENT") === "sandbox"
+        ? (d.sandbox_init_point || d.init_point)
+        : d.init_point;
+      if (!initPoint) throw new Error("Mercado Pago no devolvió el enlace de pago.");
+      await sb.from("cobros").update({
+        mp_preference_id: d.id ? String(d.id) : null,
+        mp_cuenta_id: cuentaMp.id,
+        mp_checkout_creado_en: new Date().toISOString(),
+      }).eq("id", cobro.id);
     }
 
     // El link se guarda para poder volver a copiarlo o reenviarlo sin generar
@@ -290,8 +396,21 @@ Deno.serve(async (req) => {
       );
       if (pago) await sb.from("pagos").update({ cobro_enviado_en: new Date().toISOString() }).eq("id", pago.id);
     }
-    return json({ init_point: initPoint, correo_enviado: correoEnviado, pago_id: pago ? pago.id : null, cobro_id: cobro.id });
+    return json({
+      init_point: initPoint,
+      correo_enviado: correoEnviado,
+      pago_id: pago ? pago.id : null,
+      cobro_id: cobro.id,
+      reutilizado: false,
+    });
   } catch (e) {
+    if (pago) {
+      await sb.from("pagos").update({
+        estado: "rechazado",
+        mp_status_detail: "checkout_no_creado",
+        mp_ultima_sincronizacion: new Date().toISOString(),
+      }).eq("id", pago.id);
+    }
     return json({ error: String(e).slice(0, 200) }, 500);
   }
 });

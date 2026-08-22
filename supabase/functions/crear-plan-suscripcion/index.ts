@@ -14,8 +14,8 @@
 //          (CON verificación de JWT: solo admins)
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { portalBase, validarMonedaCuenta } from "../_shared/mercadopago.ts";
 
-const VUELTA = "https://condorai.cl/portal.html";
 const CORS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
@@ -62,6 +62,11 @@ Deno.serve(async (req) => {
   }
   if (!nombre) return json({ error: "falta el nombre del plan" }, 400);
   if (!monto || monto <= 0) return json({ error: "el monto tiene que ser mayor que cero" }, 400);
+  try {
+    await validarMonedaCuenta(MP, moneda);
+  } catch (e) {
+    return json({ error: e instanceof Error ? e.message : String(e) }, 400);
+  }
 
   try {
     const r = await fetch("https://api.mercadopago.com/preapproval_plan", {
@@ -69,7 +74,7 @@ Deno.serve(async (req) => {
       headers: { Authorization: "Bearer " + MP, "Content-Type": "application/json" },
       body: JSON.stringify({
         reason: nombre,
-        back_url: VUELTA,
+        back_url: `${portalBase()}/pago/resultado`,
         auto_recurring: {
           frequency: frecuencia,
           frequency_type: "months",

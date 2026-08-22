@@ -16,10 +16,8 @@ import { Proyeccion } from "./Proyeccion";
 import {
   nombreCobro,
   type Cliente,
-  type ClienteProducto,
   type Cobro,
   type IngresoRatia,
-  type Producto,
   type Reunion,
   type SuscriptorRatia,
 } from "./tipos";
@@ -66,8 +64,6 @@ export function Dashboard() {
   const [asientos, setAsientos] = useState<Asiento[]>([]);
   const [gastosFijos, setGastosFijos] = useState<GastoFijo[]>([]);
   const [gastosMeta, setGastosMeta] = useState<GastoMeta[]>([]);
-  const [productos, setProductos] = useState<Producto[]>([]);
-  const [asignaciones, setAsignaciones] = useState<ClienteProducto[]>([]);
   const [cargando, setCargando] = useState(true);
   const cambio = useCambio();
   const [anio, setAnio] = useState(() => new Date().getFullYear());
@@ -75,7 +71,7 @@ export function Dashboard() {
 
   useEffect(() => {
     (async () => {
-      const [cl, co, pa, ra, ig, re, cu, as, gf, pr, ap, gm] =
+      const [cl, co, pa, ra, ig, re, cu, as, gf, gm] =
         await Promise.all([
           sb.from("clientes").select("*"),
           sb.from("cobros").select("*"),
@@ -88,8 +84,6 @@ export function Dashboard() {
           sb.from("cuentas").select("*"),
           sb.from("asientos").select("*, asiento_lineas(*)").order("fecha"),
           sb.from("gastos_fijos").select("*"),
-          sb.from("productos").select("*"),
-          sb.from("cliente_productos").select("*").eq("estado", "activo"),
           sb
             .from("gastos_meta")
             .select("*")
@@ -105,8 +99,6 @@ export function Dashboard() {
       setCuentas((cu.data ?? []) as Cuenta[]);
       setAsientos((as.data ?? []) as Asiento[]);
       setGastosFijos((gf.data ?? []) as GastoFijo[]);
-      setProductos((pr.data ?? []) as Producto[]);
-      setAsignaciones((ap.data ?? []) as ClienteProducto[]);
       setGastosMeta((gm.data ?? []) as GastoMeta[]);
       setCargando(false);
     })();
@@ -336,8 +328,8 @@ export function Dashboard() {
         .sort()
         .pop() ?? null;
 
-    // Run-rate mensual: compromisos fijos + costo de entregar cada producto
-    // activo. Es una estimación, claramente separada del libro real.
+    // Run-rate mensual basado en compromisos recurrentes registrados. Es una
+    // estimación claramente separada del libro real.
     const fijosActivos = gastosFijos.filter((g) => g.activo);
     const baseFija = fijosActivos.reduce(
       (t, g) => t + cambio.aCLP(g.monto, g.moneda),
@@ -351,22 +343,7 @@ export function Dashboard() {
         return cuenta?.codigo === "5104" || /meta|facebook|instagram|publicidad|anuncios/i.test(g.nombre);
       })
       .reduce((t, g) => t + cambio.aCLP(g.monto, g.moneda), 0);
-    const productoDe = new Map(productos.map((p) => [p.id, p]));
-    const costoPorProducto = new Map<string, number>();
-    for (const ap of asignaciones) {
-      const p = productoDe.get(ap.producto_id);
-      if (!p || p.estado === "descontinuado") continue;
-      const costo = cambio.aCLP(p.costo_mensual ?? 0, p.moneda);
-      costoPorProducto.set(
-        p.nombre,
-        (costoPorProducto.get(p.nombre) ?? 0) + costo,
-      );
-    }
-    const costoEntrega = [...costoPorProducto.values()].reduce(
-      (t, v) => t + v,
-      0,
-    );
-    const egresoEstimado = baseFija + costoEntrega;
+    const egresoEstimado = baseFija;
     const gastoAnio = meses.reduce(
       (t, m) => t + (egresosMes.get(m.clave) ?? 0),
       0,
@@ -379,7 +356,6 @@ export function Dashboard() {
         altaMejor: Math.round(altaMejor),
         ingresoUnicoPromedio: Math.round(unicosTotal / VENTANA),
         gastoFijoOperativo: Math.max(0, baseFija - publicidadFija),
-        costoEntrega,
         metaMensual: Math.max(metaMes, publicidadFija),
         liquido: Math.round(liquido),
         activas: mensualesActivos.length + ratActivas.length,
@@ -420,15 +396,11 @@ export function Dashboard() {
       metaUltimaSync,
       egresoEstimado,
       baseFija,
-      costoEntrega,
       margenEstimado: recurrente - egresoEstimado,
       gastoAnio,
       principalesCostos: [
         ...fijosActivos.map(
           (g) => [g.nombre, cambio.aCLP(g.monto, g.moneda)] as const,
-        ),
-        ...[...costoPorProducto].map(
-          ([n, v]) => [`Entrega · ${n}`, v] as const,
         ),
       ]
         .sort((a, b) => b[1] - a[1])
@@ -469,8 +441,6 @@ export function Dashboard() {
     asientos,
     gastosFijos,
     gastosMeta,
-    productos,
-    asignaciones,
     anio,
     ahora,
     cambio.listo,
@@ -611,11 +581,6 @@ export function Dashboard() {
               <b>{plata(d.baseFija)}</b>
               <span>sueldos, software y compromisos</span>
             </div>
-            <div>
-              <small>Costo de entrega</small>
-              <b>{plata(d.costoEntrega)}</b>
-              <span>productos activos asignados</span>
-            </div>
             <div className={d.margenEstimado >= 0 ? "positivo" : "negativo"}>
               <small>Margen recurrente estimado</small>
               <b>{plata(d.margenEstimado)}</b>
@@ -643,7 +608,7 @@ export function Dashboard() {
                 ))
               ) : (
                 <p className="vacio">
-                  Carga gastos fijos y costos de producto para estimar.
+                  Carga gastos fijos para construir la estimación.
                 </p>
               )}
             </div>

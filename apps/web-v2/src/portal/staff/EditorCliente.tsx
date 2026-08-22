@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { sb } from "../lib/supabase";
-import { CATALOGO_PLANES, MONEDAS, type Cliente, type Producto } from "./tipos";
+import { CATALOGO_PLANES, MONEDAS, type Cliente } from "./tipos";
 
 type Props = {
   cliente: Cliente | null;
@@ -43,19 +43,8 @@ export function EditorCliente({ cliente, cerrar, guardado }: Props) {
     notas: cliente?.notas ?? "",
   });
 
-  const [productos, setProductos] = useState<Producto[]>([]);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState("");
-
-  // El catálogo de productos suma sus nombres al desplegable: si ya se vendió
-  // algo que no está en la lista fija, aparece igual.
-  useEffect(() => {
-    sb.from("productos")
-      .select("*")
-      .eq("activo", true)
-      .order("nombre")
-      .then(({ data }) => setProductos((data ?? []) as Producto[]));
-  }, []);
 
   function set<K extends keyof typeof f>(k: K, v: (typeof f)[K]) {
     setF((p) => ({ ...p, [k]: v }));
@@ -116,11 +105,6 @@ export function EditorCliente({ cliente, cerrar, guardado }: Props) {
               {g.planes.map((p) => <option key={p}>{p}</option>)}
             </optgroup>
           ))}
-          {productos.length > 0 && (
-            <optgroup label="Del catálogo">
-              {productos.map((p) => <option key={p.id}>{p.nombre}</option>)}
-            </optgroup>
-          )}
         </select>
       </span>
     </label>

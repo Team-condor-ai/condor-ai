@@ -8,7 +8,6 @@ export type DatosProyeccion = {
   altaMejor: number;
   ingresoUnicoPromedio: number;
   gastoFijoOperativo: number;
-  costoEntrega: number;
   metaMensual: number;
   liquido: number;
   activas: number;
@@ -145,7 +144,7 @@ function Control({ etiqueta, valor, sufijo, min = 0, max, step = 1, nota, onChan
     <label className="proy-control">
       <span>{etiqueta}</span>
       <span className="proy-input">
-        <input type="number" value={valor} min={min} max={max} step={step} onChange={(e) => onChange(Number(e.target.value))} />
+        <input type="number" value={valor || ""} min={min} max={max} step={step} onChange={(e) => onChange(Number(e.target.value))} />
         {sufijo && <i>{sufijo}</i>}
       </span>
       {nota && <small>{nota}</small>}
@@ -163,7 +162,7 @@ export function Proyeccion({ d }: { d: DatosProyeccion }) {
     ingresoUnicoMensual: d.ingresoUnicoPromedio,
     cobranza: 95,
     gastosFijos: d.gastoFijoOperativo,
-    costoVariable: d.recurrente > 0 ? Math.round((d.costoEntrega / d.recurrente) * 1000) / 10 : 0,
+    costoVariable: 0,
     metaMensual: d.metaMensual,
     crecimientoMeta: 0,
     inflacionAnual: 4,
@@ -255,7 +254,7 @@ export function Proyeccion({ d }: { d: DatosProyeccion }) {
           </div>}
           {abierto === "costos" && <div className="proy-controles">
             <Control etiqueta="Gasto fijo operativo" valor={s.gastosFijos} sufijo="CLP" max={1_000_000_000} onChange={(v) => cambiar("gastosFijos", Math.max(0, v))} />
-            <Control etiqueta="Costo variable sobre MRR" valor={s.costoVariable} sufijo="%" min={0} max={100} step={0.1} nota={`Derivado de productos asignados: ${plata(d.costoEntrega)}.`} onChange={(v) => cambiar("costoVariable", limitar(v, 0, 100))} />
+            <Control etiqueta="Costo variable sobre MRR" valor={s.costoVariable} sufijo="%" min={0} max={100} step={0.1} nota="Supuesto editable para costos que crecen junto con los ingresos." onChange={(v) => cambiar("costoVariable", limitar(v, 0, 100))} />
             <Control etiqueta="Meta Ads mensual" valor={s.metaMensual} sufijo="CLP" max={1_000_000_000} nota="Parte desde el gasto sincronizado o presupuestado." onChange={(v) => cambiar("metaMensual", Math.max(0, v))} />
             <Control etiqueta="Crecimiento mensual de Ads" valor={s.crecimientoMeta} sufijo="%" min={-90} max={300} step={0.1} onChange={(v) => cambiar("crecimientoMeta", limitar(v, -90, 300))} />
             <Control etiqueta="Inflación anual de costos" valor={s.inflacionAnual} sufijo="%" min={-50} max={300} step={0.1} onChange={(v) => cambiar("inflacionAnual", limitar(v, -50, 300))} />
@@ -289,7 +288,7 @@ export function Proyeccion({ d }: { d: DatosProyeccion }) {
       </div>
 
       <footer className="proy-pie">
-        <p><b>Dato real:</b> MRR, altas históricas, ventas únicas, costos de productos, Meta Ads y caja contable.</p>
+        <p><b>Dato real:</b> MRR, altas históricas, ventas únicas, gastos fijos, Meta Ads y caja contable.</p>
         <p><b>Supuesto:</b> fuga, crecimiento, cobranza, inflación, impuestos, nómina, deuda e inversión. Se guardan solo en este navegador.</p>
       </footer>
     </section>

@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { sb, plata, enlaceWeb } from "../lib/supabase";
-import type { Cliente, ClienteProducto, Producto } from "./tipos";
+import { sb, plata } from "../lib/supabase";
+import type { Cliente } from "./tipos";
 
 type Nodo = {
   id: string;
-  tipo: "centro" | "plan" | "cliente" | "producto";
+  tipo: "centro" | "plan" | "cliente";
   txt: string;
   sub?: string;
   r: number;
@@ -14,7 +14,6 @@ type Nodo = {
   vx: number;
   vy: number;
   ref?: Cliente;
-  producto?: Producto;
 };
 type Arco = { a: string; b: string };
 
@@ -35,30 +34,18 @@ type Arco = { a: string; b: string };
  */
 export function Mapa() {
   const [clientes, setClientes] = useState<Cliente[]>([]);
-  const [productos, setProductos] = useState<Producto[]>([]);
-  const [asignaciones, setAsignaciones] = useState<ClienteProducto[]>([]);
   const [cargando, setCargando] = useState(true);
   const [activo, setActivo] = useState<Nodo | null>(null);
   const activoId = useRef<string | null>(null);
   const lienzo = useRef<HTMLCanvasElement>(null);
   const navega = useNavigate();
 
-  // Clientes y productos se leen por separado y el mapa se arma con lo que
-  // haya: cada vez que se crea uno, aparece acá solo — no hay que registrarlo
-  // en ningún lado.
+  // Cada cliente nuevo aparece acá automáticamente.
   useEffect(() => {
-    Promise.all([
-      sb.from("clientes").select("*"),
-      sb.from("productos").select("*"),
-      sb.from("cliente_productos").select("*").neq("estado", "finalizado"),
-    ]).then(([resClientes, resProductos, resAsignaciones]) => {
+    sb.from("clientes").select("*").then((resClientes) => {
       setClientes(
         ((resClientes.data ?? []) as Cliente[]).filter((c) => !c.archivado),
       );
-      setProductos(
-        ((resProductos.data ?? []) as Producto[]).filter((p) => p.activo),
-      );
-      setAsignaciones((resAsignaciones.data ?? []) as ClienteProducto[]);
       setCargando(false);
     });
   }, []);
@@ -117,33 +104,8 @@ export function Mapa() {
       a.push({ a: padre, b: c.id });
     }
 
-    // Los productos cuelgan del centro y sus asignaciones reales los conectan
-    // con clientes. El mapa pasa de catálogo decorativo a cerebro operativo.
-    for (const p of productos) {
-      n.push({
-        id: "producto:" + p.id,
-        tipo: "producto",
-        txt: p.nombre,
-        sub: p.repo_url ? "repo ↗" : undefined,
-        r: 13,
-        x: suelto(),
-        y: suelto(),
-        vx: 0,
-        vy: 0,
-        producto: p,
-      });
-      a.push({ a: "condor", b: "producto:" + p.id });
-    }
-
-    const idsCliente = new Set(clientes.map((c) => c.id));
-    const idsProducto = new Set(productos.map((p) => p.id));
-    for (const ap of asignaciones) {
-      if (idsCliente.has(ap.cliente_id) && idsProducto.has(ap.producto_id))
-        a.push({ a: "producto:" + ap.producto_id, b: ap.cliente_id });
-    }
-
     return { nodos: n, arcos: a };
-  }, [asignaciones, clientes, productos]);
+  }, [clientes]);
 
   useEffect(() => {
     const cv = lienzo.current;
@@ -253,11 +215,7 @@ export function Mapa() {
             ? col("--texto")
             : n.tipo === "plan"
               ? "#8B5CF6"
-              : // Los productos van con el color de acento para distinguirlos de un
-                // vistazo: son otra clase de cosa que los clientes, no otro tamaño.
-                n.tipo === "producto"
-                ? col("--azul")
-                : "#2CA66F";
+              : "#2CA66F";
         ctx.fill();
         ctx.strokeStyle = activoId.current === n.id ? col("--texto") : col("--borde");
         ctx.lineWidth = activoId.current === n.id ? 2 : 1;
@@ -334,13 +292,6 @@ export function Mapa() {
         (n) => Math.hypot(n.x - p.x, n.y - p.y) < n.r + 5,
       );
       if (bajo?.tipo === "cliente") navega(`/acceso/clientes?ver=${bajo.id}`);
-      // Un producto no tiene ficha propia todavía, así que el clic abre su
-      // repositorio si lo tiene; si no, lleva al catálogo.
-      else if (bajo?.tipo === "producto") {
-        const repo = bajo.producto?.repo_url;
-        if (repo) window.open(enlaceWeb(repo), "_blank", "noreferrer");
-        else navega("/acceso/productos");
-      }
     };
     const alRodar = (e: WheelEvent) => {
       e.preventDefault();
@@ -391,9 +342,6 @@ export function Mapa() {
             <div className="mapa-leyenda">
               <span>
                 <i className="centro" /> Cóndor
-              </span>
-              <span>
-                <i className="producto" /> Productos
               </span>
               <span>
                 <i className="plan" /> Planes

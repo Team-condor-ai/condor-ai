@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { sb } from "../lib/supabase";
-import { MONEDAS, type Cobro, type Producto } from "./tipos";
+import { MONEDAS, type Cobro } from "./tipos";
 
 type Props = {
   clienteId: string;
@@ -33,8 +33,6 @@ export function EditorCobro({ clienteId, monedaCliente, cobro, cerrar, guardado 
   const [monto, setMonto] = useState(cobro?.monto ?? 0);
   const [moneda, setMoneda] = useState(cobro?.moneda ?? monedaCliente ?? "CLP");
   const [proximo, setProximo] = useState(cobro?.proximo_cobro ?? "");
-  const [productoId, setProductoId] = useState(cobro?.producto_id ?? "");
-  const [productos, setProductos] = useState<Producto[]>([]);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState("");
 
@@ -43,23 +41,6 @@ export function EditorCobro({ clienteId, monedaCliente, cobro, cerrar, guardado 
   // la base solo haría que el portal muestre una cifra distinta de la que se
   // cobra de verdad, que es peor que no poder editarlo.
   const enMercadoPago = !!cobro?.mp_preapproval_id && cobro.estado === "activa";
-
-  useEffect(() => {
-    sb.from("productos").select("*").order("familia").order("nombre").then(({ data }) =>
-      setProductos(((data ?? []) as Producto[]).filter((p) =>
-        (p.estado ?? (p.activo ? "activo" : "descontinuado")) === "activo" || p.id === cobro?.producto_id,
-      )),
-    );
-  }, [cobro?.producto_id]);
-
-  function elegirProducto(id: string) {
-    setProductoId(id);
-    const p = productos.find((x) => x.id === id);
-    if (!p) return;
-    setTitulo(p.nombre);
-    setMoneda(p.moneda ?? monedaCliente ?? "CLP");
-    setMonto(tipo === "mensual" ? (p.precio_mensual_sugerido ?? 0) : (p.precio_setup_sugerido ?? 0));
-  }
 
   async function enviar(ev: React.FormEvent) {
     ev.preventDefault();
@@ -75,7 +56,6 @@ export function EditorCobro({ clienteId, monedaCliente, cobro, cerrar, guardado 
       // Una fecha vacía viaja como null, no como "": Postgres rechaza la
       // cadena vacía en una columna `date` y el error no dice cuál campo fue.
       proximo_cobro: tipo === "mensual" ? proximo || null : null,
-      producto_id: productoId || null,
     };
 
     if (cobro) {
@@ -138,35 +118,15 @@ export function EditorCobro({ clienteId, monedaCliente, cobro, cerrar, guardado 
 
           <label className="campo-lbl">
             Título <span style={{ fontWeight: 400, opacity: 0.7 }}>· opcional</span>
-            {/* Campo libre + la flecha con lo que ya vendemos, igual que en la
-                ficha del cliente: la mayoría de los cobros son uno de esos, y
-                escribirlos a mano cada vez invita a que cada uno lo escriba
-                distinto. */}
-            <span style={{ display: "flex", gap: 8 }}>
-              <input
-                className="campo"
-                style={{ flex: 1, minWidth: 0 }}
-                placeholder={tipo === "mensual" ? "Ej: Mantención mensual" : "Ej: Landing de septiembre"}
-                value={titulo}
-                onChange={(e) => setTitulo(e.target.value)}
-              />
-              <select
-                className="campo"
-                style={{ width: 190, flex: "none" }}
-                value={productoId}
-                onChange={(e) => elegirProducto(e.target.value)}
-                aria-label="Producto del catálogo"
-              >
-                <option value="">Cobro manual</option>
-                {productos.map((p) => (
-                  <option key={p.id} value={p.id}>{p.familia ? `${p.familia} · ` : ""}{p.nombre}</option>
-                ))}
-              </select>
-            </span>
+            <input
+              className="campo"
+              placeholder={tipo === "mensual" ? "Ej: Mantención mensual" : "Ej: Landing de septiembre"}
+              value={titulo}
+              onChange={(e) => setTitulo(e.target.value)}
+            />
           </label>
           <p className="tenue" style={{ marginTop: -6 }}>
             Si lo dejas vacío se muestra como “Cobro {cobro?.numero ?? "N"}”.
-            {productoId && " El producto queda conectado a este cliente y a sus pagos."}
           </p>
 
           <div className="dos">
@@ -178,7 +138,7 @@ export function EditorCobro({ clienteId, monedaCliente, cobro, cerrar, guardado 
                 min={0}
                 required
                 disabled={enMercadoPago}
-                value={monto}
+                value={monto || ""}
                 onChange={(e) => setMonto(Number(e.target.value))}
               />
             </label>

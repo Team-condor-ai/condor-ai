@@ -8,7 +8,6 @@ import {
   type Cliente,
   type Cobro,
   type Pago,
-  type Producto,
 } from "./tipos";
 
 type Tipo = "todos" | "unico" | "mensual";
@@ -18,7 +17,6 @@ export function Cobros() {
   const [pagos, setPagos] = useState<Pago[]>([]);
   const [cobros, setCobros] = useState<Cobro[]>([]);
   const [clientes, setClientes] = useState<Cliente[]>([]);
-  const [productos, setProductos] = useState<Producto[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
   const [busca, setBusca] = useState("");
@@ -30,17 +28,15 @@ export function Cobros() {
 
   useEffect(() => {
     (async () => {
-      const [pa, co, cl, pr] = await Promise.all([
+      const [pa, co, cl] = await Promise.all([
         sb.from("pagos").select("*").order("creado_en", { ascending: false }),
         sb.from("cobros").select("*"),
         sb.from("clientes").select("*"),
-        sb.from("productos").select("*"),
       ]);
       if (pa.error) setError(pa.error.message);
       setPagos((pa.data ?? []) as Pago[]);
       setCobros((co.data ?? []) as Cobro[]);
       setClientes((cl.data ?? []) as Cliente[]);
-      setProductos((pr.data ?? []) as Producto[]);
       setCargando(false);
     })();
   }, []);
@@ -50,16 +46,11 @@ export function Cobros() {
     () => new Map(clientes.map((x) => [x.id, x])),
     [clientes],
   );
-  const pm = useMemo(
-    () => new Map(productos.map((x) => [x.id, x])),
-    [productos],
-  );
   const visibles = useMemo(() => {
     const q = busca.trim().toLowerCase();
     return pagos.filter((p) => {
       const c = p.cobro_id ? cm.get(p.cobro_id) : undefined;
       const cli = clm.get(p.cliente_id);
-      const prod = c?.producto_id ? pm.get(c.producto_id) : undefined;
       const cuando = p.fecha ?? p.creado_en ?? "";
       return (
         (tipo === "todos" || (c?.tipo ?? p.tipo) === tipo) &&
@@ -70,7 +61,6 @@ export function Cobros() {
             cli?.negocio,
             cli?.nombre,
             cli?.email,
-            prod?.nombre,
             c ? nombreCobro(c) : p.detalle,
             p.mp_id,
             p.metodo,
@@ -81,7 +71,7 @@ export function Cobros() {
           ))
       );
     });
-  }, [pagos, cm, clm, pm, tipo, estado, desde, busca]);
+  }, [pagos, cm, clm, tipo, estado, desde, busca]);
 
   const resumen = useMemo(() => {
     const mes = new Date().toISOString().slice(0, 7);
@@ -120,17 +110,18 @@ export function Cobros() {
     const filas = visibles.map((p) => {
       const c = p.cobro_id ? cm.get(p.cobro_id) : undefined;
       const cli = clm.get(p.cliente_id);
-      const prod = c?.producto_id ? pm.get(c.producto_id) : undefined;
       return [
         p.fecha ?? p.creado_en,
         cli?.negocio ?? cli?.nombre,
-        prod?.nombre,
         c ? nombreCobro(c) : p.detalle,
         c?.tipo ?? p.tipo,
         p.periodo,
         p.metodo,
         p.mp_id,
         p.monto,
+        p.mp_fee_amount,
+        p.mp_net_received,
+        p.mp_status_detail,
         c?.moneda ?? "CLP",
         p.estado,
       ]
@@ -138,7 +129,7 @@ export function Cobros() {
         .join(",");
     });
     const csv = [
-      "fecha,cliente,producto,cobro,tipo,periodo,metodo,referencia,monto,moneda,estado",
+      "fecha,cliente,cobro,tipo,periodo,metodo,referencia,monto,comision,neto,detalle_mp,moneda,estado",
       ...filas,
     ].join("\n");
     const a = document.createElement("a");
@@ -230,7 +221,7 @@ export function Cobros() {
             <input
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
-              placeholder="Cliente, producto, referencia…"
+              placeholder="Cliente, cobro, referencia…"
             />
           </div>
           <select
@@ -275,7 +266,7 @@ export function Cobros() {
                 <tr>
                   <th>Fecha</th>
                   <th>Cliente</th>
-                  <th>Producto / cobro</th>
+                  <th>Cobro</th>
                   <th>Tipo</th>
                   <th>Medio y referencia</th>
                   <th className="num">Monto</th>
@@ -287,9 +278,6 @@ export function Cobros() {
                 {visibles.map((p) => {
                   const c = p.cobro_id ? cm.get(p.cobro_id) : undefined;
                   const cli = clm.get(p.cliente_id);
-                  const prod = c?.producto_id
-                    ? pm.get(c.producto_id)
-                    : undefined;
                   const t = c?.tipo ?? p.tipo;
                   return (
                     <tr key={p.id}>
@@ -310,11 +298,8 @@ export function Cobros() {
                       </td>
                       <td>
                         <b>
-                          {prod?.nombre ||
-                            (c ? nombreCobro(c) : p.detalle) ||
-                            "Cobro eliminado"}
+                          {(c ? nombreCobro(c) : p.detalle) || "Cobro eliminado"}
                         </b>
-                        {prod && c && <small>{nombreCobro(c)}</small>}
                       </td>
                       <td>
                         <span
@@ -332,9 +317,16 @@ export function Cobros() {
                             ? `Ref. ${p.mp_id}`
                             : p.detalle || "sin referencia"}
                         </small>
+                        {p.mp_status_detail && <small>{p.mp_status_detail}</small>}
                       </td>
                       <td className="num">
                         <b>{plata(p.monto, c?.moneda)}</b>
+                        {p.mp_net_received != null && (
+                          <small>
+                            Neto {plata(p.mp_net_received, c?.moneda)}
+                            {p.mp_fee_amount != null && ` · comisión ${plata(p.mp_fee_amount, c?.moneda)}`}
+                          </small>
+                        )}
                       </td>
                       <td>
                         <span

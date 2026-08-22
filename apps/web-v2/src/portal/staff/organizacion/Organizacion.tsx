@@ -1357,7 +1357,7 @@ function EditorMeta({
                 className="campo"
                 type="number"
                 min={0}
-                value={f.objetivo}
+                value={f.objetivo || ""}
                 onChange={(e) => set("objetivo", Number(e.target.value))}
               />
             </label>
@@ -1378,7 +1378,7 @@ function EditorMeta({
                 className="campo"
                 type="number"
                 min={0}
-                value={f.avance}
+                value={f.avance || ""}
                 onChange={(e) => set("avance", Number(e.target.value))}
               />
             </label>

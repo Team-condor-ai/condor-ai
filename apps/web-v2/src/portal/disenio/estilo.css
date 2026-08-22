@@ -243,7 +243,7 @@ tfoot td{padding:9px 14px;background:var(--panel-2);font-weight:650;border-top:1
   border-left:1px solid var(--borde);box-shadow:var(--sombra-alta);z-index:60;
   transform:translateX(101%);transition:transform .22s ease;display:flex;flex-direction:column}
 body.panel-abierto .panel-lat{transform:none}
-/* `.velo` (fondo de TODOS los modales: EditorCliente, EditorProducto, etc.)
+/* `.velo` (fondo de TODOS los modales: EditorCliente, EditorCobro, etc.)
    se copió del ERP de Planeta junto con `.panel-lat` de arriba, pero ahí el
    JS le agregaba la clase `panel-abierto` al <body> para mostrarlo — acá
    ese JS nunca se portó. Resultado: cada modal quedaba armado en el DOM con

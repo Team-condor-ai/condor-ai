@@ -77,6 +77,13 @@ export const Ico = {
       <path d="M6.5 14.5h3" />
     </Svg>
   ),
+  creditos: (p: Props = {}) => (
+    <Svg {...p}>
+      <path d="M12 3v3M12 18v3M4.2 7.5l2.6 1.5M17.2 15l2.6 1.5M4.2 16.5 6.8 15M17.2 9l2.6-1.5" />
+      <circle cx="12" cy="12" r="5.2" />
+      <path d="m13.4 8.8-3.2 3.7h2.5l-2.1 2.7" />
+    </Svg>
+  ),
   documentos: (p: Props = {}) => (
     <Svg {...p}>
       <path d="M14 3H7.4A2.4 2.4 0 0 0 5 5.4v13.2A2.4 2.4 0 0 0 7.4 21h9.2a2.4 2.4 0 0 0 2.4-2.4V8z" />
@@ -281,12 +288,6 @@ export const Ico = {
     <Svg {...p}>
       <path d="M21 15.5v3.4A2.1 2.1 0 0 1 18.9 21H5.1A2.1 2.1 0 0 1 3 18.9v-3.4" />
       <path d="m7.5 7.5 4.5-4.5 4.5 4.5M12 3v12" />
-    </Svg>
-  ),
-  producto: (p: Props = {}) => (
-    <Svg {...p}>
-      <path d="m12 3 8 4.6v8.8L12 21l-8-4.6V7.6z" />
-      <path d="M4 7.6 12 12l8-4.4M12 12v9" />
     </Svg>
   ),
   eliminar: (p: Props = {}) => (

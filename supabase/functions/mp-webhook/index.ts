@@ -7,6 +7,7 @@
 // Deploy:  supabase functions deploy mp-webhook --project-ref <ref> --no-verify-jwt
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { conciliarPago, portalBase } from "../_shared/mercadopago.ts";
 
 const ADMIN_NOTIFY = Deno.env.get("ADMIN_NOTIFY") || "contacto@teamcondorcl.com";
 const EMAIL_FROM = Deno.env.get("EMAIL_FROM") || "condor.ai <onboarding@resend.dev>";
@@ -23,25 +24,34 @@ async function enviarCorreo(to: string, subject: string, html: string) {
   } catch (e) { console.error("email error:", e); }
 }
 
-async function avisarPago(sb: any, clienteId: string, tipo: string) {
-  const { data: c } = await sb.from("clientes").select("*").eq("id", clienteId).maybeSingle();
+const escapar = (valor: unknown) => String(valor ?? "")
+  .replaceAll("&", "&amp;")
+  .replaceAll("<", "&lt;")
+  .replaceAll(">", "&gt;")
+  .replaceAll('"', "&quot;");
+
+async function avisarPago(sb: any, pago: any, cobro?: any) {
+  const { data: c } = await sb.from("clientes").select("*").eq("id", pago.cliente_id).maybeSingle();
   if (!c) return;
-  const mon = c.moneda || "CLP";
-  const monto = (tipo === "mensual" ? c.mensual_monto : c.setup_monto) || 0;
-  const concepto = tipo === "mensual" ? "Mensualidad" : "Pago inicial (setup)";
+  const mon = cobro?.moneda || c.moneda || "CLP";
+  const monto = Number(pago.monto || cobro?.monto || 0);
+  const concepto = pago.detalle || cobro?.titulo || (pago.tipo === "mensual" ? "Mensualidad" : "Pago condor.ai");
+  const negocio = escapar(c.negocio || c.email);
+  const correo = escapar(c.email);
+  const conceptoSeguro = escapar(concepto);
   // Aviso para el equipo
   await enviarCorreo(ADMIN_NOTIFY, `💰 Pago recibido · ${c.negocio || c.email}`,
     `<h2>Nuevo pago confirmado</h2>
-     <p><b>Cliente:</b> ${c.negocio || ""} (${c.email})<br>
-     <b>Concepto:</b> ${concepto}<br>
+     <p><b>Cliente:</b> ${negocio} (${correo})<br>
+     <b>Concepto:</b> ${conceptoSeguro}<br>
      <b>Monto:</b> ${mon} ${Number(monto).toLocaleString()}</p>
      <p>La ficha del cliente ya se actualizó en el portal.</p>`);
   // Aviso/recibo para el cliente
   await enviarCorreo(c.email, `✅ Recibimos tu pago · condor.ai`,
     `<h2>¡Gracias por tu pago! 🎉</h2>
-     <p>Confirmamos tu <b>${concepto.toLowerCase()}</b> por <b>${mon} ${Number(monto).toLocaleString()}</b>.</p>
+     <p>Confirmamos <b>${conceptoSeguro}</b> por <b>${mon} ${Number(monto).toLocaleString()}</b>.</p>
      <p>Puedes ver el estado y descargar tu comprobante en tu portal:</p>
-     <p><a href="https://condorai.cl/portal.html">Abrir mi portal →</a></p>
+     <p><a href="${portalBase()}">Abrir mi portal →</a></p>
      <p>— El equipo de condor.ai</p>`);
 }
 
@@ -95,7 +105,7 @@ async function registrarSuscriptor(sb: any, pa: any, preapprovalId: string) {
      <p>Tu suscripción quedó activa por <b>${mon} ${Number(plan.monto).toLocaleString()}</b> al mes.
      El cobro se hace solo; no tienes que hacer nada cada mes.</p>
      <p>Puedes ver el estado de tu suscripción y tus pagos en tu portal:</p>
-     <p><a href="https://condorai.cl/portal.html">Abrir mi portal →</a></p>
+     <p><a href="${portalBase()}">Abrir mi portal →</a></p>
      <p style="color:#666;font-size:13px">Entra con este mismo correo (<b>${email}</b>) y te enviamos un código de acceso.</p>
      <p>— El equipo de condor.ai</p>`);
 
@@ -211,7 +221,33 @@ async function registrarCobroMensual(sb: any, apId: string, MP: string) {
   // Solo cuenta el que de verdad se cobró. `scheduled` y `recycling` son
   // intentos: registrarlos daría por pagado un mes que todavía no entró.
   if (ap.status !== "processed") return;
-  if (ap.payment && ap.payment.status !== "approved") return;
+
+  // Según la versión del recurso, `payment` puede venir expandido o ser solo
+  // el identificador. Consultamos el pago real cuando tenemos ese ID: así no
+  // damos una mensualidad por pagada usando únicamente el estado del débito y
+  // además conservamos comisión, monto neto, método y detalle del rechazo.
+  const paymentRef = ap.payment;
+  const paymentId = typeof paymentRef === "object" && paymentRef !== null
+    ? paymentRef.id
+    : paymentRef;
+  let payment = typeof paymentRef === "object" && paymentRef !== null
+    ? paymentRef
+    : null;
+
+  if (paymentId) {
+    const paymentResponse = await fetch(
+      "https://api.mercadopago.com/v1/payments/" + paymentId,
+      { headers: { Authorization: "Bearer " + MP } },
+    );
+    if (!paymentResponse.ok) {
+      throw new Error(
+        `Mercado Pago respondió ${paymentResponse.status} al consultar el pago recurrente ${paymentId}`,
+      );
+    }
+    payment = await paymentResponse.json();
+  }
+
+  if (payment?.status && payment.status !== "approved") return;
 
   const preapprovalId = String(ap.preapproval_id || "");
   if (!preapprovalId) return;
@@ -226,18 +262,45 @@ async function registrarCobroMensual(sb: any, apId: string, MP: string) {
   const base = ap.debit_date ? new Date(ap.debit_date) : new Date();
   const periodo = base.toISOString().slice(0, 8) + "01";
 
-  const { error } = await sb.from("pagos").insert({
+  const monto = Math.round(
+    Number(payment?.transaction_amount) ||
+      Number(ap.transaction_amount) ||
+      Number(cobro.monto) ||
+      0,
+  );
+  const moneda = String(payment?.currency_id || ap.currency_id || cobro.moneda || "CLP");
+  if (String(cobro.moneda || "CLP").toUpperCase() !== moneda.toUpperCase()) {
+    throw new Error(
+      `Moneda inesperada en la mensualidad ${apId}: ${moneda}`,
+    );
+  }
+  const comision = Array.isArray(payment?.fee_details)
+    ? payment.fee_details.reduce(
+      (total: number, fee: { amount?: number }) => total + Number(fee.amount || 0),
+      0,
+    )
+    : 0;
+  const neto = Number(payment?.transaction_details?.net_received_amount) ||
+    Math.max(0, monto - comision);
+
+  const { data: pagoMensual, error } = await sb.from("pagos").insert({
     cliente_id: cobro.cliente_id,
     cobro_id: cobro.id,
     tipo: "mensual",
-    monto: Math.round(Number(ap.transaction_amount) || Number(cobro.monto) || 0),
+    monto,
     estado: "pagado",
-    mp_id: String((ap.payment && ap.payment.id) || apId),
+    mp_id: String(paymentId || apId),
     detalle: cobro.titulo || "Mensualidad",
     fecha: base.toISOString().slice(0, 10),
     metodo: "Mercado Pago",
     periodo,
-  });
+    mp_status_detail: payment?.status_detail || null,
+    mp_payment_type: payment?.payment_type_id || null,
+    mp_payment_method_id: payment?.payment_method_id || null,
+    mp_fee_amount: comision,
+    mp_net_received: neto,
+    mp_ultima_sincronizacion: new Date().toISOString(),
+  }).select("*").single();
 
   // 23505 = ese mes ya estaba registrado. Es el camino normal de un reintento
   // de MP, no un error: se sale sin volver a avisar.
@@ -255,7 +318,10 @@ async function registrarCobroMensual(sb: any, apId: string, MP: string) {
     irresponsable: false, dias_sin_pagar: 0, alerta_admin_en: null,
   }).eq("id", cobro.cliente_id);
 
-  await avisarPago(sb, cobro.cliente_id, "mensual");
+  if (pagoMensual) {
+    await avisarPago(sb, pagoMensual, cobro);
+    await sb.from("pagos").update({ mp_notificado_en: new Date().toISOString() }).eq("id", pagoMensual.id);
+  }
 }
 
 // ── FIRMA DE MERCADO PAGO ────────────────────────────────────────────────
@@ -269,15 +335,11 @@ async function registrarCobroMensual(sb: any, apId: string, MP: string) {
 //   id:<data.id>;request-id:<x-request-id>;ts:<ts>;
 // y manda el resultado en la cabecera `x-signature` como `ts=...,v1=...`.
 //
-// DEGRADA CON AVISO, NO REVIENTA: si `MP_WEBHOOK_SECRET` no está configurado
-// se sigue procesando y se deja constancia en el log. Rechazar todo sin el
-// secreto dejaría los cobros caídos en silencio, que es peor que el riesgo
-// que se está cerrando.
 async function firmaValida(req: Request, dataId: string): Promise<boolean> {
   const secreto = Deno.env.get("MP_WEBHOOK_SECRET") || "";
   if (!secreto) {
-    console.warn("MP_WEBHOOK_SECRET sin configurar: no se valida la firma.");
-    return true;
+    console.error("MP_WEBHOOK_SECRET sin configurar: webhook rechazado.");
+    return false;
   }
   const cabecera = req.headers.get("x-signature") || "";
   const reqId = req.headers.get("x-request-id") || "";
@@ -287,7 +349,7 @@ async function firmaValida(req: Request, dataId: string): Promise<boolean> {
   const ts = partes["ts"], v1 = partes["v1"];
   if (!ts || !v1) return false;
 
-  const plantilla = `id:${dataId};request-id:${reqId};ts:${ts};`;
+  const plantilla = `id:${dataId.toLowerCase()};request-id:${reqId};ts:${ts};`;
   const clave = await crypto.subtle.importKey(
     "raw", new TextEncoder().encode(secreto),
     { name: "HMAC", hash: "SHA-256" }, false, ["sign"],
@@ -306,6 +368,7 @@ async function firmaValida(req: Request, dataId: string): Promise<boolean> {
 
 Deno.serve(async (req) => {
   const MP = Deno.env.get("MP_ACCESS_TOKEN") || "";
+  if (!MP) return new Response("Mercado Pago no configurado", { status: 503 });
   const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
   const url = new URL(req.url);
 
@@ -315,9 +378,21 @@ Deno.serve(async (req) => {
 
   if (id && !(await firmaValida(req, String(id)))) {
     console.warn("firma inválida, se ignora la notificación", id);
-    // 200 y no 401 a propósito: MP reintenta ante un error, y reintentar algo
-    // que nunca vamos a aceptar solo genera ruido en ambos lados.
-    return new Response("ok", { status: 200 });
+    return new Response("firma inválida", { status: 401 });
+  }
+
+  let eventoId: number | null = null;
+  if (id) {
+    try {
+      const { data: evento } = await sb.from("mercadopago_eventos").insert({
+        tipo: type || "desconocido",
+        recurso_id: String(id),
+        accion: url.searchParams.get("action"),
+        request_id: req.headers.get("x-request-id"),
+        firma_valida: true,
+      }).select("id").single();
+      eventoId = evento?.id ?? null;
+    } catch { /* la integración sigue si la migración de auditoría aún no llegó */ }
   }
 
   try {
@@ -331,22 +406,21 @@ Deno.serve(async (req) => {
       await registrarCobroMensual(sb, String(id), MP);
     } else if (type.includes("payment") && id) {
       const r = await fetch("https://api.mercadopago.com/v1/payments/" + id, { headers: { Authorization: "Bearer " + MP } });
+      if (!r.ok) throw new Error(`Mercado Pago respondió ${r.status} al consultar el pago ${id}`);
       const p = await r.json();
       // Campaña: los cobros de 'pago-lead' vienen como "lead:<id>" (el lead aún no es cliente del portal)
       if (p.status === "approved" && String(p.external_reference || "").startsWith("lead:")) {
         await marcarLeadPagado(sb, String(p.external_reference).slice(5), String(id), p);
-      } else if (p.status === "approved" && p.external_reference) {
-        // Se lee el estado ANTES de actualizar: si ya estaba pagado, esta es
-        // una notificación repetida (MP reintenta, y cualquiera puede
-        // reenviarla). Sin esto, cada repetición mandaba de nuevo el correo
-        // al cliente y al equipo.
-        const { data: antes } = await sb.from("pagos").select("estado").eq("id", p.external_reference).maybeSingle();
-        const yaEstaba = antes?.estado === "pagado";
-        await sb.from("pagos").update({ estado: "pagado", mp_id: String(id) }).eq("id", p.external_reference);
-        const { data: pago } = await sb.from("pagos").select("cliente_id,tipo,cobro_id").eq("id", p.external_reference).maybeSingle();
-        if (pago && !yaEstaba) {
-          await marcarCobroPagado(sb, pago);
-          await avisarPago(sb, pago.cliente_id, pago.tipo);
+      } else if (p.external_reference) {
+        const resultado = await conciliarPago(sb, p);
+        if (resultado.error) throw new Error(resultado.error);
+        if (
+          resultado.estado === "pagado" && resultado.pago &&
+          !resultado.pago.mp_notificado_en
+        ) {
+          await avisarPago(sb, resultado.pago, resultado.cobro);
+          await sb.from("pagos").update({ mp_notificado_en: new Date().toISOString() })
+            .eq("id", resultado.pago.id);
         }
       }
     } else if (type.includes("preapproval") && id) {
@@ -364,7 +438,7 @@ Deno.serve(async (req) => {
         // creaba para la autorización. Se conserva por los links que ya estén en
         // manos de un cliente; se puede borrar cuando no quede ninguno vivo.
         await sb.from("pagos").update({ estado: "pagado", mp_id: String(id) }).eq("id", pa.external_reference);
-        const { data: pago } = await sb.from("pagos").select("cliente_id,tipo,cobro_id").eq("id", pa.external_reference).maybeSingle();
+        const { data: pago } = await sb.from("pagos").select("*").eq("id", pa.external_reference).maybeSingle();
         if (pago) {
           // Recién acá se guarda el id de la suscripción si `crear-pago` no
           // alcanzó a hacerlo: sin él, ningún cobro mensual futuro se puede
@@ -375,9 +449,13 @@ Deno.serve(async (req) => {
               .eq("id", pago.cobro_id).is("mp_preapproval_id", null);
           }
           await marcarCobroPagado(sb, pago);
-          await avisarPago(sb, pago.cliente_id, "mensual");
+          const { data: cobro } = pago.cobro_id
+            ? await sb.from("cobros").select("*").eq("id", pago.cobro_id).maybeSingle()
+            : { data: null };
+          await avisarPago(sb, pago, cobro);
+          await sb.from("pagos").update({ mp_notificado_en: new Date().toISOString() }).eq("id", pago.id);
         }
-      } else if (pa.status === "cancelled") {
+      } else if (pa.status === "cancelled" || pa.status === "canceled") {
         // Suscripción dada de baja en Mercado Pago: el cobro deja de estar
         // activo, o el portal seguiría diciendo que cobra todos los meses.
         // Se resuelve por el id de MP, que sirve para las dos formas de
@@ -394,7 +472,26 @@ Deno.serve(async (req) => {
         if (cobroId) await sb.from("cobros").update({ estado: "cancelada" }).eq("id", cobroId);
       }
     }
-  } catch (e) { console.error("webhook error:", e); }
+    if (eventoId) {
+      await sb.from("mercadopago_eventos").update({
+        procesado: true,
+        resultado: "ok",
+        procesado_en: new Date().toISOString(),
+      }).eq("id", eventoId);
+    }
+  } catch (e) {
+    const mensaje = e instanceof Error ? e.message : String(e);
+    console.error("webhook error:", mensaje);
+    if (eventoId) {
+      await sb.from("mercadopago_eventos").update({
+        procesado: false,
+        resultado: mensaje.slice(0, 500),
+        procesado_en: new Date().toISOString(),
+      }).eq("id", eventoId);
+    }
+    // Un error transitorio sí debe reintentarse; un 200 escondería pagos caídos.
+    return new Response("error al procesar", { status: 500 });
+  }
 
-  return new Response("ok", { status: 200 }); // siempre 200 para que MP no reintente sin fin
+  return new Response("ok", { status: 200 });
 });

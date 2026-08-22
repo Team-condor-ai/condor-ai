@@ -19,11 +19,11 @@ import { Ico } from "./disenio/iconos";
 import { Clientes } from "./staff/Clientes";
 import { Dashboard } from "./staff/Dashboard";
 import { Ratia } from "./staff/ratia/Ratia";
-import { Productos } from "./staff/Productos";
 import { Contabilidad } from "./staff/contabilidad/Contabilidad";
 import { Organizacion } from "./staff/organizacion/Organizacion";
 import { Biblioteca } from "./staff/Biblioteca";
 import { Mcp } from "./staff/Mcp";
+import { CreditosApi } from "./staff/CreditosApi";
 import { Cobros } from "./staff/Cobros";
 import { Correos } from "./staff/Correos";
 import { Mapa } from "./staff/Mapa";
@@ -32,6 +32,7 @@ import { Memoria } from "./staff/memoria/Memoria";
 import { FichaBarbaraCliente } from "./staff/agentes-ia/FichaBarbaraCliente";
 
 import { MiPlan } from "./cliente/MiPlan";
+import { ResultadoPago } from "./cliente/ResultadoPago";
 import { Barbara } from "./cliente/Barbara";
 import { useTieneBarbara } from "./agentes-ia/useTieneBarbara";
 
@@ -83,7 +84,6 @@ const MENU_STAFF: Grupo[] = [
     icono: "libro",
     entradas: [
       { a: "/acceso/cobros", texto: "Cobros", icono: "cobros" },
-      { a: "/acceso/productos", texto: "Productos", icono: "producto" },
       { a: "/acceso/contabilidad", texto: "Contabilidad", icono: "libro" },
     ],
   },
@@ -121,6 +121,7 @@ const MENU_STAFF: Grupo[] = [
     icono: "ajustes",
     entradas: [
       { a: "/acceso/mapa", texto: "Mapa", icono: "grafo" },
+      { a: "/acceso/creditos-api", texto: "Créditos API", icono: "creditos" },
       { a: "/acceso/mcp", texto: "MCP / CLI", icono: "mcp" },
     ],
   },
@@ -216,13 +217,13 @@ export default function Portal() {
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="clientes" element={<Clientes />} />
           <Route path="ratia" element={<Ratia />} />
-          <Route path="productos" element={<Productos />} />
           <Route path="contabilidad" element={<Contabilidad />} />
           <Route path="organizacion/:vista" element={<Organizacion />} />
           <Route path="reuniones" element={<Navigate to="/acceso/organizacion/calendario" replace />} />
           <Route path="suscripciones" element={<Navigate to="/acceso/cobros" replace />} />
           <Route path="biblioteca" element={<Biblioteca />} />
           <Route path="mcp" element={<Mcp />} />
+          <Route path="creditos-api" element={<CreditosApi />} />
           <Route path="cobros" element={<Cobros />} />
           <Route path="herramientas" element={dif(<Herramientas />)} />
           <Route path="correos" element={<Correos />} />
@@ -253,6 +254,7 @@ export default function Portal() {
     <Marco menu={menuCliente} nombre={nombre} detalle={correo}>
       <Routes>
         <Route path="plan" element={<MiPlan />} />
+        <Route path="pago/resultado" element={<ResultadoPago />} />
         <Route path="boletas" element={dif(<MisBoletas />)} />
         <Route path="barbara" element={<Barbara />} />
         <Route path="cuenta" element={<MiCuenta />} />

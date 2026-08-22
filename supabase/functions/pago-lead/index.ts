@@ -12,8 +12,8 @@
 // Deploy: supabase functions deploy pago-lead   (CON verificación de JWT: lo usa el panel)
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { validarMonedaCuenta, webhookUrl } from "../_shared/mercadopago.ts";
 
-const WEBHOOK = "https://ogmvdthxwcmvqjlxhpsr.supabase.co/functions/v1/mp-webhook";
 const WEB = "https://condorai.cl";
 const EMAIL_FROM = Deno.env.get("EMAIL_FROM") || "condor.ai <onboarding@resend.dev>";
 
@@ -60,6 +60,11 @@ Deno.serve(async (req) => {
   const moneda = String(b.moneda || "COP").slice(0, 3).toUpperCase();
   if (!Number.isInteger(leadId) || leadId <= 0) return json({ error: "lead_id inválido" }, 400);
   if (!monto || monto <= 0) return json({ error: "monto inválido" }, 400);
+  try {
+    await validarMonedaCuenta(MP, moneda);
+  } catch (e) {
+    return json({ error: e instanceof Error ? e.message : String(e) }, 400);
+  }
 
   const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
   const { data: lead } = await sb.from("leads").select("id,nombre,negocio,email,whatsapp").eq("id", leadId).maybeSingle();
@@ -75,7 +80,7 @@ Deno.serve(async (req) => {
         payer: lead.email ? { email: lead.email } : undefined,
         back_urls: { success: `${WEB}/gracias/`, failure: WEB, pending: WEB },
         auto_return: "approved",
-        notification_url: WEBHOOK,
+        notification_url: webhookUrl(),
         external_reference: `lead:${lead.id}`,          // así el webhook sabe que es un lead y no un cliente del portal
         metadata: { lead_id: lead.id, origen: "campana" },
       }),

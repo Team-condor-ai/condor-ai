@@ -174,7 +174,7 @@ export function Herramientas() {
                     className="campo corto"
                     type="number"
                     min={1}
-                    value={it.cantidad}
+                    value={it.cantidad || ""}
                     onChange={(e) => {
                       const n = [...items];
                       n[k] = { ...it, cantidad: Number(e.target.value) };
@@ -185,7 +185,7 @@ export function Herramientas() {
                     className="campo medio"
                     type="number"
                     min={0}
-                    value={it.precio}
+                    value={it.precio || ""}
                     onChange={(e) => {
                       const n = [...items];
                       n[k] = { ...it, precio: Number(e.target.value) };
@@ -224,7 +224,7 @@ export function Herramientas() {
                   className="campo"
                   type="number"
                   min={0}
-                  value={mensual}
+                  value={mensual || ""}
                   onChange={(e) => setMensual(Number(e.target.value))}
                 />
               </label>

@@ -1,12 +1,4 @@
-/* ═══════════ Piezas nuevas: selector de vista, alertas, fotos, gráficos ═══════════ */
-
-/* Foto real del producto, o recuadro con la inicial cuando todavía no está
-   publicado. Nada de ícono genérico: uno igual para todos no ayuda a
-   reconocer el frasco, que es para lo que sirve la foto en la bodega. */
-.foto{border-radius:8px;object-fit:contain;background:var(--panel-2);
-  border:1px solid var(--borde);flex:none;display:block}
-.foto.vacia{display:grid;place-items:center;font-size:11px;font-weight:700;
-  color:var(--texto-3);border-style:dashed}
+/* ═══════════ Piezas nuevas: selector de vista, alertas y gráficos ═══════════ */
 
 /* ── selector de vista por cuenta ── */
 .sel{position:relative}
@@ -134,9 +126,7 @@ body.pedido-abierto .velo-ped{opacity:1;pointer-events:auto}
 h2.sec{font-size:14px;font-weight:650;margin:0 0 9px;letter-spacing:-.01em}
 .scan-grilla .item{align-items:flex-start}
 
-/* ═══════════ Ficha editable del producto ═══════════ */
-.ficha-cab{display:flex;gap:14px;align-items:flex-start;margin-bottom:12px}
-.ficha-cab .campos{flex:1;min-width:0;display:flex;flex-direction:column;gap:10px}
+/* Campos compactos compartidos por los editores. */
 .campo{display:flex;flex-direction:column;gap:5px}
 .campo span{font-size:11px;font-weight:650;letter-spacing:.06em;text-transform:uppercase;
   color:var(--texto-3)}
@@ -144,29 +134,6 @@ h2.sec{font-size:14px;font-weight:650;margin:0 0 9px;letter-spacing:-.01em}
   background:var(--panel);color:var(--texto);font:inherit;outline:none;width:100%}
 .campo input:focus{border-color:var(--texto);box-shadow:0 0 0 3px var(--activo)}
 .campo input::placeholder{color:var(--texto-3)}
-.campo.chico{width:130px;flex:none}
-.campos-2{display:grid;gap:10px;grid-template-columns:1fr 1fr;margin-bottom:8px}
-
-.precios{display:flex;flex-direction:column;border:1px solid var(--borde);border-radius:12px;
-  overflow:hidden}
-.precio-fila{display:flex;align-items:flex-end;gap:12px;padding:12px 14px;
-  border-bottom:1px solid var(--borde-suave);flex-wrap:wrap}
-.precio-fila:last-child{border-bottom:0}
-.precio-fila .quien{flex:1;min-width:150px}
-.precio-fila .quien b{display:block;font-size:13px;font-weight:600;margin-bottom:4px}
-.precio-fila .util{min-width:104px;text-align:right}
-.precio-fila .util b{display:block;font-size:15px;font-weight:650;font-variant-numeric:tabular-nums}
-.precio-fila .util b.ok{color:var(--ok-tx)}
-.precio-fila .util b.mal{color:var(--mal-tx)}
-.precio-fila .util small{font-size:10.5px;color:var(--texto-3)}
-.precio-fila .util .na{font-size:12px;color:var(--texto-3)}
-
-.barra-guardar{display:flex;align-items:center;gap:12px;margin-top:16px;padding-top:14px;
-  border-top:1px solid var(--borde-suave);flex-wrap:wrap}
-.barra-guardar .mini{margin:0;color:var(--ok-tx);font-weight:600}
-@media(max-width:560px){.campos-2{grid-template-columns:1fr}
-  .precio-fila .campo.chico{width:100%}}
-
 /* ═══════════ Horario de corte ═══════════ */
 .horario-caja{border:1px solid var(--borde);border-radius:12px;padding:14px;margin-bottom:14px}
 .horario-caja.vencido{border-color:var(--mal-bd);background:var(--mal-bg)}

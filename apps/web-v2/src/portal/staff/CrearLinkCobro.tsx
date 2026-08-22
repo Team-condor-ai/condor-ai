@@ -35,6 +35,7 @@ export function CrearLinkCobro({ cliente, cobro, cerrar, guardado }: Props) {
   const [link, setLink] = useState(cobro.link ?? "");
   const [correoOk, setCorreoOk] = useState(false);
   const [copiado, setCopiado] = useState(false);
+  const [cuentaActual, setCuentaActual] = useState(!!cobro.mp_cuenta_id);
   // Un link ya guardado se muestra de entrada para poder reenviarlo, pero hay
   // que distinguirlo del recién generado: el mensaje "listo y enviado" sobre un
   // link viejo diría que se acaba de mandar un correo que nadie mandó.
@@ -42,13 +43,21 @@ export function CrearLinkCobro({ cliente, cobro, cerrar, guardado }: Props) {
 
   const esMensual = cobro.tipo === "mensual";
 
-  async function generar(ev: React.FormEvent) {
-    ev.preventDefault();
+  async function generar(ev?: React.FormEvent, forzarNuevo = false) {
+    ev?.preventDefault();
+    if (
+      forzarNuevo &&
+      !window.confirm("Se invalidará el intento pendiente interno y se creará un enlace con la cuenta de Mercado Pago actual. ¿Continuar?")
+    ) return;
     setTrabajando(true);
     setError("");
     try {
       const { data, error } = await sb.functions.invoke("crear-pago", {
-        body: { cobro_id: cobro.id, enviar_correo: enviarCorreo && !!cliente.email },
+        body: {
+          cobro_id: cobro.id,
+          enviar_correo: enviarCorreo && !!cliente.email,
+          forzar_nuevo: forzarNuevo,
+        },
       });
       if (error) throw error;
       const r = data as { init_point?: string; correo_enviado?: boolean; error?: string };
@@ -57,6 +66,7 @@ export function CrearLinkCobro({ cliente, cobro, cerrar, guardado }: Props) {
       setLink(r.init_point);
       setCorreoOk(!!r.correo_enviado);
       setReciente(true);
+      setCuentaActual(true);
       guardado();
     } catch (e) {
       const m = e instanceof Error ? e.message : String(e);
@@ -99,25 +109,50 @@ export function CrearLinkCobro({ cliente, cobro, cerrar, guardado }: Props) {
 
           {link ? (
             <>
-              <p className="ok-msg">
-                {reciente
-                  ? `Link listo${correoOk ? ` y enviado a ${cliente.email}` : ""}.`
-                  : "Este cobro ya tiene un link generado."}
-              </p>
+              {cuentaActual ? (
+                <p className="ok-msg">
+                  {reciente
+                    ? `Link listo${correoOk ? ` y enviado a ${cliente.email}` : ""}.`
+                    : "Este cobro ya tiene un link generado."}
+                </p>
+              ) : (
+                <p className="error">
+                  Enlace heredado de la integración anterior. Regénéralo antes de enviarlo o abrirlo.
+                </p>
+              )}
               <label className="campo-lbl">
                 Link de pago
                 <input className="campo" readOnly value={link} onFocus={(e) => e.target.select()} />
               </label>
               <div className="botonera">
-                <button type="button" className="btn solido" onClick={copiar}>
-                  {copiado ? "¡Copiado!" : "Copiar link"}
-                </button>
-                <a className="btn" href={link} target="_blank" rel="noreferrer">Abrir</a>
+                {cuentaActual && (
+                  <>
+                    <button type="button" className="btn solido" onClick={copiar}>
+                      {copiado ? "¡Copiado!" : "Copiar link"}
+                    </button>
+                    <a className="btn" href={link} target="_blank" rel="noreferrer">Abrir</a>
+                  </>
+                )}
+                {!(esMensual && cobro.estado === "activa") && (
+                  <button
+                    type="button"
+                    className="btn"
+                    disabled={trabajando}
+                    onClick={() => void generar(undefined, true)}
+                  >
+                    {trabajando ? "Regenerando…" : "Regenerar en cuenta actual"}
+                  </button>
+                )}
               </div>
               <p className="conteo" style={{ marginTop: 10 }}>
                 Queda guardado en el cobro: puedes volver a copiarlo desde su ficha
                 sin generar uno nuevo.
               </p>
+              <div className="pago-pasos pago-pasos-compacto" aria-label="Estado del enlace">
+                <span className="listo">Cobro creado</span>
+                <span className="listo">Link generado</span>
+                <span>Confirmación pendiente</span>
+              </div>
             </>
           ) : (
             <>

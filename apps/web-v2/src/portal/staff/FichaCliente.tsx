@@ -10,10 +10,8 @@ import {
   MONEDAS,
   nombreCobro,
   type Cliente,
-  type ClienteProducto,
   type Cobro,
   type Pago,
-  type Producto,
 } from "./tipos";
 
 function Dato({ k, v }: { k: string; v: React.ReactNode }) {
@@ -59,18 +57,16 @@ export function ContenidoCliente({
   const [c, setC] = useState<Cliente | null>(null);
   const [cobros, setCobros] = useState<Cobro[]>([]);
   const [pagos, setPagos] = useState<Pago[]>([]);
-  const [productos, setProductos] = useState<Producto[]>([]);
-  const [asignados, setAsignados] = useState<ClienteProducto[]>([]);
   const [error, setError] = useState("");
   const [cargando, setCargando] = useState(true);
   const [abierto, setAbierto] = useState<string | null>(null);
+  const [gestionando, setGestionando] = useState<string | null>(null);
 
   const [editandoCobro, setEditandoCobro] = useState<Cobro | null | "nuevo">(
     null,
   );
   const [anotandoEn, setAnotandoEn] = useState<Cobro | null>(null);
   const [cobrando, setCobrando] = useState<Cobro | null>(null);
-  const [asignandoProducto, setAsignandoProducto] = useState(false);
 
   async function cargar(silencioso = false) {
     if (!silencioso) setCargando(true);
@@ -85,22 +81,11 @@ export function ContenidoCliente({
       alCargar?.(data as Cliente | null);
     }
 
-    const [
-      { data: co, error: eco },
-      { data: p },
-      { data: pr },
-      { data: ap, error: eap },
-    ] =
+    const [{ data: co, error: eco }, { data: p }] =
       await Promise.all([
         sb.from("cobros").select("*").eq("cliente_id", id).order("numero"),
         sb
           .from("pagos")
-          .select("*")
-          .eq("cliente_id", id)
-          .order("creado_en", { ascending: false }),
-        sb.from("productos").select("*"),
-        sb
-          .from("cliente_productos")
           .select("*")
           .eq("cliente_id", id)
           .order("creado_en", { ascending: false }),
@@ -110,12 +95,6 @@ export function ContenidoCliente({
     if (eco) setError("No se pudieron cargar los cobros: " + eco.message);
     setCobros((co ?? []) as Cobro[]);
     setPagos((p ?? []) as Pago[]);
-    setProductos((pr ?? []) as Producto[]);
-    setAsignados((ap ?? []) as ClienteProducto[]);
-    if (eap && !eco)
-      setError(
-        "No se pudieron cargar los productos asignados: " + eap.message,
-      );
     if (!silencioso) setCargando(false);
   }
 
@@ -133,10 +112,6 @@ export function ContenidoCliente({
     }
     return m;
   }, [pagos]);
-  const productoDe = useMemo(
-    () => new Map(productos.map((p) => [p.id, p])),
-    [productos],
-  );
 
   const recibido = (cobroId: string) =>
     (pagosDe.get(cobroId) ?? [])
@@ -176,6 +151,30 @@ export function ContenidoCliente({
     else void cargar(true);
   }
 
+  async function gestionarSuscripcion(
+    cobro: Cobro,
+    accion: "pausar" | "reanudar" | "cancelar",
+  ) {
+    if (
+      accion === "cancelar" &&
+      !window.confirm("Se cancelará la suscripción en Mercado Pago y dejarán de hacerse cobros automáticos. Esta acción no se puede deshacer. ¿Continuar?")
+    ) return;
+    setGestionando(cobro.id);
+    setError("");
+    try {
+      const { data, error } = await sb.functions.invoke("gestionar-suscripcion", {
+        body: { cobro_id: cobro.id, accion },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      await cargar(true);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "No se pudo actualizar la suscripción.");
+    } finally {
+      setGestionando(null);
+    }
+  }
+
   async function eliminarPagoPendiente(pago: Pago) {
     if (pago.estado && pago.estado !== "pendiente") return;
     const ok = window.confirm(
@@ -200,34 +199,6 @@ export function ContenidoCliente({
           : "El pago ya no está pendiente y no se eliminó.",
       );
     }
-  }
-
-  async function estadoProducto(asignacion: ClienteProducto, estado: string) {
-    const { error } = await sb
-      .from("cliente_productos")
-      .update({
-        estado,
-        fin: estado === "finalizado" ? new Date().toISOString().slice(0, 10) : null,
-      })
-      .eq("id", asignacion.id);
-    if (error) setError(error.message);
-    else void cargar(true);
-  }
-
-  async function quitarProducto(asignacion: ClienteProducto) {
-    const producto = productoDe.get(asignacion.producto_id);
-    if (
-      !window.confirm(
-        `¿Quitar ${producto?.nombre || "este producto"} del cliente? El historial de cobros no se elimina.`,
-      )
-    )
-      return;
-    const { error } = await sb
-      .from("cliente_productos")
-      .delete()
-      .eq("id", asignacion.id);
-    if (error) setError(error.message);
-    else void cargar(true);
   }
 
   if (cargando) return <p className="vacio">Cargando…</p>;
@@ -350,73 +321,6 @@ export function ContenidoCliente({
       </section>
 
       <section className="bloque">
-        <div className="cabecera-bloque">
-          <div>
-            <h3>Productos asignados</h3>
-            <p>
-              Lo que Cóndor entrega a este cliente, independiente de cómo se
-              cobre.
-            </p>
-          </div>
-          <button
-            className="btn solido"
-            onClick={() => setAsignandoProducto(true)}
-          >
-            {Ico.mas({ t: 14 })} Asignar producto
-          </button>
-        </div>
-        {asignados.length === 0 ? (
-          <p className="vacio">
-            Todavía no hay productos asignados. Elige uno del catálogo de
-            Productos para conectarlo con este cliente.
-          </p>
-        ) : (
-          <div className="productos-asignados">
-            {asignados.map((a) => {
-              const p = productoDe.get(a.producto_id);
-              return (
-                <article key={a.id} className="producto-asignado">
-                  <div className="producto-asignado-identidad">
-                    <span className="producto-monograma">
-                      {(p?.nombre || "P").slice(0, 2).toUpperCase()}
-                    </span>
-                    <div>
-                      <b>{p?.nombre || "Producto eliminado"}</b>
-                      <small>
-                        {[p?.familia, p?.codigo, a.inicio && `desde ${fecha(a.inicio)}`]
-                          .filter(Boolean)
-                          .join(" · ")}
-                      </small>
-                    </div>
-                  </div>
-                  <div className="producto-asignado-acciones">
-                    <select
-                      className="campo"
-                      value={a.estado}
-                      onChange={(e) => estadoProducto(a, e.target.value)}
-                      aria-label={`Estado de ${p?.nombre || "producto"}`}
-                    >
-                      <option value="pendiente">Pendiente</option>
-                      <option value="activo">Activo</option>
-                      <option value="pausado">Pausado</option>
-                      <option value="finalizado">Finalizado</option>
-                    </select>
-                    <button
-                      className="icono-btn peligro"
-                      title="Quitar producto"
-                      onClick={() => quitarProducto(a)}
-                    >
-                      {Ico.eliminar({ t: 15 })}
-                    </button>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        )}
-      </section>
-
-      <section className="bloque">
         <div
           style={{
             display: "flex",
@@ -470,15 +374,6 @@ export function ContenidoCliente({
                     >
                       <td>
                         <b>{nombreCobro(co)}</b>
-                        {co.producto_id && productoDe.get(co.producto_id) && (
-                          <>
-                            <br />
-                            <span className="tenue">
-                              Producto ·{" "}
-                              {productoDe.get(co.producto_id)?.nombre}
-                            </span>
-                          </>
-                        )}
                         {co.tipo === "mensual" && co.proximo_cobro && (
                           <>
                             <br />
@@ -564,38 +459,33 @@ export function ContenidoCliente({
                             )}
                             {co.tipo === "mensual" &&
                               co.estado === "activa" && (
-                                <button
-                                  className="btn"
-                                  onClick={() => cambiarEstado(co, "pausada")}
-                                >
-                                  Pausar
-                                </button>
+                                 <button
+                                   className="btn"
+                                   disabled={gestionando === co.id}
+                                   onClick={() => void gestionarSuscripcion(co, "pausar")}
+                                 >
+                                   {gestionando === co.id ? "Actualizando…" : "Pausar"}
+                                 </button>
                               )}
                             {co.tipo === "mensual" &&
                               co.estado === "pausada" && (
-                                <button
-                                  className="btn"
-                                  onClick={() => cambiarEstado(co, "activa")}
-                                >
-                                  Reanudar
-                                </button>
+                                 <button
+                                   className="btn"
+                                   disabled={gestionando === co.id}
+                                   onClick={() => void gestionarSuscripcion(co, "reanudar")}
+                                 >
+                                   {gestionando === co.id ? "Actualizando…" : "Reanudar"}
+                                 </button>
                               )}
                             {co.tipo === "mensual" &&
                               co.estado !== "cancelada" && (
-                                <button
-                                  className="btn peligro"
-                                  onClick={() =>
-                                    cambiarEstado(
-                                      co,
-                                      "cancelada",
-                                      co.mp_preapproval_id
-                                        ? "Esto la marca cancelada acá, pero NO la cancela en Mercado Pago: si no la das de baja también allá, MP va a seguir cobrándole al cliente todos los meses.\n\n¿Marcarla cancelada igual?"
-                                        : "¿Cancelar este cobro mensual?",
-                                    )
-                                  }
-                                >
-                                  Cancelar
-                                </button>
+                                 <button
+                                   className="btn peligro"
+                                   disabled={gestionando === co.id}
+                                   onClick={() => void gestionarSuscripcion(co, "cancelar")}
+                                 >
+                                   {gestionando === co.id ? "Cancelando…" : "Cancelar"}
+                                 </button>
                               )}
                           </div>
 
@@ -754,142 +644,6 @@ export function ContenidoCliente({
           guardado={cargar}
         />
       )}
-      {asignandoProducto && (
-        <AsignarProducto
-          clienteId={c.id}
-          productos={productos}
-          asignados={asignados}
-          cerrar={() => setAsignandoProducto(false)}
-          guardado={() => {
-            setAsignandoProducto(false);
-            void cargar(true);
-          }}
-        />
-      )}
     </>
-  );
-}
-
-function AsignarProducto({
-  clienteId,
-  productos,
-  asignados,
-  cerrar,
-  guardado,
-}: {
-  clienteId: string;
-  productos: Producto[];
-  asignados: ClienteProducto[];
-  cerrar: () => void;
-  guardado: () => void;
-}) {
-  const idsAsignados = new Set(asignados.map((a) => a.producto_id));
-  const elegibles = productos.filter(
-    (p) => p.estado !== "descontinuado" && !idsAsignados.has(p.id),
-  );
-  const [productoId, setProductoId] = useState(elegibles[0]?.id ?? "");
-  const [estado, setEstado] = useState<ClienteProducto["estado"]>("activo");
-  const [inicio, setInicio] = useState(new Date().toISOString().slice(0, 10));
-  const [notas, setNotas] = useState("");
-  const [guardando, setGuardando] = useState(false);
-  const [error, setError] = useState("");
-
-  async function enviar(e: React.FormEvent) {
-    e.preventDefault();
-    if (!productoId) return;
-    setGuardando(true);
-    const { data: usuario } = await sb.auth.getUser();
-    const { error } = await sb.from("cliente_productos").insert({
-      cliente_id: clienteId,
-      producto_id: productoId,
-      estado,
-      inicio: inicio || null,
-      notas: notas.trim() || null,
-      creado_por: usuario.user?.id ?? null,
-    });
-    setGuardando(false);
-    if (error) setError(error.message);
-    else guardado();
-  }
-
-  return (
-    <div className="velo" onClick={cerrar}>
-      <form
-        className="panel-modal"
-        onSubmit={enviar}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <header><h2>Asignar producto</h2></header>
-        <div className="contenido">
-          {elegibles.length === 0 ? (
-            <p className="vacio">
-              Todos los productos disponibles ya están asignados. Crea otro en
-              la pestaña Productos o reactiva uno descontinuado.
-            </p>
-          ) : (
-            <>
-              <label className="campo-lbl">
-                Producto del catálogo
-                <select
-                  className="campo"
-                  value={productoId}
-                  onChange={(e) => setProductoId(e.target.value)}
-                  required
-                >
-                  {elegibles.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.nombre}{p.familia ? ` · ${p.familia}` : ""}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <div className="dos">
-                <label className="campo-lbl">
-                  Estado
-                  <select
-                    className="campo"
-                    value={estado}
-                    onChange={(e) => setEstado(e.target.value as ClienteProducto["estado"])}
-                  >
-                    <option value="pendiente">Pendiente</option>
-                    <option value="activo">Activo</option>
-                    <option value="pausado">Pausado</option>
-                  </select>
-                </label>
-                <label className="campo-lbl">
-                  Inicio
-                  <input
-                    className="campo"
-                    type="date"
-                    value={inicio}
-                    onChange={(e) => setInicio(e.target.value)}
-                  />
-                </label>
-              </div>
-              <label className="campo-lbl">
-                Notas operativas
-                <textarea
-                  className="campo"
-                  rows={3}
-                  value={notas}
-                  onChange={(e) => setNotas(e.target.value)}
-                  placeholder="Alcance, variante contratada o condición especial"
-                />
-              </label>
-            </>
-          )}
-          {error && <p className="error">{error}</p>}
-        </div>
-        <footer>
-          <button type="button" className="btn" onClick={cerrar}>Cancelar</button>
-          <button
-            className="btn solido"
-            disabled={!productoId || guardando}
-          >
-            {guardando ? "Asignando…" : "Asignar producto"}
-          </button>
-        </footer>
-      </form>
-    </div>
   );
 }

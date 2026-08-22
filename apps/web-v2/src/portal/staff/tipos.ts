@@ -51,12 +51,15 @@ export type Cobro = {
   proximo_cobro: string | null;
   /** Solo mensual: la suscripción real en Mercado Pago. */
   mp_preapproval_id: string | null;
+  /** Solo pago único: la preferencia de Checkout Pro que originó el link. */
+  mp_preference_id?: string | null;
+  mp_cuenta_id?: string | null;
+  mp_checkout_creado_en?: string | null;
+  mp_ultima_sincronizacion?: string | null;
   link: string | null;
   ultimo_recordatorio_en: string | null;
   creado_por: string | null;
   creado_en: string | null;
-  /** Producto del catálogo que origina el cobro. */
-  producto_id: string | null;
 };
 
 /** Cómo se llama un cobro en pantalla: su título, o "Cobro N" si no tiene. */
@@ -78,6 +81,14 @@ export type Pago = {
   monto: number | null;
   estado: string | null;
   mp_id: string | null;
+  mp_status_detail?: string | null;
+  mp_payment_type?: string | null;
+  mp_payment_method_id?: string | null;
+  mp_fee_amount?: number | null;
+  mp_net_received?: number | null;
+  mp_refunded_amount?: number | null;
+  mp_ultima_sincronizacion?: string | null;
+  mp_notificado_en?: string | null;
   detalle: string | null;
   fecha: string | null;
   metodo: string | null;
@@ -98,46 +109,6 @@ export const METODOS_PAGO = [
 ];
 
 export const ESTADOS_PAGO = ["pendiente", "pagado", "rechazado"];
-
-/** Las columnas reales de `public.productos` (ver 20260817_productos.sql). */
-export type Producto = {
-  id: string;
-  nombre: string;
-  descripcion: string | null;
-  caracteristicas: string[] | null;
-  precio_setup_sugerido: number | null;
-  precio_mensual_sugerido: number | null;
-  moneda: string | null;
-  activo: boolean | null;
-  repo_url: string | null;
-  sitio_url: string | null;
-  docs_url: string | null;
-  creado_en: string | null;
-  estado: "borrador" | "activo" | "descontinuado";
-  familia: string | null;
-  codigo: string | null;
-  resumen: string | null;
-  frecuencia_meses: number;
-  costo_mensual: number;
-  costo_setup: number;
-  orden: number;
-  notas: string | null;
-};
-
-/** Producto que el equipo entrega a un cliente. Es independiente del cobro:
- * un producto puede estar asignado antes de facturarse o seguir activo aunque
- * cambie su modalidad de pago. */
-export type ClienteProducto = {
-  id: string;
-  cliente_id: string;
-  producto_id: string;
-  estado: "pendiente" | "activo" | "pausado" | "finalizado";
-  inicio: string | null;
-  fin: string | null;
-  notas: string | null;
-  creado_por: string | null;
-  creado_en: string | null;
-};
 
 /** Filas de `public.reuniones` (ver reuniones.sql + reuniones_fix.sql). */
 export type Reunion = {

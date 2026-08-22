@@ -137,7 +137,7 @@ export function EditorSuscriptor({ suscriptor, cerrar, guardado }: Props) {
                 className="campo"
                 type="number"
                 min={0}
-                value={f.monto}
+                value={f.monto || ""}
                 onChange={(e) => set("monto", Number(e.target.value))}
               />
               <small>Se propone el del plan; se puede cambiar.</small>

@@ -91,7 +91,7 @@ export function AnotarPago({ clienteId, cobro, cerrar, guardado }: Props) {
                 type="number"
                 min={0}
                 required
-                value={monto}
+                value={monto || ""}
                 onChange={(e) => setMonto(Number(e.target.value))}
               />
             </label>

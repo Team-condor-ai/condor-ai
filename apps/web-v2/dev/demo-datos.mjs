@@ -216,6 +216,11 @@ export function crearDatos() {
       mp_preapproval_id: "2c9380...demo",
       link: LINK,
     }),
+    // Cobro abierto para recorrer como cliente el checkout y su retorno
+    // verificado, sin tocar Mercado Pago ni la base real.
+    cobro(112, uid(1), 3, "unico", "Campaña de lanzamiento", 245000, "pendiente", {
+      creado_en: HOY.toISOString(),
+    }),
 
     // Howden: encargos sueltos. El tercero SIN TÍTULO, para ver el "Cobro 3".
     cobro(103, uid(2), 1, "unico", "Landing de junio", 450000, "pagado", {
@@ -458,124 +463,6 @@ export function crearDatos() {
     }
   }
 
-  const productos = [
-    {
-      id: uid(301),
-      nombre: "Bárbara",
-      descripcion: "Contenido para redes con IA",
-      caracteristicas: ["Carruseles", "Reels", "Brand book"],
-      precio_setup_sugerido: 250000,
-      precio_mensual_sugerido: 89000,
-      moneda: "CLP",
-      activo: true,
-      estado: "activo",
-      familia: "Agentes IA",
-      codigo: "BAR-CONT-M",
-      resumen: "Contenido mensual con identidad de marca",
-      frecuencia_meses: 1,
-      costo_mensual: 24000,
-      costo_setup: 65000,
-      orden: 10,
-      notas: null,
-      repo_url: null,
-      sitio_url: null,
-      docs_url: null,
-      creado_en: mesAtras(3) + "T10:00:00Z",
-    },
-    {
-      id: uid(302),
-      nombre: "Tienda Shopify",
-      descripcion: "Theme custom + catálogo",
-      caracteristicas: ["Theme a medida", "Carga de catálogo"],
-      precio_setup_sugerido: 1200000,
-      precio_mensual_sugerido: 180000,
-      moneda: "CLP",
-      activo: true,
-      estado: "activo",
-      familia: "Web",
-      codigo: "WEB-SHOP-M",
-      resumen: "Ecommerce con soporte y evolución mensual",
-      frecuencia_meses: 1,
-      costo_mensual: 52000,
-      costo_setup: 420000,
-      orden: 20,
-      notas: null,
-      repo_url: null,
-      sitio_url: null,
-      docs_url: null,
-      creado_en: mesAtras(6) + "T10:00:00Z",
-    },
-    {
-      id: uid(303),
-      nombre: "Landing Express",
-      descripcion: "Landing orientada a conversión",
-      caracteristicas: ["Diseño", "Copy", "Analítica"],
-      precio_setup_sugerido: 1400000,
-      precio_mensual_sugerido: 110000,
-      moneda: "CLP",
-      activo: true,
-      estado: "activo",
-      familia: "Web",
-      codigo: "WEB-LAND-X",
-      resumen: "Lanzamiento rápido para campañas",
-      frecuencia_meses: 1,
-      costo_mensual: 18000,
-      costo_setup: 390000,
-      orden: 30,
-      notas: null,
-      repo_url: null,
-      sitio_url: null,
-      docs_url: null,
-      creado_en: mesAtras(2) + "T10:00:00Z",
-    },
-  ];
-
-  const productoCobro = {
-    [uid(101)]: uid(302),
-    [uid(102)]: uid(302),
-    [uid(106)]: uid(301),
-    [uid(107)]: uid(301),
-    [uid(110)]: uid(303),
-    [uid(111)]: uid(303),
-  };
-  for (const c of cobros) c.producto_id = productoCobro[c.id] ?? null;
-
-  const cliente_productos = [
-    {
-      id: uid(580),
-      cliente_id: uid(1),
-      producto_id: uid(302),
-      estado: "activo",
-      inicio: mesAtras(6),
-      fin: null,
-      notas: "Soporte y evolución mensual",
-      creado_por: uid(900),
-      creado_en: mesAtras(6) + "T10:00:00Z",
-    },
-    {
-      id: uid(581),
-      cliente_id: uid(3),
-      producto_id: uid(301),
-      estado: "activo",
-      inicio: mesAtras(2),
-      fin: null,
-      notas: null,
-      creado_por: uid(900),
-      creado_en: mesAtras(2) + "T10:00:00Z",
-    },
-    {
-      id: uid(582),
-      cliente_id: uid(6),
-      producto_id: uid(303),
-      estado: "activo",
-      inicio: mesAtras(3),
-      fin: null,
-      notas: "Versión en inglés",
-      creado_por: uid(900),
-      creado_en: mesAtras(3) + "T10:00:00Z",
-    },
-  ];
-
   const reuniones = [
     {
       id: uid(590),
@@ -678,7 +565,7 @@ export function crearDatos() {
     {
       id: uid(620),
       titulo: "Llegar a $1,5M recurrentes",
-      detalle: "Con productos activos y suscripciones cobrando.",
+      detalle: "Con servicios activos y suscripciones cobrando.",
       metrica: "recurrente",
       objetivo: 1500000,
       avance: 0,
@@ -994,11 +881,35 @@ export function crearDatos() {
     },
   ];
 
+  const api_creditos = [
+    {
+      proveedor: "anthropic", nombre: "Anthropic", estado: "ok", saldo: null,
+      unidad_saldo: null, uso_periodo: null, unidad_uso: "tokens",
+      tokens_entrada: 842300, tokens_salida: 126400, costo_usd: 7.84,
+      periodo_desde: mesAtras(1) + "T00:00:00Z", detalle: "Datos de demostración.",
+      fuente: "Usage & Cost Admin API · demo", actualizado_en: new Date().toISOString(), orden: 10,
+    },
+    {
+      proveedor: "higgsfield", nombre: "Higgsfield", estado: "ok", saldo: 1240,
+      unidad_saldo: "créditos", uso_periodo: 286, unidad_uso: "créditos",
+      tokens_entrada: null, tokens_salida: null, costo_usd: null,
+      periodo_desde: mesAtras(1) + "T00:00:00Z", detalle: "Datos de demostración.",
+      fuente: "Higgsfield CLI · demo", actualizado_en: new Date().toISOString(), orden: 20,
+    },
+    {
+      proveedor: "blotato", nombre: "Blotato", estado: "advertencia", saldo: null,
+      unidad_saldo: "créditos", uso_periodo: null, unidad_uso: null,
+      tokens_entrada: null, tokens_salida: null, costo_usd: null,
+      periodo_desde: mesAtras(1) + "T00:00:00Z",
+      detalle: "Conexión verificada; Blotato no expone el saldo por API.",
+      fuente: "Blotato API · demo", actualizado_en: new Date().toISOString(), orden: 30,
+    },
+  ];
+
   return {
     clientes,
     cobros,
     pagos,
-    productos,
     admin_profiles,
     tipos_cambio,
     suscriptores_ratia,
@@ -1006,7 +917,7 @@ export function crearDatos() {
     reuniones,
     tareas,
     metas,
-    cliente_productos,
+    api_creditos,
     email_contactos,
     email_campanas,
     email_envios: [],

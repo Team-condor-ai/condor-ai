@@ -22,6 +22,8 @@ export function MiPlan() {
   const [cobros, setCobros] = useState<Cobro[]>([]);
   const [pagos, setPagos] = useState<Pago[]>([]);
   const [cargando, setCargando] = useState(true);
+  const [pagando, setPagando] = useState<string | null>(null);
+  const [errorPago, setErrorPago] = useState("");
 
   useEffect(() => {
     (async () => {
@@ -48,6 +50,28 @@ export function MiPlan() {
     return m;
   }, [pagos]);
 
+  async function pagar(cobro: Cobro) {
+    setPagando(cobro.id);
+    setErrorPago("");
+    try {
+      // Se consulta siempre al backend aunque haya un link guardado: ahí se
+      // valida que pertenezca a la cuenta de Mercado Pago actual y no a la
+      // integración antigua.
+      const { data, error } = await sb.functions.invoke("crear-pago", {
+        body: { cobro_id: cobro.id },
+      });
+      if (error) throw error;
+      const respuesta = data as { init_point?: string; error?: string };
+      if (respuesta?.error) throw new Error(respuesta.error);
+      const link = respuesta?.init_point || "";
+      if (!link) throw new Error("Mercado Pago no devolvió un enlace.");
+      window.location.assign(link);
+    } catch (e) {
+      setErrorPago(e instanceof Error ? e.message : "No se pudo iniciar el pago.");
+      setPagando(null);
+    }
+  }
+
   if (cargando) return <div className="cuerpo"><p className="vacio">Cargando…</p></div>;
 
   if (!c)
@@ -68,7 +92,7 @@ export function MiPlan() {
   return (
     <>
       <div className="barra">
-        <h1>Mi plan</h1>
+        <h1>Mi plan y pagos</h1>
       </div>
 
       <div className="cuerpo">
@@ -87,70 +111,77 @@ export function MiPlan() {
           )}
         </section>
 
-        <section className="bloque">
-          <h3>Lo que tienes contratado</h3>
+        <section className="bloque estado-cuenta">
+          <div className="estado-cuenta-cab">
+            <div>
+              <p className="pago-eyebrow">Estado de cuenta</p>
+              <h3>Lo que tienes contratado</h3>
+            </div>
+            <span className="pago-seguro">Pago protegido por Mercado Pago</span>
+          </div>
+
+          {errorPago && <p className="error">{errorPago}</p>}
           {vigentes.length === 0 ? (
             <p className="vacio">No tienes cobros abiertos ahora mismo.</p>
           ) : (
-            <div className="tabla-caja">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Concepto</th>
-                    <th className="num">Monto</th>
-                    <th>Cuándo</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {vigentes.map((x) => {
-                    const pagado = pagadoDe.get(x.id) ?? 0;
-                    const falta = Math.max(0, (x.monto ?? 0) - pagado);
-                    return (
-                      <tr key={x.id}>
-                        <td>
-                          <b>{nombreCobro(x)}</b>
-                          {x.tipo === "unico" && pagado > 0 && falta > 0 && (
-                            <>
-                              <br />
-                              <span className="conteo">
-                                Abonado {plata(pagado, x.moneda)} · faltan{" "}
-                                {plata(falta, x.moneda)}
-                              </span>
-                            </>
-                          )}
-                        </td>
-                        <td className="num">
-                          {plata(x.monto, x.moneda)}
-                          {x.tipo === "mensual" && <span className="conteo"> /mes</span>}
-                        </td>
-                        <td>
-                          {x.tipo === "mensual"
-                            ? x.estado === "activa"
-                              ? `Se cobra solo · próximo ${fecha(x.proximo_cobro)}`
-                              : x.estado === "pausada"
-                                ? "En pausa"
-                                : "Falta que lo actives"
-                            : x.estado === "pendiente"
-                              ? "Pendiente de pago"
-                              : "—"}
-                        </td>
-                        <td className="acciones">
-                          {/* El link se guarda al generarlo, así que el cliente
-                              puede volver a pagarlo sin pedir uno nuevo. */}
-                          {x.link && x.estado === "pendiente" && (
-                            <a className="btn solido" href={x.link} target="_blank" rel="noreferrer">
-                              {x.tipo === "mensual" ? "Activar" : "Pagar"}
-                            </a>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+            <div className="cobros-cliente">
+              {vigentes.map((x) => {
+                const pagado = pagadoDe.get(x.id) ?? 0;
+                const falta = Math.max(0, (x.monto ?? 0) - pagado);
+                const pendiente = x.estado === "pendiente";
+                return (
+                  <article className="cobro-cliente" key={x.id}>
+                    <div className="cobro-cliente-principal">
+                      <span className={`pill ${x.tipo === "mensual" ? "azul" : "gris"}`}>
+                        {x.tipo === "mensual" ? "Mensual" : "Una vez"}
+                      </span>
+                      <h4>{nombreCobro(x)}</h4>
+                      <p>
+                        {x.tipo === "mensual"
+                          ? x.estado === "activa"
+                            ? `Cobro automático · próximo ${fecha(x.proximo_cobro)}`
+                            : x.estado === "pausada"
+                              ? "La mensualidad está en pausa"
+                              : "Autoriza una vez; luego se cobra automáticamente"
+                          : pagado > 0 && falta > 0
+                            ? `Has abonado ${plata(pagado, x.moneda)}`
+                            : "Pago único pendiente"}
+                      </p>
+                    </div>
+                    <div className="cobro-cliente-monto">
+                      <strong>{plata(x.tipo === "unico" ? falta : x.monto, x.moneda)}</strong>
+                      <small>{x.tipo === "mensual" ? "cada mes" : pagado > 0 ? "saldo pendiente" : "total"}</small>
+                    </div>
+                    <div className="cobro-cliente-accion">
+                      {pendiente ? (
+                        <button
+                          className="btn solido"
+                          disabled={pagando === x.id}
+                          onClick={() => void pagar(x)}
+                        >
+                          {pagando === x.id
+                            ? "Abriendo…"
+                            : x.tipo === "mensual"
+                              ? "Activar con Mercado Pago"
+                              : "Pagar ahora"}
+                        </button>
+                      ) : (
+                        <span className={`pill ${x.estado === "activa" ? "ok" : "warn"}`}>
+                          {x.estado === "activa" ? "Activa" : "En pausa"}
+                        </span>
+                      )}
+                    </div>
+                  </article>
+                );
+              })}
             </div>
           )}
+
+          <div className="pago-pasos pago-pasos-compacto" aria-label="Cómo funciona el pago">
+            <span className="listo">Elige tu cobro</span>
+            <span>Mercado Pago</span>
+            <span>Confirmación automática</span>
+          </div>
         </section>
 
         <section className="bloque">
