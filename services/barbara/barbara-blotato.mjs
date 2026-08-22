@@ -10,7 +10,9 @@ const OUTBOX = process.env.BARBARA_OUTBOX_DIR || ".barbara-outbox";
 const LOG = "services/barbara/content-log.json";
 const runId = process.env.GITHUB_RUN_ID || "local";
 const tipo = String(process.env.DIA || "viernes").trim().toLowerCase();
-const TEMPLATE_ID = "2491f97b-1b47-4efa-8b96-8c651fa7b3d5";
+// Aunque la documentación general muestra el UUID corto, la cuenta devuelve y acepta
+// el identificador versionado completo para esta plantilla.
+const TEMPLATE_ID = "/base/v2/tutorial-carousel/2491f97b-1b47-4efa-8b96-8c651fa7b3d5/v1";
 
 const TEMAS = {
   lunes: {
