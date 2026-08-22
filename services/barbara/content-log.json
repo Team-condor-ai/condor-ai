@@ -120,5 +120,14 @@
     "tipo": "reel-trailer",
     "angulo": "El restaurante que predice lo que quieres antes de que lo pidas: la IA como chef de datos invisible",
     "industria": "restaurante"
+  },
+  {
+    "fecha": "2026-08-22",
+    "tipo": "viernes",
+    "angulo": "La IA transforma las pequeñas empresas",
+    "titulo": "🌅 IA para trabajar y vivir mejor",
+    "runId": "32539892101",
+    "motor": "blotato",
+    "visualId": "a908986a-f7c1-4325-a84f-57c0d6b624a1"
   }
 ]
