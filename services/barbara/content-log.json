@@ -120,5 +120,13 @@
     "tipo": "reel-trailer",
     "angulo": "El restaurante que predice lo que quieres antes de que lo pidas: la IA como chef de datos invisible",
     "industria": "restaurante"
+  },
+  {
+    "fecha": "2026-08-22",
+    "tipo": "lunes",
+    "serie": "noticias",
+    "angulo": "La IA de esta semana no está en un laboratorio lejano: ya se instaló en tu WhatsApp, tu software de oficina y el banco que le presta a tu pyme.",
+    "titulo": "📰 Noticiero IA — la semana en IA",
+    "runId": "32595990242"
   }
 ]
