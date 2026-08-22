@@ -154,7 +154,16 @@ const schema = {
       // del slide.
       prompt: { type: "string", description: `Contenido EN INGLÉS de ESTE slide, breve (máx 60 palabras). NO describas el estilo, los colores ni la tipografía: eso ya lo pone el template. Di solo qué ilustración o ícono va, y el TEXTO EXACTO en español que debe aparecer, como copy FINAL (solo lo que lee la persona). PROHIBIDO que ese texto incluya rótulos ni meta-palabras como 'titular', 'título', 'subtítulo', 'dato', 'texto', 'slide' o 'CTA', ni una palabra seguida de dos puntos como etiqueta. Último slide = CTA con el texto '${tema.cta}'.` },
     }, required: ["titulo", "prompt"] } },
-    caption: { type: "string", description: "Caption educativa para Instagram con hook, valor real, invita a seguir + MÁXIMO 5 hashtags (Instagram rechaza la publicación con más de 5). Mezcla IA/negocios/Perú/Chile." },
+    // Corregido 22-ago-2026: la primera caption real salió como UN párrafo
+    // corrido — Joaquín la aprobó igual porque el carrusel estaba bueno, pero
+    // marcó que a la próxima tiene que venir estructurada. Se dicta el
+    // formato explícito en vez de confiar en "hazla atractiva".
+    caption: { type: "string", description: `Caption para Instagram, con SALTOS DE LÍNEA reales entre bloques (usa "\\n\\n" en el JSON) — NUNCA un solo párrafo corrido:
+1. Gancho de 1-2 líneas cortas que para el scroll. Con 1-2 emojis, no más.
+2. Un salto de línea, y el cuerpo en 2-4 líneas CORTAS (no una muralla de texto) — puede llevar una pregunta al lector.
+3. Un salto de línea, y el cierre: qué hace condor.ai + invitación a seguir/DM.
+4. Un salto de línea final y MÁXIMO 5 hashtags en una sola línea (Instagram rechaza la publicación con más de 5). Mezcla IA/negocios/Perú/Chile.
+Objetivo: que se lea fácil en el feed del celular sin tener que abrir "ver más", con aire entre los bloques.` },
   },
   required: ["angulo", "slides", "caption"],
 };

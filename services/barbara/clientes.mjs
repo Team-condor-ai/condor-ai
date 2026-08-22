@@ -41,7 +41,12 @@ const schema = {
       titular: { type: "string", description: "El titular del slide, EN ESPAÑOL, tal cual se va a leer. Corto y con fuerza: 4 a 9 palabras. Sin rótulos ni dos puntos de etiqueta." },
       cuerpo: { type: "string", description: "Una o dos frases que desarrollan el titular, EN ESPAÑOL, tal cual se van a leer. Máximo 160 caracteres. Puede ir vacío si el titular se basta solo." },
     }, required: ["titular", "cuerpo"] } },
-    caption: { type: "string", description: "Caption para Instagram con hook, valor real para el público objetivo del cliente, tono acorde a su marca, y 5-8 hashtags relevantes a su rubro." },
+    // Corregido 22-ago-2026: la primera caption real de Cóndor salió como un
+    // párrafo corrido, y por separado Instagram rechazó una publicación por
+    // traer 8 hashtags (el límite real es 5). Mismo bug, latente acá también
+    // — se dicta formato y tope explícitos en vez de confiar en "hazla
+    // atractiva" / "5-8".
+    caption: { type: "string", description: `Caption para Instagram, con SALTOS DE LÍNEA reales entre bloques (usa "\\n\\n" en el JSON) — NUNCA un solo párrafo corrido: (1) gancho de 1-2 líneas con 1-2 emojis; (2) cuerpo de 2-4 líneas cortas, tono acorde a la marca del cliente, útil para su público objetivo — puede llevar una pregunta; (3) cierre con CTA; (4) línea final con MÁXIMO 5 hashtags relevantes al rubro del cliente (Instagram rechaza la publicación con más de 5). Que se lea fácil en el feed sin abrir "ver más".` },
   },
   required: ["angulo", "slides", "caption"],
 };
@@ -68,7 +73,7 @@ const schemaUGC = {
       }, required: ["escena", "duracion"] },
     },
     texto_en_pantalla: { type: "string", description: "Frase corta en español para sobreimprimir (hook o dato del producto), fiel al tono de marca." },
-    caption: { type: "string", description: "Caption para Instagram/TikTok, tono UGC auténtico, con hook + valor + CTA + 5-8 hashtags relevantes al rubro." },
+    caption: { type: "string", description: `Caption para Instagram/TikTok, tono UGC auténtico, con SALTOS DE LÍNEA reales entre bloques (usa "\\n\\n" en el JSON) — NUNCA un solo párrafo corrido: gancho corto + cuerpo breve con valor + CTA + línea final con MÁXIMO 5 hashtags relevantes al rubro (Instagram rechaza la publicación con más de 5).` },
   },
   required: ["angulo", "clips", "texto_en_pantalla", "caption"],
 };
