@@ -227,10 +227,19 @@ async function main() {
   let research = "";
   if (tema.investiga) {
     try {
+      // La fecha de hoy va EXPLÍCITA. Sin ella el modelo no sabe qué es "esta
+      // semana" y devuelve noticias de hace meses como si fueran de ayer: el
+      // 22-ago-2026 armó un noticiero "de esta semana" con el anuncio de los
+      // agentes de WhatsApp, que es real pero del 3 de junio, y le puso fechas
+      // de julio que no existen. Además ahora se exige URL y fecha de
+      // publicación por noticia, para que lo no verificable se pueda descartar
+      // en vez de llegar al diseño ya convertido en titular.
+      const hoyTxt = new Date().toISOString().slice(0, 10);
+      const desde = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
       const r = await claude({
-        model: "claude-sonnet-5", max_tokens: 1200,
-        tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 5 }],
-        messages: [{ role: "user", content: `Investiga datos ACTUALES y reales para: ${tema.instruccion}\nResumen con cifras y fuentes recientes.` }],
+        model: "claude-sonnet-5", max_tokens: 2000,
+        tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 8 }],
+        messages: [{ role: "user", content: `Hoy es ${hoyTxt}. Investiga datos ACTUALES y reales para: ${tema.instruccion}\n\nREGLAS DE LA INVESTIGACIÓN:\n- Solo sirve lo publicado entre ${desde} y ${hoyTxt}. Si una noticia es anterior, DESCÁRTALA aunque sea importante.\n- Por cada hallazgo escribe: titular, cifra exacta, medio, FECHA DE PUBLICACIÓN y URL.\n- Si no encuentras la fecha o la URL, no lo incluyas.\n- NO completes ni redondees cifras de memoria: si el dato no está en la fuente, dilo.\n- Si en la semana no hubo suficientes noticias, dilo explícitamente en vez de rellenar.` }],
       });
       research = textOf(r);
     } catch (e) { console.log("research falló:", String(e).slice(0, 120)); }
@@ -244,7 +253,11 @@ async function main() {
   const extra = isRetry ? "\n\n⚠️ ESTE ES UN REINTENTO: el contenido anterior fue rechazado por el equipo. Genera una versión CLARAMENTE MEJOR y distinta (mejor diseño, mejor texto, otro enfoque del mismo tema)." : "";
   const dir = await claude({
     model: "claude-sonnet-5", max_tokens: 8000,
-    system: `Eres Barbara, directora creativa de condor.ai. Diseñas carruseles de Instagram (${N_SLIDES} slides) de nivel agencia, educativos y que hacen seguir la cuenta. Sigues EXACTAMENTE el template del día. Incluyes el texto exacto a renderizar en cada slide COMO COPY FINAL: en la imagen SOLO aparece lo que lee la persona, JAMÁS palabras estructurales como "titular", "subtítulo", "título", "dato", "texto", "slide" o "CTA", ni rótulos con dos puntos. NUNCA repites ángulos, protagonistas ni textos de las piezas recientes (te las paso). Innova siempre. Responde SOLO con el JSON.`,
+    system: `Eres Barbara, directora creativa de condor.ai. Diseñas carruseles de Instagram (${N_SLIDES} slides) de nivel agencia, educativos y que hacen seguir la cuenta. Sigues EXACTAMENTE el template del día. Incluyes el texto exacto a renderizar en cada slide COMO COPY FINAL: en la imagen SOLO aparece lo que lee la persona, JAMÁS palabras estructurales como "titular", "subtítulo", "título", "dato", "texto", "slide" o "CTA", ni rótulos con dos puntos. NUNCA repites ángulos, protagonistas ni textos de las piezas recientes (te las paso). Innova siempre.
+
+REGLA DE VERACIDAD (no negociable): cada cifra, fecha, medio y hecho que pongas en un slide tiene que salir TAL CUAL de la investigación que te paso. Está PROHIBIDO inventar o estimar una estadística, atribuirle algo a un medio real (Bloomberg, Microsoft, Meta, Google, McKinsey…) que no venga en la investigación, o ponerle a una noticia una fecha que no sea la de su publicación real. Esto se publica en la cuenta real de una empresa: un dato inventado con el logo encima es un problema de verdad. Si la investigación no alcanza, haz un carrusel más corto o de ángulo más general — nunca lo rellenes.
+
+Responde SOLO con el JSON.`,
     output_config: { format: { type: "json_schema", schema } },
     messages: [{ role: "user", content: `Tipo de hoy (${dia}): ${tema.instruccion}\n\nTEMPLATE OBLIGATORIO:\n${tema.template}\n\nPIEZAS RECIENTES (NO repitas estos ángulos, innova):\n${recientes}\n${research ? "\nInvestigación web:\n" + research : ""}${extra}\n\nCrea el carrusel de ${N_SLIDES} slides con un ángulo NUEVO.` }],
   });
@@ -269,7 +282,11 @@ async function main() {
   const imgs = [];
   for (let i = 0; i < slides.length; i++) {
     try {
-      const url = genImagen(slides[i].prompt + "\n\n" + tema.template + "\n\n" + REGLA_TEXTO, i);
+      // El contador va DICTADO, no insinuado. Dejándoselo al modelo salieron
+      // "01", "01 / 05", "3/5", "05" y "04/10" en un mismo carrusel de 6: un
+      // modelo de imagen no sabe en qué slide va ni cuántos hay.
+      const contador = `\n\nSLIDE COUNTER: render exactly the text "${i + 1}/${slides.length}" in the top-right corner, nothing else there. Do not invent a different number or format.`;
+      const url = genImagen(REGLA_TEXTO + "\n\n" + tema.template + contador + "\n\n" + slides[i].prompt, i);
       const buf = Buffer.from(await (await fetch(url)).arrayBuffer());
       imgs.push(buf);
     } catch (e) {
