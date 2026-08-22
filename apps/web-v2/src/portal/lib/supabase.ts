@@ -16,12 +16,17 @@ import { createClient } from "@supabase/supabase-js";
 // apuntar a otra instancia sin tocar código, y si nadie la setea el portal
 // igual funciona. No se pierde nada por tenerla acá — es pública de todos
 // modos, como aclara el propio `.env.example`.
+// 21-ago-2026: apuntado al proyecto nuevo (org "Condor AI",
+// ylsqvmggycfijzfvguzq) para ver el portal visualmente contra el nuevo
+// backend mientras se completan los secretos reales. Ver
+// memoria "migracion_supabase_nuevo_proyecto_2026_08_21" para el detalle
+// y lo que todavía falta antes de que esto sea el corte definitivo.
 const URL =
   (import.meta.env.VITE_SUPABASE_URL as string | undefined)?.trim() ||
-  "https://ogmvdthxwcmvqjlxhpsr.supabase.co";
+  "https://ylsqvmggycfijzfvguzq.supabase.co";
 const ANON =
   (import.meta.env.VITE_SUPABASE_ANON as string | undefined)?.trim() ||
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9nbXZkdGh4d2NtdnFqbHhocHNyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE2NDEwMTksImV4cCI6MjA5NzIxNzAxOX0.wo6zSUlMejjYu1hSweZcWEBBdCvBgVNWg3xtLzFTIrI";
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlsc3F2bWdneWNmaWp6ZnZndXpxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczNjE3OTgsImV4cCI6MjEwMjkzNzc5OH0.w1LABnzrOIgJ-UHelPF2A2kXCqDzDYPQK-5oV_o6VPk";
 
 export const sb = createClient(URL, ANON);
 export const FUNCIONES = URL + "/functions/v1";
