@@ -2,10 +2,11 @@ name: Barbara - chequeo de credenciales
 
 on:
   schedule:
-    # Días de contenido (Lun-Vie), UNAS HORAS ANTES de publicar.
-    # Las publicaciones son 13:00 UTC (09:00 Chile). Chequeamos 11:00 UTC (07:00 Chile),
-    # ~2h antes, para avisar a tiempo si hay que re-autenticar. Ajustable a gusto.
-    - cron: '0 11 * * 1-5'
+    # TODOS los días (no solo Lun-Vie): cada corrida usa el refresh_token y lo
+    # renueva, así que correr también fin de semana reduce el tiempo sin uso
+    # que fue justo lo que dejó vencer la sesión la vez pasada (jun-jul 2026).
+    # 11:00 UTC = 07:00 Chile, ~2h antes de publicar (13:00 UTC / 09:00 Chile).
+    - cron: '0 11 * * *'
   workflow_dispatch: {}
 
 permissions:
