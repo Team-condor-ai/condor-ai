@@ -34,6 +34,25 @@ export const textOf = (d) => (d.content || []).filter((b) => b.type === "text").
 // cualquier palabra estructural del prompt si no se lo prohibimos.
 export const REGLA_TEXTO = `TEXT RULE (critical): the only text rendered in the image must be the final Spanish copy the reader is meant to see, as polished editorial typography. Do NOT render meta words or field labels such as "titular", "título", "subtítulo", "subtitulo", "dato", "texto", "slide", "CTA", "headline", "subtitle" or "caption", and NEVER render a word followed by a colon used as a label. No placeholder labels, no field names on the image.`;
 
+// Regla de veracidad. Va en el system de TODO director que escriba copy —
+// Cóndor y cada cliente — porque el modelo, cuando no tiene el dato, no deja
+// el hueco: lo rellena con una cifra verosímil y le pone al lado el nombre de
+// un medio real.
+//
+// Pasó en vivo el 22-ago-2026 con el noticiero de Cóndor: tituló "4 noticias
+// de esta semana" con fechas de julio inexistentes, y le atribuyó cifras a
+// Bloomberg y a un "reporte trimestral de Microsoft" que nunca estuvieron en
+// la investigación. Se pilló mirando los PNG antes de publicar.
+//
+// Con un cliente el riesgo es peor: nadie de Cóndor revisa sus piezas antes de
+// que salgan, y el dato inventado va con SU logo y SU marca encima.
+export const REGLA_VERACIDAD = `REGLA DE VERACIDAD (no negociable): toda cifra, porcentaje, fecha, estudio o nombre de empresa que escribas tiene que venir del material que te paso. Está PROHIBIDO:
+- inventar o estimar una estadística, aunque suene razonable;
+- atribuirle un dato a una fuente real (Bloomberg, Microsoft, Meta, Google, McKinsey, Gartner, un diario…) si no viene en el material;
+- ponerle a un hecho una fecha que no sea la real;
+- describir como "de esta semana" o "reciente" algo cuya fecha no tienes.
+Si no tienes el dato, escribe la pieza SIN cifras: un buen texto sin números es publicable, uno con un número inventado no. Esto se publica en la cuenta real de una marca y con su logo encima.`;
+
 // ---- Higgsfield: generar imagen y devolver URL (mismo patrón de reintentos
 // que barbara.mjs — 3 intentos, aborta de inmediato si el error es de
 // auth/config en vez de transitorio) ----
