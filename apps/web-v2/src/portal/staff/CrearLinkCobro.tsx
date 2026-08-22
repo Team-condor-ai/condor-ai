@@ -57,6 +57,9 @@ export function CrearLinkCobro({ cliente, cobro, cerrar, guardado }: Props) {
         "crear-pago",
         {
           cobro_id: cobro.id,
+          // El staff puede cobrar a un cliente sin correo. El backend usa este
+          // id para resolver la ficha; el monto sigue saliendo del cobro.
+          cliente_id: cliente.id,
           enviar_correo: enviarCorreo && !!cliente.email,
           forzar_nuevo: forzarNuevo,
         },
@@ -177,7 +180,9 @@ export function CrearLinkCobro({ cliente, cobro, cerrar, guardado }: Props) {
                 </div>
               ) : (
                 <p className="conteo">
-                  Este cliente no tiene correo, así que el link hay que pasárselo a mano.
+                  {esMensual
+                    ? "Mercado Pago exige un correo para autorizar una suscripción mensual. Agrégalo a la ficha antes de generar este link."
+                    : "Este cliente no tiene correo. Genera el link y compártelo a mano por WhatsApp u otro canal."}
                 </p>
               )}
 
@@ -191,7 +196,11 @@ export function CrearLinkCobro({ cliente, cobro, cerrar, guardado }: Props) {
             {link ? "Cerrar" : "Cancelar"}
           </button>
           {!link && (
-            <button className="btn solido" disabled={trabajando}>
+            <button
+              className="btn solido"
+              disabled={trabajando || (esMensual && !cliente.email)}
+              title={esMensual && !cliente.email ? "Las suscripciones requieren correo" : undefined}
+            >
               {trabajando ? "Generando…" : <>{Ico.cobros({ t: 15 })} Generar link</>}
             </button>
           )}

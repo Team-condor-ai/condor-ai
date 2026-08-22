@@ -76,10 +76,12 @@ const diasEntre = (a: string, b: string) =>
 export function ImportarCartola({
   cuentas,
   asientos,
+  cerrar,
   recargar,
 }: {
   cuentas: Cuenta[];
   asientos: Asiento[];
+  cerrar: () => void;
   recargar: () => void;
 }) {
   const liquidas = useMemo(() => cuentas.filter((c) => c.liquida), [cuentas]);
@@ -628,9 +630,32 @@ export function ImportarCartola({
   const cuentaBanco = cuentas.find((c) => c.id === cuentaBancoId);
 
   return (
-    <section className="bloque">
-      <h3 style={{ marginTop: 0 }}>Importar cartola del banco</h3>
-      <p className="conteo">
+    <div className="velo" onClick={() => !aplicando && cerrar()}>
+      <section
+        className="panel-modal cartola-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="cartola-titulo"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <header>
+          <div>
+            <h2 id="cartola-titulo">Importar cartola del banco</h2>
+            <p>Revisa cada movimiento antes de llevarlo a contabilidad.</p>
+          </div>
+          <button
+            type="button"
+            className="btn chico cartola-cerrar"
+            aria-label="Cerrar cartola"
+            disabled={aplicando}
+            onClick={cerrar}
+          >
+            ×
+          </button>
+        </header>
+
+        <div className="contenido cartola-modal-contenido">
+      <p className="conteo cartola-intro">
         Lee el PDF de la cartola, dice qué haría con cada movimiento y espera que lo
         aceptes o lo deniegues. Reimportar el mismo archivo no duplica nada, y lo que
         deniegues vuelve a aparecer la próxima vez.
@@ -1031,6 +1056,14 @@ export function ImportarCartola({
           </button>
         </>
       )}
-    </section>
+        </div>
+
+        <footer>
+          <button type="button" className="btn" disabled={aplicando} onClick={cerrar}>
+            Cerrar
+          </button>
+        </footer>
+      </section>
+    </div>
   );
 }

@@ -16,7 +16,6 @@ const PESTANAS = [
   { id: "desglose", texto: "Desglose de egresos" },
   { id: "libro", texto: "Libro diario" },
   { id: "fijos", texto: "Gastos fijos" },
-  { id: "cartola", texto: "Cartola del banco" },
   { id: "cuentas", texto: "Plan de cuentas" },
 ] as const;
 
@@ -63,6 +62,7 @@ export function Contabilidad() {
     null,
   );
   const [asientoManual, setAsientoManual] = useState(false);
+  const [cartolaAbierta, setCartolaAbierta] = useState(false);
   const [cuentaEditando, setCuentaEditando] = useState<Cuenta | "nueva" | null>(
     null,
   );
@@ -196,6 +196,9 @@ export function Contabilidad() {
         <h1>Contabilidad</h1>
         <button className="btn" onClick={() => setAsientoManual(true)}>
           {Ico.libro({ t: 14 })} Asiento manual
+        </button>
+        <button className="btn" onClick={() => setCartolaAbierta(true)}>
+          {Ico.subir({ t: 14 })} Cartola
         </button>
         <button className="btn" onClick={() => setRegistrando("ingreso")}>
           {Ico.mas({ t: 14 })} Ingreso
@@ -476,14 +479,6 @@ export function Contabilidad() {
           />
         )}
 
-        {pestana === "cartola" && (
-          <ImportarCartola
-            cuentas={cuentas}
-            asientos={asientos}
-            recargar={cargar}
-          />
-        )}
-
         {pestana === "cuentas" && (
           <>
             <div className="plan-cuentas-cab">
@@ -572,6 +567,14 @@ export function Contabilidad() {
             setAsientoManual(false);
             cargar();
           }}
+        />
+      )}
+      {cartolaAbierta && (
+        <ImportarCartola
+          cuentas={cuentas}
+          asientos={asientos}
+          cerrar={() => setCartolaAbierta(false)}
+          recargar={cargar}
         />
       )}
       {cuentaEditando && (

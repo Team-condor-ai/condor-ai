@@ -138,6 +138,15 @@ Deno.serve(async (req) => {
   const { data: adminRow } = await sb.from("admins").select("email").eq("email", user.email).maybeSingle();
   const esAdmin = !!adminRow;
 
+  // La pantalla nueva envía cliente_id, pero un cobro ya contiene esa relación.
+  // Resolverla también acá evita que un link manual dependa de que el cliente
+  // tenga correo o de que el navegador repita información que ya está en BD.
+  if (esAdmin && !clienteId && cobroId) {
+    const { data: cobroObjetivo } = await sb.from("cobros")
+      .select("cliente_id").eq("id", cobroId).maybeSingle();
+    clienteId = cobroObjetivo?.cliente_id ?? null;
+  }
+
   // Admin puede cobrar a cualquier cliente (cliente_id); el cliente normal, solo a sí mismo
   let cliente: any = null;
   if (esAdmin && clienteId) cliente = (await sb.from("clientes").select("*").eq("id", clienteId).maybeSingle()).data;
@@ -314,6 +323,13 @@ Deno.serve(async (req) => {
   try {
     let initPoint = "";
     if (tipoCobro === "mensual") {
+      // Mercado Pago exige payer_email para crear una suscripción. Los cobros
+      // únicos no tienen esta limitación y pueden compartirse completamente a mano.
+      if (!cliente.email) {
+        return json({
+          error: "Mercado Pago exige un correo para crear una suscripción mensual. Agrégalo a la ficha del cliente.",
+        }, 400);
+      }
       // Suscripción (cobro automático mensual)
       const r = await fetch("https://api.mercadopago.com/preapproval", {
         method: "POST", headers: {
@@ -355,7 +371,7 @@ Deno.serve(async (req) => {
         },
         body: JSON.stringify({
           items: [{ title: concepto, quantity: 1, unit_price: monto, currency_id: moneda }],
-          payer: { email: cliente.email },
+          ...(cliente.email ? { payer: { email: cliente.email } } : {}),
           back_urls: { success: retorno, failure: retorno, pending: retorno },
           auto_return: "approved",
           notification_url: webhookUrl(),
