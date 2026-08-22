@@ -91,7 +91,11 @@ function medir(fila) {
   const gasto = +fila.spend || 0;
   const clics = a[CLICS_WEB] ?? +fila.clicks ?? 0;
   const landing = a[LANDING] || 0;
-  const convWA = (a[CONV_WA_1] || 0) + (a[CONV_WA_2] || 0);
+  /* BUG corregido 22-ago-2026 (mismo que en meta-analyzer.mjs): las dos
+     métricas se solapan y sumarlas inflaba las conversaciones ~1,54x. Se toma
+     la mayor, no la suma — así una campaña que solo reporte la segunda sigue
+     midiéndose bien, sin contar dos veces a la misma persona. */
+  const convWA = Math.max(a[CONV_WA_1] || 0, a[CONV_WA_2] || 0);
   return {
     gasto,
     impresiones: +fila.impressions || 0,

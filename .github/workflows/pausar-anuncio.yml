@@ -1,0 +1,43 @@
+name: Pausar o reactivar un anuncio
+
+# Las credenciales de Meta viven solo acá (secrets), no en ningún PC.
+# Por eso pausar un anuncio se dispara desde este botón y no a mano.
+#
+# Actions → "Pausar o reactivar un anuncio" → Run workflow.
+
+on:
+  workflow_dispatch:
+    inputs:
+      anuncio:
+        description: 'Parte del nombre del anuncio (ej: video pizarra)'
+        required: true
+        type: string
+      accion:
+        description: 'Qué hacer con él'
+        required: true
+        default: pausar
+        type: choice
+        options: [pausar, activar]
+      confirmar:
+        description: 'Aplicarlo de verdad (sin esto solo simula)'
+        required: true
+        default: false
+        type: boolean
+
+jobs:
+  pausar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Cambiar estado del anuncio
+        run: |
+          node services/meta-analyzer/pausar-anuncio.mjs \
+            --anuncio "${{ inputs.anuncio }}" \
+            ${{ inputs.accion == 'activar' && '--activar' || '' }} \
+            ${{ inputs.confirmar && '--confirmar' || '' }}
+        env:
+          META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
+          META_AD_ACCOUNT_ID: ${{ secrets.META_AD_ACCOUNT_ID }}

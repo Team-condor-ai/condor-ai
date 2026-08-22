@@ -88,7 +88,21 @@ async function main() {
   console.log(`Analizando ${activas.length}: ` + activas.map(c => c.name).join(" · "));
 
   const getAcc = (acc, t) => Number((acc.find(a => a.action_type === t) || {}).value || 0);
-  const convDe = (acc) => getAcc(acc, "onsite_conversion.messaging_conversation_started_7d") + getAcc(acc, "onsite_conversion.total_messaging_connection");
+  // BUG corregido 22-ago-2026: esto SUMABA las dos métricas y se solapan, así que
+  // inflaba las conversaciones ~1,54x. Al día 10 el reporte decía 174 cuando el
+  // administrador de anuncios mostraba 113 — y con eso el costo por conversación
+  // salía ~$540 en vez de los ~$1.036 reales. Once días de reportes a Telegram
+  // salieron con esa cifra optimista.
+  //
+  // `messaging_conversation_started_7d` es la que Meta muestra como
+  // "Conversaciones con mensajes iniciadas" y es la que optimiza el conjunto.
+  // Se usa `max` y no solo esa métrica para no romper campañas viejas que
+  // reportan únicamente `total_messaging_connection`: si una viene en cero, la
+  // otra sigue sirviendo, pero nunca se suman.
+  const convDe = (acc) => Math.max(
+    getAcc(acc, "onsite_conversion.messaging_conversation_started_7d"),
+    getAcc(acc, "onsite_conversion.total_messaging_connection"),
+  );
   const moneda = cuenta.currency || "?";
   const hoy = new Date();
 
