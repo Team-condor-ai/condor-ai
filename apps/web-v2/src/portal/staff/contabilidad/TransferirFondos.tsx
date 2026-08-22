@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { sb, plata } from "../../lib/supabase";
-import type { Cuenta } from "./tipos";
+import { lineasDe, type Cuenta } from "./tipos";
 
 /**
  * Mueve plata entre dos cuentas líquidas con un solo asiento balanceado.
@@ -55,13 +55,36 @@ export function TransferirFondos({
 
     setGuardando(true);
     setError("");
-    const { error: fallo } = await sb.rpc("registrar_traspaso_fondos", {
+    let { error: fallo } = await sb.rpc("registrar_traspaso_fondos", {
       p_origen: origen,
       p_destino: destino,
       p_monto: valor,
       p_fecha: fecha,
       p_glosa: detalle.trim() || null,
     });
+
+    // Durante un despliegue la web puede llegar unos minutos antes que la
+    // migración. El camino normal es el RPC atómico; este respaldo mantiene la
+    // operación disponible con el mismo patrón seguro que ya usa Ingreso/Egreso.
+    if (fallo && /registrar_traspaso_fondos|schema cache|PGRST202/i.test(fallo.message)) {
+      const glosa = detalle.trim() || `Traspaso · ${cuentaOrigen?.nombre} → ${cuentaDestino?.nombre}`;
+      const { data: asiento, error: errorAsiento } = await sb.from("asientos").insert({
+        fecha,
+        glosa,
+        origen: "traspaso",
+      }).select("id").single();
+      fallo = errorAsiento;
+      if (!fallo && asiento) {
+        const { error: errorLineas } = await sb.from("asiento_lineas").insert(
+          lineasDe(destino, origen, valor, glosa).map((linea) => ({
+            ...linea,
+            asiento_id: asiento.id,
+          })),
+        );
+        fallo = errorLineas;
+        if (fallo) await sb.from("asientos").delete().eq("id", asiento.id);
+      }
+    }
     setGuardando(false);
     if (fallo) {
       setError(fallo.message);
