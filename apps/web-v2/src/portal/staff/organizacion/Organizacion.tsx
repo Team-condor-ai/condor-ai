@@ -86,7 +86,9 @@ export function Organizacion() {
   const [reuniones, setReuniones] = useState<Reunion[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
-  const [editando, setEditando] = useState<Tarea | "nueva" | null>(null);
+  const [editando, setEditando] = useState<
+    Tarea | "nueva" | "nueva_agendada" | null
+  >(null);
   const [editandoMeta, setEditandoMeta] = useState<Meta | "nueva" | null>(null);
   const [editandoReunion, setEditandoReunion] = useState(false);
   const [filtro, setFiltro] = useState<"todas" | "mias" | "vencidas">("todas");
@@ -187,7 +189,7 @@ export function Organizacion() {
             >
               {Ico.video({ t: 15 })} Reunión instantánea
             </a>
-            <button className="btn" onClick={() => setEditando("nueva")}>
+            <button className="btn" onClick={() => setEditando("nueva_agendada")}>
               {Ico.mas({ t: 15 })} Nueva tarea
             </button>
             <button
@@ -295,6 +297,9 @@ export function Organizacion() {
                                 {fecha(t.vence)}
                               </time>
                             )}
+                            {!t.inicio && !t.vence && (
+                              <span className="tarea-sin-agenda">Sin agendar</span>
+                            )}
                           </div>
                           <h3>{t.titulo}</h3>
                           {t.descripcion && <p>{t.descripcion}</p>}
@@ -333,7 +338,9 @@ export function Organizacion() {
           </>
         ) : vista === "calendario" ? (
           <Calendario
-            tareas={tareas}
+            // Las tareas sin fecha pertenecen al Tablero. No se les inventa
+            // un día para poder dibujarlas acá.
+            tareas={tareas.filter((t) => t.inicio || t.vence)}
             reuniones={reuniones}
             cliente={cliente}
             abrir={setEditando}
@@ -365,7 +372,8 @@ export function Organizacion() {
       </div>
       {editando && (
         <EditorTarea
-          tarea={editando === "nueva" ? null : editando}
+          tarea={typeof editando === "string" ? null : editando}
+          agendarInicial={editando === "nueva_agendada"}
           clientes={clientes}
           cerrar={() => setEditando(null)}
           guardado={() => {
@@ -1052,15 +1060,21 @@ function Metas({
 
 function EditorTarea({
   tarea,
+  agendarInicial = false,
   clientes,
   cerrar,
   guardado,
 }: {
   tarea: Tarea | null;
+  agendarInicial?: boolean;
   clientes: Cliente[];
   cerrar: () => void;
   guardado: () => void;
 }) {
+  const hoy = new Date().toISOString().slice(0, 10);
+  const [agendada, setAgendada] = useState(
+    !!(tarea?.inicio || tarea?.vence || agendarInicial),
+  );
   const [f, setF] = useState({
     titulo: tarea?.titulo ?? "",
     descripcion: tarea?.descripcion ?? "",
@@ -1068,7 +1082,7 @@ function EditorTarea({
     prioridad: tarea?.prioridad ?? "media",
     asignado_a: tarea?.asignado_a ?? "",
     cliente_id: tarea?.cliente_id ?? "",
-    inicio: tarea?.inicio ?? tarea?.vence ?? "",
+    inicio: tarea?.inicio ?? tarea?.vence ?? (agendarInicial ? hoy : ""),
     inicio_hora: tarea?.inicio_hora?.slice(0, 5) ?? "",
     vence: tarea?.vence ?? "",
     vence_hora: tarea?.vence_hora?.slice(0, 5) ?? "",
@@ -1076,29 +1090,73 @@ function EditorTarea({
   });
   const [error, setError] = useState("");
   const set = (k: keyof typeof f, v: string) => setF((p) => ({ ...p, [k]: v }));
+  function cambiarAgenda(valor: boolean) {
+    setAgendada(valor);
+    setError("");
+    if (valor && !f.inicio && !f.vence) set("inicio", hoy);
+  }
   async function enviar(e: React.FormEvent) {
     e.preventDefault();
-    const fila = {
-      ...f,
+    if (agendada && !f.inicio && !f.vence) {
+      setError("Elige una fecha para agregar la tarea al calendario.");
+      return;
+    }
+    if (agendada && f.inicio && f.vence && f.vence < f.inicio) {
+      setError("La fecha de término no puede ser anterior al inicio.");
+      return;
+    }
+    if (
+      agendada && f.inicio === f.vence && f.inicio_hora && f.vence_hora &&
+      f.vence_hora < f.inicio_hora
+    ) {
+      setError("La hora de término no puede ser anterior al inicio.");
+      return;
+    }
+
+    const filaBase = {
       titulo: f.titulo.trim(),
       descripcion: f.descripcion.trim() || null,
+      estado: f.estado,
+      prioridad: f.prioridad,
       asignado_a: f.asignado_a.trim() || null,
       cliente_id: f.cliente_id || null,
-      inicio: f.inicio || f.vence || null,
-      inicio_hora: f.inicio_hora || null,
-      vence: f.vence || f.inicio || null,
-      vence_hora: f.vence_hora || null,
+      inicio: agendada ? f.inicio || f.vence || null : null,
+      vence: agendada ? f.vence || f.inicio || null : null,
       etiquetas: f.etiquetas
         .split(",")
         .map((x) => x.trim())
         .filter(Boolean),
     };
-    const q = tarea
-      ? sb.from("tareas").update(fila).eq("id", tarea.id)
-      : sb.from("tareas").insert(fila);
-    const { error } = await q;
-    if (error) setError(error.message);
-    else guardado();
+    // Al sacar una tarea del calendario también se limpian sus horas. El
+    // reintento de abajo permite que esto conviva con una base que aún no
+    // incorporó esas dos columnas.
+    const fila = {
+      ...filaBase,
+      inicio_hora: agendada ? f.inicio_hora || null : null,
+      vence_hora: agendada ? f.vence_hora || null : null,
+    };
+    const guardar = (datos: typeof filaBase | typeof fila) =>
+      tarea
+        ? sb.from("tareas").update(datos).eq("id", tarea.id)
+        : sb.from("tareas").insert(datos);
+    let { error: fallo } = await guardar(fila);
+
+    // Compatibilidad para tareas con fecha pero sin hora mientras producción
+    // termina de incorporar inicio_hora/vence_hora. Si el usuario sí escribió
+    // una hora, no la descartamos en silencio: explicamos qué falta.
+    if (
+      fallo && (!agendada || (!f.inicio_hora && !f.vence_hora)) &&
+      /inicio_hora|vence_hora|schema cache/i.test(fallo.message)
+    ) {
+      ({ error: fallo } = await guardar(filaBase));
+    }
+    if (fallo) {
+      setError(
+        /inicio_hora|vence_hora|schema cache/i.test(fallo.message)
+          ? "Falta aplicar la actualización de horas del calendario. La tarea no se guardó."
+          : fallo.message,
+      );
+    } else guardado();
   }
   async function borrar() {
     if (!tarea || !window.confirm("¿Eliminar esta tarea?")) return;
@@ -1191,52 +1249,78 @@ function EditorTarea({
               </select>
             </label>
           </div>
-          <div className="dos horario-editor">
-            <label className="campo-lbl">
-              Fecha de inicio
-              <input
-                className="campo"
-                type="date"
-                value={f.inicio}
-                onChange={(e) => set("inicio", e.target.value)}
-              />
-            </label>
-            <label className="campo-lbl">
-              Hora de inicio
-              <input
-                className="campo"
-                type="time"
-                step="300"
-                value={f.inicio_hora}
-                onChange={(e) => set("inicio_hora", e.target.value)}
-              />
-            </label>
+          <div className="chips modo-agenda" aria-label="Dónde mostrar la tarea">
+            <button
+              type="button"
+              className={"chip" + (!agendada ? " on" : "")}
+              onClick={() => cambiarAgenda(false)}
+            >
+              Solo tablero
+            </button>
+            <button
+              type="button"
+              className={"chip" + (agendada ? " on" : "")}
+              onClick={() => cambiarAgenda(true)}
+            >
+              Agregar al calendario
+            </button>
           </div>
-          <div className="dos horario-editor">
-            <label className="campo-lbl">
-              Fecha de término
-              <input
-                className="campo"
-                type="date"
-                min={f.inicio || undefined}
-                value={f.vence}
-                onChange={(e) => set("vence", e.target.value)}
-              />
-            </label>
-            <label className="campo-lbl">
-              Hora de término
-              <input
-                className="campo"
-                type="time"
-                step="300"
-                value={f.vence_hora}
-                onChange={(e) => set("vence_hora", e.target.value)}
-              />
-            </label>
-          </div>
-          <small className="ayuda-horario">
-            Las horas son opcionales. En el calendario puedes mover el bloque o estirarlo desde ambos costados.
-          </small>
+
+          {agendada ? (
+            <>
+              <div className="dos horario-editor">
+                <label className="campo-lbl">
+                  Fecha de inicio
+                  <input
+                    className="campo"
+                    type="date"
+                    required
+                    value={f.inicio}
+                    onChange={(e) => set("inicio", e.target.value)}
+                  />
+                </label>
+                <label className="campo-lbl">
+                  Hora de inicio <span style={{ fontWeight: 400, opacity: 0.7 }}>· opcional</span>
+                  <input
+                    className="campo"
+                    type="time"
+                    step="300"
+                    value={f.inicio_hora}
+                    onChange={(e) => set("inicio_hora", e.target.value)}
+                  />
+                </label>
+              </div>
+              <div className="dos horario-editor">
+                <label className="campo-lbl">
+                  Fecha de término <span style={{ fontWeight: 400, opacity: 0.7 }}>· opcional</span>
+                  <input
+                    className="campo"
+                    type="date"
+                    min={f.inicio || undefined}
+                    value={f.vence}
+                    onChange={(e) => set("vence", e.target.value)}
+                  />
+                </label>
+                <label className="campo-lbl">
+                  Hora de término <span style={{ fontWeight: 400, opacity: 0.7 }}>· opcional</span>
+                  <input
+                    className="campo"
+                    type="time"
+                    step="300"
+                    value={f.vence_hora}
+                    onChange={(e) => set("vence_hora", e.target.value)}
+                  />
+                </label>
+              </div>
+              <small className="ayuda-horario">
+                Aparecerá en Calendario. Allí puedes mover el bloque o estirarlo desde ambos costados.
+              </small>
+            </>
+          ) : (
+            <p className="aviso-sin-agenda">
+              Sin fecha ni hora · aparecerá únicamente en la tab Tablero.
+            </p>
+          )}
           <label className="campo-lbl">
             Etiquetas
             <input
