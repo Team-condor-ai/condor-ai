@@ -1,0 +1,52 @@
+name: Barbara - carrusel con Blotato
+
+on:
+  workflow_dispatch:
+    inputs:
+      dia:
+        description: "lunes (noticias) | viernes (impacto positivo)"
+        required: true
+        default: "viernes"
+        type: choice
+        options:
+          - viernes
+          - lunes
+
+permissions:
+  actions: write
+  contents: write
+
+jobs:
+  generar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+      - name: Investigar, generar y enviar a revisión
+        env:
+          BLOTATO_API_KEY: ${{ secrets.BLOTATO_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          BARBARA_OUTBOX_DIR: .barbara-outbox
+          DIA: ${{ inputs.dia }}
+        run: node services/barbara/barbara-blotato.mjs
+      - name: Guardar pieza aprobable
+        uses: actions/upload-artifact@v4
+        with:
+          name: barbara-${{ github.run_id }}
+          path: .barbara-outbox
+          if-no-files-found: error
+          retention-days: 30
+      - name: Persistir memoria de Bárbara
+        run: |
+          git config user.name "barbara-bot"
+          git config user.email "bot@condorai.cl"
+          git add services/barbara/content-log.json
+          if git diff --staged --quiet; then
+            echo "sin cambios"
+          else
+            git commit -m "barbara: registro Blotato $(date +%Y-%m-%d)"
+            for n in 1 2 3; do git pull --rebase origin main && git push && break || sleep 5; done
+          fi
