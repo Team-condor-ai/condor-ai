@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { sb, plata } from "../../lib/supabase";
 import { Ico } from "../../disenio/iconos";
 import { lineasDe, type Asiento, type Cuenta } from "./tipos";
@@ -109,6 +109,9 @@ export function ImportarCartola({
   );
   const [nombreArchivo, setNombreArchivo] = useState("");
   const [leyendo, setLeyendo] = useState(false);
+  const [arrastrando, setArrastrando] = useState(false);
+  const profundidadArrastre = useRef(0);
+  const selectorArchivo = useRef<HTMLInputElement>(null);
   const [error, setError] = useState("");
   const [cartola, setCartola] = useState<Cartola | null>(null);
   const [reglas, setReglas] = useState<Regla[]>([]);
@@ -228,13 +231,14 @@ export function ImportarCartola({
     );
   }
 
-  async function elegirArchivo(ev: React.ChangeEvent<HTMLInputElement>) {
-    const input = ev.currentTarget;
-    const archivo = ev.target.files?.[0];
+  async function procesarArchivo(archivo: File | undefined) {
     if (!archivo) return;
+    if (archivo.type !== "application/pdf" && !archivo.name.toLowerCase().endsWith(".pdf")) {
+      setError("El archivo tiene que ser un PDF.");
+      return;
+    }
     if (!cuentaBancoId) {
       setError("Primero elige la cuenta contable que representa este banco.");
-      input.value = "";
       return;
     }
     setNombreArchivo(archivo.name);
@@ -294,11 +298,40 @@ export function ImportarCartola({
           : "No se pudo leer el PDF: " + msg,
       );
     } finally {
-      // Permite volver a elegir exactamente el mismo PDF después de corregir
-      // una clave errónea; sin esto el navegador no dispara otro `change`.
-      input.value = "";
       setLeyendo(false);
     }
+  }
+
+  function elegirArchivo(ev: React.ChangeEvent<HTMLInputElement>) {
+    const archivo = ev.currentTarget.files?.[0];
+    // Permite elegir el mismo PDF después de corregir una clave equivocada.
+    ev.currentTarget.value = "";
+    void procesarArchivo(archivo);
+  }
+
+  function entrarArrastre(ev: React.DragEvent<HTMLElement>) {
+    ev.preventDefault();
+    if (leyendo) return;
+    profundidadArrastre.current += 1;
+    setArrastrando(true);
+  }
+
+  function salirArrastre(ev: React.DragEvent<HTMLElement>) {
+    ev.preventDefault();
+    profundidadArrastre.current = Math.max(0, profundidadArrastre.current - 1);
+    if (profundidadArrastre.current === 0) setArrastrando(false);
+  }
+
+  function mantenerArrastre(ev: React.DragEvent<HTMLElement>) {
+    ev.preventDefault();
+    if (!leyendo) ev.dataTransfer.dropEffect = "copy";
+  }
+
+  function soltarArchivo(ev: React.DragEvent<HTMLElement>) {
+    ev.preventDefault();
+    profundidadArrastre.current = 0;
+    setArrastrando(false);
+    if (!leyendo) void procesarArchivo(ev.dataTransfer.files?.[0]);
   }
 
   // Se arma acá y no en el estado: así cambiar una cuenta a mano no obliga a
@@ -765,20 +798,52 @@ export function ImportarCartola({
       )}
 
       <label
-        className={`btn solido cartola-subir${leyendo ? " deshabilitado" : ""}`}
+        className={
+          "cartola-dropzone" +
+          (arrastrando ? " arrastrando" : "") +
+          (leyendo ? " deshabilitado" : "")
+        }
+        tabIndex={leyendo ? -1 : 0}
+        role="button"
+        aria-label="Arrastrar o elegir una cartola en PDF"
+        aria-busy={leyendo}
         aria-disabled={leyendo}
+        onDragEnter={entrarArrastre}
+        onDragOver={mantenerArrastre}
+        onDragLeave={salirArrastre}
+        onDrop={soltarArchivo}
+        onKeyDown={(ev) => {
+          if (!leyendo && (ev.key === "Enter" || ev.key === " ")) {
+            ev.preventDefault();
+            selectorArchivo.current?.click();
+          }
+        }}
       >
-        {Ico.subir({ t: 14 })} {leyendo ? "Leyendo…" : "Elegir cartola en PDF"}
         <input
+          ref={selectorArchivo}
           type="file"
           accept=".pdf,application/pdf"
           hidden
           disabled={leyendo}
           onChange={elegirArchivo}
         />
+        <span className="cartola-dropzone-icono">{Ico.subir({ t: 22 })}</span>
+        <span className="cartola-dropzone-texto">
+          <strong>
+            {leyendo
+              ? `Leyendo ${nombreArchivo || "cartola"}…`
+              : arrastrando
+                ? "Suelta el PDF para leerlo"
+                : "Arrastra la cartola aquí"}
+          </strong>
+          <small>
+            {arrastrando ? "Se procesará dentro de este navegador" : "o elige el archivo desde tu equipo"}
+          </small>
+        </span>
+        {!leyendo && !arrastrando && <span className="btn solido cartola-elegir">Elegir PDF</span>}
       </label>
       {nombreArchivo && (
-        <span className="conteo" style={{ marginLeft: 8 }}>
+        <span className="conteo cartola-archivo-elegido">
           {nombreArchivo}
         </span>
       )}
