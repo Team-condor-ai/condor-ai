@@ -637,7 +637,11 @@ export function ContenidoCliente({
           cliente={c}
           cobro={cobrando}
           cerrar={() => setCobrando(null)}
-          guardado={cargar}
+          // El link ya vive en el estado local de CrearLinkCobro. Recargamos
+          // la ficha sin activar la pantalla "Cargando…": esa pantalla
+          // desmontaba el modal justo después de crear el enlace y obligaba a
+          // cerrarlo y abrirlo de nuevo para ver Copiar/Abrir.
+          guardado={() => void cargar(true)}
         />
       )}
     </>

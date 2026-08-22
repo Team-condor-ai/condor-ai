@@ -248,6 +248,13 @@ export const Ico = {
       <path d="M3 18.5V13h5.5" />
     </Svg>
   ),
+  /** Traspaso interno: la plata cambia de cuenta, no sale de la empresa. */
+  traspaso: (p: Props = {}) => (
+    <Svg {...p}>
+      <path d="M4 8h14M15 5l3 3-3 3" />
+      <path d="M20 16H6M9 13l-3 3 3 3" />
+    </Svg>
+  ),
   carpetaMas: (p: Props = {}) => (
     <Svg {...p}>
       <path d="M21 12.5V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h4.2a2 2 0 0 1 1.5.7l1.1 1.3H19a2 2 0 0 1 2 2v.5" />

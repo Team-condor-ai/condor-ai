@@ -9,6 +9,7 @@ import { EditorCuenta } from "./EditorCuenta";
 import { EditorAsiento } from "./EditorAsiento";
 import { DesgloseGastos } from "./DesgloseGastos";
 import { ImportarCartola } from "./ImportarCartola";
+import { TransferirFondos } from "./TransferirFondos";
 import type { Asiento, Cuenta, GastoMeta, SaldoCuenta } from "./tipos";
 
 const PESTANAS = [
@@ -63,6 +64,7 @@ export function Contabilidad() {
   );
   const [asientoManual, setAsientoManual] = useState(false);
   const [cartolaAbierta, setCartolaAbierta] = useState(false);
+  const [transfiriendo, setTransfiriendo] = useState(false);
   const [cuentaEditando, setCuentaEditando] = useState<Cuenta | "nueva" | null>(
     null,
   );
@@ -199,6 +201,9 @@ export function Contabilidad() {
         </button>
         <button className="btn" onClick={() => setCartolaAbierta(true)}>
           {Ico.subir({ t: 14 })} Cartola
+        </button>
+        <button className="btn" onClick={() => setTransfiriendo(true)}>
+          {Ico.traspaso({ t: 14 })} Mover fondos
         </button>
         <button className="btn" onClick={() => setRegistrando("ingreso")}>
           {Ico.mas({ t: 14 })} Ingreso
@@ -575,6 +580,16 @@ export function Contabilidad() {
           asientos={asientos}
           cerrar={() => setCartolaAbierta(false)}
           recargar={cargar}
+        />
+      )}
+      {transfiriendo && (
+        <TransferirFondos
+          cuentas={cuentas}
+          cerrar={() => setTransfiriendo(false)}
+          guardado={() => {
+            setTransfiriendo(false);
+            cargar();
+          }}
         />
       )}
       {cuentaEditando && (
