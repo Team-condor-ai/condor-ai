@@ -5,16 +5,134 @@
 // contenido vía el workflow `barbara-clientes.yml` — o los bloquea al llegar
 // a 3 intentos y deriva a soporte por WhatsApp.
 //
-// Distinta de `telegram-barbara` (esa es el "Denuevo barbara" del contenido
-// PROPIO de Cóndor, otro repo/otro flujo — no se toca acá).
+// TAMBIÉN atiende el chat interno del equipo ("Denuevo barbara" / "Aprobar
+// barbara", el contenido PROPIO de Cóndor). Fusionado acá el 22-ago-2026:
+// `telegram-barbara` y este webhook usan el MISMO bot de Telegram
+// (@Barbaramarketing_rrss_bot), y un bot solo puede tener un webhook activo
+// a la vez — tener las dos funciones separadas hacía que registrar el
+// webhook de una silenciara a la otra sin ningún error visible. Acá se
+// separan por `chat_id`: si es el chat interno configurado en
+// `TELEGRAM_CHAT_ID`, va la rama de contenido propio; si es un chat de
+// `barbara_clientes`, va la rama de corrección de clientes; cualquier otro
+// chat se ignora. La función `telegram-barbara` sigue existiendo en el
+// repo pero ya no recibe tráfico — no se borró por si hace falta volver
+// atrás, pero la lógica viva es esta.
 //
-// Secretos: TELEGRAM_WEBHOOK_SECRET, TELEGRAM_BOT_TOKEN, GITHUB_DISPATCH_TOKEN,
+// Secretos: TELEGRAM_WEBHOOK_SECRET, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID,
+//           GITHUB_DISPATCH_TOKEN, GH_TOKEN, OPENAI_API_KEY,
 //           SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
-// Deploy:  supabase functions deploy telegram-barbara-clientes --project-ref ogmvdthxwcmvqjlxhpsr --no-verify-jwt
+// Deploy:  supabase functions deploy telegram-barbara-clientes --project-ref <REF> --no-verify-jwt
 //          (--no-verify-jwt porque Telegram llama sin sesión de Supabase; la
 //          seguridad acá es el X-Telegram-Bot-Api-Secret-Token, no el JWT)
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+// ── Contenido propio de Cóndor ("Denuevo barbara" / "Aprobar barbara") ─────
+// Portado de `telegram-barbara/index.ts` en la fusión del 22-ago. Mismo
+// comportamiento exacto, sin cambios de lógica — solo de dónde vive.
+const REPO_CONTENIDO = "Team-condor-ai/condor-ai";
+const GH_TOKEN_CONTENIDO = Deno.env.get("GH_TOKEN") || "";
+const CHAT_INTERNO = Deno.env.get("TELEGRAM_CHAT_ID") || "";
+
+type UltimoContenido = {
+  tipo: string;
+  runId?: string;
+  workflowReintento: string;
+  inputsReintento: Record<string, string>;
+};
+
+function githubHeadersContenido() {
+  return {
+    Authorization: `Bearer ${GH_TOKEN_CONTENIDO}`,
+    Accept: "application/vnd.github+json",
+    "X-GitHub-Api-Version": "2022-11-28",
+    "User-Agent": "condor-barbara",
+  };
+}
+
+async function ultimoContenido(): Promise<UltimoContenido | null> {
+  try {
+    const r = await fetch(`https://api.github.com/repos/${REPO_CONTENIDO}/contents/services/barbara/content-log.json?ref=main&t=${Date.now()}`, {
+      headers: githubHeadersContenido(),
+    });
+    if (!r.ok) return null;
+    const archivo = await r.json();
+    const texto = atob(String(archivo.content || "").replace(/\s/g, ""));
+    const log = JSON.parse(texto);
+    const last = (log || [])[log.length - 1];
+    if (!last) return null;
+    const tipo = String(last.tipo || "");
+    if (tipo.startsWith("reel-")) {
+      return {
+        tipo,
+        runId: last.runId ? String(last.runId) : undefined,
+        workflowReintento: "reels.yml",
+        inputsReintento: { tipo: tipo.replace("reel-", ""), retry: "1" },
+      };
+    }
+    return {
+      tipo,
+      runId: last.runId ? String(last.runId) : undefined,
+      workflowReintento: "barbara.yml",
+      inputsReintento: { dia: tipo, retry: "1" },
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function dispararWorkflowContenido(workflow: string, inputs: Record<string, string>) {
+  const r = await fetch(`https://api.github.com/repos/${REPO_CONTENIDO}/actions/workflows/${workflow}/dispatches`, {
+    method: "POST",
+    headers: { ...githubHeadersContenido(), "Content-Type": "application/json" },
+    body: JSON.stringify({ ref: "main", inputs }),
+  });
+  return r.ok;
+}
+
+/** true si ya se manejó el mensaje acá (chat interno) y no hay que seguir. */
+async function manejarChatInterno(chatId: number | string, textoOriginal: string): Promise<boolean> {
+  if (!CHAT_INTERNO || String(chatId) !== String(CHAT_INTERNO)) return false;
+
+  const texto = textoOriginal.trim().toLowerCase();
+
+  if (texto === "denuevo barbara" || texto === "de nuevo barbara") {
+    const ultimo = await ultimoContenido();
+    if (!ultimo) {
+      await tgSend(chatId, "🤔 No encuentro el último contenido para reintentar. Genera uno primero.");
+      return true;
+    }
+    const ok = await dispararWorkflowContenido(ultimo.workflowReintento, ultimo.inputsReintento);
+    await tgSend(chatId, ok
+      ? "🔄 Bárbara está rehaciendo el último contenido. En unos minutos llegará la nueva versión."
+      : "⚠️ No pude disparar el reintento. Revisa GH_TOKEN y sus permisos.");
+    return true;
+  }
+
+  if (texto === "aprobar barbara") {
+    const ultimo = await ultimoContenido();
+    if (!ultimo?.runId) {
+      await tgSend(chatId, "⚠️ La última pieza no tiene un artefacto publicable. Genera una nueva con el flujo actualizado.");
+      return true;
+    }
+    if (ultimo.tipo.startsWith("reel-")) {
+      await tgSend(chatId, "⚠️ La aprobación automática de reels aún no está habilitada. Esta primera versión publica carruseles.");
+      return true;
+    }
+    const ok = await dispararWorkflowContenido("barbara-publicar-blotato.yml", {
+      run_id: ultimo.runId,
+      confirmacion: "PUBLICAR",
+    });
+    await tgSend(chatId, ok
+      ? `✅ Pieza ${ultimo.runId} aprobada. Blotato está procesando la publicación.`
+      : "⚠️ No pude iniciar la publicación. Revisa la cuenta de Blotato y GH_TOKEN.");
+    return true;
+  }
+
+  // Es el chat interno pero no coincide con ningún comando conocido: se
+  // ignora (no es un cliente, así que no entra a la lógica de corrección).
+  return true;
+}
 
 // El repo pasó a la organización el 21-ago-2026. La API de GitHub redirige
 // el nombre viejo, pero un 301 en un POST es frágil: se apunta al nuevo.
@@ -161,6 +279,13 @@ Deno.serve(async (req) => {
   // silencio: el cliente mandaba su corrección hablada y no pasaba nada.
   const fileVoz = msg?.voice?.file_id || msg?.audio?.file_id || msg?.video_note?.file_id || null;
   if (!chatId || (!texto && !fileVoz)) return new Response("ok", { status: 200 });
+
+  // Chat interno del equipo (contenido propio de Cóndor): se resuelve acá y
+  // se corta, ANTES de tocar `barbara_clientes` — ese chat nunca va a ser un
+  // cliente, así que no tiene sentido ni gastar la consulta.
+  if (await manejarChatInterno(chatId, texto)) {
+    return new Response("ok", { status: 200 });
+  }
 
   const sb = createClient(
     Deno.env.get("SUPABASE_URL")!,

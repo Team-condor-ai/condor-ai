@@ -1,6 +1,12 @@
 // condor.ai · Webhook de Telegram para revisar contenido de Bárbara.
 // "Denuevo barbara" regenera la última pieza.
 // "Aprobar barbara" publica exactamente el artefacto revisado mediante Blotato.
+//
+// ⚠️ SIN TRÁFICO desde el 22-ago-2026: esta lógica se fusionó dentro de
+// `telegram-barbara-clientes` (ver su encabezado) porque las dos funciones
+// usan el MISMO bot de Telegram y un bot solo tiene un webhook activo. No se
+// borró este archivo por si hace falta volver atrás, pero el webhook real
+// hoy apunta a `telegram-barbara-clientes`, no acá.
 
 const REPO = Deno.env.get("GH_REPO") || "Team-condor-ai/condor-ai";
 const GH = Deno.env.get("GH_TOKEN");
