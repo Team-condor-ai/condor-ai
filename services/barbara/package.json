@@ -1,0 +1,9 @@
+{
+  "name": "barbara-assets",
+  "private": true,
+  "type": "module",
+  "description": "Solo trae sharp: compone el logo REAL de cada marca sobre lo que genera Higgsfield, en vez de pedirle al modelo que lo dibuje de memoria. No es un paquete publicable — vive junto a los scripts que lo usan.",
+  "dependencies": {
+    "sharp": "^0.33.5"
+  }
+}

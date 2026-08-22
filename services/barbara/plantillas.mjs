@@ -86,12 +86,22 @@ function armarHtml(plantilla, d) {
   const {
     titular = "", cuerpo = "", marca = "", indice = 1, total = 1,
     color = "#111111", color2 = "#f4f2ec", tipografia = "", fondoDataUri = "",
+    logo = "",
   } = d;
 
   const serif = /serif|didot|garamond|playfair|georgia/i.test(tipografia);
   const familia = serif ? SERIF : SANS;
   const tinta = esOscuro(color) ? "#ffffff" : "#111111";
   const paso = total > 1 ? `${indice}/${total}` : "";
+  // El logo del cliente SIEMPRE es el archivo real que subió al brand book
+  // (Chrome lo pinta pixel a pixel, como cualquier <img>) — nunca el nombre
+  // del negocio escrito con la tipografía de la plantilla, que es lo que
+  // pasaba antes: dos clientes con el mismo color de marca terminaban con la
+  // "identidad" reducida a una palabra en la misma letra. Si el cliente
+  // todavía no subió un logo, el texto queda de respaldo.
+  const marcaHtml = logo
+    ? `<img class="logo" src="${logo}" alt="">`
+    : `<span>${esc(marca)}</span>`;
 
   const comun = `
     *{box-sizing:border-box;margin:0;padding:0}
@@ -108,6 +118,10 @@ function armarHtml(plantilla, d) {
     .pie{display:flex;align-items:center;justify-content:space-between;
       font-size:26px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;
       font-family:${SANS}}
+    /* Alto fijo, ancho libre: todos los logos de cliente comparten el mismo
+       alto en el pie sin importar su proporción (un isotipo cuadrado y un
+       lockup horizontal largo quedan del mismo tamaño visual). */
+    .logo{height:40px;width:auto;display:block}
   `;
 
   const cuerpos = {
@@ -126,7 +140,7 @@ function armarHtml(plantilla, d) {
           <h1>${esc(titular)}</h1>
           ${cuerpo ? `<p>${esc(cuerpo)}</p>` : ""}
         </div>
-        <div class="pie"><span>${esc(marca)}</span><span>${paso}</span></div>
+        <div class="pie">${marcaHtml}<span>${paso}</span></div>
       </div>`,
 
     bloque: `
@@ -142,7 +156,7 @@ function armarHtml(plantilla, d) {
           <h1>${esc(titular)}</h1>
           ${cuerpo ? `<p>${esc(cuerpo)}</p>` : ""}
         </div>
-        <div class="pie"><span>${esc(marca)}</span><span>${paso}</span></div>
+        <div class="pie">${marcaHtml}<span>${paso}</span></div>
       </div>`,
 
     ficha: `
@@ -163,7 +177,7 @@ function armarHtml(plantilla, d) {
           <h1>${esc(titular)}</h1>
           ${cuerpo ? `<p>${esc(cuerpo)}</p>` : ""}
         </div>
-        <div class="pie"><span>${esc(marca)}</span><span>${paso}</span></div>
+        <div class="pie">${marcaHtml}<span>${paso}</span></div>
       </div></div>`,
 
     foto: `
@@ -184,7 +198,7 @@ function armarHtml(plantilla, d) {
       <div class="marco">
         <h1>${esc(titular)}</h1>
         ${cuerpo ? `<p>${esc(cuerpo)}</p>` : ""}
-        <div class="pie"><span>${esc(marca)}</span><span>${paso}</span></div>
+        <div class="pie">${marcaHtml}<span>${paso}</span></div>
       </div>`,
   };
 

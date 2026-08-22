@@ -10,6 +10,10 @@
 
 import { execFileSync, execSync } from "node:child_process";
 import { writeFileSync, readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import sharp from "sharp";
+
+const ASSETS = fileURLToPath(new URL("./assets/", import.meta.url));
 
 export async function tg(token, method, payload, isForm = false) {
   const opt = { method: "POST" };
@@ -52,6 +56,87 @@ export const REGLA_VERACIDAD = `REGLA DE VERACIDAD (no negociable): toda cifra, 
 - ponerle a un hecho una fecha que no sea la real;
 - describir como "de esta semana" o "reciente" algo cuya fecha no tienes.
 Si no tienes el dato, escribe la pieza SIN cifras: un buen texto sin números es publicable, uno con un número inventado no. Esto se publica en la cuenta real de una marca y con su logo encima.`;
+
+// ── El logo REAL, compuesto encima — nunca dibujado por el modelo ──────────
+//
+// Corregido 22-ago-2026: el primer carrusel publicado le pedía a nano_banana_2
+// que DIBUJARA "a small geometric hummingbird mark in gradient" en cada slide.
+// Un modelo de imagen no reproduce el mismo logo dos veces — lo redibuja de
+// memoria, y esa vez salió con proporciones y trazo distintos al real. Para
+// una marca, el logo tiene que ser SIEMPRE el mismo archivo, pixel a pixel.
+//
+// La solución no es "describir mejor" el logo: es no pedirle al modelo que lo
+// dibuje. El template dice "deja limpio este espacio" y acá se pega encima el
+// PNG real, recortado del logo oficial (`apps/web-v2/public/assets/logo.png`).
+//
+// El wordmark cambia de color (negro/blanco) según el fondo real de CADA
+// slide, no según qué template es: T_BARBARA_DATOS alterna fondo negro y
+// crema a criterio del modelo, así que no hay forma de saberlo de antemano.
+// Se mide el brillo real de la zona donde va a ir el logo y se elige la
+// versión que se lea — el mismo criterio (luminancia percibida) que ya usa
+// `plantillas.mjs` para decidir texto claro/oscuro.
+const ICONO = ASSETS + "condor-icon.png";
+const WORDMARK_NEGRO = ASSETS + "condor-wordmark-black.png";
+const WORDMARK_BLANCO = ASSETS + "condor-wordmark-white.png";
+
+async function fondoEsOscuro(sharpImg, region) {
+  const { data } = await sharpImg.clone().extract(region).raw().toBuffer({ resolveWithObject: true });
+  let suma = 0, n = 0;
+  const canales = data.length / (region.width * region.height);
+  for (let i = 0; i < data.length; i += canales) {
+    // Luminancia percibida (Rec. 601): el ojo ve el verde mucho más claro que
+    // el azul, promediar los tres canales a secas da el resultado equivocado.
+    suma += 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+    n++;
+  }
+  return suma / n < 140;
+}
+
+/**
+ * Compone el logo real de condor.ai sobre el buffer que devolvió Higgsfield.
+ * `posicion`: "izquierda" (ícono + wordmark pegados al borde izquierdo) o
+ * "centro" (el bloque completo centrado horizontalmente).
+ */
+export async function pegarLogoCondor(buf, posicion = "izquierda") {
+  const base = sharp(buf);
+  const meta = await base.metadata();
+  const W = meta.width, H = meta.height;
+
+  // Proporciones tomadas de las piezas ya aprobadas: el ícono ocupa ~6.5% del
+  // alto, con un margen de ~6.5% del ancho respecto al borde.
+  const altoIcono = Math.round(H * 0.065);
+  const margenX = Math.round(W * 0.065);
+  const margenY = Math.round(H * 0.05);
+  const gap = Math.round(altoIcono * 0.28);
+
+  const iconoMeta = await sharp(ICONO).metadata();
+  const escala = altoIcono / iconoMeta.height;
+  const anchoIcono = Math.round(iconoMeta.width * escala);
+
+  const iconoBuf = await sharp(ICONO).resize({ height: altoIcono }).toBuffer();
+  const wordmarkMeta = await sharp(WORDMARK_NEGRO).metadata();
+  const anchoWordmark = Math.round(wordmarkMeta.width * escala);
+  const altoWordmark = Math.round(wordmarkMeta.height * escala);
+
+  const anchoTotal = anchoIcono + gap + anchoWordmark;
+  const left0 = posicion === "centro" ? Math.round((W - anchoTotal) / 2) : margenX;
+
+  // Se mide el brillo de la franja donde va a ir el wordmark (no el ícono: el
+  // ícono lleva su propio contraste interno y se lee sobre cualquier fondo).
+  const oscuro = await fondoEsOscuro(base, {
+    left: Math.max(0, Math.min(left0 + anchoIcono + gap, W - 1)),
+    top: Math.max(0, margenY),
+    width: Math.max(1, Math.min(anchoWordmark, W - (left0 + anchoIcono + gap))),
+    height: Math.max(1, Math.min(altoWordmark, H - margenY)),
+  });
+  const wordmarkBuf = await sharp(oscuro ? WORDMARK_BLANCO : WORDMARK_NEGRO)
+    .resize({ height: altoIcono }).toBuffer();
+
+  return base.composite([
+    { input: iconoBuf, left: left0, top: margenY },
+    { input: wordmarkBuf, left: left0 + anchoIcono + gap, top: margenY },
+  ]).png().toBuffer();
+}
 
 // ---- Higgsfield: generar imagen y devolver URL (mismo patrón de reintentos
 // que barbara.mjs — 3 intentos, aborta de inmediato si el error es de

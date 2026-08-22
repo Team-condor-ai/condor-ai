@@ -32,6 +32,9 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: '22'
+      - name: Instalar dependencias (compone el logo real sobre lo que genera Higgsfield)
+        working-directory: services/barbara
+        run: npm install
       - name: Instalar CLI de Higgsfield
         # PIN de versión a propósito: instalar @latest hacía que un release rompiente
         # (1.0.0, 27-jun-2026: workspace obligatorio + nuevo auth flow) tumbara a Barbara

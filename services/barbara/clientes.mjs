@@ -78,6 +78,33 @@ const schemaUGC = {
   required: ["angulo", "clips", "texto_en_pantalla", "caption"],
 };
 
+// El logo REAL de cada cliente, no un texto con su nombre. Mismo principio
+// que el fix del 22-ago-2026 para Cóndor: el logo tiene que ser SIEMPRE el
+// mismo archivo, y acá el riesgo era el opuesto (no inventado, simplemente
+// ausente — `plantillas.mjs` solo escribía el nombre del negocio como texto).
+// Se baja UNA vez por cliente (no por slide) y se pasa como data URI: Chrome
+// headless renderiza `file://`, y depender de que resuelva una URL remota en
+// cada uno de los 6-7 slides es una fuente de fallos intermitentes que un
+// data URI evita del todo — el mismo patrón que ya usa `fondoDataUri` en
+// plantillas.mjs para las fotos de fondo.
+const logoCache = new Map();
+async function logoDataUri(url) {
+  if (!url) return "";
+  if (logoCache.has(url)) return logoCache.get(url);
+  try {
+    const r = await fetch(url);
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    const buf = Buffer.from(await r.arrayBuffer());
+    const mime = (r.headers.get("content-type") || "").split(";")[0] || "image/png";
+    const uri = `data:${mime};base64,${buf.toString("base64")}`;
+    logoCache.set(url, uri);
+    return uri;
+  } catch (e) {
+    console.log("no se pudo bajar el logo (" + url + "):", String(e).slice(0, 120));
+    return "";
+  }
+}
+
 async function generarPara(cliente) {
   const { id: barbaraId, plan, rubro, telegram_chat_id, cliente_id } = cliente;
   const negocio = cliente.clientes?.negocio || cliente.clientes?.[0]?.negocio || "el negocio";
@@ -290,6 +317,10 @@ Responde SOLO con el JSON.`,
     // es una pieza tipográfica, y componerla en HTML deja el texto siempre
     // correcto (tildes, eñes), el hex de marca exacto y el costo en cero.
     const plantilla = PLANTILLAS[bb.plantilla] ? bb.plantilla : PLANTILLA_POR_DEFECTO;
+    const logo = await logoDataUri(bb.logo_url);
+    if (bb.logo_url && !logo) {
+      console.log(`[${negocio}] tiene logo_url pero no se pudo bajar — este carrusel sale con el nombre en texto, revisar el archivo en el brand book.`);
+    }
     const imgs = [];
     for (let i = 0; i < slides.length; i++) {
       try {
@@ -297,6 +328,7 @@ Responde SOLO con el JSON.`,
           titular: slides[i].titular,
           cuerpo: slides[i].cuerpo,
           marca: negocio,
+          logo,
           indice: i + 1,
           total: slides.length,
           color: colorMarca,
@@ -411,7 +443,7 @@ async function main() {
 
   const filtroId = SOLO_CLIENTE ? `&id=eq.${SOLO_CLIENTE}` : "";
   const clientes = await db.get(
-    `barbara_clientes?activo=eq.true${filtroId}&select=id,plan,rubro,telegram_chat_id,cliente_id,clientes(negocio),barbara_brand_book(paleta_colores,tipografia,detalles),barbara_formulario(tipo_contenido,publico_objetivo,tono,restricciones,ejemplos_referencia,producto_destacar)`
+    `barbara_clientes?activo=eq.true${filtroId}&select=id,plan,rubro,telegram_chat_id,cliente_id,clientes(negocio),barbara_brand_book(paleta_colores,tipografia,detalles,logo_url),barbara_formulario(tipo_contenido,publico_objetivo,tono,restricciones,ejemplos_referencia,producto_destacar)`
   );
 
   if (!clientes.length) {

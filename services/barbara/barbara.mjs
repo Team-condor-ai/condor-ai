@@ -10,6 +10,7 @@
 
 import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
+import { pegarLogoCondor } from "./motor.mjs";
 
 const AK = process.env.ANTHROPIC_API_KEY;
 const TG = process.env.TELEGRAM_BOT_TOKEN;
@@ -37,6 +38,14 @@ if (!["lunes", "miercoles", "viernes"].includes(dia)) {
 const GRADIENTE = "the condor.ai brand gradient: royal blue #1B4DE4 into violet #7B2FBF into crimson #E8203A";
 const LIMA = "#BCD530";
 
+// El template ya NO le pide al modelo que dibuje el logo — solo que deje el
+// espacio limpio. El archivo real se pega encima después, en genImagen
+// (ver pegarLogoCondor en motor.mjs) y por eso acá no se menciona ni el
+// colibrí ni la palabra "condor.ai": describirlo es lo que hacía que el
+// modelo lo redibujara de memoria, distinto cada vez.
+const ZONA_LOGO_IZQ = "Top-left corner: leave a clean, uncluttered solid-colour safe zone about one-tenth of the frame's width and height — no text, no icon, no illustration there. A logo lockup gets placed there afterward.";
+const ZONA_LOGO_CENTRO = "Top area, centred: leave a clean, uncluttered solid-colour safe zone about one-third of the frame's width and one-tenth of its height, horizontally centred — no text, no icon, no illustration there. A logo lockup gets placed there afterward.";
+
 // ── Los 4 templates ─────────────────────────────────────────────────────────
 // Describen SOLO el diseño: retícula, paleta, tipografía y ritmo. El contenido
 // lo inventa Bárbara cada vez y nunca se repite — de eso ya se encarga
@@ -44,11 +53,11 @@ const LIMA = "#BCD530";
 // innovar. Mantener el patrón visual y cambiar el fondo es justo lo que hace
 // que una cuenta se vea como una cuenta y no como piezas sueltas.
 
-const T_NOTICIAS = `Editorial tech-news slide, 4:5. Background near-white #F7F7F8 with one soft out-of-focus bloom of blue and pink in a single corner. Top-left: a small geometric hummingbird mark in ${GRADIENTE}, beside the lowercase wordmark "condor.ai" in heavy black grotesque. Top-right: the slide counter in bold black. Layout is LEFT-ALIGNED with a wide empty right column. Above the headline, one rounded-square app-icon tile in flat solid blue #1B4DE4 or violet #7B2FBF or crimson #E8203A, with a thin white line icon centred inside. Headline in very heavy grotesque sans, near-black #0A0A0A, tight leading, three or four short lines, with one or two key words filled with the same gradient. Under the headline a short horizontal rule in that gradient. Below it two or three lines of small grey body text. In the empty right column, one floating 3D isometric render or thin-line illustration in blue-violet tones, soft drop shadow, lots of white space around it. Optionally one very large statistic set in the gradient at bottom-left with its explanation beside it. Premium, calm, airy. NO clip-art, NO stock-photo people.`;
+const T_NOTICIAS = `Editorial tech-news slide, 4:5. Background near-white #F7F7F8 with one soft out-of-focus bloom of blue and pink in a single corner. ${ZONA_LOGO_IZQ} Top-right: the slide counter in bold black. Layout is LEFT-ALIGNED with a wide empty right column. Above the headline, one rounded-square app-icon tile in flat solid blue #1B4DE4 or violet #7B2FBF or crimson #E8203A, with a thin white line icon centred inside. Headline in very heavy grotesque sans, near-black #0A0A0A, tight leading, three or four short lines, with one or two key words filled with the same gradient. Under the headline a short horizontal rule in that gradient. Below it two or three lines of small grey body text. In the empty right column, one floating 3D isometric render or thin-line illustration in blue-violet tones, soft drop shadow, lots of white space around it. Optionally one very large statistic set in the gradient at bottom-left with its explanation beside it. Premium, calm, airy. NO clip-art, NO stock-photo people.`;
 
-const T_SERVICIOS = `Centred agency statement slide, 4:5. Background near-white #F7F7F8 with one soft blue-to-pink gradient bloom bleeding in from a corner. TOP-CENTRE: the geometric hummingbird mark in ${GRADIENTE} beside the lowercase wordmark "condor.ai" in heavy black grotesque. Top-right corner: the slide counter in bold black. EVERYTHING IS CENTRE-ALIGNED on one vertical axis. A very large headline in heavy grotesque sans, near-black #0A0A0A, tight leading, filling the middle of the frame, with one whole phrase filled in the same gradient. Optionally one simple thin-line icon centred above the headline drawn in the gradient (a circle, a coin, two chat bubbles) and never more than one. Under the headline two or three centred lines of medium-grey supporting copy at much smaller size. At the very bottom a short centred horizontal rule in the gradient. Enormous breathing room, symmetric margins, poster-like calm. NO photos, NO people, NO clip-art, NO cards or boxes.`;
+const T_SERVICIOS = `Centred agency statement slide, 4:5. Background near-white #F7F7F8 with one soft blue-to-pink gradient bloom bleeding in from a corner. ${ZONA_LOGO_CENTRO} Top-right corner: the slide counter in bold black. EVERYTHING IS CENTRE-ALIGNED on one vertical axis. A very large headline in heavy grotesque sans, near-black #0A0A0A, tight leading, filling the middle of the frame, with one whole phrase filled in the same gradient. Optionally one simple thin-line icon centred above the headline drawn in the gradient (a circle, a coin, two chat bubbles) and never more than one. Under the headline two or three centred lines of medium-grey supporting copy at much smaller size. At the very bottom a short centred horizontal rule in the gradient. Enormous breathing room, symmetric margins, poster-like calm. NO photos, NO people, NO clip-art, NO cards or boxes.`;
 
-const T_BARBARA_PRODUCTO = `Dark editorial slide, 4:5. Background PURE BLACK #000000 edge to edge. Top-left: small geometric hummingbird mark in ${GRADIENTE} beside the wordmark "condor.ai" in white grotesque. Top-right: the slide counter in lime ${LIMA}. Headline set in a high-contrast DISPLAY SERIF with Scotch or Didone flavour, cream #F5F1E8, with the emphasised words in lime ${LIMA}. When the slide is a numbered point, place a small rounded-square OUTLINE badge stroked in lime, holding the number in lime, centred above the headline. In the middle of the frame, one large thin-line icon drawn in lime strokes on the black — a speech bubble, a descending bar chart, a target with an arrow, a calendar, a pencil — line art only, never filled, never another colour. At the bottom, a wide rounded-rectangle OUTLINE stroked in lime holding a small lime line icon at the left and two lines of white sans-serif text, with the number or key phrase in lime bold. Confident, high contrast, generous negative space. NO photos, NO background gradients, NO colour other than black, cream and lime.`;
+const T_BARBARA_PRODUCTO = `Dark editorial slide, 4:5. Background PURE BLACK #000000 edge to edge. ${ZONA_LOGO_IZQ} Top-right: the slide counter in lime ${LIMA}. Headline set in a high-contrast DISPLAY SERIF with Scotch or Didone flavour, cream #F5F1E8, with the emphasised words in lime ${LIMA}. When the slide is a numbered point, place a small rounded-square OUTLINE badge stroked in lime, holding the number in lime, centred above the headline. In the middle of the frame, one large thin-line icon drawn in lime strokes on the black — a speech bubble, a descending bar chart, a target with an arrow, a calendar, a pencil — line art only, never filled, never another colour. At the bottom, a wide rounded-rectangle OUTLINE stroked in lime holding a small lime line icon at the left and two lines of white sans-serif text, with the number or key phrase in lime bold. Confident, high contrast, generous negative space. NO photos, NO background gradients, NO colour other than black, cream and lime.`;
 
 const T_BARBARA_DATOS = `Data-driven editorial slide, 4:5, same brand family as the dark Barbara series but on alternating grounds: this slide is EITHER pure black #000000 with cream #F5F1E8 text, OR warm cream #F2EFE6 with near-black text and olive accents — pick one and commit to it, never split the frame. Top-left: a SOLID rounded-square badge filled lime ${LIMA} with the number in black inside it. Headline in a high-contrast DISPLAY SERIF with the emphasised half in lime ${LIMA}, or in deeper olive #8FA524 when the ground is cream so it stays readable. Under it a short lime rule. Body copy in a geometric sans. For statistics, stack two or three wide rounded-rectangle OUTLINE cards, each with a thin-line icon at the left, one very large lime percentage, and a two-line label beside it. For comparisons, draw a bordered two-column panel with a circled-cross list on the left and a circled-check list on the right, split by a vertical rule with a small circled "VS" on it. Optionally one simple two-bar chart, grey against lime, labelled underneath. Bottom-left, a small grey source line. Editorial, dense but ordered. NO photos, NO clip-art.`;
 
@@ -57,25 +66,25 @@ const SERIES = {
     titulo: "📰 Noticiero IA — la semana en IA",
     investiga: true, slides: 6, cta: "Síguenos para más",
     instruccion: "Investiga exactamente 7 noticias de IA de los últimos 7 días (reales, de la búsqueda web), contrasta su vigencia y arma un NOTICIERO con las 3-4 más importantes, explicadas para un dueño de negocio latinoamericano. Cada noticia necesita una cifra concreta y una línea de qué significa para su negocio. Nombra la fuente en el slide.",
-    template: T_NOTICIAS,
+    template: T_NOTICIAS, logo: "izquierda",
   },
   servicios: {
     titulo: "🚀 Servicios Cóndor — agentes de IA",
     investiga: false, slides: 6, cta: "Escríbenos al DM",
     instruccion: "Carrusel de venta de los servicios de Cóndor AI (agentes de IA, automatización de procesos, páginas web, campañas). UN solo argumento por slide, nada de listas de características. Habla del costo de no automatizar, no de la tecnología.",
-    template: T_SERVICIOS,
+    template: T_SERVICIOS, logo: "centro",
   },
   barbara_producto: {
     titulo: "🎀 Bárbara — tu agente de contenido",
     investiga: false, slides: 6, cta: "Escríbenos al DM",
     instruccion: "Carrusel sobre Bárbara, la agente de IA que crea y publica el contenido de una marca sola. Parte de un dolor concreto y cotidiano del dueño de negocio y muestra cómo Bárbara lo resuelve. Máximo 3 puntos numerados, cada uno con las horas que ahorra.",
-    template: T_BARBARA_PRODUCTO,
+    template: T_BARBARA_PRODUCTO, logo: "izquierda",
   },
   barbara_datos: {
     titulo: "📊 Bárbara — el dato que lo cambia todo",
     investiga: true, slides: 7, cta: "Escríbenos al DM",
     instruccion: "Carrusel sobre el impacto MEDIBLE de usar IA en marketing y ventas, apoyado en estudios REALES encontrados en la búsqueda web (McKinsey, Gartner, HubSpot, Deloitte u otros). Cada cifra tiene que ir con su fuente citada. Incluye una comparación antes/después o con/sin IA.",
-    template: T_BARBARA_DATOS,
+    template: T_BARBARA_DATOS, logo: null, // esta serie, en las piezas que aprobó Joaquín, no lleva el logo en cada slide
   },
 };
 
@@ -296,7 +305,11 @@ Responde SOLO con el JSON.`,
       // modelo de imagen no sabe en qué slide va ni cuántos hay.
       const contador = `\n\nSLIDE COUNTER: render exactly the text "${i + 1}/${slides.length}" in the top-right corner, nothing else there. Do not invent a different number or format.`;
       const url = genImagen(REGLA_TEXTO + "\n\n" + tema.template + contador + "\n\n" + slides[i].prompt, i);
-      const buf = Buffer.from(await (await fetch(url)).arrayBuffer());
+      let buf = Buffer.from(await (await fetch(url)).arrayBuffer());
+      // El logo REAL se pega acá, no se le pide al modelo que lo dibuje (ver
+      // el comentario junto a ZONA_LOGO_IZQ). tema.logo es null en las series
+      // cuya referencia aprobada no lleva logo en cada slide.
+      if (tema.logo) buf = await pegarLogoCondor(buf, tema.logo);
       imgs.push(buf);
     } catch (e) {
       if (e.permanent) throw e; // config/auth: no tiene sentido seguir con los demás slides
