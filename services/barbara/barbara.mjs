@@ -43,8 +43,14 @@ const LIMA = "#BCD530";
 // (ver pegarLogoCondor en motor.mjs) y por eso acá no se menciona ni el
 // colibrí ni la palabra "condor.ai": describirlo es lo que hacía que el
 // modelo lo redibujara de memoria, distinto cada vez.
-const ZONA_LOGO_IZQ = "Top-left corner: leave a clean, uncluttered solid-colour safe zone about one-tenth of the frame's width and height — no text, no icon, no illustration there. A logo lockup gets placed there afterward.";
-const ZONA_LOGO_CENTRO = "Top area, centred: leave a clean, uncluttered solid-colour safe zone about one-third of the frame's width and one-tenth of its height, horizontally centred — no text, no icon, no illustration there. A logo lockup gets placed there afterward.";
+// "solid-colour safe zone" (la redacción anterior) hizo que el modelo
+// dibujara una CAJA real ahí — un rectángulo gris apenas distinto del negro
+// puro alrededor, visible en las 4 slides de la corrida de verificación del
+// 22-ago-2026. La instrucción tiene que decir lo contrario: seguir exactamente
+// igual que el resto del fondo, sin ningún borde ni panel que delate dónde
+// va a pegarse el logo.
+const ZONA_LOGO_IZQ = "Top-left corner, about one-tenth of the frame's width and height: this area must look EXACTLY like the rest of the background — same colour, same texture, same gradient, continuous with everything around it. Do NOT draw a box, card, panel, chip or any shape there, and do NOT place any text or icon there either. A real logo file gets placed on top of this untouched background afterward — any visible rectangle or colour shift there is a mistake.";
+const ZONA_LOGO_CENTRO = "Top area, centred, about one-third of the frame's width and one-tenth of its height: this area must look EXACTLY like the rest of the background — same colour, same texture, same gradient, continuous with everything around it. Do NOT draw a box, card, panel, chip or any shape there, and do NOT place any text or icon there either. A real logo file gets placed on top of this untouched background afterward — any visible rectangle or colour shift there is a mistake.";
 
 // ── Los 4 templates ─────────────────────────────────────────────────────────
 // Describen SOLO el diseño: retícula, paleta, tipografía y ritmo. El contenido
