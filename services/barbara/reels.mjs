@@ -131,7 +131,7 @@ async function hacerUGC() {
   const recientes = leerLog().slice(-15).map(e => `- [${e.fecha} ${e.tipo}] ${e.angulo}`).join("\n") || "(sin historial)";
   const extra = isRetry ? "\n\n⚠️ REINTENTO: el reel anterior fue rechazado. Haz uno claramente mejor y distinto." : "";
   const dir = await claude({
-    model: "claude-sonnet-4-6", max_tokens: 2500,
+    model: "claude-sonnet-5", max_tokens: 2500,
     system: `Eres Barbara, directora creativa de condor.ai (agencia que implementa IA en negocios de Perú y Chile). Diriges un reel UGC vertical 9:16 de una vocera que habla a cámara en ESPAÑOL NEUTRO sobre lo importante que es implementar IA en tu negocio HOY. Tono cercano, real, energía de creadora auténtica, hook potente en los primeros 3 segundos y mucha retención. NUNCA repites ángulos ni frases de las piezas recientes (te las paso). Responde SOLO con el JSON.\n\nREGLAS DEL GUION (críticas): son exactamente 4 tomas de 8 segundos que forman UN SOLO monólogo continuo (~95 palabras en total). Cada toma DEBE tener entre 22 y 26 palabras de diálogo para cubrir sus 8 segundos completos de habla fluida y natural (ni apurada ni con silencios). El discurso AVANZA en cada toma: jamás repitas una idea, frase o palabra clave ya usada en una toma anterior. Piensa el guion completo primero y luego pártelo en 4.`,
     output_config: { format: { type: "json_schema", schema: schemaUGC } },
     messages: [{ role: "user", content: `Crea el guion del reel UGC de hoy.\n\nPIEZAS RECIENTES (no repitas estos ángulos):\n${recientes}${extra}\n\nDevuelve 4 tomas (escena + diálogo en español neutro). Toma 1 hook, toma 4 cierre con CTA "contáctanos y vemos cómo implementarla en tu negocio".` }],
@@ -186,7 +186,7 @@ async function hacerTrailer() {
   const extra = isRetry ? "\n\n⚠️ REINTENTO: el trailer anterior fue rechazado. Haz uno claramente mejor y distinto." : "";
   const look = "Cinematic premium trailer, vertical 9:16, dramatic camera movement, glossy modern color grade, epic uplifting score energy, futuristic but grounded, real-looking people and spaces of the industry transformed by AI, holographic data and subtle AI interface accents. NO logos, NO watermark, NO real brand names, NO on-screen text.";
   const dir = await claude({
-    model: "claude-sonnet-4-6", max_tokens: 2000,
+    model: "claude-sonnet-5", max_tokens: 2000,
     system: `Eres Barbara, directora creativa de condor.ai. Diriges un REEL TRAILER cinematográfico vertical 9:16 (~30s, 2 clips de 15s) que muestra una industria concreta transformada por la IA, con máxima técnica de hook y retención. CLAVE: NO es solo cine con música — lleva una VOZ EN OFF en español neutro que EXPLICA, con datos y gancho, cómo la IA transforma esa industria (educativo y persuasivo, no aburrido). Es distinto y NO copia el carrusel del miércoles. NUNCA repites ángulos de las piezas recientes. Responde SOLO con el JSON.`,
     output_config: { format: { type: "json_schema", schema: schemaTrailer } },
     messages: [{ role: "user", content: `Industria de hoy: ${industria}.\n\nLOOK VISUAL OBLIGATORIO:\n${look}\n\nPIEZAS RECIENTES (no repitas):\n${recientes}${extra}\n\nDevuelve 2 clips (escena en inglés + locución en español de 25-35 palabras c/u) que cuenten, con voz en off explicativa, cómo la IA transforma un ${industria}. La locución debe sonar a trailer: potente, clara y que enseñe algo concreto.` }],

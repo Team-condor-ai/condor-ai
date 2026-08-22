@@ -151,7 +151,7 @@ async function main() {
   if (tema.investiga) {
     try {
       const r = await claude({
-        model: "claude-haiku-4-5", max_tokens: 1200,
+        model: "claude-sonnet-5", max_tokens: 1200,
         tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 5 }],
         messages: [{ role: "user", content: `Investiga datos ACTUALES y reales para: ${tema.instruccion}\nResumen con cifras y fuentes recientes.` }],
       });
@@ -166,7 +166,7 @@ async function main() {
   // 3) Director (lee memoria, innova)
   const extra = isRetry ? "\n\n⚠️ ESTE ES UN REINTENTO: el contenido anterior fue rechazado por el equipo. Genera una versión CLARAMENTE MEJOR y distinta (mejor diseño, mejor texto, otro enfoque del mismo tema)." : "";
   const dir = await claude({
-    model: "claude-sonnet-4-6", max_tokens: 4000,
+    model: "claude-sonnet-5", max_tokens: 4000,
     system: `Eres Barbara, directora creativa de condor.ai. Diseñas carruseles de Instagram (${N_SLIDES} slides) de nivel agencia, educativos y que hacen seguir la cuenta. Sigues EXACTAMENTE el template del día. Incluyes el texto exacto a renderizar en cada slide COMO COPY FINAL: en la imagen SOLO aparece lo que lee la persona, JAMÁS palabras estructurales como "titular", "subtítulo", "título", "dato", "texto", "slide" o "CTA", ni rótulos con dos puntos. NUNCA repites ángulos, protagonistas ni textos de las piezas recientes (te las paso). Innova siempre. Responde SOLO con el JSON.`,
     output_config: { format: { type: "json_schema", schema } },
     messages: [{ role: "user", content: `Tipo de hoy (${dia}): ${tema.instruccion}\n\nTEMPLATE OBLIGATORIO:\n${tema.template}\n\nPIEZAS RECIENTES (NO repitas estos ángulos, innova):\n${recientes}\n${research ? "\nInvestigación web:\n" + research : ""}${extra}\n\nCrea el carrusel de ${N_SLIDES} slides con un ángulo NUEVO.` }],

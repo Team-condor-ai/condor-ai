@@ -232,7 +232,7 @@ ${patrones}` : ""}${extraRetry}`;
 
   if (TIPO === "ugc") {
     const pedirPlanUGC = async (extra = "") => JSON.parse(textOf(await claude(AK, {
-      model: "claude-sonnet-4-6", max_tokens: 2500,
+      model: "claude-sonnet-5", max_tokens: 2500,
       system: `Eres Bárbara, directora creativa de "${negocio}" (rubro: ${rubro || "no especificado"}). Diriges un video UGC vertical 9:16 (2-3 tomas de 4-6s): UNA PERSONA mostrando el producto o servicio y HABLÁNDOLE A LA CÁMARA, estilo grabado con su propio celular — casero y genuino, nunca un comercial pulido. La persona puede cambiar entre piezas. Sigues la identidad de marca del cliente. NUNCA repites ángulos de las piezas recientes. Responde SOLO con el JSON.`,
       output_config: { format: { type: "json_schema", schema: schemaUGC } },
       messages: [{ role: "user", content: `${contexto}${extra}\n\nCrea el UGC con un ángulo NUEVO, fiel a la marca.` }],
@@ -263,7 +263,7 @@ ${patrones}` : ""}${extraRetry}`;
   } else {
     const nSlides = TIPO === "historia" ? 1 : 6;
     const pedirPlanSlides = async (extra = "") => JSON.parse(textOf(await claude(AK, {
-      model: "claude-sonnet-4-6", max_tokens: 4000,
+      model: "claude-sonnet-5", max_tokens: 4000,
       system: `Eres Bárbara, directora creativa de "${negocio}" (rubro: ${rubro || "no especificado"}). Diseñas ${TIPO === "historia" ? "una historia de Instagram (1 imagen)" : `un carrusel de Instagram (${nSlides} slides)`} de nivel agencia. Sigues la identidad de marca del cliente al pie de la letra. Escribes la COPY FINAL de cada slide: el titular y el cuerpo tal cual los va a leer la persona. El diseño lo pone una plantilla de marca, así que NO describes imágenes ni composición — solo escribes las palabras, y tienen que sostenerse solas. NUNCA repites ángulos de las piezas recientes. Responde SOLO con el JSON.`,
       output_config: { format: { type: "json_schema", schema } },
       messages: [{ role: "user", content: `${contexto}${extra}\n\nCrea ${TIPO === "historia" ? "la historia" : `el carrusel de ${nSlides} slides`} con un ángulo NUEVO, fiel a la marca.` }],

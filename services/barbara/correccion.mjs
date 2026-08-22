@@ -33,7 +33,7 @@
 
 import { claude, textOf } from "./motor.mjs";
 
-const MODELO = "claude-sonnet-4-6";
+const MODELO = "claude-sonnet-5";
 
 // Un cliente puede mandar tres mensajes seguidos describiendo lo mismo. Se
 // leen todos los del último tramo, no solo el último: quedarse con el último
