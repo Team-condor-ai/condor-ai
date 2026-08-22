@@ -95,14 +95,17 @@ async function main() {
   // salieron con esa cifra optimista.
   //
   // `messaging_conversation_started_7d` es la que Meta muestra como
-  // "Conversaciones con mensajes iniciadas" y es la que optimiza el conjunto.
-  // Se usa `max` y no solo esa métrica para no romper campañas viejas que
-  // reportan únicamente `total_messaging_connection`: si una viene en cero, la
-  // otra sigue sirviendo, pero nunca se suman.
-  const convDe = (acc) => Math.max(
-    getAcc(acc, "onsite_conversion.messaging_conversation_started_7d"),
-    getAcc(acc, "onsite_conversion.total_messaging_connection"),
-  );
+  // "Conversaciones con mensajes iniciadas" y la que optimiza el conjunto:
+  // es LA métrica, y se verificó contra el administrador (46 en "anuncio 5
+  // video pizarra", igual que el UI).
+  //
+  // `total_messaging_connection` es más ancha —para el mismo anuncio daba 56—
+  // así que tampoco sirve `Math.max`: elegiría la ancha cada vez que sea
+  // mayor, que es siempre. Queda solo de respaldo, para campañas viejas que
+  // no reportan la primera.
+  const convDe = (acc) =>
+    getAcc(acc, "onsite_conversion.messaging_conversation_started_7d") ||
+    getAcc(acc, "onsite_conversion.total_messaging_connection");
   const moneda = cuenta.currency || "?";
   const hoy = new Date();
 

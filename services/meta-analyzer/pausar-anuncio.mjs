@@ -68,13 +68,14 @@ async function api(ruta, { campos, cuerpo, params } = {}) {
 
 const plata = (n) => "$" + Math.round(n).toLocaleString("es-CL");
 
-/* Mismo criterio que meta-analyzer.mjs: las dos métricas de conversación se
-   solapan, así que se toma la mayor y NUNCA la suma. */
+/* Mismo criterio que meta-analyzer.mjs: la primera métrica es la que muestra
+   el administrador; la segunda es más ancha y va solo de respaldo. Nunca se
+   suman ni se toma la mayor. */
 const conversaciones = (acciones = []) => {
   const de = (t) => Number((acciones.find((a) => a.action_type === t) || {}).value || 0);
-  return Math.max(
-    de("onsite_conversion.messaging_conversation_started_7d"),
-    de("onsite_conversion.total_messaging_connection"),
+  return (
+    de("onsite_conversion.messaging_conversation_started_7d") ||
+    de("onsite_conversion.total_messaging_connection")
   );
 };
 
