@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { sb, plata, fecha, enlaceWeb } from "../lib/supabase";
+import { sb, invocar, plata, fecha, enlaceWeb } from "../lib/supabase";
 import { nombreCobro, type Cliente, type Cobro, type Pago } from "../staff/tipos";
 
 /**
@@ -57,12 +57,9 @@ export function MiPlan() {
       // Se consulta siempre al backend aunque haya un link guardado: ahí se
       // valida que pertenezca a la cuenta de Mercado Pago actual y no a la
       // integración antigua.
-      const { data, error } = await sb.functions.invoke("crear-pago", {
-        body: { cobro_id: cobro.id },
+      const respuesta = await invocar<{ init_point?: string }>("crear-pago", {
+        cobro_id: cobro.id,
       });
-      if (error) throw error;
-      const respuesta = data as { init_point?: string; error?: string };
-      if (respuesta?.error) throw new Error(respuesta.error);
       const link = respuesta?.init_point || "";
       if (!link) throw new Error("Mercado Pago no devolvió un enlace.");
       window.location.assign(link);

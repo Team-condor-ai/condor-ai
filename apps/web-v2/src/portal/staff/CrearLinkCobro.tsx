@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { sb, plata } from "../lib/supabase";
+import { invocar, plata } from "../lib/supabase";
 import { Ico } from "../disenio/iconos";
 import { nombreCobro, type Cliente, type Cobro } from "./tipos";
 
@@ -35,6 +35,7 @@ export function CrearLinkCobro({ cliente, cobro, cerrar, guardado }: Props) {
   const [link, setLink] = useState(cobro.link ?? "");
   const [correoOk, setCorreoOk] = useState(false);
   const [copiado, setCopiado] = useState(false);
+  const [aviso, setAviso] = useState("");
   const [cuentaActual, setCuentaActual] = useState(!!cobro.mp_cuenta_id);
   // Un link ya guardado se muestra de entrada para poder reenviarlo, pero hay
   // que distinguirlo del recién generado: el mensaje "listo y enviado" sobre un
@@ -52,32 +53,33 @@ export function CrearLinkCobro({ cliente, cobro, cerrar, guardado }: Props) {
     setTrabajando(true);
     setError("");
     try {
-      const { data, error } = await sb.functions.invoke("crear-pago", {
-        body: {
+      const r = await invocar<{ init_point?: string; correo_enviado?: boolean; aviso?: string | null }>(
+        "crear-pago",
+        {
           cobro_id: cobro.id,
           enviar_correo: enviarCorreo && !!cliente.email,
           forzar_nuevo: forzarNuevo,
         },
-      });
-      if (error) throw error;
-      const r = data as { init_point?: string; correo_enviado?: boolean; error?: string };
-      if (r?.error) throw new Error(r.error);
+      );
       if (!r?.init_point) throw new Error("Mercado Pago no devolvió un link.");
       setLink(r.init_point);
       setCorreoOk(!!r.correo_enviado);
+      // El link existe en Mercado Pago pero algo no se pudo guardar de este
+      // lado. Se muestra junto al link, no en vez de él: el checkout sirve.
+      setAviso(r.aviso || "");
       setReciente(true);
       setCuentaActual(true);
       guardado();
     } catch (e) {
+      // `invocar` ya trae el motivo real de la función; acá solo se traducen
+      // los que hablan de configuración a algo que el equipo pueda accionar.
       const m = e instanceof Error ? e.message : String(e);
       setError(
-        /not found|404/i.test(m)
-          ? "Falta desplegar la Edge Function `crear-pago`. No se cobró nada."
-          : /MP_ACCESS_TOKEN/i.test(m)
-            ? "Falta configurar MP_ACCESS_TOKEN en Supabase. No se cobró nada."
-            : /cobros/i.test(m) && /relation|does not exist/i.test(m)
-              ? "Falta correr la migración `20260821_cobros.sql` en Supabase."
-              : m,
+        /MP_ACCESS_TOKEN/i.test(m)
+          ? "Falta configurar MP_ACCESS_TOKEN en Supabase. No se cobró nada."
+          : /column .* does not exist|relation .* does not exist|schema cache/i.test(m)
+            ? "Falta aplicar las migraciones de Mercado Pago en Supabase (" + m + ")."
+            : m,
       );
     } finally {
       setTrabajando(false);
@@ -120,6 +122,7 @@ export function CrearLinkCobro({ cliente, cobro, cerrar, guardado }: Props) {
                   Enlace heredado de la integración anterior. Regénéralo antes de enviarlo o abrirlo.
                 </p>
               )}
+              {aviso && <p className="error">{aviso}</p>}
               <label className="campo-lbl">
                 Link de pago
                 <input className="campo" readOnly value={link} onFocus={(e) => e.target.select()} />

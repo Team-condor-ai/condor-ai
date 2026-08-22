@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { sb } from "../lib/supabase";
+import { invocar } from "../lib/supabase";
 import { MONEDAS } from "./tipos";
 
 type Props = {
@@ -35,8 +35,9 @@ export function CrearPlanSuscripcion({ grupoSugerido, gruposExistentes, cerrar, 
     setTrabajando(true);
     setError("");
     try {
-      const { data, error } = await sb.functions.invoke("crear-plan-suscripcion", {
-        body: {
+      const r = await invocar<{ ok?: boolean; plan?: { init_point?: string } }>(
+        "crear-plan-suscripcion",
+        {
           grupo: grupo.trim(),
           nombre: nombre.trim(),
           descripcion: descripcion.trim(),
@@ -44,10 +45,7 @@ export function CrearPlanSuscripcion({ grupoSugerido, gruposExistentes, cerrar, 
           moneda,
           frecuencia_meses: frecuencia,
         },
-      });
-      if (error) throw error;
-      const r = data as { ok?: boolean; plan?: { init_point?: string }; error?: string };
-      if (r?.error) throw new Error(r.error);
+      );
       if (!r?.plan?.init_point) throw new Error("Mercado Pago no devolvió un link.");
       setLink(r.plan.init_point);
       guardado();

@@ -304,6 +304,10 @@ Deno.serve(async (req) => {
     pago = data;
   }
 
+  // Lo que hay que dejar escrito en el cobro después de hablar con MP. Se junta
+  // en un solo update junto con el link — ver el bloque de guardado.
+  let datosCobro: Record<string, unknown> = {};
+
   const referencia = pago ? pago.id : `cobro:${cobro.id}`;
   const retorno = `${portalBase()}/pago/resultado?cobro_id=${encodeURIComponent(cobro.id)}`;
 
@@ -336,11 +340,11 @@ Deno.serve(async (req) => {
       // reconocer los cobros mensuales que MP hace solo: el webhook resuelve
       // cada cobro recurrente por este id. El estado se queda en 'pendiente'
       // hasta que el cliente autorice — decirlo activo antes sería mentir.
-      if (d.id) await sb.from("cobros").update({
-        mp_preapproval_id: String(d.id),
+      datosCobro = {
+        ...(d.id ? { mp_preapproval_id: String(d.id) } : {}),
         mp_cuenta_id: cuentaMp.id,
         mp_checkout_creado_en: new Date().toISOString(),
-      }).eq("id", cobro.id);
+      };
     } else {
       // Pago único (setup u otro)
       const r = await fetch("https://api.mercadopago.com/checkout/preferences", {
@@ -373,18 +377,39 @@ Deno.serve(async (req) => {
         ? (d.sandbox_init_point || d.init_point)
         : d.init_point;
       if (!initPoint) throw new Error("Mercado Pago no devolvió el enlace de pago.");
-      await sb.from("cobros").update({
+      datosCobro = {
         mp_preference_id: d.id ? String(d.id) : null,
         mp_cuenta_id: cuentaMp.id,
         mp_checkout_creado_en: new Date().toISOString(),
-      }).eq("id", cobro.id);
+      };
     }
 
     // El link se guarda para poder volver a copiarlo o reenviarlo sin generar
     // un cobro nuevo — si no, cada "no me llegó" dejaría una fila duplicada.
     if (pago) await sb.from("pagos").update({ link: initPoint }).eq("id", pago.id);
-    // También en el cobro: es ahí donde la ficha busca "reenviar el link".
-    await sb.from("cobros").update({ link: initPoint }).eq("id", cobro.id);
+
+    // GUARDAR EL LINK Y LA CUENTA JUNTOS, Y MIRAR SI FALLÓ
+    // -------------------------------------------------------------------------
+    // Eran dos updates y ninguno revisaba el error. Si el segundo fallaba —por
+    // ejemplo con la migración de Mercado Pago v2 sin aplicar, que deja el
+    // cobro sin `mp_cuenta_id`— el cobro quedaba con link pero sin cuenta, y a
+    // partir de ahí TODA llamada devolvía 409 "este enlace pertenece a la
+    // integración anterior". Un cobro trabado para siempre, en silencio.
+    //
+    // Ahora van en un solo update y el error se cuenta: el link ya existe en
+    // Mercado Pago y se devuelve igual (no perder un checkout válido), pero se
+    // dice qué quedó sin escribir en vez de descubrirlo al segundo intento.
+    const { error: errorCobro } = await sb.from("cobros")
+      .update({ ...datosCobro, link: initPoint })
+      .eq("id", cobro.id);
+    let aviso: string | null = null;
+    if (errorCobro) {
+      console.error("crear-pago · no se pudo guardar el cobro:", errorCobro.message);
+      aviso =
+        "El link se creó en Mercado Pago pero no se pudo guardar en el cobro: " +
+        errorCobro.message +
+        " · Cópialo ahora; revisa las migraciones de Supabase antes de generar otro.";
+    }
 
     // Si el admin pidió enviar el cobro por correo: email bonito al cliente + marcar cobro_enviado_en
     let correoEnviado = false;
@@ -402,6 +427,7 @@ Deno.serve(async (req) => {
       pago_id: pago ? pago.id : null,
       cobro_id: cobro.id,
       reutilizado: false,
+      aviso,
     });
   } catch (e) {
     if (pago) {

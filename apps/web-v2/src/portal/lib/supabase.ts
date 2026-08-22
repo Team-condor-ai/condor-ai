@@ -65,3 +65,70 @@ export function fecha(f: string | null | undefined) {
     year: "numeric",
   });
 }
+
+/**
+ * Llama a una Edge Function y devuelve el motivo REAL cuando falla.
+ *
+ * POR QUÉ EXISTE ESTO: "Edge Function returned a non-2xx status code"
+ * ---------------------------------------------------------------------------
+ * `sb.functions.invoke` no lee el cuerpo cuando el status no es 2xx: lanza un
+ * `FunctionsHttpError` cuyo `.message` es siempre esa frase, y deja la Response
+ * sin leer en `error.context`. Nuestras funciones sí explican qué pasó
+ * ("Falta configurar MP_ACCESS_TOKEN", "cancela la suscripción activa antes de
+ * crear otra"), pero ese texto se perdía y en pantalla salía la frase genérica.
+ * El 22-ago un cobro no se pudo generar y el portal no supo decir por qué.
+ *
+ * Acá se abre `error.context` para rescatar el mensaje. Lo que devuelve la
+ * función siempre gana; la frase genérica queda solo como último recurso.
+ */
+export async function invocar<T = unknown>(
+  nombre: string,
+  body?: Record<string, unknown>,
+  opciones?: { method?: "GET" | "POST" },
+): Promise<T> {
+  const { data, error } = await sb.functions.invoke(nombre, {
+    ...(body === undefined ? {} : { body }),
+    ...(opciones?.method ? { method: opciones.method } : {}),
+  });
+
+  if (error) throw new Error(await motivoDeFuncion(error, nombre));
+  // Una función puede responder 200 con `{ error }` adentro; también es fallo.
+  if (data && typeof data === "object" && "error" in data) {
+    const motivo = (data as { error?: unknown }).error;
+    if (motivo) throw new Error(String(motivo));
+  }
+  return data as T;
+}
+
+/** Saca el texto útil de un error de `functions.invoke`. */
+async function motivoDeFuncion(error: unknown, nombre: string): Promise<string> {
+  const errorConContexto = error as { context?: unknown; message?: unknown };
+  const respuesta: Response | undefined = errorConContexto.context instanceof Response
+    ? errorConContexto.context
+    : undefined;
+
+  if (respuesta) {
+    let cuerpo = "";
+    try {
+      cuerpo = await respuesta.clone().text();
+    } catch { /* el cuerpo ya se consumió o no se pudo leer */ }
+
+    let mensaje: string;
+    try {
+      const j = JSON.parse(cuerpo) as { error?: unknown; message?: unknown; msg?: unknown };
+      mensaje = String(j.error || j.message || j.msg || "");
+    } catch {
+      mensaje = cuerpo.trim().slice(0, 300);
+    }
+
+    if (respuesta.status === 404 && /NOT_FOUND|not found/i.test(cuerpo || mensaje)) {
+      return `Falta desplegar la Edge Function \`${nombre}\` en Supabase. No se cobró nada.`;
+    }
+    if (mensaje) return mensaje;
+    return `La función \`${nombre}\` respondió ${respuesta.status} sin explicar el motivo.`;
+  }
+
+  return typeof errorConContexto.message === "string" && errorConContexto.message
+    ? errorConContexto.message
+    : `No se pudo llamar a \`${nombre}\`.`;
+}

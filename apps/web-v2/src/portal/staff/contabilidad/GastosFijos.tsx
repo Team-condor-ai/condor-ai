@@ -4,6 +4,9 @@ import { Ico } from "../../disenio/iconos";
 import { CampoVivo } from "../CampoVivo";
 import { lineasDe, type Asiento, type Cuenta, type GastoFijo } from "./tipos";
 
+/** Un gasto fijo recién creado no tiene cuenta: hay que elegirla a propósito. */
+const SIN_CUENTA = "— elegir cuenta —";
+
 /**
  * Los gastos que se repiten todos los meses.
  *
@@ -48,9 +51,12 @@ export function GastosFijos({
     );
 
   async function anotar(g: GastoFijo) {
-    const cuentaGasto = g.cuenta_id ?? gastos[0]?.id;
+    // El mismo fallback silencioso de antes: anotaba en la primera cuenta del
+    // plan y el gasto aparecía como sueldo. Mejor negarse y decir por qué.
+    const cuentaGasto = g.cuenta_id;
     const medio = liquidas[0]?.id;
-    if (!cuentaGasto || !medio) { setError("Faltan cuentas para anotar el gasto."); return; }
+    if (!cuentaGasto) { setError(`Elige la cuenta de "${g.nombre}" antes de anotarlo.`); return; }
+    if (!medio) { setError("No hay ninguna cuenta líquida para pagar el gasto."); return; }
     setTrabajando(g.id);
     const { data: a, error: e1 } = await sb.from("asientos").insert({
       glosa: g.nombre, origen: "fijo",
@@ -64,8 +70,10 @@ export function GastosFijos({
   }
 
   async function agregar() {
+    // Sin cuenta a propósito: heredar `gastos[0]` dejaba todo anotado en la
+    // primera cuenta del plan —Sueldos y honorarios— sin que nadie lo eligiera.
     const { data } = await sb.from("gastos_fijos").insert({
-      nombre: "Gasto nuevo", monto: 0, cuenta_id: gastos[0]?.id ?? null,
+      nombre: "Gasto nuevo", monto: 0, cuenta_id: null,
     }).select().single();
     if (data) setFijos((p) => [...p, data as GastoFijo]);
   }
@@ -138,8 +146,19 @@ export function GastosFijos({
                         }}
                       />
                     </td>
-                    <td className="conteo">
-                      {cuentas.find((c) => c.id === g.cuenta_id)?.nombre ?? "—"}
+                    <td style={{ minWidth: 200 }}>
+                      <CampoVivo
+                        etiqueta=""
+                        valor={cuentas.find((c) => c.id === g.cuenta_id)?.nombre ?? SIN_CUENTA}
+                        opciones={[SIN_CUENTA, ...gastos.map((c) => c.nombre)]}
+                        guardar={async (v) => {
+                          const id = gastos.find((c) => c.nombre === v)?.id ?? null;
+                          const { error } = await sb.from("gastos_fijos")
+                            .update({ cuenta_id: id }).eq("id", g.id);
+                          if (!error) setFijos((p) => p.map((x) => (x.id === g.id ? { ...x, cuenta_id: id } : x)));
+                          return error?.message ?? null;
+                        }}
+                      />
                     </td>
                     <td>
                       {pagado ? (

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { sb, plata } from "../lib/supabase";
+import { sb, invocar, plata } from "../lib/supabase";
 import type { Cobro } from "../staff/tipos";
 
 type EstadoVista = "confirmando" | "pagado" | "activa" | "pendiente" | "rechazado";
@@ -53,12 +53,7 @@ export function ResultadoPago() {
     async function verificar() {
       try {
         if (paymentId) {
-          const { data, error } = await sb.functions.invoke("verificar-pago", {
-            body: { payment_id: paymentId },
-          });
-          if (error) throw error;
-          const r = (data || {}) as Resultado;
-          if (r.error) throw new Error(r.error);
+          const r = ((await invocar("verificar-pago", { payment_id: paymentId })) || {}) as Resultado;
           if (!vivo) return;
           setMonto(r.monto ?? null);
           setMoneda(r.moneda || "CLP");

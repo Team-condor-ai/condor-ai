@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { sb, plata, fecha, enlaceWeb } from "../lib/supabase";
+import { sb, invocar, plata, fecha, enlaceWeb } from "../lib/supabase";
 import { Ico } from "../disenio/iconos";
 import { CampoVivo } from "./CampoVivo";
 import { EditorCobro } from "./EditorCobro";
@@ -162,11 +162,7 @@ export function ContenidoCliente({
     setGestionando(cobro.id);
     setError("");
     try {
-      const { data, error } = await sb.functions.invoke("gestionar-suscripcion", {
-        body: { cobro_id: cobro.id, accion },
-      });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
+      await invocar("gestionar-suscripcion", { cobro_id: cobro.id, accion });
       await cargar(true);
     } catch (e) {
       setError(e instanceof Error ? e.message : "No se pudo actualizar la suscripción.");
