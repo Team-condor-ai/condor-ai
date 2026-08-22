@@ -147,7 +147,12 @@ const schema = {
     angulo: { type: "string", description: "El ángulo/idea ÚNICO de hoy en una frase (para registrar y no repetir)." },
     slides: { type: "array", items: { type: "object", additionalProperties: false, properties: {
       titulo: { type: "string" },
-      prompt: { type: "string", description: `Prompt EN INGLÉS, art-directed, que repite el template del día. Debe especificar el TEXTO EXACTO en español que se verá, escrito como copy FINAL de diseño (solo lo que lee la persona). PROHIBIDO que ese texto incluya rótulos ni meta-palabras como 'titular', 'título', 'subtítulo', 'dato', 'texto', 'slide' o 'CTA', ni una palabra seguida de dos puntos como etiqueta. Última slide = CTA con el texto '${tema.cta}'. El logo condor.ai SÍ va, tal como lo describe el template.` },
+      // NO repetir el template acá: genImagen ya lo concatena a este prompt
+      // antes de mandarlo. Pedírselo al modelo lo hacía escribirlo 6 o 7 veces
+      // y el JSON se pasaba de max_tokens y llegaba cortado a la mitad de una
+      // cadena (SyntaxError al parsear). Este campo describe SOLO lo propio
+      // del slide.
+      prompt: { type: "string", description: `Contenido EN INGLÉS de ESTE slide, breve (máx 60 palabras). NO describas el estilo, los colores ni la tipografía: eso ya lo pone el template. Di solo qué ilustración o ícono va, y el TEXTO EXACTO en español que debe aparecer, como copy FINAL (solo lo que lee la persona). PROHIBIDO que ese texto incluya rótulos ni meta-palabras como 'titular', 'título', 'subtítulo', 'dato', 'texto', 'slide' o 'CTA', ni una palabra seguida de dos puntos como etiqueta. Último slide = CTA con el texto '${tema.cta}'.` },
     }, required: ["titulo", "prompt"] } },
     caption: { type: "string", description: "Caption educativa para Instagram con hook, valor real, invita a seguir + 5-8 hashtags (mezcla IA/negocios/Perú/Chile)." },
   },
@@ -238,12 +243,26 @@ async function main() {
   // 3) Director (lee memoria, innova)
   const extra = isRetry ? "\n\n⚠️ ESTE ES UN REINTENTO: el contenido anterior fue rechazado por el equipo. Genera una versión CLARAMENTE MEJOR y distinta (mejor diseño, mejor texto, otro enfoque del mismo tema)." : "";
   const dir = await claude({
-    model: "claude-sonnet-5", max_tokens: 4000,
+    model: "claude-sonnet-5", max_tokens: 8000,
     system: `Eres Barbara, directora creativa de condor.ai. Diseñas carruseles de Instagram (${N_SLIDES} slides) de nivel agencia, educativos y que hacen seguir la cuenta. Sigues EXACTAMENTE el template del día. Incluyes el texto exacto a renderizar en cada slide COMO COPY FINAL: en la imagen SOLO aparece lo que lee la persona, JAMÁS palabras estructurales como "titular", "subtítulo", "título", "dato", "texto", "slide" o "CTA", ni rótulos con dos puntos. NUNCA repites ángulos, protagonistas ni textos de las piezas recientes (te las paso). Innova siempre. Responde SOLO con el JSON.`,
     output_config: { format: { type: "json_schema", schema } },
     messages: [{ role: "user", content: `Tipo de hoy (${dia}): ${tema.instruccion}\n\nTEMPLATE OBLIGATORIO:\n${tema.template}\n\nPIEZAS RECIENTES (NO repitas estos ángulos, innova):\n${recientes}\n${research ? "\nInvestigación web:\n" + research : ""}${extra}\n\nCrea el carrusel de ${N_SLIDES} slides con un ángulo NUEVO.` }],
   });
-  const plan = JSON.parse(textOf(dir));
+  // Si el modelo se queda sin tokens, el JSON llega cortado y JSON.parse tira
+  // un "Unterminated string in JSON at position N" que no dice nada de la
+  // causa real. Se traduce a un mensaje que sí, porque el arreglo es subir
+  // max_tokens o acortar el template, no mirar el carácter 2884.
+  const crudo = textOf(dir);
+  let plan;
+  try {
+    plan = JSON.parse(crudo);
+  } catch (e) {
+    const corte = dir.stop_reason === "max_tokens";
+    throw new Error(
+      (corte ? "El director se quedó sin tokens y el JSON llegó cortado. Sube max_tokens o acorta el template. " : "El director devolvió un JSON inválido. ") +
+      `(${crudo.length} chars, stop_reason=${dir.stop_reason}): ` + String(e).slice(0, 120)
+    );
+  }
   const slides = (plan.slides || []).slice(0, N_SLIDES);
 
   // 4) Imágenes con Higgsfield
