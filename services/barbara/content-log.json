@@ -128,5 +128,13 @@
     "angulo": "La IA de esta semana no está en un laboratorio lejano: ya se instaló en tu WhatsApp, tu software de oficina y el banco que le presta a tu pyme.",
     "titulo": "📰 Noticiero IA — la semana en IA",
     "runId": "32595990242"
+  },
+  {
+    "fecha": "2026-08-22",
+    "tipo": "miercoles",
+    "serie": "servicios",
+    "angulo": "El verdadero costo no es implementar IA, es todo lo que pierdes cada día que sigues sin ella",
+    "titulo": "🚀 Servicios Cóndor — agentes de IA",
+    "runId": "32596828121"
   }
 ]
