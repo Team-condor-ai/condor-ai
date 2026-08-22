@@ -1,0 +1,21 @@
+name: Diagnóstico del token de Meta
+
+# Qué permisos tiene el token que usan los demás workflows.
+# Se corre a mano cuando algo falla con un error de permisos de Meta.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnostico:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Revisar permisos del token
+        run: node services/meta-analyzer/diagnostico-token.mjs
+        env:
+          META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
+          META_AD_ACCOUNT_ID: ${{ secrets.META_AD_ACCOUNT_ID }}
