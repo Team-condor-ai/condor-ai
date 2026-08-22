@@ -154,7 +154,7 @@ const schema = {
       // del slide.
       prompt: { type: "string", description: `Contenido EN INGLÉS de ESTE slide, breve (máx 60 palabras). NO describas el estilo, los colores ni la tipografía: eso ya lo pone el template. Di solo qué ilustración o ícono va, y el TEXTO EXACTO en español que debe aparecer, como copy FINAL (solo lo que lee la persona). PROHIBIDO que ese texto incluya rótulos ni meta-palabras como 'titular', 'título', 'subtítulo', 'dato', 'texto', 'slide' o 'CTA', ni una palabra seguida de dos puntos como etiqueta. Último slide = CTA con el texto '${tema.cta}'.` },
     }, required: ["titulo", "prompt"] } },
-    caption: { type: "string", description: "Caption educativa para Instagram con hook, valor real, invita a seguir + 5-8 hashtags (mezcla IA/negocios/Perú/Chile)." },
+    caption: { type: "string", description: "Caption educativa para Instagram con hook, valor real, invita a seguir + MÁXIMO 5 hashtags (Instagram rechaza la publicación con más de 5). Mezcla IA/negocios/Perú/Chile." },
   },
   required: ["angulo", "slides", "caption"],
 };

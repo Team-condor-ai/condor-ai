@@ -66,3 +66,23 @@ jobs:
           BLOTATO_ACCOUNT_ID: ${{ vars.BLOTATO_INSTAGRAM_ACCOUNT_ID }}
           BLOTATO_CONFIRMAR_PUBLICACION: ${{ inputs.confirmacion }}
         run: node services/barbara/blotato-cli.mjs publicar-outbox barbara-outbox
+      # La reserva se toma ANTES de publicar (correcto: evita que dos corridas
+      # publiquen la misma pieza). Pero si la publicación falla, esa reserva
+      # dejaba el run_id bloqueado PARA SIEMPRE y la única salida era volver a
+      # generar la pieza. Pasó el 22-ago-2026: Instagram rechazó la caption por
+      # traer 8 hashtags y el candado quedó puesto sin que se publicara nada.
+      # Si no se publicó, la reserva se suelta.
+      - name: Liberar la reserva si la publicación falló
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_RUN_ID: ${{ inputs.run_id }}
+        run: |
+          ID=$(gh api -X GET "repos/${{ github.repository }}/actions/artifacts" \
+                 -f "name=barbara-publicacion-${SOURCE_RUN_ID}" --jq '.artifacts[0].id // empty')
+          if [ -n "$ID" ]; then
+            gh api -X DELETE "repos/${{ github.repository }}/actions/artifacts/$ID" \
+              && echo "Reserva liberada: la pieza ${SOURCE_RUN_ID} se puede reintentar."
+          else
+            echo "No había reserva que liberar."
+          fi

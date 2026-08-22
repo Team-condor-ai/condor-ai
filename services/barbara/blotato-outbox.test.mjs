@@ -3,7 +3,7 @@ import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
-import { leerOutbox, publicarOutbox } from "./blotato-outbox.mjs";
+import { leerOutbox, publicarOutbox, limitarHashtags } from "./blotato-outbox.mjs";
 
 function crearOutbox() {
   const dir = mkdtempSync(join(tmpdir(), "barbara-outbox-"));
@@ -46,4 +46,20 @@ test("rechaza rutas que escapen del outbox", async (t) => {
     publicarOutbox({ subirMedia: async () => ({}) }, { directorio: dir, accountId: "1" }),
     /fuera del outbox/,
   );
+});
+
+test("limitarHashtags deja solo los primeros y limpia los huecos", () => {
+  const original = "Texto real. #IA #InteligenciaArtificial #Automatización #Negocios #Emprendimiento #Perú #Chile #Pymes";
+  const podado = limitarHashtags(original, 5);
+  assert.equal((podado.match(/#/g) || []).length, 5);
+  assert.ok(podado.startsWith("Texto real."));
+  assert.ok(podado.includes("#Emprendimiento"));
+  assert.ok(!podado.includes("#Pymes"));
+  assert.equal(podado, podado.trimEnd(), "no debe quedar cola de espacios");
+});
+
+test("limitarHashtags no toca un texto que ya cumple", () => {
+  const ok = "Corto. #IA #Negocios";
+  assert.equal(limitarHashtags(ok, 5), ok);
+  assert.equal(limitarHashtags(ok, undefined), ok);
 });
