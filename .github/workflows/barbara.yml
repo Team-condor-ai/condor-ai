@@ -73,12 +73,12 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           DIA: ${{ github.event.inputs.dia }}
           RETRY: ${{ github.event.inputs.retry }}
-          BARBARA_OUTBOX_DIR: .barbara-outbox
+          BARBARA_OUTBOX_DIR: barbara-outbox
       - name: Guardar pieza aprobable
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: barbara-${{ github.run_id }}
-          path: .barbara-outbox
+          path: barbara-outbox
           if-no-files-found: error
           retention-days: 30
       - name: Persistir credenciales rotadas + memoria

@@ -30,10 +30,10 @@ jobs:
         with:
           node-version: "22"
       - name: Descargar exactamente la pieza revisada
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: barbara-${{ inputs.run_id }}
-          path: .barbara-outbox
+          path: barbara-outbox
           github-token: ${{ github.token }}
           run-id: ${{ inputs.run_id }}
       - name: Validar cuenta y evitar una publicación duplicada
@@ -54,7 +54,7 @@ jobs:
           mkdir -p .blotato-lock
           printf '{"sourceRunId":"%s","lockedAt":"%s"}\n' "$SOURCE_RUN_ID" "$(date -u +%FT%TZ)" > .blotato-lock/lock.json
       - name: Reservar publicación única
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: barbara-publicacion-${{ inputs.run_id }}
           path: .blotato-lock/lock.json
@@ -65,4 +65,4 @@ jobs:
           BLOTATO_API_KEY: ${{ secrets.BLOTATO_API_KEY }}
           BLOTATO_ACCOUNT_ID: ${{ vars.BLOTATO_INSTAGRAM_ACCOUNT_ID }}
           BLOTATO_CONFIRMAR_PUBLICACION: ${{ inputs.confirmacion }}
-        run: node services/barbara/blotato-cli.mjs publicar-outbox .barbara-outbox
+        run: node services/barbara/blotato-cli.mjs publicar-outbox barbara-outbox
