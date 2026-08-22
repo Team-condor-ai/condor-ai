@@ -7,7 +7,7 @@
 # hf-creds.enc actualizado. No necesita conocer la llave anterior.
 set -euo pipefail
 
-REPO="joaquinmunozs/condor-ai"
+REPO="Team-condor-ai/condor-ai"
 CRED="$HOME/.config/higgsfield/credentials.json"
 
 cd "$(git rev-parse --show-toplevel)"
