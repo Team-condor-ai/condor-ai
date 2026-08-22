@@ -14,6 +14,12 @@ on:
         description: 'poner 1 para reintento (mejora el contenido)'
         required: false
         default: ''
+      serie:
+        description: 'forzar serie (vacío = la que toca por rotación)'
+        required: false
+        default: ''
+        type: choice
+        options: ['', 'noticias', 'servicios', 'barbara_producto', 'barbara_datos']
 
 permissions:
   contents: write
@@ -73,6 +79,7 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           DIA: ${{ github.event.inputs.dia }}
           RETRY: ${{ github.event.inputs.retry }}
+          SERIE: ${{ github.event.inputs.serie }}
           BARBARA_OUTBOX_DIR: barbara-outbox
       - name: Guardar pieza aprobable
         uses: actions/upload-artifact@v7

@@ -17,7 +17,6 @@ const CHAT = process.env.TELEGRAM_CHAT_ID;
 const isTest = (process.env.DIA || "").trim().toLowerCase() === "test" || process.env.TEST === "1";
 const isRetry = process.env.RETRY === "1";
 
-const N_SLIDES = 6;
 const LOG = "services/barbara/content-log.json";
 const OUTBOX = process.env.BARBARA_OUTBOX_DIR;
 
@@ -29,27 +28,88 @@ if (!["lunes", "miercoles", "viernes"].includes(dia)) {
   dia = wd === 3 ? "miercoles" : wd === 5 ? "viernes" : "lunes";
 }
 
-const TEMAS = {
-  lunes: {
+// ── Piezas de marca compartidas ─────────────────────────────────────────────
+// Los hex van LITERALES en el prompt a propósito. Pedirle "verde lima" a un
+// modelo de imagen devuelve un verde distinto en cada slide y el carrusel se
+// nota cosido de retazos; con el hex escrito, el color se sostiene de la
+// portada al cierre. Salen del logo y de los 4 carruseles que aprobó Joaquín
+// el 22-ago-2026.
+const GRADIENTE = "the condor.ai brand gradient: royal blue #1B4DE4 into violet #7B2FBF into crimson #E8203A";
+const LIMA = "#BCD530";
+
+// ── Los 4 templates ─────────────────────────────────────────────────────────
+// Describen SOLO el diseño: retícula, paleta, tipografía y ritmo. El contenido
+// lo inventa Bárbara cada vez y nunca se repite — de eso ya se encarga
+// content-log.json, que le pasa los últimos 15 ángulos con la orden de
+// innovar. Mantener el patrón visual y cambiar el fondo es justo lo que hace
+// que una cuenta se vea como una cuenta y no como piezas sueltas.
+
+const T_NOTICIAS = `Editorial tech-news slide, 4:5. Background near-white #F7F7F8 with one soft out-of-focus bloom of blue and pink in a single corner. Top-left: a small geometric hummingbird mark in ${GRADIENTE}, beside the lowercase wordmark "condor.ai" in heavy black grotesque. Top-right: the slide counter in bold black. Layout is LEFT-ALIGNED with a wide empty right column. Above the headline, one rounded-square app-icon tile in flat solid blue #1B4DE4 or violet #7B2FBF or crimson #E8203A, with a thin white line icon centred inside. Headline in very heavy grotesque sans, near-black #0A0A0A, tight leading, three or four short lines, with one or two key words filled with the same gradient. Under the headline a short horizontal rule in that gradient. Below it two or three lines of small grey body text. In the empty right column, one floating 3D isometric render or thin-line illustration in blue-violet tones, soft drop shadow, lots of white space around it. Optionally one very large statistic set in the gradient at bottom-left with its explanation beside it. Premium, calm, airy. NO clip-art, NO stock-photo people.`;
+
+const T_SERVICIOS = `Centred agency statement slide, 4:5. Background near-white #F7F7F8 with one soft blue-to-pink gradient bloom bleeding in from a corner. TOP-CENTRE: the geometric hummingbird mark in ${GRADIENTE} beside the lowercase wordmark "condor.ai" in heavy black grotesque. Top-right corner: the slide counter in bold black. EVERYTHING IS CENTRE-ALIGNED on one vertical axis. A very large headline in heavy grotesque sans, near-black #0A0A0A, tight leading, filling the middle of the frame, with one whole phrase filled in the same gradient. Optionally one simple thin-line icon centred above the headline drawn in the gradient (a circle, a coin, two chat bubbles) and never more than one. Under the headline two or three centred lines of medium-grey supporting copy at much smaller size. At the very bottom a short centred horizontal rule in the gradient. Enormous breathing room, symmetric margins, poster-like calm. NO photos, NO people, NO clip-art, NO cards or boxes.`;
+
+const T_BARBARA_PRODUCTO = `Dark editorial slide, 4:5. Background PURE BLACK #000000 edge to edge. Top-left: small geometric hummingbird mark in ${GRADIENTE} beside the wordmark "condor.ai" in white grotesque. Top-right: the slide counter in lime ${LIMA}. Headline set in a high-contrast DISPLAY SERIF with Scotch or Didone flavour, cream #F5F1E8, with the emphasised words in lime ${LIMA}. When the slide is a numbered point, place a small rounded-square OUTLINE badge stroked in lime, holding the number in lime, centred above the headline. In the middle of the frame, one large thin-line icon drawn in lime strokes on the black — a speech bubble, a descending bar chart, a target with an arrow, a calendar, a pencil — line art only, never filled, never another colour. At the bottom, a wide rounded-rectangle OUTLINE stroked in lime holding a small lime line icon at the left and two lines of white sans-serif text, with the number or key phrase in lime bold. Confident, high contrast, generous negative space. NO photos, NO background gradients, NO colour other than black, cream and lime.`;
+
+const T_BARBARA_DATOS = `Data-driven editorial slide, 4:5, same brand family as the dark Barbara series but on alternating grounds: this slide is EITHER pure black #000000 with cream #F5F1E8 text, OR warm cream #F2EFE6 with near-black text and olive accents — pick one and commit to it, never split the frame. Top-left: a SOLID rounded-square badge filled lime ${LIMA} with the number in black inside it. Headline in a high-contrast DISPLAY SERIF with the emphasised half in lime ${LIMA}, or in deeper olive #8FA524 when the ground is cream so it stays readable. Under it a short lime rule. Body copy in a geometric sans. For statistics, stack two or three wide rounded-rectangle OUTLINE cards, each with a thin-line icon at the left, one very large lime percentage, and a two-line label beside it. For comparisons, draw a bordered two-column panel with a circled-cross list on the left and a circled-check list on the right, split by a vertical rule with a small circled "VS" on it. Optionally one simple two-bar chart, grey against lime, labelled underneath. Bottom-left, a small grey source line. Editorial, dense but ordered. NO photos, NO clip-art.`;
+
+const SERIES = {
+  noticias: {
     titulo: "📰 Noticiero IA — la semana en IA",
-    investiga: true,
-    instruccion: "Investiga exactamente 7 noticias de IA de los últimos 7 días (reales, de la búsqueda web), contrasta su vigencia y crea un carrusel NOTICIERO seleccionando las 3-4 más importantes, explicadas para un dueño de negocio.",
-    template: `EDITORIAL TECH NEWSLETTER style (tipo "The Rundown AI"): fondo crema #f2efe6, texto NEGRO, UN acento verde menta #9ef0c0 como marcador detrás de 1-2 palabras clave. Tipografía rounded grotesque bold, muy legible. Portada con foto cinematográfica real + efecto papel rasgado. Cada slide: foto real arriba y debajo el copy como diseño editorial (una frase grande + una cifra clave resaltada + una línea corta de cierre "Cómo afecta"). Minimal, premium, serio. Badge de número arriba a la derecha. NO colorido, NO clip-art.`,
+    investiga: true, slides: 6, cta: "Síguenos para más",
+    instruccion: "Investiga exactamente 7 noticias de IA de los últimos 7 días (reales, de la búsqueda web), contrasta su vigencia y arma un NOTICIERO con las 3-4 más importantes, explicadas para un dueño de negocio latinoamericano. Cada noticia necesita una cifra concreta y una línea de qué significa para su negocio. Nombra la fuente en el slide.",
+    template: T_NOTICIAS,
   },
-  miercoles: {
-    titulo: "🏭 IA por industria — casos concretos",
-    investiga: false,
-    instruccion: "Carrusel de una INDUSTRIA específica (restaurantes, retail, clínicas, inmobiliarias, talleres, etc.) con ejemplos CONCRETOS de qué puede hacer la IA ahí y el beneficio.",
-    template: `Diseño infografía premium colorida tipo Canva pro: foto realista de la industria + bloque de color vibrante (familia cromática coherente del día), ícono grande, tipografía rounded bold, bastante texto útil. Alegre, visual, profesional. NO logos.`,
+  servicios: {
+    titulo: "🚀 Servicios Cóndor — agentes de IA",
+    investiga: false, slides: 6, cta: "Escríbenos al DM",
+    instruccion: "Carrusel de venta de los servicios de Cóndor AI (agentes de IA, automatización de procesos, páginas web, campañas). UN solo argumento por slide, nada de listas de características. Habla del costo de no automatizar, no de la tecnología.",
+    template: T_SERVICIOS,
   },
-  viernes: {
-    titulo: "🌅 Filosofía IA — el futuro positivo",
-    investiga: true,
-    instruccion: "Carrusel FILOSÓFICO/aspiracional sobre lo positivo de la IA para los negocios y las personas, apoyado en un dato o estudio real (búsqueda web).",
-    template: `Editorial aspiracional cinematográfico: imágenes cálidas y luminosas del futuro con IA (personas reales viviendo mejor, ciudades, naturaleza + tecnología), paleta cálida con acentos pastel, frases inspiradoras grandes + un dato de estudio. Elegante, colorido. NO logos.`,
+  barbara_producto: {
+    titulo: "🎀 Bárbara — tu agente de contenido",
+    investiga: false, slides: 6, cta: "Escríbenos al DM",
+    instruccion: "Carrusel sobre Bárbara, la agente de IA que crea y publica el contenido de una marca sola. Parte de un dolor concreto y cotidiano del dueño de negocio y muestra cómo Bárbara lo resuelve. Máximo 3 puntos numerados, cada uno con las horas que ahorra.",
+    template: T_BARBARA_PRODUCTO,
+  },
+  barbara_datos: {
+    titulo: "📊 Bárbara — el dato que lo cambia todo",
+    investiga: true, slides: 7, cta: "Escríbenos al DM",
+    instruccion: "Carrusel sobre el impacto MEDIBLE de usar IA en marketing y ventas, apoyado en estudios REALES encontrados en la búsqueda web (McKinsey, Gartner, HubSpot, Deloitte u otros). Cada cifra tiene que ir con su fuente citada. Incluye una comparación antes/después o con/sin IA.",
+    template: T_BARBARA_DATOS,
   },
 };
-const tema = TEMAS[dia];
+
+// ── El calendario ───────────────────────────────────────────────────────────
+// Lunes es SIEMPRE el noticiero: es la pieza que exige investigación real y
+// conviene que salga el mismo día para que la audiencia la espere.
+//
+// Miércoles y viernes rotan entre las otras TRES series. Son 3 series en 2
+// espacios, así que el ciclo se cierra recién a las 3 semanas: ninguna serie
+// cae dos veces en la misma semana y ningún par miércoles-viernes se repite
+// hasta dar la vuelta entera. Con una serie fija por día, la tercera no
+// saldría nunca.
+const ROTATIVAS = ["servicios", "barbara_producto", "barbara_datos"];
+
+// Semana ISO. El índice avanza por semana REAL y no por corrida: contando
+// corridas, un reintento del mismo día adelantaría la rotación y el viernes
+// saldría con la serie que le tocaba a la semana siguiente.
+function semanaISO(d = new Date()) {
+  const j = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+  j.setUTCDate(j.getUTCDate() + 4 - (j.getUTCDay() || 7));
+  return Math.ceil(((j - Date.UTC(j.getUTCFullYear(), 0, 1)) / 86400000 + 1) / 7);
+}
+
+function serieDeHoy() {
+  if (dia === "lunes") return "noticias";
+  const slot = dia === "miercoles" ? 0 : 1;
+  return ROTATIVAS[(semanaISO() * 2 + slot) % ROTATIVAS.length];
+}
+
+// SERIE=... fuerza una serie concreta (para probar una sin esperar su semana).
+const serieForzada = (process.env.SERIE || "").trim().toLowerCase();
+const claveSerie = SERIES[serieForzada] ? serieForzada : serieDeHoy();
+const tema = SERIES[claveSerie];
+const N_SLIDES = tema.slides;
 
 // Regla dura anti "titular:/subtítulo:": el modelo tiende a renderizar literalmente
 // cualquier palabra estructural del prompt, así que se lo prohibimos explícitamente
@@ -87,7 +147,7 @@ const schema = {
     angulo: { type: "string", description: "El ángulo/idea ÚNICO de hoy en una frase (para registrar y no repetir)." },
     slides: { type: "array", items: { type: "object", additionalProperties: false, properties: {
       titulo: { type: "string" },
-      prompt: { type: "string", description: "Prompt EN INGLÉS, art-directed, que repite el template del día. Debe especificar el TEXTO EXACTO en español que se verá, escrito como copy FINAL de diseño (solo lo que lee la persona). PROHIBIDO que ese texto incluya rótulos ni meta-palabras como 'titular', 'título', 'subtítulo', 'dato', 'texto', 'slide' o 'CTA', ni una palabra seguida de dos puntos como etiqueta. Última slide = CTA con el texto 'Síguenos para más'. NO logos ni marcas." },
+      prompt: { type: "string", description: `Prompt EN INGLÉS, art-directed, que repite el template del día. Debe especificar el TEXTO EXACTO en español que se verá, escrito como copy FINAL de diseño (solo lo que lee la persona). PROHIBIDO que ese texto incluya rótulos ni meta-palabras como 'titular', 'título', 'subtítulo', 'dato', 'texto', 'slide' o 'CTA', ni una palabra seguida de dos puntos como etiqueta. Última slide = CTA con el texto '${tema.cta}'. El logo condor.ai SÍ va, tal como lo describe el template.` },
     }, required: ["titulo", "prompt"] } },
     caption: { type: "string", description: "Caption educativa para Instagram con hook, valor real, invita a seguir + 5-8 hashtags (mezcla IA/negocios/Perú/Chile)." },
   },
@@ -95,9 +155,21 @@ const schema = {
 };
 
 // ---- Higgsfield: generar imagen y devolver buffer ----
+const MAX_PROMPT = 2600;
 function genImagen(prompt, idx) {
   // execFileSync (sin shell) para que saltos de línea/comillas del prompt no rompan el comando.
-  const safe = prompt.replace(/\s+/g, " ").trim().slice(0, 1500);
+  //
+  // El tope subió de 1500 a 2600 el 22-ago-2026, al instalar los templates
+  // reales de la marca. Con 1500 el prompt armado (copy del slide + template +
+  // REGLA_TEXTO) pasaba de largo y lo que se cortaba era el FINAL — o sea la
+  // REGLA_TEXTO entera, que es justo la que impide que el modelo escriba
+  // "titular:" dentro de la imagen. Con los templates viejos (~300 chars) nunca
+  // se notó; con art-direction de verdad se rompía en cada slide.
+  const armado = prompt.replace(/\s+/g, " ").trim();
+  if (armado.length > MAX_PROMPT) {
+    console.log(`⚠️ slide ${idx + 1}: prompt de ${armado.length} chars, se corta en ${MAX_PROMPT}. Revisa el template.`);
+  }
+  const safe = armado.slice(0, MAX_PROMPT);
   const args = ["generate", "create", "nano_banana_2", "--prompt", safe, "--aspect_ratio", "4:5", "--resolution", "1k", "--wait", "--wait-timeout", "8m"];
   // Reintentos ante fallos transitorios de Higgsfield (respuesta vacía).
   let ultimo = "";
@@ -161,7 +233,7 @@ async function main() {
 
   // 2) Memoria: últimas 15 piezas para NO repetir
   const log = leerLog();
-  const recientes = log.slice(-15).map(e => `- [${e.fecha} ${e.tipo}] ${e.angulo}`).join("\n") || "(sin historial)";
+  const recientes = log.slice(-15).map(e => `- [${e.fecha} ${e.serie || e.tipo}] ${e.angulo}`).join("\n") || "(sin historial)";
 
   // 3) Director (lee memoria, innova)
   const extra = isRetry ? "\n\n⚠️ ESTE ES UN REINTENTO: el contenido anterior fue rechazado por el equipo. Genera una versión CLARAMENTE MEJOR y distinta (mejor diseño, mejor texto, otro enfoque del mismo tema)." : "";
@@ -219,11 +291,37 @@ async function main() {
     const j = await (await tg("sendPhoto", fd, true)).json();
     if (!j.ok) throw new Error("Telegram sendPhoto: " + (j.description || ""));
   }
-  await tg("sendMessage", { chat_id: CHAT, text: `🤖 *Barbara* — ${tema.titulo}\nListo para revisar. ID: \`${runId}\`\n\n📝 *Caption:*\n\n${plan.caption || ""}\n\n_Si quedó mal: "Denuevo barbara". Si está aprobado: "Aprobar barbara"._`, parse_mode: "Markdown" });
+  // El mensaje de revisión lleva TODO lo necesario para decidir sin abrir el
+  // repo: la caption tal cual se va a publicar, el ángulo (para saber si
+  // repite algo), y las palancas exactas para rehacerlo o corregir una cosa
+  // puntual. Antes decía solo "Denuevo barbara", y cualquier arreglo fino
+  // obligaba a pedírselo a alguien que supiera dónde tocar.
+  const comoCorregir = [
+    "🔁 *Para rehacerlo o corregir*",
+    "• Rehacer entero: escribe *Denuevo barbara*",
+    "• Aprobar y publicar: escribe *Aprobar barbara*",
+    "",
+    "Para algo puntual, corre el workflow _Barbara_ a mano con:",
+    "• `SERIE=" + claveSerie + "` — repite esta misma serie",
+    "• `SERIE=noticias|servicios|barbara_producto|barbara_datos` — cambia de serie",
+    "• `DIA=lunes|miercoles|viernes` — fuerza el día",
+    "• `RETRY=1` — salta el candado de 1 pieza por día",
+    "",
+    "El diseño de cada serie vive en `services/barbara/barbara.mjs`, en la constante `T_" + claveSerie.toUpperCase() + "`. Ahí se cambian colores, tipografía y retícula — el contenido no se toca, lo escribe Bárbara cada vez.",
+  ].join("\n");
+
+  await tg("sendMessage", {
+    chat_id: CHAT,
+    text: `🤖 *Barbara* — ${tema.titulo}\n` +
+          `Serie: \`${claveSerie}\` · ${imgs.length} slides · ID: \`${runId}\`\n` +
+          `🎯 Ángulo: _${plan.angulo || "—"}_\n\n` +
+          `📝 *Caption:*\n\n${plan.caption || ""}\n\n${comoCorregir}`,
+    parse_mode: "Markdown",
+  });
 
   // 7) Registrar en memoria (anti-repetición + artefacto aprobable)
-  guardarEnLog({ fecha: new Date().toISOString().slice(0, 10), tipo: dia, angulo: plan.angulo || slides[0]?.titulo || "", titulo: tema.titulo, runId });
-  console.log("OK", dia, "| ángulo:", plan.angulo);
+  guardarEnLog({ fecha: new Date().toISOString().slice(0, 10), tipo: dia, serie: claveSerie, angulo: plan.angulo || slides[0]?.titulo || "", titulo: tema.titulo, runId });
+  console.log("OK", dia, "|", claveSerie, "| ángulo:", plan.angulo);
 }
 
 main().catch(async (e) => {
