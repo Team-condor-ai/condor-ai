@@ -1,0 +1,41 @@
+name: Recalcular historial de campañas Meta
+
+# Reescribe campaign-log.json con las conversaciones reales de Meta, para
+# limpiar las entradas que quedaron infladas por el doble conteo corregido el
+# 22-ago-2026. Simula por defecto.
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmar:
+        description: 'Escribir los cambios (sin esto solo simula)'
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+
+jobs:
+  recalcular:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Recalcular
+        run: node services/meta-analyzer/recalcular-log.mjs ${{ inputs.confirmar && '--confirmar' || '' }}
+        env:
+          META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
+          META_AD_ACCOUNT_ID: ${{ secrets.META_AD_ACCOUNT_ID }}
+      - name: Guardar el historial corregido
+        if: ${{ inputs.confirmar }}
+        run: |
+          git config user.name "condor-bot"
+          git config user.email "bot@condorai.cl"
+          if git diff --quiet services/meta-analyzer/campaign-log.json; then echo "sin cambios"; else
+            git add services/meta-analyzer/campaign-log.json
+            git commit -m "meta: recalcular historial con las conversaciones reales"
+            for n in 1 2 3; do git pull --rebase origin main && git push && break || sleep 5; done
+          fi
