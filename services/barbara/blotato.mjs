@@ -94,10 +94,46 @@ export function crearClienteBlotato({
     obtenerUsuario: () => request("GET", "/users/me"),
     listarCuentas: () => request("GET", "/users/me/accounts"),
     listarSubcuentas: (accountId) => request("GET", `/users/me/accounts/${encodeURIComponent(requerido(accountId, "accountId"))}/subaccounts`),
+    listarPlantillas: () => request("GET", "/videos/templates?fields=id,name,description,inputs"),
+    crearFuente: (payload) => request("POST", "/source-resolutions-v3", payload),
+    obtenerFuente: (id) => request("GET", `/source-resolutions-v3/${encodeURIComponent(requerido(id, "sourceId"))}`),
+    crearVisual: (payload) => request("POST", "/videos/from-templates", payload),
+    obtenerVisual: (id) => request("GET", `/videos/creations/${encodeURIComponent(requerido(id, "visualId"))}`),
     subirMedia: (url) => request("POST", "/media", { url: limpiarUrl(url) }),
     crearPublicacion: (payload) => request("POST", "/posts", payload),
     obtenerPublicacion: (postSubmissionId) => request("GET", `/posts/${encodeURIComponent(requerido(postSubmissionId, "postSubmissionId"))}`),
   };
+}
+
+export async function esperarFuente(cliente, id, {
+  intervaloMs = 3000,
+  timeoutMs = 180000,
+} = {}) {
+  const inicio = Date.now();
+  while (Date.now() - inicio < timeoutMs) {
+    const resultado = await cliente.obtenerFuente(id);
+    if (resultado?.status === "completed") return resultado;
+    if (resultado?.status === "failed") throw new BlotatoError(resultado.message || "La investigación de Blotato falló", { body: resultado });
+    await new Promise((resolve) => setTimeout(resolve, intervaloMs));
+  }
+  throw new BlotatoError(`Tiempo de espera agotado para la fuente ${id}`);
+}
+
+export async function esperarVisual(cliente, id, {
+  intervaloMs = 5000,
+  timeoutMs = 600000,
+} = {}) {
+  const inicio = Date.now();
+  while (Date.now() - inicio < timeoutMs) {
+    const resultado = await cliente.obtenerVisual(id);
+    const item = resultado?.item || resultado;
+    if (item?.status === "done") return item;
+    if (["creation-from-template-failed", "failed"].includes(item?.status)) {
+      throw new BlotatoError(item.message || "La generación visual de Blotato falló", { body: resultado });
+    }
+    await new Promise((resolve) => setTimeout(resolve, intervaloMs));
+  }
+  throw new BlotatoError(`Tiempo de espera agotado para el visual ${id}`);
 }
 
 export async function esperarPublicacion(cliente, postSubmissionId, {

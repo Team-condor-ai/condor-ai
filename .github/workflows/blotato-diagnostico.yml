@@ -4,13 +4,14 @@ on:
   workflow_dispatch:
     inputs:
       accion:
-        description: "me | cuentas"
+        description: "me | cuentas | plantillas"
         required: true
         default: "cuentas"
         type: choice
         options:
           - cuentas
           - me
+          - plantillas
 
 permissions:
   contents: read

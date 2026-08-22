@@ -39,7 +39,7 @@ function imprimir(data) {
 
 async function main() {
   if (comando === "ayuda" || comando === "--help" || comando === "-h") {
-    console.log("Uso: node services/barbara/blotato-cli.mjs <me|cuentas|subcuentas|dry-run|publicar|publicar-outbox|estado> [id|directorio]");
+    console.log("Uso: node services/barbara/blotato-cli.mjs <me|cuentas|subcuentas|plantillas|dry-run|publicar|publicar-outbox|estado> [id|directorio]");
     return;
   }
 
@@ -56,6 +56,7 @@ async function main() {
   if (comando === "me") return imprimir(await cliente.obtenerUsuario());
   if (comando === "cuentas") return imprimir(await cliente.listarCuentas());
   if (comando === "subcuentas") return imprimir(await cliente.listarSubcuentas(argumento || process.env.BLOTATO_ACCOUNT_ID));
+  if (comando === "plantillas") return imprimir(await cliente.listarPlantillas());
   if (comando === "estado") return imprimir(await cliente.obtenerPublicacion(argumento || process.env.BLOTATO_POST_ID));
 
   if (comando === "publicar") {
