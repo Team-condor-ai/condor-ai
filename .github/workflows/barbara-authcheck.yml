@@ -38,8 +38,7 @@ jobs:
         run: |
           higgsfield --version || true
           higgsfield workspace list --json || true
-          higgsfield account 2>&1 || true
-          higgsfield whoami 2>&1 || true
+          higgsfield account status --json 2>&1 || true
       - name: Chequear autenticación y avisar si hace falta re-loguear
         run: node services/barbara/authcheck.mjs
         env:
