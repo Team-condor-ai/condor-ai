@@ -52,6 +52,22 @@ const LIMA = "#BCD530";
 const ZONA_LOGO_IZQ = "Top-left corner, about one-tenth of the frame's width and height: this area must look EXACTLY like the rest of the background — same colour, same texture, same gradient, continuous with everything around it. Do NOT draw a box, card, panel, chip or any shape there, and do NOT place any text or icon there either. A real logo file gets placed on top of this untouched background afterward — any visible rectangle or colour shift there is a mistake.";
 const ZONA_LOGO_CENTRO = "Top area, centred, about one-third of the frame's width and one-tenth of its height: this area must look EXACTLY like the rest of the background — same colour, same texture, same gradient, continuous with everything around it. Do NOT draw a box, card, panel, chip or any shape there, and do NOT place any text or icon there either. A real logo file gets placed on top of this untouched background afterward — any visible rectangle or colour shift there is a mistake.";
 
+// El personaje "Bárbara" — la mascota, no el logo. Pedido de Joaquín el
+// 22-ago-2026, a partir de 3 renders que mandó como referencia (mismo trío
+// de color que ya usan estas dos series: negro, crema #F5F1E8, lima
+// ${LIMA}). Va SOLO en las series que son literalmente sobre Bárbara — la
+// referencia aprobada de noticias/servicios nunca la mostró, y meterla ahí
+// contradiría ese diseño ya aprobado.
+//
+// A diferencia del logo, ACÁ sí se le describe al modelo en vez de pegar un
+// archivo fijo: Joaquín pidió variar la pose entre slides ("jugar con la
+// animación... dif variantes"), que es lo opuesto de lo que hacía falta para
+// el logo. Lo que tiene que sostenerse igual es el estilo — pelo, paleta,
+// trazo — no la pose.
+const PERSONAJE_BARBARA = `This slide REPLACES the template's usual middle icon with Bárbara the mascot instead — same position, same role in the layout, nothing else changes. In a circular badge crop, roughly one-fifth of the frame's width: pure black circle background, thin lime ${LIMA} ring border, one or two small four-point lime sparkle accents floating near the top-right of her hair. Flat vector illustration style with clean thin black outlines (NOT photorealistic, NOT 3D): a young Latin American woman, short black bob haircut with full blunt bangs, warm cream/ivory skin, minimal friendly facial features with a soft closed-mouth smile, wearing a cream blazer over a black top. Vary her pose across different generations — a plain friendly headshot, arms crossed confidently, or holding a black folder with a lime accent edge — but always keep this exact hairstyle, this exact palette (black / cream / lime) and this exact flat-illustration linework identical, as if it were the same reusable character asset.`;
+
+const SIN_PERSONAJE = "Do NOT include Bárbara, any illustrated character, mascot or human figure anywhere in this slide — icons and typography only.";
+
 // ── Los 4 templates ─────────────────────────────────────────────────────────
 // Describen SOLO el diseño: retícula, paleta, tipografía y ritmo. El contenido
 // lo inventa Bárbara cada vez y nunca se repite — de eso ya se encarga
@@ -84,13 +100,13 @@ const SERIES = {
     titulo: "🎀 Bárbara — tu agente de contenido",
     investiga: false, slides: 6, cta: "Escríbenos al DM",
     instruccion: "Carrusel sobre Bárbara, la agente de IA que crea y publica el contenido de una marca sola. Parte de un dolor concreto y cotidiano del dueño de negocio y muestra cómo Bárbara lo resuelve. Máximo 3 puntos numerados, cada uno con las horas que ahorra.",
-    template: T_BARBARA_PRODUCTO, logo: "izquierda",
+    template: T_BARBARA_PRODUCTO, logo: "izquierda", personaje: true,
   },
   barbara_datos: {
     titulo: "📊 Bárbara — el dato que lo cambia todo",
     investiga: true, slides: 7, cta: "Escríbenos al DM",
     instruccion: "Carrusel sobre el impacto MEDIBLE de usar IA en marketing y ventas, apoyado en estudios REALES encontrados en la búsqueda web (McKinsey, Gartner, HubSpot, Deloitte u otros). Cada cifra tiene que ir con su fuente citada. Incluye una comparación antes/después o con/sin IA.",
-    template: T_BARBARA_DATOS, logo: null, // esta serie, en las piezas que aprobó Joaquín, no lleva el logo en cada slide
+    template: T_BARBARA_DATOS, logo: null, personaje: true, // el logo no va (ver arriba); el personaje sí, es una serie de Bárbara
   },
 };
 
@@ -184,7 +200,12 @@ Objetivo: que se lea fácil en el feed del celular sin tener que abrir "ver más
 };
 
 // ---- Higgsfield: generar imagen y devolver buffer ----
-const MAX_PROMPT = 2600;
+// Subido de 2600 a 3600 el 22-ago-2026: PERSONAJE_BARBARA agrega ~1000 chars
+// más en las slides que la llevan, y con T_BARBARA_DATOS (el template más
+// largo) el total worst-case pasaba los 2600 — mismo bug que ya se vio una
+// vez con REGLA_TEXTO: lo que se corta es el FINAL del prompt armado, que es
+// justo el contenido específico del slide.
+const MAX_PROMPT = 3600;
 function genImagen(prompt, idx) {
   // execFileSync (sin shell) para que saltos de línea/comillas del prompt no rompan el comando.
   //
@@ -310,7 +331,13 @@ Responde SOLO con el JSON.`,
       // "01", "01 / 05", "3/5", "05" y "04/10" en un mismo carrusel de 6: un
       // modelo de imagen no sabe en qué slide va ni cuántos hay.
       const contador = `\n\nSLIDE COUNTER: render exactly the text "${i + 1}/${slides.length}" in the top-right corner, nothing else there. Do not invent a different number or format.`;
-      const url = genImagen(REGLA_TEXTO + "\n\n" + tema.template + contador + "\n\n" + slides[i].prompt, i);
+      // Portada siempre, alternado, nunca dos seguidas, ≥50% del carrusel:
+      // se calcula acá (par/impar, 0-indexado) en vez de dejárselo al
+      // criterio del director. Pedido de Joaquín el 22-ago-2026 — con 6 o 7
+      // slides, "un slide sí / uno no, empezando en la portada" YA cumple
+      // las cuatro condiciones a la vez sin necesidad de negociarlas.
+      const personaje = tema.personaje ? (i % 2 === 0 ? PERSONAJE_BARBARA : SIN_PERSONAJE) : "";
+      const url = genImagen(REGLA_TEXTO + "\n\n" + tema.template + contador + (personaje ? "\n\n" + personaje : "") + "\n\n" + slides[i].prompt, i);
       let buf = Buffer.from(await (await fetch(url)).arrayBuffer());
       // El logo REAL se pega acá, no se le pide al modelo que lo dibuje (ver
       // el comentario junto a ZONA_LOGO_IZQ). tema.logo es null en las series
