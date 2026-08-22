@@ -34,6 +34,12 @@ jobs:
             printf '{"access_token":"%s","refresh_token":"%s"}' "$HF_ACCESS" "$HF_REFRESH" > ~/.config/higgsfield/credentials.json
           fi
           sha256sum ~/.config/higgsfield/credentials.json | awk '{print $1}' > /tmp/hf_before.sha
+      - name: DIAGNOSTICO TEMPORAL — identidad de la cuenta Higgsfield (sin exponer tokens)
+        run: |
+          higgsfield --version || true
+          higgsfield workspace list --json || true
+          higgsfield account 2>&1 || true
+          higgsfield whoami 2>&1 || true
       - name: Chequear autenticación y avisar si hace falta re-loguear
         run: node services/barbara/authcheck.mjs
         env:
