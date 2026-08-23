@@ -136,5 +136,13 @@
     "angulo": "El verdadero costo no es implementar IA, es todo lo que pierdes cada día que sigues sin ella",
     "titulo": "🚀 Servicios Cóndor — agentes de IA",
     "runId": "32596828121"
+  },
+  {
+    "fecha": "2026-08-23",
+    "tipo": "miercoles",
+    "serie": "barbara_datos",
+    "angulo": "La IA predice qué cliente está a punto de irse antes de que cancele: comparación entre la tasa de retención de empresas que usan modelos predictivos de churn vs las que no, con cifra de Salesforce o Epsilon.",
+    "titulo": "📊 Bárbara — el dato que lo cambia todo",
+    "runId": "32626767497"
   }
 ]
