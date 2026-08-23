@@ -1,0 +1,30 @@
+{
+  "vieja:nail_fungus_7days": {
+    "item_id": "MLC2185629557",
+    "precio": 24990,
+    "stock_inicial": 8,
+    "titulo": "Tónico Uñas Jengibre 7 Days Gotero Pies Y Manos",
+    "fecha": "2026-08-22"
+  },
+  "agustin:nail_fungus_7days": {
+    "item_id": "MLC2185629569",
+    "precio": 26990,
+    "stock_inicial": 8,
+    "titulo": "Tónico Uñas Jengibre 7 Days Gotero Pies Y Manos",
+    "fecha": "2026-08-22"
+  },
+  "vieja:inositol": {
+    "item_id": "MLC2185629577",
+    "precio": 23490,
+    "stock_inicial": 3,
+    "titulo": "Mio Inositol Ácido Fólico Vitamina D3 60 Cápsulas",
+    "fecha": "2026-08-22"
+  },
+  "agustin:inositol": {
+    "item_id": "MLC2185629589",
+    "precio": 25490,
+    "stock_inicial": 3,
+    "titulo": "Mio Inositol Ácido Fólico Vitamina D3 60 Cápsulas",
+    "fecha": "2026-08-22"
+  }
+}

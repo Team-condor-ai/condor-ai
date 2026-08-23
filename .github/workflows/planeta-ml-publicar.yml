@@ -1,0 +1,112 @@
+name: Planeta Shop - publicar faltantes en ML
+
+# Corre en la nube, no depende de que el PC de Joaquín esté prendido.
+# Reemplaza al Programador de tareas de Windows (PlanetaShop_*), que se
+# puede borrar una vez que este workflow quede probado.
+#
+# 5 horarios para el lote de 36 productos ya auditado el 22-ago-2026 (hora
+# de Chile, UTC-4 en invierno — convertido a UTC abajo):
+#   Dom 23-ago 16:10 CLT -> 20:10 UTC · límite 6
+#   Lun 24-ago 10:40 CLT -> 14:40 UTC · límite 8
+#   Mar 25-ago 13:15 CLT -> 17:15 UTC · límite 8
+#   Mié 26-ago 11:50 CLT -> 15:50 UTC · límite 8
+#   Jue 27-ago 17:05 CLT -> 21:05 UTC · límite 6
+#
+# El cron de GitHub Actions recurre cada año en esa fecha — una vez
+# publicados los 36 (o si ya no calza ninguna fecha útil), borrar este
+# workflow o los triggers de schedule para que no quede corriendo en vano
+# el próximo agosto.
+
+on:
+  workflow_dispatch:
+    inputs:
+      limite:
+        description: 'Cuántos publicar en esta corrida manual'
+        required: false
+        default: '1'
+      ejecutar:
+        description: 'true = publica de verdad; false = solo valida (dry-run)'
+        required: false
+        default: 'false'
+  schedule:
+    - cron: '10 20 23 8 *'  # Dom 23-ago 16:10 CLT · límite 6
+    - cron: '40 14 24 8 *'  # Lun 24-ago 10:40 CLT · límite 8
+    - cron: '15 17 25 8 *'  # Mar 25-ago 13:15 CLT · límite 8
+    - cron: '50 15 26 8 *'  # Mié 26-ago 11:50 CLT · límite 8
+    - cron: '5 21 27 8 *'   # Jue 27-ago 17:05 CLT · límite 6
+
+permissions:
+  contents: write
+
+concurrency:
+  group: planeta-ml-publicar
+  cancel-in-progress: false
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/planeta-ml
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Descifrar config.json (credenciales ML)
+        env:
+          ML_CREDS_KEY: ${{ secrets.ML_CREDS_KEY }}
+        run: |
+          openssl enc -d -aes-256-cbc -pbkdf2 -salt -in config.enc -out config.json -pass pass:"$ML_CREDS_KEY"
+          sha256sum config.json | awk '{print $1}' > /tmp/config_before.sha
+
+      - name: Decidir el límite del día
+        id: limite
+        run: |
+          case "${{ github.event.schedule }}" in
+            "10 20 23 8 *") echo "n=6" >> "$GITHUB_OUTPUT" ;;
+            "40 14 24 8 *") echo "n=8" >> "$GITHUB_OUTPUT" ;;
+            "15 17 25 8 *") echo "n=8" >> "$GITHUB_OUTPUT" ;;
+            "50 15 26 8 *") echo "n=8" >> "$GITHUB_OUTPUT" ;;
+            "5 21 27 8 *")  echo "n=6" >> "$GITHUB_OUTPUT" ;;
+            *) echo "n=${{ inputs.limite || '1' }}" >> "$GITHUB_OUTPUT" ;;
+          esac
+
+      - name: Publicar (o validar, según el trigger)
+        env:
+          PLANETA_SUPABASE_URL: ${{ secrets.PLANETA_SUPABASE_URL }}
+          PLANETA_SUPABASE_KEY: ${{ secrets.PLANETA_SUPABASE_KEY }}
+        run: |
+          if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ inputs.ejecutar }}" = "true" ]; then
+            python publicar_lote.py --ejecutar --limite ${{ steps.limite.outputs.n }} \
+              --max-diario 8 --min-espera 480 --max-espera 1080
+          else
+            python publicar_lote.py --dry-run --limite ${{ steps.limite.outputs.n }}
+          fi
+
+      - name: Guardar estado y credenciales rotadas
+        if: always()
+        env:
+          ML_CREDS_KEY: ${{ secrets.ML_CREDS_KEY }}
+        run: |
+          git config user.name "planeta-ml-bot"
+          git config user.email "bot@condorai.cl"
+
+          AFTER=$(sha256sum config.json | awk '{print $1}')
+          BEFORE=$(cat /tmp/config_before.sha 2>/dev/null || echo "")
+          if [ "$AFTER" != "$BEFORE" ]; then
+            echo "Token(s) rotado(s): actualizando config.enc"
+            openssl enc -aes-256-cbc -pbkdf2 -salt -in config.json -out config.enc -pass pass:"$ML_CREDS_KEY"
+            git add config.enc
+          fi
+          rm -f config.json
+
+          git add publicaciones_programadas.json historial_lotes.jsonl ultimo_lote.json 2>/dev/null || true
+          if git diff --staged --quiet; then
+            echo "sin cambios"
+          else
+            git commit -m "planeta-ml: lote $(date -u +%Y-%m-%d_%H%M) UTC"
+            for n in 1 2 3; do git pull --rebase origin main && git push && break || sleep 5; done
+          fi
