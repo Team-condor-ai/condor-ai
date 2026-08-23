@@ -345,13 +345,29 @@ def items_activos(cfg: dict, cuenta: str) -> list[dict]:
 
 
 def validacion_bloqueante(status: int, respuesta) -> bool:
+    """¿La validación de ML impide publicar, o son sólo advertencias?
+
+    `/items/validate` devuelve HTTP 400 apenas tiene ALGO que informar, aunque
+    todas las causas sean `type: "warning"`. Antes esto terminaba en
+    `return status >= 400` y bloqueaba igual: el 23-ago-2026 los 8 items de la
+    corrida se descartaron por dos advertencias inofensivas —
+    `mandatory_free_shipping` (ML agrega el envío gratis solo) y
+    `lost_me1_by_user` (la cuenta no tiene modo ME1)—. Ninguna impide crear la
+    publicación; sólo avisan qué ajustó ML.
+
+    Un 400 SIN causas sí bloquea: ahí no sabemos qué pasó, y publicar a ciegas
+    contra la cuenta que ya fue sancionada una vez no es una opción.
+    """
     if status in (200, 204):
         return False
     if not isinstance(respuesta, dict):
         return True
-    for causa in respuesta.get("cause", []) or []:
-        if causa.get("type") == "error":
-            return True
+
+    causas = respuesta.get("cause", []) or []
+    if any(c.get("type") == "error" for c in causas):
+        return True
+    if causas:
+        return False
     return status >= 400
 
 
