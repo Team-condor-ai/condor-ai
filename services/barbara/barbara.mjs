@@ -632,7 +632,13 @@ Responde SOLO con el JSON.`,
       `(${crudo.length} chars, stop_reason=${dir.stop_reason}): ` + String(e).slice(0, 120)
     );
   }
-  const slides = (plan.slides || []).slice(0, N_SLIDES);
+  // SOLO_PORTADA=1 genera únicamente la primera imagen. Es para revisar un
+  // diseño nuevo sin pagar el carrusel entero: 1 crédito en vez de 6 o 7. El
+  // director igual escribe el plan completo, así que la portada es la misma
+  // que saldría en la pieza real — no una portada "de prueba".
+  const soloPortada = process.env.SOLO_PORTADA === "1";
+  const slides = (plan.slides || []).slice(0, soloPortada ? 1 : N_SLIDES);
+  if (soloPortada) console.log("SOLO_PORTADA=1 — se genera sólo la primera imagen");
 
   // 4) Imágenes con Higgsfield
   const imgs = [];
@@ -643,10 +649,16 @@ Responde SOLO con el JSON.`,
       // modelo de imagen no sabe en qué slide va ni cuántos hay.
       // Una pieza de UNA sola imagen no lleva contador: "1/1" en la esquina
       // delata que es una plantilla de carrusel y rompe la ilusión de anuncio.
-      const esUnica = slides.length === 1;
+      // Se mira N_SLIDES (lo que la SERIE define) y no slides.length: con
+      // SOLO_PORTADA=1 un carrusel de 7 renderiza 1 sola imagen, y confundir
+      // eso con un anuncio le sacaría el contador y la regla de portada — o
+      // sea, la prueba mostraría un diseño distinto al real.
+      const esUnica = N_SLIDES === 1;
       const contador = esUnica
         ? "\n\nDo NOT render any slide counter, page number or \"1/1\" anywhere in the frame."
-        : `\n\nSLIDE COUNTER: render exactly the text "${i + 1}/${slides.length}" in the top-right corner, nothing else there. Do not invent a different number or format.`;
+        // El total es N_SLIDES, no slides.length: con SOLO_PORTADA la prueba
+        // tiene que mostrar "1/7" como saldría de verdad, no "1/1".
+        : `\n\nSLIDE COUNTER: render exactly the text "${i + 1}/${N_SLIDES}" in the top-right corner, nothing else there. Do not invent a different number or format.`;
       // Portada siempre, alternado, nunca dos seguidas, ≥50% del carrusel:
       // se calcula acá (par/impar, 0-indexado) en vez de dejárselo al
       // criterio del director. Pedido de Joaquín el 22-ago-2026 — con 6 o 7

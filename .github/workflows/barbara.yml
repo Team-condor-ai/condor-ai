@@ -20,6 +20,10 @@ on:
         description: 'qué corregir de la pieza anterior (lo llena el bot de Telegram)'
         required: false
         default: ''
+      solo_portada:
+        description: 'poner 1 para generar SOLO la primera imagen (prueba barata de diseno)'
+        required: false
+        default: ''
       serie:
         description: 'forzar serie (vacío = la que toca por rotación)'
         required: false
@@ -114,6 +118,7 @@ jobs:
           RETRY: ${{ github.event.inputs.retry }}
           SERIE: ${{ github.event.inputs.serie }}
           CORRECCION: ${{ github.event.inputs.correccion }}
+          SOLO_PORTADA: ${{ github.event.inputs.solo_portada }}
           BARBARA_OUTBOX_DIR: barbara-outbox
           # Opcionales: sólo se usan para leer los playbooks (memoria
           # fundacional). Si faltan, barbara.mjs corre igual sin ellos.

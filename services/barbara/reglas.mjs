@@ -34,9 +34,16 @@
  */
 
 import { readFileSync, writeFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 
 const MODELO = "claude-sonnet-5";
-export const ARCHIVO_REGLAS = "services/barbara/reglas-condor.json";
+
+// Ruta ABSOLUTA, resuelta desde este archivo y no desde el directorio actual.
+// Con una ruta relativa el CLI sólo funcionaba corriéndolo desde la raíz del
+// repo: parado en services/barbara buscaba services/barbara/services/barbara/…
+// y reportaba "sin reglas" sobre un archivo que existe. Un lector que miente
+// en silencio es peor que uno que falla.
+export const ARCHIVO_REGLAS = fileURLToPath(new URL("./reglas-condor.json", import.meta.url));
 
 /* Tope de reglas que viajan al prompt. Más que esto deja de ser memoria y pasa
    a ser un manual que compite con la instrucción del día. */
@@ -190,4 +197,52 @@ export function bloquePrompt(reglas) {
     activas.map((r) =>
       `- ${r.regla}${(r.veces_reforzada || 1) > 1 ? ` (lo pidieron ${r.veces_reforzada} veces)` : ""}`
     ).join("\n");
+}
+
+/* ── CLI ──────────────────────────────────────────────────────────────────
+ *
+ * Grabar una corrección que NO vino por Telegram.
+ *
+ * El circuito automático sólo cubre lo que el equipo escribe como
+ * "Denuevo barbara, <qué corregir>". El 23-ago-2026 Joaquín dio cuatro
+ * correcciones por otro canal y ninguna quedó registrada: se implementaron a
+ * mano y el archivo de reglas siguió vacío. Esto tapa ese hueco.
+ *
+ *   node services/barbara/reglas.mjs --aprender "los titulares más cortos"
+ *   node services/barbara/reglas.mjs --listar
+ */
+async function cli() {
+  const args = process.argv.slice(2);
+  const idx = args.indexOf("--aprender");
+
+  if (idx >= 0) {
+    const texto = args[idx + 1];
+    if (!texto) {
+      console.error('Falta el texto. Ej: --aprender "los titulares más cortos"');
+      process.exitCode = 1;
+      return;
+    }
+    const AK = process.env.ANTHROPIC_API_KEY;
+    if (!AK) {
+      console.error("Falta ANTHROPIC_API_KEY (se usa para decidir si es duradera o puntual).");
+      process.exitCode = 1;
+      return;
+    }
+    const { claude } = await import("./motor.mjs");
+    const r = await aprenderDeCorreccion(claude, AK, texto);
+    if (r.guardada) console.log(`✅ ${r.reforzada ? "Reforzada" : "Nueva"}: ${r.regla}`);
+    else console.log(`ℹ️  No se guardó — ${r.motivo}`);
+    return;
+  }
+
+  const reglas = leerReglas().filter((x) => x.activa !== false);
+  if (!reglas.length) return console.log("Sin reglas todavía.");
+  for (const x of reglas.sort((a, b) => (b.veces_reforzada || 1) - (a.veces_reforzada || 1))) {
+    console.log(`● [${x.categoria || "-"}] ${x.regla}`);
+    console.log(`   pedido ${x.veces_reforzada || 1}x · desde ${x.creada} · origen: ${(x.origen || "").slice(0, 70)}\n`);
+  }
+}
+
+if (process.argv[1] && process.argv[1].endsWith("reglas.mjs")) {
+  cli().catch((e) => { console.error(e); process.exitCode = 1; });
 }
