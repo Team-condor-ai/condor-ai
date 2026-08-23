@@ -12,22 +12,28 @@ clasificación (10-20x vs. Haiku), pero esas llamadas son texto corto,
 así que el impacto real en el costo total del sistema es marginal.
 Decisión de calidad tomada a propósito, no un descuido de costo.
 
-## Capa de datos
+## Capa de datos — lo que REALMENTE existe
 
-**Supabase (Postgres + extensión `pgvector`)** — ya es la base de
-datos usada en el resto del stack de Cóndor, no se suma una
-dependencia nueva.
+Supabase (proyecto `ylsqvmggycfijzfvguzq`), un proyecto compartido con
+aislamiento por `barbara_cliente_id` + RLS. Al 23-ago-2026 las tablas
+en uso son:
 
-- **Un proyecto compartido**, no uno por cliente — más barato y simple
-  de operar. Aislamiento con `client_id` + Row Level Security (patrón
-  estándar de SaaS multi-tenant), no separación física de bases.
-- `memories`: id, `client_id` (null si es global/fundacional), `tier`
-  (`privada` / `global` / `fundacional`), contenido, `embedding`
-  (vector), tags, confianza/veces-repetido, fecha.
-- `candidatos_globales`: staging antes de promoción a memoria global,
-  con contador de clientes distintos donde apareció el patrón.
-- `memory_links`: opcional, relaciones explícitas entre notas (igual
-  que los `[[enlaces]]` de la memoria de Obsidian).
+| Tabla | Capa | Quién escribe | Quién lee |
+|---|---|---|---|
+| `barbara_reglas` | privada | webhook de Telegram (correcciones) | `clientes.mjs` |
+| `barbara_memoria_nodos` | privada | portal (grafo) + Edge Function del perfil | `clientes.mjs` *(desde 23-ago)* |
+| `barbara_memoria` | privada | `clientes.mjs` al cerrar cada pieza | `clientes.mjs`, `patrones.mjs` |
+| `barbara_patrones` | global | `patrones.mjs` (destila, nace apagado) | `clientes.mjs` |
+| `barbara_playbooks` | fundacional | staff a mano (CLI `playbooks.mjs`) | `clientes.mjs` *(nueva)* |
+
+Prioridad en el prompt, de más a menos peso: perfil y gustos/datos de
+la marca → reglas que la marca corrigió → patrones globales →
+playbooks de la casa. El encabezado de los playbooks se lo dice
+explícito al modelo: *si choca con lo que pidió esta marca, manda la
+marca*.
+
+`pgvector` **no está en uso** — ver la sección de anti-repetición para
+por qué (falta decidir proveedor de embeddings).
 
 ## Capa de escritura
 
@@ -59,24 +65,51 @@ Al momento de generar contenido nuevo:
    entre un patrón general y la preferencia específica del cliente,
    siempre gana el cliente.
 
-## Anti-repetición: de lista de texto a memoria semántica
+## Anti-repetición: juez semántico separado
 
-Estado actual: `content-log.json` pasa las últimas 15 entradas como
-texto plano y confía en que el modelo "note" el parecido — funciona al
-principio, pero falla con el tiempo (a las 50-60 piezas, dos ángulos
-semánticamente parecidos con palabras distintas pasan sin que el
-modelo lo note).
+**Construido el 23-ago-2026** (`angulos.mjs`, conectado a `barbara.mjs`
+y a `clientes.mjs`).
 
-**Mejora**: antes de aceptar un ángulo nuevo, generar su embedding y
-compararlo contra los embeddings de los últimos ~6 meses de ángulos de
-ESE cliente. Si la similitud supera un umbral (ej. 85%), se rechaza
-automáticamente y se le pide al modelo un ángulo distinto — no depende
-de que el modelo "se dé cuenta" solo.
+El problema con lo que había: la anti-repetición era una línea dentro
+del prompt del director ("acá van las últimas 15, no repitas"). Dos
+fallas concretas — el generador se auto-vigilaba (mismo modelo, misma
+llamada, juzgando lo que acababa de inventar), y la ventana de 15
+piezas se agota en cinco semanas a 3 carruseles semanales.
+
+Cómo quedó, en dos llamadas con roles separados:
+
+1. `proponer()` pide N ángulos candidatos, cortos y baratos — no el
+   carrusel entero. Si hay que descartar, se descarta una línea de
+   texto y no una generación de 8000 tokens.
+2. `juzgar()` es una llamada cuyo **único** trabajo es comparar los
+   candidatos contra el historial largo (80 piezas). Quien juzga no es
+   quien propuso.
+
+Recién con el ángulo elegido se gasta la generación completa. Si el
+juez rechaza todo, se reintenta pasándole explícitamente qué se
+descartó y por qué; si se agotan los intentos se publica igual el mejor
+disponible y **se avisa por Telegram** — quedarse sin publicar es peor
+que publicar algo parecido, pero el equipo tiene que enterarse de que
+esa serie está quedándose sin terreno.
+
+En un reintento de corrección NO se elige ángulo nuevo, a propósito: el
+cliente pidió corregir algo puntual de esa pieza, y cambiarle el ángulo
+sería el "rehacer en vez de corregir" que `correccion.mjs` vino a
+arreglar.
+
+**Por qué un juez y no embeddings** (decisión, no olvido): lo de manual
+sería vectorizar cada ángulo y comparar por coseno. Anthropic no tiene
+endpoint de embeddings, así que hacerlo implica contratar un proveedor
+nuevo (Voyage, OpenAI…), y la orden explícita es que todo el motor sea
+Sonnet. Un juez dedicado alcanza de sobra para cientos de ángulos, que
+es el orden de magnitud real de un cliente. Si alguna marca acumula
+miles, ahí conviene vectorizar — **esa sigue siendo la decisión
+pendiente**, y requiere aprobar un proveedor de embeddings.
 
 **Para que las ideas no se vuelvan genéricas con el tiempo**: extender
 el patrón que ya usa la serie `noticias` (`investiga: true`, búsqueda
 web real) a los demás pilares — antes de generar, una búsqueda rápida
-de tendencias/novedades del rubro del cliente.
+de tendencias/novedades del rubro del cliente. *Pendiente.*
 
 ## Video: revisar Higgsfield antes de construir nada nuevo
 
@@ -111,32 +144,39 @@ generar, "traer memorias relevantes"; después de publicar y tener
 métricas, "escribir memoria nueva". No se suma un orquestador nuevo
 tipo n8n.
 
-## Fases de construcción
+## Estado y qué falta
 
-**Fase 1 (semanas, sobre lo que ya hay en Supabase)**
-- Memoria semilla desde el formulario de onboarding.
-- Cada publicación + su resultado se guarda como memoria nueva.
-- Retrieval por fuerza bruta (sin HNSW todavía).
-- Piloto en un solo cliente (Cóndor mismo, ya que Bárbara ya publica
-  ahí) antes de justificar invertir en fases siguientes.
+**Hecho al 23-ago-2026**
+- Memoria privada en tres tablas, todas leídas por el generador.
+- Memoria global con umbral de muestra y anonimización en origen.
+- Memoria fundacional (`barbara_playbooks`) + CLI para administrarla,
+  sembrada con 5 lecciones verificadas en producción.
+- Anti-repetición con juez semántico separado.
+- Pilares de contenido por cliente, elegidos por deuda.
+- 41 tests unitarios; las 8 queries PostgREST nuevas validadas contra
+  la base real.
 
-**Fase 2 (un par de meses)**
-- Separar memoria en núcleo fijo (tono de marca, reglas que nunca
-  cambian) + memoria dinámica recuperada por relevancia — el mismo
-  split que usa la investigación real de agentes con memoria
-  (Generative Agents, Stanford 2023: relevancia + recencia +
-  importancia para decidir qué recordar).
-- Loop de refuerzo: patrones que funcionaron (más engagement) pesan
-  más en decisiones futuras; los que fallaron se guardan también, para
-  no repetir el error.
-- Sistema de pilares configurable por cliente (ver ESTRATEGIA.md).
-- Anti-repetición semántica (embeddings, no lista de texto).
+**Pendiente, en orden de valor**
+1. **Exponer los pilares en el formulario del portal.** Hoy la columna
+   `barbara_formulario.pilares` existe y el motor la respeta, pero no
+   hay UI para que staff la complete — sin eso todos los clientes usan
+   la mezcla por defecto.
+2. **La cuenta propia de Cóndor (`barbara.mjs`) no usa nada de esto.**
+   Sólo tiene el `content-log.json` local: ni reglas, ni playbooks, ni
+   pilares. Es el caso "en casa de herrero, cuchillo de palo". Requiere
+   agregarle los secrets de Supabase a su workflow.
+3. **Investigación web para los demás pilares**, no sólo para
+   `noticias`.
+4. **Edición de video** con subtítulos/música — primero confirmar si el
+   CLI de Higgsfield ya lo expone (ver sección de video).
+5. **Embeddings/pgvector**, sólo si alguna marca acumula miles de
+   ángulos y sólo tras aprobar un proveedor.
 
-**Fase 3 (cuando algún cliente acumule volumen real)**
-- Migrar de fuerza bruta a índice HNSW real en `pgvector` — cambio de
-  índice, no reescritura.
-- Edición de video con subtítulos/música, vía Higgsfield si lo cubre,
-  o `ffmpeg` casero si no.
+Referencia de diseño para el paso 2 cuando se haga: el split entre
+núcleo fijo (tono de marca, reglas inmutables) y memoria dinámica
+recuperada por relevancia es el mismo que usa la investigación de
+agentes con memoria (Generative Agents, Stanford 2023: relevancia +
+recencia + importancia).
 
 ## Referencias de investigación externa usadas para estas decisiones
 

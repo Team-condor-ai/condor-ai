@@ -25,13 +25,13 @@ Verificado en el código real al 23-ago-2026:
   por el modelo de imagen — un modelo de texto-a-imagen no puede
   reproducir un logo fijo pixel-exacto).
 
-## 2. Sistema de pilares de contenido (nuevo)
+## 2. Sistema de pilares de contenido
 
-Hoy las series de Cóndor están escritas fijas en código. Para escalar
-a cualquier cliente sin tocar código cada vez, se define **en el
-formulario de onboarding** qué proporción de contenido va a cada
-pilar — los pilares son fijos y genéricos, las proporciones son por
-cliente:
+**Construido el 23-ago-2026** (`pilares.mjs` + columnas
+`barbara_formulario.pilares` y `barbara_memoria.pilar`). Las series de
+Cóndor siguen fijas en código para la cuenta propia; para clientes, la
+mezcla se define **en el formulario de onboarding** — los pilares son
+fijos y genéricos, las proporciones son por cliente:
 
 | Pilar | Qué es | Ejemplo Cóndor hoy |
 |---|---|---|
@@ -45,7 +45,18 @@ cliente:
 hablan de Cóndor/Bárbara mismos) es válida porque es la cuenta propia.
 Copiar esa proporción a un cliente sería demasiado auto-promocional y
 lo ahuyentaría. El % por pilar tiene que definirse por cliente, nunca
-heredarse de la cuenta de Cóndor por defecto.
+heredarse de la cuenta de Cóndor por defecto. Hay un test que protege
+esto (`pilares.test.mjs`: "la mezcla por defecto NO es la de Cóndor").
+
+**Cómo se elige el pilar de cada día: por deuda, no por turno.** Se
+compara lo que la cuenta publicó de verdad (últimas 20 piezas) contra
+la mezcla que la marca pidió, y gana el pilar más atrasado. Dos
+ventajas sobre rotar en orden: converge a la mezcla pedida aunque se
+salten días o se generen piezas sueltas fuera de calendario, y se
+autocorrige solo (si una semana salieron tres piezas de venta, la
+siguiente ese pilar queda saldado). Un pilar en 0% nunca sale — importa
+sobre todo para `prueba_social`: sin testimonios reales cargados, la
+única forma de llenar ese pilar sería inventarlos.
 
 ## 3. Contenido UGC — sub-ángulos concretos
 
@@ -60,24 +71,35 @@ mismo chequeo anti-repetición que el resto:
 
 ## 4. Memoria global: cómo se alimenta sin contaminarse
 
-El riesgo de fondo: si se promueve cualquier corrección de un cliente
-directo a memoria global, el capricho de un solo cliente contamina a
-todos los demás. Por eso hay un **umbral de consenso**, no promoción
-inmediata:
+**Corrección al 23-ago-2026**: esto ya estaba construido antes de esta
+sesión (`patrones.mjs` + tabla `barbara_patrones`). Se documenta acá lo
+que el código realmente hace, no lo que había que hacer:
 
-1. Cada corrección/sugerencia entra primero a una tabla de
-   **candidatos** (staging), nunca directo a global.
-2. Se clasifica (con Sonnet — ver nota de costo en STACK-TECNICO.md):
-   ¿es un gusto personal del cliente (color, tono, estética) o un
-   patrón general (estructura, timing, formato que aplicaría a
-   cualquiera)? Solo lo segundo entra como candidato.
-3. Se agrupan candidatos por similitud semántica. Un patrón se
-   **promueve a memoria global real** solo cuando aparece de forma
-   independiente en al menos 3-5 clientes distintos.
-4. Lo que queda en memoria global está **anonimizado** — el patrón, no
-   el dato ("carruseles con pregunta en la portada suben 30% el
-   guardado en rubro gastronomía"), nunca el contenido ni el cliente
-   de origen.
+1. Sólo se miran piezas **cerradas** (con veredicto: aprobada sin
+   cambios, o corregida). Una pieza recién generada no dice nada
+   todavía.
+2. Umbral de muestra antes de destilar nada: mínimo **12 piezas de 3
+   marcas distintas** (`MINIMO_PIEZAS` / `MINIMO_MARCAS`). Por debajo
+   de eso no se llama al modelo siquiera — 20 piezas de un solo cliente
+   describen a ese cliente, no un patrón global.
+3. **Anonimización en origen**: al modelo le llega el tipo de pieza y
+   el ángulo creativo, nunca la marca ni el rubro, y el
+   `barbara_cliente_id` se descarta antes de armar el material (con un
+   id opaco se pueden agrupar piezas y reconstruir a un cliente). No se
+   le pide al modelo "no menciones marcas": se le manda un material
+   donde las marcas no están. Una instrucción se puede desobedecer; un
+   dato que no viajó, no.
+4. Los patrones de confianza baja se descartan, y **todos nacen
+   apagados** (`activo = false`): los enciende una persona a mano
+   cuando la muestra lo sostiene. Mientras estén apagados no tocan la
+   generación.
+
+Lo que sí se agregó en esta sesión, porque faltaba: el generador ahora
+lee `barbara_memoria_nodos` (gustos, datos y perfil sintetizado del
+cliente). Esa tabla existía desde el 19-ago, el portal la escribe desde
+el grafo de memoria y una Edge Function le guarda el perfil — pero
+`clientes.mjs` nunca la leía, así que nada de lo que staff anotaba de
+un cliente llegaba a la pieza.
 
 ## 5. Por qué se descartó cargar transcripciones de expositores
 
