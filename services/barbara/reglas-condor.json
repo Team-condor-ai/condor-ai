@@ -1,1 +1,11 @@
-[]
+[
+  {
+    "regla": "cierra siempre el carrusel con una pregunta al lector, nunca con una afirmación",
+    "categoria": "copy",
+    "origen": "siempre cierra el carrusel con una pregunta al lector, nunca con una afirmación",
+    "veces_reforzada": 1,
+    "creada": "2026-08-23",
+    "actualizada": "2026-08-23",
+    "activa": true
+  }
+]
