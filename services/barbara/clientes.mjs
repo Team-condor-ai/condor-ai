@@ -166,6 +166,28 @@ async function generarPara(cliente) {
     ? reglasRaw.map(r => `- ${r.regla}${r.veces_reforzada > 1 ? ` (lo pidio ${r.veces_reforzada} veces)` : ""}`).join(String.fromCharCode(10))
     : "(todavia no corrigio nada)";
 
+  // GUSTOS, DATOS Y PERFIL de esta marca (`barbara_memoria_nodos`).
+  //
+  // La tabla existía, el portal la escribe desde el grafo de memoria y la
+  // Edge Function `barbara-sintetizar-perfil` le guarda el perfil — pero el
+  // generador NUNCA la leía. Es exactamente el agujero que documentó
+  // patrones.mjs en su encabezado, al revés: allá había un lector sin
+  // escritor, acá un escritor sin lector. Lo que staff anotaba del cliente no
+  // llegaba jamás a la pieza.
+  //
+  // Va junto a las reglas, en la capa de MÁS peso: es lo propio de esta marca.
+  // El "perfil" primero — es la síntesis — y después gustos y datos por
+  // refuerzo.
+  const nodosRaw = await db.get(
+    `barbara_memoria_nodos?barbara_cliente_id=eq.${barbaraId}&activo=eq.true` +
+    `&select=tipo,titulo,contenido,peso&order=peso.desc&limit=30`
+  ).catch(() => []);
+  const perfil = nodosRaw.filter(n => n.tipo === "perfil").map(n => n.contenido).join(" ");
+  const gustosDatos = nodosRaw
+    .filter(n => n.tipo === "gusto" || n.tipo === "dato")
+    .map(n => `- [${n.tipo}] ${n.titulo}: ${n.contenido}`)
+    .join(String.fromCharCode(10));
+
   // MEMORIA GLOBAL: patrones aprendidos entre todos los clientes. Solo entran
   // los marcados `activo`, que hoy son cero a proposito — con pocos clientes
   // un patron cruzado es ruido, y aprender de ruido es peor que no aprender.
@@ -244,7 +266,13 @@ Producto/servicio a destacar hoy: ${form.producto_destacar || "el negocio en gen
 PIEZAS RECIENTES DE ESTE CLIENTE (NO repitas estos ángulos, innova):
 ${recientes}
 
-LO QUE ESTA MARCA YA TE CORRIGIO (respetalo SIEMPRE, es lo que mas pesa):
+${perfil ? `COMO ES ESTA MARCA TRABAJANDO CONTIGO (perfil sintetizado):
+${perfil}
+
+` : ""}${gustosDatos ? `GUSTOS Y DATOS QUE YA SABES DE ESTA MARCA (usalos, dan naturalidad):
+${gustosDatos}
+
+` : ""}LO QUE ESTA MARCA YA TE CORRIGIO (respetalo SIEMPRE, es lo que mas pesa):
 ${reglas}${patrones ? `
 
 LO QUE FUNCIONA EN GENERAL (patrones de rendimiento, no reglas de esta marca):
