@@ -472,6 +472,24 @@ Responde SOLO con el JSON.`,
 
 main().catch(async (e) => {
   console.error(e);
-  try { await tg("sendMessage", { chat_id: CHAT, text: "⚠️ Barbara falló (" + dia + "): " + String(e).slice(0, 300) }); } catch {}
+  // Un fallo de auth de Higgsfield no se arregla reintentando ni mirando el
+  // código: hay que volver a loguearse a mano. Ya pasó el 22-ago-2026 (y
+  // antes), y las dos veces el mensaje decía sólo "Not authenticated", que
+  // obliga a que alguien vaya a buscar el procedimiento. Va con el remedio
+  // adentro.
+  const esAuth = /Not authenticated|auth login|session expired|unauthor|forbidden|\b(401|403)\b/i.test(String(e));
+  const remedio = esAuth
+    ? "\n\n🔑 *Es el token de Higgsfield, no el código.* Hay que re-loguearse a mano:\n" +
+      "1. `higgsfield auth login` (abre el navegador)\n" +
+      "2. `bash services/barbara/reauth.sh` — re-cifra, rota el secret y pushea\n" +
+      "Ojo: el CLI local tiene que ser 0.2.x, que es el que usa CI."
+    : "";
+  try {
+    await tg("sendMessage", {
+      chat_id: CHAT,
+      text: "⚠️ Barbara falló (" + dia + "): " + String(e).slice(0, 300) + remedio,
+      parse_mode: "Markdown",
+    });
+  } catch {}
   process.exit(1);
 });
