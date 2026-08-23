@@ -159,40 +159,7 @@
     "serie": "barbara_datos",
     "angulo": "Los compradores ya no llegan primero a tu web: le preguntan directo a la IA, y cerca del 20% de esas conversaciones en ChatGPT ya tiene intención de compra directa (MarketingProfs, ago 2026).",
     "titulo": "📊 Bárbara — el dato que lo cambia todo",
-    "runId": "32644467299",
-    "contenido": {
-      "slides": [
-        {
-          "titulo": "La búsqueda ya cambió",
-          "prompt": "Black ground #000000, cream text. Large display serif headline split with lime emphasis. Text to render: 'La búsqueda ya cambió'. Below, smaller sans subhead: 'Ya no escriben en Google. Le preguntan directo a la IA.' Thin lime rule under headline. Badge number 1."
-        },
-        {
-          "titulo": "20% ya quiere comprar",
-          "prompt": "Cream ground #F2EFE6, near-black text, olive accents. One wide outline card with a thin-line chat-bubble icon at left, a very large lime number '20%' and a two-line label beside it: 'de las preguntas en ChatGPT ya muestran intención de compra directa'. Small grey source line bottom-left: 'Fuente: MarketingProfs, 21 de agosto 2026'. Badge number 2."
-        },
-        {
-          "titulo": "Qué es intención comercial",
-          "prompt": "Black ground, cream text, lime accents. Bordered card with a short icon list showing example queries as body copy: '¿Cuál cafetera me conviene comprar?' and '¿Qué CRM me recomiendas para mi negocio?'. Below the list, a line: 'Esas preguntas ya no pasan por tu sitio web, pasan por la IA.' Badge number 3."
-        },
-        {
-          "titulo": "Antes vs ahora",
-          "prompt": "Cream ground, olive accents. Bordered two-column panel split by vertical rule with small circled 'VS'. Left column with circled-cross icon and text: 'Antes: la gente buscaba en Google y llegaba a tu sitio.' Right column with circled-check icon and text: 'Ahora: le pregunta a una IA y la IA responde por ti.' Badge number 4."
-        },
-        {
-          "titulo": "El nuevo escaparate",
-          "prompt": "Black ground, cream text, thin lime rule under headline. Headline emphasis in lime on the word 'escaparate'. Body text: 'La IA se convirtió en el nuevo escaparate: recomienda, compara y decide antes de que tu cliente entre a tu web.' Badge number 5."
-        },
-        {
-          "titulo": "Qué significa para ti",
-          "prompt": "Cream ground, near-black text, olive accent rule. Body copy: 'Si tu marca no aparece en las respuestas de la IA, ya perdiste esa venta antes de que el cliente llegue a tu web.' Badge number 6."
-        },
-        {
-          "titulo": "Da el primer paso",
-          "prompt": "Black ground, cream text, bold lime CTA button-style rounded rectangle. Text inside: 'Escríbenos al DM'. Badge number 7."
-        }
-      ],
-      "caption": "Tu cliente ya no llega a tu web. 🤖\n\nHoy 1 de cada 5 preguntas en ChatGPT ya tiene intención directa de compra. La gente pregunta '¿qué me conviene comprar?' y la IA responde antes de que tu sitio aparezca.\n\n¿Tu marca está en esa conversación o sigue esperando que la busquen en Google?\n\nEn condor.ai ayudamos a que tu negocio aparezca donde tu cliente ya está decidiendo. Escríbenos al DM y te mostramos cómo.\n\n#IA #Marketing #Ventas #Perú #Chile"
-    }
+    "runId": "32644467299"
   },
   {
     "fecha": "2026-08-23",
@@ -270,6 +237,43 @@
         }
       ],
       "caption": "¿Cuántas veces editaste el mismo post hoy? 😩\n\nInstagram pide una medida, TikTok otra, Facebook otra, LinkedIn otra. Multiplica eso por cada publicación de la semana.\nEso no es crear contenido, es hacer el mismo trabajo cuatro veces.\n\nBárbara, la agente de condor.ai, adapta y publica tu contenido en las cuatro redes sin que nadie abra un editor. Síguenos y escríbenos al DM si quieres recuperar esas horas.\n\n#condorai #IA #marketingdigital #pymes #Peru"
+    }
+  },
+  {
+    "fecha": "2026-08-23",
+    "tipo": "miercoles",
+    "serie": "barbara_producto",
+    "angulo": "Los comentarios y mensajes directos que se acumulan sin respuesta después de cada publicación, mientras el cliente interesado se enfría y compra en otro lado — Bárbara responde y empuja la conversación hacia la venta.",
+    "titulo": "🎀 Bárbara — tu agente de contenido",
+    "runId": "32646299633",
+    "contenido": {
+      "slides": [
+        {
+          "titulo": "Portada",
+          "prompt": "Large thin-line speech bubble icon in lime, cracked or fading at one edge to suggest something lost. Headline text in cream serif with lime emphasis, exact copy: 'El comentario que nadie respondió'. Emphasize 'nadie respondió' in lime."
+        },
+        {
+          "titulo": "El problema",
+          "prompt": "Large thin-line icon of a descending bar chart in lime, representing interest cooling down. Headline exact copy: 'Mientras publicas, los mensajes se acumulan'. Emphasize 'se acumulan' in lime."
+        },
+        {
+          "titulo": "Punto 1",
+          "prompt": "Numbered badge '1' in lime outline square above headline. Large thin-line icon of a speech bubble with a checkmark inside, lime strokes. Headline exact copy: 'Responde cada comentario en segundos'. Emphasize 'en segundos' in lime. Bottom rounded rectangle outline with small clock icon at left and text: 'Ahorra 5 horas a la semana'."
+        },
+        {
+          "titulo": "Punto 2",
+          "prompt": "Numbered badge '2' in lime outline square above headline. Large thin-line icon of a target with an arrow, lime strokes. Headline exact copy: 'Detecta quién está listo para comprar'. Emphasize 'listo para comprar' in lime. Bottom rounded rectangle outline with small clock icon at left and text: 'Ahorra 4 horas a la semana'."
+        },
+        {
+          "titulo": "Punto 3",
+          "prompt": "Numbered badge '3' in lime outline square above headline. Large thin-line icon of two speech bubbles connecting into an arrow pointing forward, lime strokes. Headline exact copy: 'Lleva la conversación al cierre'. Emphasize 'al cierre' in lime. Bottom rounded rectangle outline with small clock icon at left and text: 'Ahorra 3 horas a la semana'."
+        },
+        {
+          "titulo": "CTA",
+          "prompt": "Large thin-line icon of a speech bubble with a small arrow pointing out, lime strokes. Headline exact copy: 'Escríbenos al DM'. Bottom rounded rectangle outline with small icon and short supporting text: 'Bárbara ya está respondiendo'."
+        }
+      ],
+      "caption": "¿Cuántos comentarios se te quedaron sin responder esta semana? 👀\n\nEse \"¿precio?\" o \"¿disponible?\" que nadie contestó a tiempo, se enfría rápido. Y mientras tú sigues creando contenido, el cliente ya está comprando en otro lado.\n\nBárbara responde cada comentario y DM al instante, detecta quién está listo para comprar y empuja la conversación hasta el cierre. Síguenos y escríbenos al DM si quieres que trabaje para tu marca.\n\n#IA #Emprendimiento #Peru #Chile #Negocios"
     }
   }
 ]
