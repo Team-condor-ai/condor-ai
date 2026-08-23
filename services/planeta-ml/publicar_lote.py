@@ -427,35 +427,40 @@ def publicados_hoy(estado: dict, fecha: str) -> int:
     return sum(1 for fila in estado.values() if fila.get("fecha") == fecha and fila.get("item_id"))
 
 
-def producto_de(clave_titulo_como_alias: str) -> str:
-    """Coincide un título publicado con la clave de producto por
-    substring — misma heurística que `shared.inventario.producto_de`,
-    reducida a lo que este script necesita (cobertura ya publicada)."""
-    t = clave_titulo_como_alias.lower()
-    for clave in PRODUCTOS:
-        if clave.replace("_", " ") in t or clave in t.replace(" ", "_"):
-            return clave
-    return ""
+LOTE_APROBADO = BASE / "lote_aprobado.json"
 
 
 def candidatos(cfg: dict, specs: dict, inventario: dict) -> list[dict]:
-    activos = {cuenta: items_activos(cfg, cuenta) for cuenta in CUENTAS}
+    """SOLO trabaja sobre los pares (cuenta, producto) que ya pasaron el
+    dry-run local del 22-ago-2026 (`lote_aprobado.json`, 36 pares).
+
+    A propósito NO relee el catálogo completo para "descubrir" qué falta:
+    la primera versión de este script sí lo hacía con un matcher de alias
+    simplificado (substring), y en la primera corrida de prueba encontró
+    43 pendientes en vez de 36 — un candidato nuevo (`vieja:collagen_peptides`)
+    que el matcher real (`shared.inventario`, solo disponible en el PC de
+    Joaquín) nunca había validado. Publicar sobre una cola que el matcher
+    aproximado arma solo es exactamente el tipo de error que ya causó una
+    suspensión antes. Si algún día hay que sumar productos nuevos al lote,
+    se valida el alias a mano contra `shared.inventario` y se agrega acá,
+    no se deja que este script decida solo qué está "cubierto"."""
+    if not LOTE_APROBADO.exists():
+        raise RuntimeError(f"Falta {LOTE_APROBADO} — no hay lote aprobado que publicar")
+    pares = json.loads(LOTE_APROBADO.read_text(encoding="utf-8"))
     cola = []
-    for cuenta in CUENTAS:
-        for clave, datos in specs.items():
-            if clave in PROHIBIDOS:
-                continue
-            fila = inventario.get(clave)
-            if not fila or fila["unidades"] <= 0 or fila["costo"] is None:
-                continue
-            if any(producto_de(item.get("title", "")) == clave for item in activos[cuenta]):
-                continue
-            base = calcular_producto(fila["costo"], 1)["precio"]
-            precio = precio_agustin(base) if cuenta == "agustin" else base
-            cola.append({
-                "cuenta": cuenta, "producto": clave, "datos": datos,
-                "stock": fila["unidades"], "costo": fila["costo"], "precio": precio,
-            })
+    for cuenta, clave in pares:
+        if clave in PROHIBIDOS:
+            continue
+        datos = specs.get(clave)
+        fila = inventario.get(clave)
+        if not datos or not fila or fila["unidades"] <= 0 or fila["costo"] is None:
+            continue
+        base = calcular_producto(fila["costo"], 1)["precio"]
+        precio = precio_agustin(base) if cuenta == "agustin" else base
+        cola.append({
+            "cuenta": cuenta, "producto": clave, "datos": datos,
+            "stock": fila["unidades"], "costo": fila["costo"], "precio": precio,
+        })
     semilla = dt.date.today().isoformat() + "-planeta-shop"
     random.Random(semilla).shuffle(cola)
     return cola
