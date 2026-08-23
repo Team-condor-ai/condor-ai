@@ -26,5 +26,13 @@
     "stock_inicial": 3,
     "titulo": "Mio Inositol Ácido Fólico Vitamina D3 60 Cápsulas",
     "fecha": "2026-08-22"
+  },
+  "agustin:rosetimes": {
+    "item_id": "MLC2187457693",
+    "fecha": "2026-08-23",
+    "titulo": "Rosetimes Bálsamo Facial Hidratante En Barra 8g",
+    "precio": 23490,
+    "stock_inicial": 3,
+    "descripcion_http": 201
   }
 }
