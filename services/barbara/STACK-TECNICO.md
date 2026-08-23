@@ -181,19 +181,54 @@ alguien.
 el 23-ago-2026 contra su OpenAPI y contra el endpoint en vivo (devuelve
 401 con clave falsa, o sea el formato es el correcto).
 
-Tiene los dos modelos que Bárbara ya usa:
-
-| Uso | CLI (antes) | API (ahora) |
-|---|---|---|
-| Carruseles | `nano_banana_2` | `POST /nano-banana` — acepta `4:5` y `png` |
-| UGC en video | `seedance1_5` | `POST /bytedance/seedance/v1/lite/text-to-video` — `9:16`, 720p |
-
 Es asíncrona: el POST devuelve un `request_id` y se consulta
 `/requests/{id}/status` hasta `completed`. Hay webhooks, pero no se usan
 — GitHub Actions no tiene dónde recibirlos y el job igual está esperando.
 
-**Costo**: no hay tarifa aparte. La API consume los mismos créditos del
-plan mensual (hoy Plus). No cambia lo que se paga.
+### ⛔ Pero la API NO sirve los modelos que Bárbara usa
+
+Probado con la key real el 23-ago-2026, endpoint por endpoint. Esto
+invalida el supuesto con el que se empezó la migración:
+
+| Uso | Modelo del CLI | Estado en la API |
+|---|---|---|
+| Carruseles | `nano_banana_2` | ❌ 404 `model_not_found` |
+| UGC en video | `seedance1_5` | ❌ 404 `model_not_found` |
+| *(alternativa)* GPT Image 2 | — | ❌ ni siquiera está en el OpenAPI |
+
+Lo que **sí** responde: `higgsfield-ai/soul/*`, `dop/*`, `popcorn`,
+`kling/*`, `minimax/*`, `wan-25`. Todos devuelven 403
+`not_enough_credits`, o sea existen y sólo falta saldo.
+
+**Además, dos correcciones de costo y de datos:**
+
+1. **Los créditos de la API son APARTE del plan mensual.** Los créditos
+   de Plus en higgsfield.ai no se consumen desde `platform.higgsfield.ai`
+   — hay que cargar saldo por separado en `cloud.higgsfield.ai`. (La
+   documentación de terceros decía lo contrario; el 403 en vivo dice que
+   no.)
+2. **El OpenAPI publicado no es confiable para los enums.** Dice que
+   `soul/standard` acepta `4:5` y resolución `2K`; la API real rechaza
+   ambos con 422 — sólo `3:4` y `720p`/`1080p`. Por eso cada modelo
+   declara en `higgsfield-api.mjs` los ratios que de verdad acepta, y hay
+   degradación al vertical más parecido en vez de fallar.
+
+### Qué hacer con esto
+
+El código de la API queda **listo y probado**, con el modelo
+configurable (`HIGGSFIELD_MODELO_IMAGEN` / `HIGGSFIELD_MODELO_VIDEO`),
+pero **no se activó**: con la API configurada y sin los modelos correctos,
+Bárbara fallaría de una forma nueva en vez de la actual.
+
+1. **Ahora**: re-loguear el CLI para que Bárbara vuelva con los modelos
+   de siempre (ver el bloqueo más abajo).
+2. **En paralelo**: escribirle a `support@higgsfield.ai` preguntando si
+   pueden habilitar `nano-banana` y `seedance` por API para esta cuenta.
+   Si dicen que sí, migrar es cargar saldo y poner dos secrets — el
+   código ya está hecho.
+3. **Sólo si dicen que no**: evaluar `soul` como reemplazo, sabiendo que
+   implica re-verificar visualmente los 4 templates de marca (estética
+   distinta y `3:4` en vez de `4:5`).
 
 **Migración segura**: `higgsfield-api.mjs` no reemplaza al CLI por su
 cuenta. `genImagen`/`genVideo` prefieren la API **sólo si existen las
@@ -201,6 +236,10 @@ credenciales**; si no, siguen con el CLI igual que hasta hoy. Se puede
 probar sin arriesgar lo que ya funciona.
 
 ### Qué falta para activarla (una sola vez, y nunca más)
+
+> ⚠️ **Esta sección quedó en pausa**: la key ya se creó y funciona, pero
+> la API no sirve `nano-banana` ni `seedance` (ver arriba). Los pasos
+> siguen siendo válidos para cuando soporte los habilite.
 
 **Paso manual, irreducible:** crear la key en
 https://cloud.higgsfield.ai → sección API. No se puede automatizar: la
