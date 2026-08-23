@@ -34,6 +34,17 @@ on:
 permissions:
   contents: write
 
+# El 23-ago se dispararon 4 corridas en 70 segundos. La primera paso; las otras
+# tres chocaron entre si al escribir content-log.json, el rebase quedo en
+# conflicto y ninguna pudo pushear. Como el refresh_token de Higgsfield ROTA EN
+# CADA USO, un push perdido puede dejar la cadena muerta en silencio.
+#
+# cancel-in-progress: false a proposito — cancelar una corrida a medio camino
+# quema creditos ya gastados y puede perder un token recien rotado. Se encolan.
+concurrency:
+  group: barbara-contenido-propio
+  cancel-in-progress: false
+
 jobs:
   barbara:
     runs-on: ubuntu-latest

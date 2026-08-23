@@ -43,6 +43,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Instalar dependencias (sharp)
+        # Faltaba: este workflow solo instalaba el CLI de Higgsfield. Desde que
+        # motor.mjs importa sharp (22-ago 21:20 UTC), la corrida diaria moria con
+        # ERR_MODULE_NOT_FOUND antes de generar nada. barbara.yml ya tenia este paso.
+        working-directory: services/barbara
+        run: npm install
       - name: Instalar CLI de Higgsfield
         run: npm install -g @higgsfield/cli@1.1.23
       - name: Autenticar Higgsfield (descifrar credenciales rotadas)
