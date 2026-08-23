@@ -15,6 +15,7 @@ import { elegirAngulo } from "./angulos.mjs";
 import { apiDisponible, generarImagen as apiImagen } from "./higgsfield-api.mjs";
 import { playbooksPara, bloquePrompt as bloquePlaybooks } from "./playbooks.mjs";
 import { extraerCambios, instrucciones } from "./correccion.mjs";
+import { leerReglas, bloquePrompt as bloqueReglas, aprenderDeCorreccion } from "./reglas.mjs";
 
 const AK = process.env.ANTHROPIC_API_KEY;
 const TG = process.env.TELEGRAM_BOT_TOKEN;
@@ -409,6 +410,11 @@ async function main() {
     }
   }
 
+  // LO QUE EL EQUIPO YA CORRIGIO. Es la capa de MAS peso: son las
+  // preferencias de la propia marca, destiladas de correcciones reales.
+  // Ver reglas.mjs.
+  const reglasEquipo = bloqueReglas(leerReglas());
+
   // 3) Director (lee memoria, innova)
   //
   // Tres modos, de más preciso a menos: corrección dirigida con la lista de
@@ -449,7 +455,7 @@ REGLA DE VERACIDAD (no negociable): cada cifra, fecha, medio y hecho que pongas 
 
 Responde SOLO con el JSON.`,
     output_config: { format: { type: "json_schema", schema } },
-    messages: [{ role: "user", content: `Tipo de hoy (${dia}): ${tema.instruccion}\n\nTEMPLATE OBLIGATORIO:\n${tema.template}\n\nPIEZAS RECIENTES (NO repitas estos ángulos, innova):\n${recientes}\n${research ? "\nInvestigación web:\n" + research : ""}${playbooks}${anguloFijado}${extra}\n\nCrea el carrusel de ${N_SLIDES} slides con un ángulo NUEVO.` }],
+    messages: [{ role: "user", content: `Tipo de hoy (${dia}): ${tema.instruccion}\n\nTEMPLATE OBLIGATORIO:\n${tema.template}\n\nPIEZAS RECIENTES (NO repitas estos ángulos, innova):\n${recientes}\n${research ? "\nInvestigación web:\n" + research : ""}${reglasEquipo}${playbooks}${anguloFijado}${extra}\n\nCrea el carrusel de ${N_SLIDES} slides con un ángulo NUEVO.` }],
   });
   // Si el modelo se queda sin tokens, el JSON llega cortado y JSON.parse tira
   // un "Unterminated string in JSON at position N" que no dice nada de la
@@ -556,6 +562,27 @@ Responde SOLO con el JSON.`,
           `📝 *Caption:*\n\n${plan.caption || ""}${avisoAngulo}\n\n${comoCorregir}`,
     parse_mode: "Markdown",
   });
+
+  // 6b) APRENDER de la corrección, si la hubo.
+  //
+  // Va DESPUÉS de mandar la pieza a Telegram a propósito: destilar la regla es
+  // valioso pero nunca puede demorar ni tumbar la entrega. `aprenderDeCorreccion`
+  // no lanza — si falla, la pieza de hoy ya salió igual.
+  if (CORRECCION) {
+    const r = await aprenderDeCorreccion((_k, body) => claude(body), AK, CORRECCION);
+    if (r.guardada) {
+      console.log(`regla ${r.reforzada ? "reforzada" : "nueva"}: ${r.regla}`);
+      await tg("sendMessage", {
+        chat_id: CHAT,
+        text: r.reforzada
+          ? `🧠 Anotado (ya lo habían pedido antes): _${r.regla}_`
+          : `🧠 Aprendido para las próximas: _${r.regla}_`,
+        parse_mode: "Markdown",
+      });
+    } else {
+      console.log("no se guardó regla:", r.motivo);
+    }
+  }
 
   // 7) Registrar en memoria (anti-repetición + artefacto aprobable)
   guardarEnLog({

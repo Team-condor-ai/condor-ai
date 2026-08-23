@@ -142,7 +142,7 @@ jobs:
               git add services/barbara/hf-creds.enc
             fi
           fi
-          git add services/barbara/content-log.json
+          git add services/barbara/content-log.json services/barbara/reglas-condor.json
           if git diff --staged --quiet; then echo "sin cambios"; else
             git commit -m "barbara: registro de contenido + token $(date +%Y-%m-%d)"
             OK=0
