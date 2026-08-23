@@ -34,5 +34,53 @@
     "precio": 23490,
     "stock_inicial": 3,
     "descripcion_http": 201
+  },
+  "agustin:memorix": {
+    "item_id": "MLC4391528712",
+    "fecha": "2026-08-23",
+    "titulo": "Memorix 60 Cápsulas Suplemento Alimentario Sin Sabor",
+    "precio": 25490,
+    "stock_inicial": 6,
+    "descripcion_http": 201
+  },
+  "vieja:oil_of_oregano": {
+    "item_id": "MLC2187509467",
+    "fecha": "2026-08-23",
+    "titulo": "Carlyle Organic Oil Of Oregano 59ml Gotero",
+    "precio": 23490,
+    "stock_inicial": 3,
+    "descripcion_http": 201
+  },
+  "vieja:rosetimes": {
+    "item_id": "MLC2187457877",
+    "fecha": "2026-08-23",
+    "titulo": "Rosetimes Bálsamo Facial Hidratante En Barra 8g",
+    "precio": 21490,
+    "stock_inicial": 3,
+    "descripcion_http": 201
+  },
+  "vieja:dr_melaxin": {
+    "item_id": "MLC2187509675",
+    "fecha": "2026-08-23",
+    "titulo": "Dr Melaxin Peel Shot Spray Exfoliante Ácido Kójico",
+    "precio": 24990,
+    "stock_inicial": 4,
+    "descripcion_http": 201
+  },
+  "vieja:magnesio_12en1": {
+    "item_id": "MLC2187626097",
+    "fecha": "2026-08-23",
+    "titulo": "Magnesio 12 En 1 Complex 720mg 60 Cápsulas Sin Sabor",
+    "precio": 23490,
+    "stock_inicial": 2,
+    "descripcion_http": 201
+  },
+  "agustin:magnesio_complex": {
+    "item_id": "MLC2187626227",
+    "fecha": "2026-08-23",
+    "titulo": "Bioforce Magnesium Complex 1000mg 90 Cápsulas",
+    "precio": 27490,
+    "stock_inicial": 3,
+    "descripcion_http": 201
   }
 }
