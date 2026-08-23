@@ -83,9 +83,11 @@ jobs:
           PLANETA_SUPABASE_URL: ${{ secrets.PLANETA_SUPABASE_URL }}
           PLANETA_SUPABASE_KEY: ${{ secrets.PLANETA_SUPABASE_KEY }}
         run: |
-          if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ inputs.ejecutar }}" = "true" ]; then
+          if [ "${{ inputs.ejecutar }}" = "true" ]; then
             python publicar_lote.py --ejecutar --limite ${{ steps.limite.outputs.n }} \
-              --max-diario 8 --min-espera 480 --max-espera 1080
+              --max-diario ${{ inputs.max_diario || '8' }} \
+              --min-espera ${{ inputs.min_espera || '480' }} \
+              --max-espera ${{ inputs.max_espera || '1080' }}
           else
             python publicar_lote.py --dry-run --limite ${{ steps.limite.outputs.n }}
           fi
