@@ -84,6 +84,10 @@ jobs:
           RETRY: ${{ github.event.inputs.retry }}
           SERIE: ${{ github.event.inputs.serie }}
           BARBARA_OUTBOX_DIR: barbara-outbox
+          # Opcionales: sólo se usan para leer los playbooks (memoria
+          # fundacional). Si faltan, barbara.mjs corre igual sin ellos.
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       - name: Guardar pieza aprobable
         uses: actions/upload-artifact@v7
         with:

@@ -10,8 +10,9 @@
 
 import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
-import { pegarLogoCondor } from "./motor.mjs";
+import { pegarLogoCondor, supabase } from "./motor.mjs";
 import { elegirAngulo } from "./angulos.mjs";
+import { playbooksPara, bloquePrompt as bloquePlaybooks } from "./playbooks.mjs";
 
 const AK = process.env.ANTHROPIC_API_KEY;
 const TG = process.env.TELEGRAM_BOT_TOKEN;
@@ -328,6 +329,23 @@ async function main() {
     console.log("elección de ángulo falló, sigo sin ella:", String(e).slice(0, 140));
   }
 
+  // 2c) MEMORIA FUNDACIONAL. Hasta acá la cuenta propia de Cóndor era el caso
+  // "en casa de herrero, cuchillo de palo": los clientes tenían tres capas de
+  // memoria y Cóndor sólo un content-log.json local.
+  //
+  // Es OPCIONAL a propósito: si el workflow no trae los secrets de Supabase,
+  // barbara.mjs sigue corriendo igual que siempre. Este script publica en la
+  // cuenta real tres veces por semana y no puede caerse por una tabla.
+  let playbooks = "";
+  if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    try {
+      const db = supabase(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+      playbooks = bloquePlaybooks(await playbooksPara(db, { tipo: "carrusel" }));
+    } catch (e) {
+      console.log("playbooks no disponibles, sigo sin ellos:", String(e).slice(0, 120));
+    }
+  }
+
   // 3) Director (lee memoria, innova)
   const extra = isRetry ? "\n\n⚠️ ESTE ES UN REINTENTO: el contenido anterior fue rechazado por el equipo. Genera una versión CLARAMENTE MEJOR y distinta (mejor diseño, mejor texto, otro enfoque del mismo tema)." : "";
   const anguloFijado = anguloElegido
@@ -341,7 +359,7 @@ REGLA DE VERACIDAD (no negociable): cada cifra, fecha, medio y hecho que pongas 
 
 Responde SOLO con el JSON.`,
     output_config: { format: { type: "json_schema", schema } },
-    messages: [{ role: "user", content: `Tipo de hoy (${dia}): ${tema.instruccion}\n\nTEMPLATE OBLIGATORIO:\n${tema.template}\n\nPIEZAS RECIENTES (NO repitas estos ángulos, innova):\n${recientes}\n${research ? "\nInvestigación web:\n" + research : ""}${anguloFijado}${extra}\n\nCrea el carrusel de ${N_SLIDES} slides con un ángulo NUEVO.` }],
+    messages: [{ role: "user", content: `Tipo de hoy (${dia}): ${tema.instruccion}\n\nTEMPLATE OBLIGATORIO:\n${tema.template}\n\nPIEZAS RECIENTES (NO repitas estos ángulos, innova):\n${recientes}\n${research ? "\nInvestigación web:\n" + research : ""}${playbooks}${anguloFijado}${extra}\n\nCrea el carrusel de ${N_SLIDES} slides con un ángulo NUEVO.` }],
   });
   // Si el modelo se queda sin tokens, el JSON llega cortado y JSON.parse tira
   // un "Unterminated string in JSON at position N" que no dice nada de la
