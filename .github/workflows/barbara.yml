@@ -27,6 +27,12 @@ permissions:
 jobs:
   barbara:
     runs-on: ubuntu-latest
+    env:
+      # Con la API oficial configurada, todo el andamiaje de OAuth (instalar el
+      # CLI, descifrar el token, seleccionar workspace, re-cifrar el token
+      # rotado) sobra: son ~40s por corrida y, sobre todo, superficie de falla
+      # que ya tumbo a Barbara tres veces. Ver higgsfield-api.mjs.
+      USA_API_HF: ${{ secrets.HIGGSFIELD_API_KEY_ID != '' }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -36,11 +42,13 @@ jobs:
         working-directory: services/barbara
         run: npm install
       - name: Instalar CLI de Higgsfield
+        if: env.USA_API_HF != 'true'
         # PIN de versión a propósito: instalar @latest hacía que un release rompiente
         # (1.0.0, 27-jun-2026: workspace obligatorio + nuevo auth flow) tumbara a Barbara
         # sola. Subir de versión debe ser un cambio deliberado, no automático.
         run: npm install -g @higgsfield/cli@0.2.3
       - name: Autenticar Higgsfield (descifrar credenciales rotadas)
+        if: env.USA_API_HF != 'true'
         env:
           HF_CREDS_KEY: ${{ secrets.HF_CREDS_KEY }}
           HF_ACCESS: ${{ secrets.HIGGSFIELD_ACCESS_TOKEN }}
@@ -106,7 +114,9 @@ jobs:
         run: |
           git config user.name "barbara-bot"
           git config user.email "bot@condorai.cl"
-          if [ -n "$HF_CREDS_KEY" ] && [ -f ~/.config/higgsfield/credentials.json ]; then
+          # Con la API oficial el CLI ni corre, asi que credentials.json no existe
+          # y este bloque se salta solo. Se deja por si se vuelve al CLI.
+          if [ "$USA_API_HF" != "true" ] && [ -n "$HF_CREDS_KEY" ] && [ -f ~/.config/higgsfield/credentials.json ]; then
             AFTER=$(sha256sum ~/.config/higgsfield/credentials.json | awk '{print $1}')
             BEFORE=$(cat /tmp/hf_before.sha 2>/dev/null || echo "")
             if [ "$AFTER" != "$BEFORE" ]; then
