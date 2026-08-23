@@ -78,6 +78,10 @@ jobs:
         run: node services/barbara/barbara.mjs
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # API oficial de Higgsfield: credenciales ESTATICAS, no caducan.
+          # Si estan, genImagen/genVideo las prefieren sobre el CLI (OAuth).
+          HIGGSFIELD_API_KEY_ID: ${{ secrets.HIGGSFIELD_API_KEY_ID }}
+          HIGGSFIELD_API_KEY_SECRET: ${{ secrets.HIGGSFIELD_API_KEY_SECRET }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           DIA: ${{ github.event.inputs.dia }}

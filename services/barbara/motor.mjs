@@ -12,6 +12,7 @@ import { execFileSync, execSync } from "node:child_process";
 import { writeFileSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import sharp from "sharp";
+import { apiDisponible, generarImagen as apiImagen, generarVideo as apiVideo } from "./higgsfield-api.mjs";
 
 const ASSETS = fileURLToPath(new URL("./assets/", import.meta.url));
 
@@ -141,8 +142,15 @@ export async function pegarLogoCondor(buf, posicion = "izquierda") {
 // ---- Higgsfield: generar imagen y devolver URL (mismo patrón de reintentos
 // que barbara.mjs — 3 intentos, aborta de inmediato si el error es de
 // auth/config en vez de transitorio) ----
-export function genImagen(prompt, idx) {
+export async function genImagen(prompt, idx) {
   const safe = prompt.replace(/\s+/g, " ").trim().slice(0, 1500);
+
+  // Si hay credenciales de la API oficial, se usa ésa: son estáticas y no
+  // caducan, a diferencia del OAuth del CLI que obliga a re-loguearse a mano
+  // cada tanto (ver el encabezado de higgsfield-api.mjs). Sin credenciales,
+  // sigue el CLI exactamente como siempre.
+  if (apiDisponible()) return apiImagen(safe, { aspectRatio: "4:5", formato: "png" });
+
   const args = ["generate", "create", "nano_banana_2", "--prompt", safe, "--aspect_ratio", "4:5", "--resolution", "1k", "--wait", "--wait-timeout", "8m"];
   let ultimo = "";
   for (let intento = 1; intento <= 3; intento++) {
@@ -172,8 +180,17 @@ export function genImagen(prompt, idx) {
 // ~4x más barato que seedance_2_0, calidad "amateur" suficiente para UGC).
 // Mismo patrón de reintentos que genImagen. `extraArgs` permite pasar
 // `--image <ref>` si algún día el cliente sube una foto de referencia.
-export function genVideo(prompt, dur, idx, extraArgs = []) {
+export async function genVideo(prompt, dur, idx, extraArgs = []) {
   const safe = prompt.replace(/\s+/g, " ").trim().slice(0, 1500);
+
+  // Igual que genImagen: la API oficial primero si está configurada.
+  // `extraArgs` (hoy sólo `--image` para una foto de referencia, que todavía
+  // no se usa) es del CLI; si algún día se usa, hay que mapearlo a
+  // `image-to-video` en vez de `text-to-video`, así que se cae al CLI.
+  if (apiDisponible() && !extraArgs.length) {
+    return apiVideo(safe, { duracion: dur, aspectRatio: "9:16", resolucion: "720" });
+  }
+
   const args = [
     "generate", "create", "seedance1_5", "--prompt", safe,
     "--aspect_ratio", "9:16", "--duration", String(dur), "--resolution", "720p",

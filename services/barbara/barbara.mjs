@@ -12,6 +12,7 @@ import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { pegarLogoCondor, supabase } from "./motor.mjs";
 import { elegirAngulo } from "./angulos.mjs";
+import { apiDisponible, generarImagen as apiImagen } from "./higgsfield-api.mjs";
 import { playbooksPara, bloquePrompt as bloquePlaybooks } from "./playbooks.mjs";
 
 const AK = process.env.ANTHROPIC_API_KEY;
@@ -208,7 +209,7 @@ Objetivo: que se lea fácil en el feed del celular sin tener que abrir "ver más
 // vez con REGLA_TEXTO: lo que se corta es el FINAL del prompt armado, que es
 // justo el contenido específico del slide.
 const MAX_PROMPT = 3600;
-function genImagen(prompt, idx) {
+async function genImagen(prompt, idx) {
   // execFileSync (sin shell) para que saltos de línea/comillas del prompt no rompan el comando.
   //
   // El tope subió de 1500 a 2600 el 22-ago-2026, al instalar los templates
@@ -222,6 +223,14 @@ function genImagen(prompt, idx) {
     console.log(`⚠️ slide ${idx + 1}: prompt de ${armado.length} chars, se corta en ${MAX_PROMPT}. Revisa el template.`);
   }
   const safe = armado.slice(0, MAX_PROMPT);
+
+  // API oficial si está configurada. Es el arreglo de raíz al problema que
+  // dejó a Bárbara muda el 29-jun, el 22-ago y el 23-ago: el CLI se autentica
+  // con OAuth (token que caduca + refresh que rota), y cada vez que la cadena
+  // se corta hay que volver a loguearse por navegador. Las credenciales de la
+  // API son estáticas. Ver higgsfield-api.mjs.
+  if (apiDisponible()) return apiImagen(safe, { aspectRatio: "4:5", formato: "png" });
+
   const args = ["generate", "create", "nano_banana_2", "--prompt", safe, "--aspect_ratio", "4:5", "--resolution", "1k", "--wait", "--wait-timeout", "8m"];
   // Reintentos ante fallos transitorios de Higgsfield (respuesta vacía).
   let ultimo = "";
@@ -392,7 +401,7 @@ Responde SOLO con el JSON.`,
       // slides, "un slide sí / uno no, empezando en la portada" YA cumple
       // las cuatro condiciones a la vez sin necesidad de negociarlas.
       const personaje = tema.personaje ? (i % 2 === 0 ? PERSONAJE_BARBARA : SIN_PERSONAJE) : "";
-      const url = genImagen(REGLA_TEXTO + "\n\n" + tema.template + contador + (personaje ? "\n\n" + personaje : "") + "\n\n" + slides[i].prompt, i);
+      const url = await genImagen(REGLA_TEXTO + "\n\n" + tema.template + contador + (personaje ? "\n\n" + personaje : "") + "\n\n" + slides[i].prompt, i);
       let buf = Buffer.from(await (await fetch(url)).arrayBuffer());
       // El logo REAL se pega acá, no se le pide al modelo que lo dibuje (ver
       // el comentario junto a ZONA_LOGO_IZQ). tema.logo es null en las series

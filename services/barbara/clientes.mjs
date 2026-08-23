@@ -378,7 +378,7 @@ Responde SOLO con el JSON.`,
     const urls = [];
     for (let i = 0; i < clips.length; i++) {
       try {
-        urls.push(genVideo(clips[i].escena + "\n\n" + REGLA_TEXTO, Math.min(Math.max(clips[i].duracion || 5, 4), 6), i));
+        urls.push(await genVideo(clips[i].escena + "\n\n" + REGLA_TEXTO, Math.min(Math.max(clips[i].duracion || 5, 4), 6), i));
       } catch (e) {
         if (e.permanent) throw e;
         console.log(`[${negocio}] clip ${i + 1} falló:`, String(e).slice(0, 140));

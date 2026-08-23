@@ -165,7 +165,64 @@ parecido que la lista de 15 en texto plano dejaba pasar. El ángulo
 finalmente elegido fue sobre la fricción con las agencias, sin
 antecedente en el historial.
 
-### ⚠️ Bloqueo activo: Higgsfield sin autenticación
+## Higgsfield: del CLI con OAuth a la API con key estática
+
+**El problema de raíz.** El CLI (`higgsfield generate create …`) se
+autentica con OAuth: un `access_token` que caduca y un `refresh_token`
+que **rota en cada uso**. Cada vez que la cadena se corta, alguien tiene
+que volver a loguearse por navegador. Pasó el 29-jun, el 22-ago y otra
+vez el 23-ago, dejando a Bárbara muda días enteros. Con decenas de
+clientes eso deja de ser un incidente y pasa a ser el trabajo fijo de
+alguien.
+
+**La solución.** Higgsfield tiene una **API oficial** en
+`https://platform.higgsfield.ai` con credenciales **estáticas** —
+`Authorization: Key {id}:{secret}` — que no caducan ni rotan. Verificado
+el 23-ago-2026 contra su OpenAPI y contra el endpoint en vivo (devuelve
+401 con clave falsa, o sea el formato es el correcto).
+
+Tiene los dos modelos que Bárbara ya usa:
+
+| Uso | CLI (antes) | API (ahora) |
+|---|---|---|
+| Carruseles | `nano_banana_2` | `POST /nano-banana` — acepta `4:5` y `png` |
+| UGC en video | `seedance1_5` | `POST /bytedance/seedance/v1/lite/text-to-video` — `9:16`, 720p |
+
+Es asíncrona: el POST devuelve un `request_id` y se consulta
+`/requests/{id}/status` hasta `completed`. Hay webhooks, pero no se usan
+— GitHub Actions no tiene dónde recibirlos y el job igual está esperando.
+
+**Costo**: no hay tarifa aparte. La API consume los mismos créditos del
+plan mensual (hoy Plus). No cambia lo que se paga.
+
+**Migración segura**: `higgsfield-api.mjs` no reemplaza al CLI por su
+cuenta. `genImagen`/`genVideo` prefieren la API **sólo si existen las
+credenciales**; si no, siguen con el CLI igual que hasta hoy. Se puede
+probar sin arriesgar lo que ya funciona.
+
+### Qué falta para activarla (una sola vez, y nunca más)
+
+1. Crear la key en https://cloud.higgsfield.ai (sección API).
+2. Verificarla sin gastar créditos:
+   ```
+   export HIGGSFIELD_API_KEY_ID=...
+   export HIGGSFIELD_API_KEY_SECRET=...
+   node services/barbara/api-check.mjs            # sólo valida
+   node services/barbara/api-check.mjs --generar  # genera 1 imagen real
+   ```
+3. Subirlas como secrets (los workflows ya las leen):
+   ```
+   gh secret set HIGGSFIELD_API_KEY_ID -R Team-condor-ai/condor-ai
+   gh secret set HIGGSFIELD_API_KEY_SECRET -R Team-condor-ai/condor-ai
+   ```
+
+Una vez hecho, se puede borrar todo el andamiaje de OAuth: el paso de
+autenticación del workflow, `hf-creds.enc`, `reauth.sh`, el secret
+`HF_CREDS_KEY` y el paso que re-cifra el token rotado. **No se borró
+todavía a propósito** — primero hay que ver la API funcionando en una
+corrida real.
+
+### ⚠️ Bloqueo activo (hasta que se haga lo de arriba): Higgsfield sin autenticación
 
 Desde el 22-ago-2026 por la tarde, **Bárbara no puede generar imágenes**:
 el token de Higgsfield murió ("Not authenticated"). No es un problema de
@@ -195,8 +252,9 @@ aviso de Telegram ya sale con estos pasos adentro.
   la base real; `tsc` y `vite build` limpios.
 
 **Pendiente, en orden de valor**
-1. **Re-autenticar Higgsfield** (ver bloqueo arriba). Bloquea todo lo
-   demás — sin esto no se genera ninguna imagen.
+1. **Crear la API key de Higgsfield** (ver arriba). Levanta a Bárbara y
+   además elimina para siempre el re-login manual. Es lo único que
+   bloquea todo lo demás.
 2. **La cuenta propia de Cóndor sigue sin pilares ni memoria propia.**
    Ya lee playbooks, pero el reparto de series sigue fijo en código y no
    tiene `barbara_reglas` ni aprende de las correcciones del equipo.
