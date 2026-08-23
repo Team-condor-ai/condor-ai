@@ -31,5 +31,18 @@ jobs:
             echo "Sin cambios esta semana"
           else
             git commit -m "chore: noticias IA semanal ($(date +%Y-%m-%d))"
-            for n in 1 2 3; do git pull --rebase origin main && git push && break || sleep 5; done
+            OK=0
+            for n in 1 2 3; do
+              if git pull --rebase origin main && git push; then OK=1; break; fi
+              sleep 5
+            done
+            # EL BUG QUE ROMPIO A BARBARA EL 22-AGO: antes esto era un bucle que
+            # al agotar los 3 intentos terminaba con exit 0. El job quedaba en
+            # verde mientras el token recien rotado se perdia — y como el
+            # refresh_token de Higgsfield ROTA EN CADA USO, el viejo ya estaba
+            # muerto. La cadena se cortaba para siempre, en silencio.
+            if [ "$OK" != "1" ]; then
+              echo "::error::No se pudo guardar el estado tras 3 intentos. Si el token de Higgsfield roto en esta corrida, la cadena quedo ROTA: hay que re-loguear (higgsfield auth login + bash services/barbara/reauth.sh)."
+              exit 1
+            fi
           fi
