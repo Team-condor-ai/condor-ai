@@ -165,6 +165,12 @@ test("verificarCredenciales distingue clave mala de request inexistente", async 
   // 404 significa que la auth pasó y sólo no existe esa request.
   const buenas = fetchFalso({ __default: { status: 404, body: {} } });
   assert.equal((await verificarCredenciales({ env: ENV, fetchFn: buenas })).ok, true);
+
+  // Y 403 (sin saldo) TAMBIEN prueba que la credencial sirve. Es el caso real
+  // de la cuenta al 23-ago-2026 y confundirlo con "clave mala" mandaria a
+  // revisar la key en vez de a cargar creditos.
+  const sinSaldo = fetchFalso({ __default: { status: 403, body: { detail: "not_enough_credits" } } });
+  assert.equal((await verificarCredenciales({ env: ENV, fetchFn: sinSaldo })).ok, true);
 });
 
 test("sin credenciales falla diciendo qué variables faltan", async () => {
@@ -172,4 +178,84 @@ test("sin credenciales falla diciendo qué variables faltan", async () => {
     () => generarImagen("x", { env: {}, fetchFn: fetchFalso({}) }),
     /HIGGSFIELD_API_KEY_ID/,
   );
+});
+
+/* Mapeo real del 23-ago-2026: nano-banana y seedance dan 404 en esta cuenta,
+   mientras soul/* da 403 (existe, falta saldo). De ahí que el modelo sea
+   configurable y que cada código se traduzca a un remedio distinto. */
+
+test("el modelo de imagen es configurable por entorno", async () => {
+  const f = fetchFalso({
+    "/higgsfield-ai/soul/standard": { body: { request_id: "r1", status: "queued" } },
+    "/requests/r1/status": { body: { status: "completed", images: [{ url: "https://x/s.png" }] } },
+  });
+  const url = await generarImagen("x", {
+    env: { ...ENV, HIGGSFIELD_MODELO_IMAGEN: "soul" }, fetchFn: f, dormir: sinDormir,
+  });
+  assert.equal(url, "https://x/s.png");
+
+  const cuerpo = JSON.parse(f.llamadas[0].opt.body);
+  assert.equal(cuerpo.resolution, "1080p", "soul pide resolución en 720p/1080p, no 2K");
+  assert.equal(cuerpo.output_format, undefined, "soul NO acepta output_format");
+  // 3:4 y no 4:5: soul rechaza 4:5 con 422 aunque el OpenAPI diga lo
+  // contrario. Lo cubre en detalle el test del fallback de ratio.
+  assert.equal(cuerpo.aspect_ratio, "3:4");
+});
+
+test("un modelo inventado falla nombrando las opciones válidas", async () => {
+  await assert.rejects(
+    () => generarImagen("x", { env: { ...ENV, HIGGSFIELD_MODELO_IMAGEN: "no-existe" }, fetchFn: fetchFalso({}) }),
+    (e) => /no existe/.test(e.message) && /nano-banana/.test(e.message) && /soul/.test(e.message),
+  );
+});
+
+test("404 model_not_found explica que hay que cambiar de modelo, no reintentar", async () => {
+  const f = fetchFalso({ "/nano-banana": { status: 404, body: { detail: "model_not_found" } } });
+  await assert.rejects(
+    () => generarImagen("x", { env: ENV, fetchFn: f, dormir: sinDormir }),
+    (e) => e.permanent === true && /NO está habilitado/.test(e.message) && /HIGGSFIELD_MODELO_IMAGEN/.test(e.message),
+  );
+});
+
+test("403 not_enough_credits avisa que los créditos de API son APARTE del plan", async () => {
+  // Es la confusión cara: el plan mensual de higgsfield.ai tiene créditos y la
+  // plataforma de API tiene los suyos. Verificado en vivo el 23-ago-2026.
+  const f = fetchFalso({ "/nano-banana": { status: 403, body: { detail: "not_enough_credits" } } });
+  await assert.rejects(
+    () => generarImagen("x", { env: ENV, fetchFn: f, dormir: sinDormir }),
+    (e) => /APARTE/.test(e.message) && /cloud\.higgsfield\.ai/.test(e.message),
+  );
+});
+
+test("el modelo de video también es configurable", async () => {
+  const f = fetchFalso({
+    "/kling-video/v2.5-turbo/pro/text-to-video": { body: { request_id: "v1", status: "queued" } },
+    "/requests/v1/status": { body: { status: "completed", video: { url: "https://x/k.mp4" } } },
+  });
+  const url = await generarVideo("x", {
+    env: { ...ENV, HIGGSFIELD_MODELO_VIDEO: "kling" }, fetchFn: f, dormir: sinDormir,
+  });
+  assert.equal(url, "https://x/k.mp4");
+});
+
+test("si el modelo no acepta 4:5 cae al vertical más parecido", async () => {
+  // El OpenAPI dice que soul acepta 4:5; la API real lo rechaza con 422.
+  // Degradar a 3:4 es preferible a fallar: Instagram acepta los dos.
+  const f = fetchFalso({
+    "/higgsfield-ai/soul/standard": { body: { request_id: "r1", status: "queued" } },
+    "/requests/r1/status": { body: { status: "completed", images: [{ url: "https://x/s.png" }] } },
+  });
+  await generarImagen("x", {
+    env: { ...ENV, HIGGSFIELD_MODELO_IMAGEN: "soul" }, fetchFn: f, dormir: sinDormir,
+  });
+  assert.equal(JSON.parse(f.llamadas[0].opt.body).aspect_ratio, "3:4");
+});
+
+test("nano-banana conserva 4:5 porque sí lo acepta", async () => {
+  const f = fetchFalso({
+    "/nano-banana": { body: { request_id: "r1", status: "queued" } },
+    "/requests/r1/status": { body: { status: "completed", images: [{ url: "https://x/i.png" }] } },
+  });
+  await generarImagen("x", { env: ENV, fetchFn: f, dormir: sinDormir });
+  assert.equal(JSON.parse(f.llamadas[0].opt.body).aspect_ratio, "4:5");
 });

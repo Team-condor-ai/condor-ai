@@ -41,6 +41,72 @@
 
 const BASE = "https://platform.higgsfield.ai";
 
+/**
+ * QUÉ MODELOS TIENE DE VERDAD LA CUENTA (mapeado el 23-ago-2026)
+ * ---------------------------------------------------------------------------
+ * Se probaron los 48 endpoints del OpenAPI con la key real. La API distingue
+ * tres cosas con códigos distintos, y conviene saber leerlos:
+ *
+ *   404 model_not_found    → el modelo NO está habilitado en esta cuenta
+ *   403 not_enough_credits → el modelo SÍ está, falta saldo de API
+ *   423 model_blocked      → bloqueado (reve/*)
+ *   400/422                → está disponible; sólo faltaban parámetros
+ *
+ * El hallazgo incómodo: `nano-banana` y `bytedance/seedance/*`, que son
+ * justo los dos que usa Bárbara por el CLI, dan 404 — no están habilitados
+ * por API en esta cuenta. Sí están los modelos propios de Higgsfield
+ * (`soul/*`, `dop/*`, `popcorn`) y varios de video (kling, minimax, wan).
+ *
+ * Por eso el modelo es CONFIGURABLE en vez de estar fijo: según cómo se
+ * resuelva (habilitar nano-banana con soporte, o migrar a soul), se cambia
+ * una variable de entorno y no el código.
+ */
+/**
+ * ⚠️ El OpenAPI publicado NO es confiable para los enums. Dice que
+ * `soul/standard` acepta `4:5`, y la API real lo rechaza con 422: sólo admite
+ * 9:16, 16:9, 4:3, 3:4, 1:1, 2:3 y 3:2. Comprobado en vivo el 23-ago-2026.
+ * Por eso cada modelo declara los aspect ratios que de verdad acepta y hay una
+ * traducción explícita — descubrirlo en producción costaría una corrida entera.
+ */
+export const MODELOS_IMAGEN = {
+  "nano-banana": {
+    ruta: "/nano-banana",
+    soportaFormato: true,
+    ratios: ["auto", "1:1", "4:3", "3:4", "3:2", "2:3", "5:4", "4:5", "16:9", "9:16", "21:9"],
+  },
+  soul: {
+    ruta: "/higgsfield-ai/soul/standard",
+    soportaFormato: false,
+    // El OpenAPI dice 2K/4K; la API real sólo acepta 720p/1080p (422 con 2K).
+    resolucion: "1080p",
+    ratios: ["9:16", "16:9", "4:3", "3:4", "1:1", "2:3", "3:2"],
+  },
+};
+
+/* Si el modelo no acepta el ratio pedido, se cae al vertical más parecido que
+   sí acepte, en orden de cercanía. 4:5 (0.80) → 3:4 (0.75) → 2:3 (0.67).
+   Instagram acepta los tres en carrusel, así que degradar es preferible a
+   fallar. */
+const EQUIVALENTES = { "4:5": ["3:4", "2:3", "9:16"], "3:4": ["4:5", "2:3"], "9:16": ["2:3", "3:4"] };
+
+function ratioSoportado(modelo, pedido) {
+  if (!modelo.ratios || modelo.ratios.includes(pedido)) return pedido;
+  const alternativa = (EQUIVALENTES[pedido] || []).find((r) => modelo.ratios.includes(r));
+  if (!alternativa) {
+    throw new Error(
+      `El modelo no acepta aspect_ratio "${pedido}" ni un equivalente. Acepta: ${modelo.ratios.join(", ")}`
+    );
+  }
+  console.log(`   (este modelo no acepta ${pedido}; se usa ${alternativa})`);
+  return alternativa;
+}
+
+export const MODELOS_VIDEO = {
+  seedance: { ruta: "/bytedance/seedance/v1/lite/text-to-video" },
+  kling: { ruta: "/kling-video/v2.5-turbo/pro/text-to-video" },
+  minimax: { ruta: "/minimax/hailuo-2.3/standard/text-to-video" },
+};
+
 /* Estados terminales según el OpenAPI. `nsfw` es un rechazo del filtro de
    contenido: es definitivo, reintentarlo sólo quema créditos. */
 const TERMINALES = new Set(["completed", "failed", "canceled", "nsfw"]);
@@ -70,11 +136,30 @@ async function pedir(ruta, { metodo = "GET", cuerpo = null, env = process.env, f
 
   const texto = await r.text();
   if (!r.ok) {
-    // 401/403 son de credenciales: no son transitorios y reintentar sólo
-    // quema tiempo. Se marcan `permanent` con la misma convención que ya usa
+    // Los errores de configuración de cuenta no son transitorios: reintentar
+    // sólo quema tiempo. Se marcan `permanent`, misma convención que ya usa
     // genImagen del CLI, para que el llamador aborte el run entero.
-    const err = new Error(`Higgsfield API ${metodo} ${ruta}: ${r.status} ${texto.slice(0, 200)}`);
-    if (r.status === 401 || r.status === 403) err.permanent = true;
+    //
+    // Cada código dice algo distinto y el arreglo es distinto para cada uno,
+    // así que el mensaje lo traduce en vez de dejar el JSON crudo.
+    let pista = "";
+    if (r.status === 401) pista = " · las credenciales no sirven (revisá KEY_ID y KEY_SECRET).";
+    else if (r.status === 403 && /credit/i.test(texto)) {
+      pista = " · la cuenta de API no tiene saldo. OJO: los créditos de la API son " +
+        "APARTE de los del plan mensual de higgsfield.ai — hay que cargarlos en cloud.higgsfield.ai.";
+    } else if (r.status === 404 && /model_not_found/.test(texto)) {
+      pista = ` · el modelo de esa ruta NO está habilitado en esta cuenta de API. ` +
+        `Probá otro con HIGGSFIELD_MODELO_IMAGEN/HIGGSFIELD_MODELO_VIDEO ` +
+        `(opciones: ${Object.keys(MODELOS_IMAGEN).join(", ")} / ${Object.keys(MODELOS_VIDEO).join(", ")}), ` +
+        `o pedile a soporte de Higgsfield que lo habiliten.`;
+    } else if (r.status === 423) pista = " · el modelo está bloqueado para esta cuenta.";
+
+    const err = new Error(`Higgsfield API ${metodo} ${ruta}: ${r.status} ${texto.slice(0, 200)}${pista}`);
+    if ([401, 403, 404, 423].includes(r.status)) err.permanent = true;
+    // El status va aparte de `permanent` porque no todo error permanente es
+    // de credenciales: un 404 puede ser "ese modelo no está" o simplemente
+    // "esa request no existe", y verificarCredenciales necesita distinguirlo.
+    err.status = r.status;
     throw err;
   }
   try {
@@ -134,13 +219,23 @@ export async function generarImagen(prompt, {
   fetchFn = fetch,
   ...opciones
 } = {}) {
-  const creada = await pedir("/nano-banana", {
+  const clave = env.HIGGSFIELD_MODELO_IMAGEN || "nano-banana";
+  const modelo = MODELOS_IMAGEN[clave];
+  if (!modelo) {
+    throw new Error(
+      `HIGGSFIELD_MODELO_IMAGEN="${clave}" no existe. Opciones: ${Object.keys(MODELOS_IMAGEN).join(", ")}`
+    );
+  }
+
+  const creada = await pedir(modelo.ruta, {
     metodo: "POST",
     cuerpo: {
       prompt,
-      aspect_ratio: aspectRatio,
-      output_format: formato,
+      aspect_ratio: ratioSoportado(modelo, aspectRatio),
       num_images: 1,
+      // soul no acepta output_format y sí pide resolución; nano-banana al revés.
+      ...(modelo.soportaFormato ? { output_format: formato } : {}),
+      ...(modelo.resolucion ? { resolution: modelo.resolucion } : {}),
     },
     env, fetchFn,
   });
@@ -166,7 +261,15 @@ export async function generarVideo(prompt, {
   fetchFn = fetch,
   ...opciones
 } = {}) {
-  const creada = await pedir("/bytedance/seedance/v1/lite/text-to-video", {
+  const clave = env.HIGGSFIELD_MODELO_VIDEO || "seedance";
+  const modelo = MODELOS_VIDEO[clave];
+  if (!modelo) {
+    throw new Error(
+      `HIGGSFIELD_MODELO_VIDEO="${clave}" no existe. Opciones: ${Object.keys(MODELOS_VIDEO).join(", ")}`
+    );
+  }
+
+  const creada = await pedir(modelo.ruta, {
     metodo: "POST",
     cuerpo: {
       prompt,
@@ -194,9 +297,10 @@ export async function verificarCredenciales({ env = process.env, fetchFn = fetch
     await pedir("/requests/00000000-0000-0000-0000-000000000000/status", { env, fetchFn });
     return { ok: true };
   } catch (e) {
-    // 401/403 = credenciales malas. Cualquier otro error (404 por el id falso,
-    // por ejemplo) significa que la autenticación SÍ pasó.
-    if (e.permanent) return { ok: false, motivo: "credenciales inválidas" };
+    // SÓLO 401 es "la clave no sirve". Un 403 ya es autenticación válida sin
+    // saldo, y un 404 es la request falsa que se pidió a propósito — los dos
+    // prueban que la credencial funciona.
+    if (e.status === 401) return { ok: false, motivo: "credenciales inválidas" };
     return { ok: true };
   }
 }
