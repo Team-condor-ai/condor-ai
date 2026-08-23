@@ -14,12 +14,15 @@ import { pegarLogoCondor, supabase } from "./motor.mjs";
 import { elegirAngulo } from "./angulos.mjs";
 import { apiDisponible, generarImagen as apiImagen } from "./higgsfield-api.mjs";
 import { playbooksPara, bloquePrompt as bloquePlaybooks } from "./playbooks.mjs";
+import { extraerCambios, instrucciones } from "./correccion.mjs";
 
 const AK = process.env.ANTHROPIC_API_KEY;
 const TG = process.env.TELEGRAM_BOT_TOKEN;
 const CHAT = process.env.TELEGRAM_CHAT_ID;
 const isTest = (process.env.DIA || "").trim().toLowerCase() === "test" || process.env.TEST === "1";
 const isRetry = process.env.RETRY === "1";
+// Lo que el equipo escribio despues de "Denuevo barbara" en Telegram.
+const CORRECCION = (process.env.CORRECCION || "").trim();
 
 const LOG = "services/barbara/content-log.json";
 const OUTBOX = process.env.BARBARA_OUTBOX_DIR;
@@ -169,10 +172,34 @@ const textOf = (d) => (d.content || []).filter((b) => b.type === "text").map((b)
 
 // ---- Memoria anti-repetición ----
 function leerLog() { try { return JSON.parse(readFileSync(LOG, "utf8")); } catch { return []; } }
+
+// Cuántas entradas guardan el PLAN completo (los slides, no sólo el ángulo).
+// Sin el plan no se puede corregir: hay que saber qué decía el titular del
+// slide 2 para poder acortarlo. Pero guardarlo en las 100 entradas infla el
+// archivo sin que nadie lo lea — una corrección siempre es sobre la última.
+const CON_CONTENIDO = 3;
+
 function guardarEnLog(entry) {
   const log = leerLog();
   log.push(entry);
-  writeFileSync(LOG, JSON.stringify(log.slice(-100), null, 2) + "\n"); // máximo 100 últimas
+  const recortado = log.slice(-100);
+  // Se despoja el plan de todas menos las últimas, en el momento de escribir.
+  for (let i = 0; i < recortado.length - CON_CONTENIDO; i++) delete recortado[i].contenido;
+  writeFileSync(LOG, JSON.stringify(recortado, null, 2) + "\n");
+}
+
+/** La última pieza del mismo tipo, con su plan, para poder corregirla. */
+function piezaAnteriorLocal(tipoActual) {
+  const log = leerLog();
+  for (let i = log.length - 1; i >= 0; i--) {
+    if (log[i].contenido && log[i].tipo === tipoActual) return log[i];
+  }
+  // Si no hay del mismo tipo, sirve la última con contenido: el equipo pudo
+  // haber forzado otra serie a mano y aun así querer corregir esa.
+  for (let i = log.length - 1; i >= 0; i--) {
+    if (log[i].contenido) return log[i];
+  }
+  return null;
 }
 
 const schema = {
@@ -316,26 +343,35 @@ async function main() {
   //
   // `claude` acá es (body) => …, y angulos.mjs espera (apiKey, body) porque
   // motor.mjs lo expone así. El adaptador evita tocar ninguna de las dos.
+  // En una CORRECCION dirigida no se elige angulo nuevo: el equipo pidio
+  // arreglar algo puntual de ESA pieza, y cambiarle el angulo seria
+  // exactamente el "rehacer en vez de corregir" que esto vino a resolver.
+  const esCorreccionDirigida = isRetry && Boolean(CORRECCION);
   const historial = log.map(e => e.angulo).filter(Boolean).slice(-80);
   let anguloElegido = null, avisoAngulo = "";
-  try {
-    const eleccion = await elegirAngulo((_k, body) => claude(body), AK, {
-      instruccion: tema.instruccion, research, historial,
-    });
-    anguloElegido = eleccion.angulo;
-    for (const d of eleccion.descartes) console.log(`ángulo descartado: se parecía a "${d.se_parece_a}" (${d.razon})`);
-    if (eleccion.agotado) {
-      // No se aborta: quedarse sin publicar es peor que publicar algo parecido.
-      // Pero el equipo tiene que enterarse, porque agotarse dos veces seguidas
-      // significa que la serie ya dio lo que tenía para dar.
-      avisoAngulo = "\n\n⚠️ *Ojo*: el juez de repetición descartó todos los ángulos propuestos. Se publicó el mejor disponible, pero esta serie está quedándose sin terreno nuevo.";
-      console.log("⚠️ ángulos agotados tras los reintentos — se sigue con el mejor disponible");
+
+  if (esCorreccionDirigida) {
+    console.log("corrección dirigida: se mantiene el ángulo de la pieza anterior");
+  } else {
+    try {
+      const eleccion = await elegirAngulo((_k, body) => claude(body), AK, {
+        instruccion: tema.instruccion, research, historial,
+      });
+      anguloElegido = eleccion.angulo;
+      for (const d of eleccion.descartes) console.log(`ángulo descartado: se parecía a "${d.se_parece_a}" (${d.razon})`);
+      if (eleccion.agotado) {
+        // No se aborta: quedarse sin publicar es peor que publicar algo parecido.
+        // Pero el equipo tiene que enterarse, porque agotarse dos veces seguidas
+        // significa que la serie ya dio lo que tenía para dar.
+        avisoAngulo = "\n\n⚠️ *Ojo*: el juez de repetición descartó todos los ángulos propuestos. Se publicó el mejor disponible, pero esta serie está quedándose sin terreno nuevo.";
+        console.log("⚠️ ángulos agotados tras los reintentos — se sigue con el mejor disponible");
+      }
+      if (anguloElegido) console.log("ángulo elegido:", anguloElegido.angulo);
+    } catch (e) {
+      // Si el juez falla (red, JSON raro), se sigue con el comportamiento viejo:
+      // el director elige el ángulo solo. Peor, pero publicable.
+      console.log("elección de ángulo falló, sigo sin ella:", String(e).slice(0, 140));
     }
-    if (anguloElegido) console.log("ángulo elegido:", anguloElegido.angulo);
-  } catch (e) {
-    // Si el juez falla (red, JSON raro), se sigue con el comportamiento viejo:
-    // el director elige el ángulo solo. Peor, pero publicable.
-    console.log("elección de ángulo falló, sigo sin ella:", String(e).slice(0, 140));
   }
 
   // 2c) MEMORIA FUNDACIONAL. Hasta acá la cuenta propia de Cóndor era el caso
@@ -355,8 +391,36 @@ async function main() {
     }
   }
 
+  // 2d) CORRECCIÓN DIRIGIDA. Si el equipo escribió "Denuevo barbara, <qué
+  // arreglar>", se corrige ESO y se deja el resto igual — en vez de rehacer la
+  // pieza entera y esperar que salga mejor de casualidad. Es el mismo salto
+  // que correccion.mjs ya había dado para los clientes; la cuenta propia de
+  // Cóndor se había quedado atrás.
+  let previaLocal = null, cambios = [];
+  if (isRetry && CORRECCION) {
+    try {
+      previaLocal = piezaAnteriorLocal(dia);
+      const r = await extraerCambios(AK, [CORRECCION], previaLocal);
+      cambios = r.cambios || [];
+      console.log(`corrección pedida: ${cambios.length} cambio(s)` +
+        (cambios.length ? " — " + cambios.map(c => c.que).join(", ") : " (no se entendió ninguno concreto)"));
+    } catch (e) {
+      console.log("no se pudo interpretar la corrección, sigo sin ella:", String(e).slice(0, 140));
+    }
+  }
+
   // 3) Director (lee memoria, innova)
-  const extra = isRetry ? "\n\n⚠️ ESTE ES UN REINTENTO: el contenido anterior fue rechazado por el equipo. Genera una versión CLARAMENTE MEJOR y distinta (mejor diseño, mejor texto, otro enfoque del mismo tema)." : "";
+  //
+  // Tres modos, de más preciso a menos: corrección dirigida con la lista de
+  // cambios; reintento a secas (rehacer, el comportamiento viejo); o pieza
+  // nueva.
+  const extra = cambios.length
+    ? instrucciones(cambios, previaLocal)
+    : isRetry
+      ? "\n\n⚠️ ESTE ES UN REINTENTO: el contenido anterior fue rechazado por el equipo." +
+        (CORRECCION ? ` Pidieron esto: "${CORRECCION}". Aplícalo.` : "") +
+        " Genera una versión CLARAMENTE MEJOR y distinta (mejor diseño, mejor texto, otro enfoque del mismo tema)."
+      : "";
   const anguloFijado = anguloElegido
     ? `\n\nÁNGULO YA ELEGIDO (no lo cambies, desarróllalo):\n"${anguloElegido.angulo}"\nQué lo hace distinto: ${anguloElegido.por_que_es_distinto}\nEn el campo "angulo" del JSON devuelve exactamente este ángulo.`
     : "";
@@ -453,7 +517,9 @@ Responde SOLO con el JSON.`,
   // obligaba a pedírselo a alguien que supiera dónde tocar.
   const comoCorregir = [
     "🔁 *Para rehacerlo o corregir*",
-    "• Rehacer entero: escribe *Denuevo barbara*",
+    "• Corregir algo puntual: *Denuevo barbara, <qué arreglar>*",
+    "   ej: _Denuevo barbara, el titular del slide 2 muy largo_ → cambia solo eso",
+    "• Rehacer entero: escribe *Denuevo barbara* (sin explicación)",
     "• Aprobar y publicar: escribe *Aprobar barbara*",
     "",
     "Para algo puntual, corre el workflow _Barbara_ a mano con:",
@@ -475,7 +541,13 @@ Responde SOLO con el JSON.`,
   });
 
   // 7) Registrar en memoria (anti-repetición + artefacto aprobable)
-  guardarEnLog({ fecha: new Date().toISOString().slice(0, 10), tipo: dia, serie: claveSerie, angulo: plan.angulo || slides[0]?.titulo || "", titulo: tema.titulo, runId });
+  guardarEnLog({
+    fecha: new Date().toISOString().slice(0, 10), tipo: dia, serie: claveSerie,
+    angulo: plan.angulo || slides[0]?.titulo || "", titulo: tema.titulo, runId,
+    // El plan completo, para que la proxima correccion tenga QUE corregir.
+    // Solo sobrevive en las ultimas entradas (ver CON_CONTENIDO).
+    contenido: { slides, caption: plan.caption || "" },
+  });
   console.log("OK", dia, "|", claveSerie, "| ángulo:", plan.angulo);
 }
 

@@ -14,6 +14,10 @@ on:
         description: 'poner 1 para reintento (mejora el contenido)'
         required: false
         default: ''
+      correccion:
+        description: 'qué corregir de la pieza anterior (lo llena el bot de Telegram)'
+        required: false
+        default: ''
       serie:
         description: 'forzar serie (vacío = la que toca por rotación)'
         required: false
@@ -107,6 +111,7 @@ jobs:
           DIA: ${{ github.event.inputs.dia }}
           RETRY: ${{ github.event.inputs.retry }}
           SERIE: ${{ github.event.inputs.serie }}
+          CORRECCION: ${{ github.event.inputs.correccion }}
           BARBARA_OUTBOX_DIR: barbara-outbox
           # Opcionales: sólo se usan para leer los playbooks (memoria
           # fundacional). Si faltan, barbara.mjs corre igual sin ellos.
