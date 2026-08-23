@@ -76,9 +76,13 @@ jobs:
           # el 2026-06-29 con "No workspace selected". Lo seleccionamos de forma
           # auto-reparable: ID conocido y, si no, el primero de la cuenta del bot.
           # Al cambiar credentials.json, el paso de persistencia lo re-cifra en hf-creds.enc.
-          # Best-effort (nunca falla el job): 0.2.x NO exige workspace; sólo lo necesita
-          # la serie 1.x. Si el día de mañana se sube de versión, esto ya lo deja listo.
-          WS_ID="${HF_WORKSPACE_ID:-a2878df7-43e1-4685-acca-5be527026fc2}"
+          # YA NO es best-effort: desde que CI usa la serie 1.x, el workspace es
+          # OBLIGATORIO. El 23-ago-2026 la corrida fallo slide por slide con
+          # workspace_membership_required porque el ID hardcodeado era el de la
+          # cuenta VIEJA de Higgsfield (migrada el 22-ago) y este paso se lo
+          # tragaba en silencio con un "Aviso:". Si no se puede seleccionar, el
+          # job tiene que morir aca y no 15 minutos despues quemando reintentos.
+          WS_ID="${HF_WORKSPACE_ID:-a269a272-1e58-4b90-b117-0419c44b475c}"
           if higgsfield workspace set "$WS_ID" >/dev/null 2>&1; then
             echo "Workspace seleccionado: $WS_ID"
           else
@@ -86,7 +90,8 @@ jobs:
             if [ -n "$WS_ID" ] && higgsfield workspace set "$WS_ID" >/dev/null 2>&1; then
               echo "Workspace auto-seleccionado: $WS_ID"
             else
-              echo "Aviso: no se seleccionó workspace (ok en CLI 0.2.x, que no lo requiere)."
+              echo "::error::No se pudo seleccionar workspace en Higgsfield. Con el CLI 1.x es obligatorio: sin esto toda generación falla con workspace_membership_required. Revisá el secret HIGGSFIELD_WORKSPACE_ID contra: higgsfield workspace list"
+              exit 1
             fi
           fi
       - name: Generar carrusel y enviar a Telegram

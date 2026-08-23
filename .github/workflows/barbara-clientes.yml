@@ -59,8 +59,13 @@ jobs:
             printf '{"access_token":"%s","refresh_token":"%s"}' "$HF_ACCESS" "$HF_REFRESH" > ~/.config/higgsfield/credentials.json
           fi
           sha256sum ~/.config/higgsfield/credentials.json | awk '{print $1}' > /tmp/hf_before.sha
-          WS_ID="${HF_WORKSPACE_ID:-a2878df7-43e1-4685-acca-5be527026fc2}"
-          higgsfield workspace set "$WS_ID" >/dev/null 2>&1 || echo "Aviso: no se seleccionó workspace (ok en CLI 0.2.x)."
+          WS_ID="${HF_WORKSPACE_ID:-a269a272-1e58-4b90-b117-0419c44b475c}"
+          # Obligatorio desde que CI usa la serie 1.x del CLI: sin workspace,
+          # cada generación muere con workspace_membership_required.
+          if ! higgsfield workspace set "$WS_ID" >/dev/null 2>&1; then
+            echo "::error::No se pudo seleccionar workspace en Higgsfield. Revisá el secret HIGGSFIELD_WORKSPACE_ID contra: higgsfield workspace list"
+            exit 1
+          fi
       - name: Generar contenido de clientes activos
         run: node services/barbara/clientes.mjs
         env:
