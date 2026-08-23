@@ -139,6 +139,51 @@ export async function pegarLogoCondor(buf, posicion = "izquierda") {
   ]).png().toBuffer();
 }
 
+// ── El personaje Bárbara, pegado como archivo — nunca dibujado ─────────────
+//
+// Corregido 23-ago-2026, y es EXACTAMENTE el mismo aprendizaje que costó el
+// logo un día antes: a un modelo de imagen no se le puede pedir que dibuje
+// siempre el mismo personaje. Se le describía "a young Latin American woman…
+// warm cream/ivory skin" y devolvía una Bárbara distinta cada vez, con la piel
+// tostada — el descriptor regional pesa más que el adjetivo de color, y encima
+// la cara, el trazo y las proporciones cambiaban entre slides.
+//
+// Joaquín mandó los 3 assets reales del personaje. Ahora se pegan tal cual,
+// así que la Bárbara de un carrusel es pixel por pixel la misma que la del
+// carrusel de la semana pasada.
+//
+// Las 3 poses cubren el pedido original de "jugar con la animación": varía la
+// pose, no el personaje.
+const POSES_BARBARA = [
+  ASSETS + "barbara-retrato.png",   // sólo la cara
+  ASSETS + "barbara-brazos.png",    // brazos cruzados
+  ASSETS + "barbara-carpeta.png",   // con carpeta
+];
+
+/**
+ * Compone a Bárbara sobre la imagen que devolvió Higgsfield.
+ *
+ * `indice` elige la pose de forma determinista (no al azar): dos slides
+ * seguidos del mismo carrusel no deben repetir pose, y una corrida repetida
+ * tiene que dar el mismo resultado para que sea reproducible.
+ */
+export async function pegarPersonajeBarbara(buf, indice = 0) {
+  const base = sharp(buf);
+  const meta = await base.metadata();
+  const W = meta.width, H = meta.height;
+
+  // Un quinto del ancho, centrado — la misma proporción y posición que ya
+  // ocupaba el personaje dibujado en las piezas que Joaquín aprobó.
+  const lado = Math.round(W * 0.30);
+  const left = Math.round((W - lado) / 2);
+  const top = Math.round((H - lado) / 2);
+
+  const pose = POSES_BARBARA[Math.abs(indice) % POSES_BARBARA.length];
+  const personaje = await sharp(pose).resize(lado, lado, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } }).toBuffer();
+
+  return base.composite([{ input: personaje, left, top }]).png().toBuffer();
+}
+
 // ---- Higgsfield: generar imagen y devolver URL (mismo patrón de reintentos
 // que barbara.mjs — 3 intentos, aborta de inmediato si el error es de
 // auth/config en vez de transitorio) ----

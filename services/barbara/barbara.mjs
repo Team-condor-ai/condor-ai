@@ -10,7 +10,7 @@
 
 import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
-import { pegarLogoCondor, supabase } from "./motor.mjs";
+import { pegarLogoCondor, pegarPersonajeBarbara, supabase } from "./motor.mjs";
 import { elegirAngulo } from "./angulos.mjs";
 import { apiDisponible, generarImagen as apiImagen } from "./higgsfield-api.mjs";
 import { playbooksPara, bloquePrompt as bloquePlaybooks } from "./playbooks.mjs";
@@ -66,12 +66,16 @@ const ZONA_LOGO_CENTRO = "Top area, centred, about one-third of the frame's widt
 // referencia aprobada de noticias/servicios nunca la mostró, y meterla ahí
 // contradiría ese diseño ya aprobado.
 //
-// A diferencia del logo, ACÁ sí se le describe al modelo en vez de pegar un
-// archivo fijo: Joaquín pidió variar la pose entre slides ("jugar con la
-// animación... dif variantes"), que es lo opuesto de lo que hacía falta para
-// el logo. Lo que tiene que sostenerse igual es el estilo — pelo, paleta,
-// trazo — no la pose.
-const PERSONAJE_BARBARA = `This slide REPLACES the template's usual middle icon with Bárbara the mascot instead — same position, same role in the layout, nothing else changes. In a circular badge crop, roughly one-fifth of the frame's width: pure black circle background, thin lime ${LIMA} ring border, one or two small four-point lime sparkle accents floating near the top-right of her hair. Flat vector illustration style with clean thin black outlines (NOT photorealistic, NOT 3D): a young woman with VERY FAIR, PALE PORCELAIN SKIN — her skin fill must be an almost-white cool ivory (around #F7EDE6). CRITICAL: her skin must NOT be tan, NOT golden, NOT beige, NOT olive, NOT bronzed and NOT any warm medium tone; it is clearly pale, the lightest element of her face. She has a short black bob haircut with full blunt bangs, minimal friendly facial features with a soft closed-mouth smile, and wears a cream blazer over a black top. Vary her pose across different generations — a plain friendly headshot, arms crossed confidently, or holding a black folder with a lime accent edge — but always keep this exact hairstyle, this exact pale skin tone, this exact palette (black / cream / lime) and this exact flat-illustration linework identical, as if it were the same reusable character asset.`;
+// Ya NO se le pide al modelo que dibuje a Bárbara — sólo que deje el espacio
+// limpio. El archivo real se pega encima después (ver pegarPersonajeBarbara en
+// motor.mjs). Es el mismo camino que el logo: describirla es justo lo que hacía
+// que saliera distinta —y con la piel tostada— en cada slide.
+//
+// La redacción evita a propósito la palabra "espacio limpio" a secas: con el
+// logo, "solid-colour safe zone" hizo que el modelo dibujara una CAJA real ahí.
+// Por eso se insiste en continuidad exacta con el fondo y se prohíbe cualquier
+// forma.
+const PERSONAJE_BARBARA = `IMPORTANT — reserved circular area: leave a perfectly EMPTY circular region centred in the middle of the frame, about 30% of the frame's width. That circle must look EXACTLY like the rest of the background — same colour, same texture, same gradient, perfectly continuous with everything around it. Do NOT draw a circle, ring, badge, card, panel or any shape there. Do NOT draw a person, character, mascot, face, avatar or portrait anywhere in this slide. Do NOT place text or icons in that central area. A real character illustration gets composited on top of that untouched background afterward — any visible circle, outline or colour shift there is a mistake. Compose the rest of the slide (headline, stats, footer) so nothing important falls inside that central circle.`;
 
 const SIN_PERSONAJE = "Do NOT include Bárbara, any illustrated character, mascot or human figure anywhere in this slide — icons and typography only.";
 
@@ -487,13 +491,18 @@ Responde SOLO con el JSON.`,
       // criterio del director. Pedido de Joaquín el 22-ago-2026 — con 6 o 7
       // slides, "un slide sí / uno no, empezando en la portada" YA cumple
       // las cuatro condiciones a la vez sin necesidad de negociarlas.
-      const personaje = tema.personaje ? (i % 2 === 0 ? PERSONAJE_BARBARA : SIN_PERSONAJE) : "";
+      const llevaPersonaje = Boolean(tema.personaje) && i % 2 === 0;
+      const personaje = tema.personaje ? (llevaPersonaje ? PERSONAJE_BARBARA : SIN_PERSONAJE) : "";
       const url = await genImagen(REGLA_TEXTO + "\n\n" + tema.template + contador + (personaje ? "\n\n" + personaje : "") + "\n\n" + slides[i].prompt, i);
       let buf = Buffer.from(await (await fetch(url)).arrayBuffer());
       // El logo REAL se pega acá, no se le pide al modelo que lo dibuje (ver
       // el comentario junto a ZONA_LOGO_IZQ). tema.logo es null en las series
       // cuya referencia aprobada no lleva logo en cada slide.
       if (tema.logo) buf = await pegarLogoCondor(buf, tema.logo);
+      // Y el personaje igual: archivo real encima del hueco que dejó el modelo.
+      // `i / 2` para que las poses roten de a una entre slides CON personaje
+      // (0, 2, 4 → retrato, brazos, carpeta) y no se repita dos veces seguidas.
+      if (llevaPersonaje) buf = await pegarPersonajeBarbara(buf, Math.floor(i / 2));
       imgs.push(buf);
     } catch (e) {
       if (e.permanent) throw e; // config/auth: no tiene sentido seguir con los demás slides
