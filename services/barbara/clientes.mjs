@@ -17,6 +17,7 @@
 import { tg, claude, textOf, genImagen, genVideo, unirClips, REGLA_TEXTO, REGLA_VERACIDAD, supabase } from "./motor.mjs";
 import { componerSlide, PLANTILLAS, PLANTILLA_POR_DEFECTO } from "./plantillas.mjs";
 import { piezaAnterior, leerPedido, extraerCambios, instrucciones, verificar, faltantes } from "./correccion.mjs";
+import { elegirAngulo } from "./angulos.mjs";
 
 const AK = process.env.ANTHROPIC_API_KEY;
 const TG_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
@@ -223,6 +224,49 @@ ${reglas}${patrones ? `
 LO QUE FUNCIONA EN GENERAL (patrones de rendimiento, no reglas de esta marca):
 ${patrones}` : ""}${extraRetry}`;
 
+  // ÁNGULO ELEGIDO ANTES DE GENERAR, con un juez semántico aparte.
+  //
+  // Las 15 piezas recientes que ya van en `contexto` siguen sirviendo de
+  // contexto, pero no alcanzan como única defensa: es el propio generador
+  // auto-vigilándose, sobre una ventana corta. Acá se compara contra el
+  // historial largo del cliente con una llamada cuyo único trabajo es
+  // comparar. Ver el encabezado de angulos.mjs.
+  //
+  // En un REINTENTO no se elige ángulo nuevo a propósito: el cliente pidió
+  // corregir algo puntual de ESA pieza, y cambiarle el ángulo sería
+  // justamente el "rehacer en vez de corregir" que correccion.mjs vino a
+  // arreglar.
+  let anguloFijado = "";
+  if (!isRetry) {
+    try {
+      const historialRaw = await db.get(
+        `barbara_memoria?barbara_cliente_id=eq.${barbaraId}&select=angulo&order=creado_en.desc&limit=80`
+      ).catch(() => []);
+      const historial = historialRaw.map(e => e.angulo).filter(Boolean);
+      const eleccion = await elegirAngulo(claude, AK, {
+        instruccion: `${TIPO} para "${negocio}" (rubro: ${rubro || "no especificado"}). ` +
+          `Tipo de contenido pedido: ${tipos}. Público: ${form.publico_objetivo || "no especificado"}.`,
+        historial,
+      });
+      for (const d of eleccion.descartes) {
+        console.log(`[${negocio}] ángulo descartado: se parecía a "${d.se_parece_a}" (${d.razon})`);
+      }
+      if (eleccion.agotado) {
+        console.log(`[${negocio}] ⚠️ el juez descartó todos los ángulos — se sigue con el mejor disponible.`);
+      }
+      if (eleccion.angulo) {
+        console.log(`[${negocio}] ángulo elegido: ${eleccion.angulo.angulo}`);
+        anguloFijado = `\n\nÁNGULO YA ELEGIDO (no lo cambies, desarróllalo):\n"${eleccion.angulo.angulo}"\n` +
+          `Qué lo hace distinto: ${eleccion.angulo.por_que_es_distinto}\n` +
+          `En el campo "angulo" del JSON devuelve exactamente este ángulo.`;
+      }
+    } catch (e) {
+      // Si el juez falla, se sigue con el comportamiento viejo: el director
+      // elige solo. Peor, pero publicable.
+      console.log(`[${negocio}] elección de ángulo falló, sigo sin ella:`, String(e).slice(0, 140));
+    }
+  }
+
   // VERIFICAR ANTES DE GASTAR. Se comprueba el PLAN (el JSON), no la pieza
   // compuesta, y por dos razones que importan en pesos y en paciencia:
   //
@@ -271,7 +315,7 @@ ${REGLA_VERACIDAD}
 
 Responde SOLO con el JSON.`,
       output_config: { format: { type: "json_schema", schema: schemaUGC } },
-      messages: [{ role: "user", content: `${contexto}${extra}\n\nCrea el UGC con un ángulo NUEVO, fiel a la marca.` }],
+      messages: [{ role: "user", content: `${contexto}${anguloFijado}${extra}\n\nCrea el UGC con un ángulo NUEVO, fiel a la marca.` }],
     })));
     plan_contenido = await pedirPlanUGC("");
     verificacion = await asegurarCorreccion(pedirPlanUGC, plan_contenido);
@@ -306,7 +350,7 @@ ${REGLA_VERACIDAD}
 
 Responde SOLO con el JSON.`,
       output_config: { format: { type: "json_schema", schema } },
-      messages: [{ role: "user", content: `${contexto}${extra}\n\nCrea ${TIPO === "historia" ? "la historia" : `el carrusel de ${nSlides} slides`} con un ángulo NUEVO, fiel a la marca.` }],
+      messages: [{ role: "user", content: `${contexto}${anguloFijado}${extra}\n\nCrea ${TIPO === "historia" ? "la historia" : `el carrusel de ${nSlides} slides`} con un ángulo NUEVO, fiel a la marca.` }],
     })));
     plan_contenido = await pedirPlanSlides("");
     verificacion = await asegurarCorreccion(pedirPlanSlides, plan_contenido);

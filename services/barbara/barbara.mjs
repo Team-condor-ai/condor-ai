@@ -11,6 +11,7 @@
 import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { pegarLogoCondor } from "./motor.mjs";
+import { elegirAngulo } from "./angulos.mjs";
 
 const AK = process.env.ANTHROPIC_API_KEY;
 const TG = process.env.TELEGRAM_BOT_TOKEN;
@@ -294,8 +295,44 @@ async function main() {
   const log = leerLog();
   const recientes = log.slice(-15).map(e => `- [${e.fecha} ${e.serie || e.tipo}] ${e.angulo}`).join("\n") || "(sin historial)";
 
+  // 2b) ÁNGULO: se elige ANTES de generar, con un juez semántico aparte.
+  //
+  // La línea "no repitas, acá van las últimas 15" que ya iba en el prompt del
+  // director se queda (sirve de contexto), pero no puede ser la única defensa:
+  // es el propio generador auto-vigilándose, y la ventana de 15 piezas se
+  // agota en cinco semanas a 3 carruseles por semana. Acá se compara contra
+  // el historial LARGO y con una llamada cuyo único trabajo es comparar.
+  // Ver el encabezado de angulos.mjs.
+  //
+  // `claude` acá es (body) => …, y angulos.mjs espera (apiKey, body) porque
+  // motor.mjs lo expone así. El adaptador evita tocar ninguna de las dos.
+  const historial = log.map(e => e.angulo).filter(Boolean).slice(-80);
+  let anguloElegido = null, avisoAngulo = "";
+  try {
+    const eleccion = await elegirAngulo((_k, body) => claude(body), AK, {
+      instruccion: tema.instruccion, research, historial,
+    });
+    anguloElegido = eleccion.angulo;
+    for (const d of eleccion.descartes) console.log(`ángulo descartado: se parecía a "${d.se_parece_a}" (${d.razon})`);
+    if (eleccion.agotado) {
+      // No se aborta: quedarse sin publicar es peor que publicar algo parecido.
+      // Pero el equipo tiene que enterarse, porque agotarse dos veces seguidas
+      // significa que la serie ya dio lo que tenía para dar.
+      avisoAngulo = "\n\n⚠️ *Ojo*: el juez de repetición descartó todos los ángulos propuestos. Se publicó el mejor disponible, pero esta serie está quedándose sin terreno nuevo.";
+      console.log("⚠️ ángulos agotados tras los reintentos — se sigue con el mejor disponible");
+    }
+    if (anguloElegido) console.log("ángulo elegido:", anguloElegido.angulo);
+  } catch (e) {
+    // Si el juez falla (red, JSON raro), se sigue con el comportamiento viejo:
+    // el director elige el ángulo solo. Peor, pero publicable.
+    console.log("elección de ángulo falló, sigo sin ella:", String(e).slice(0, 140));
+  }
+
   // 3) Director (lee memoria, innova)
   const extra = isRetry ? "\n\n⚠️ ESTE ES UN REINTENTO: el contenido anterior fue rechazado por el equipo. Genera una versión CLARAMENTE MEJOR y distinta (mejor diseño, mejor texto, otro enfoque del mismo tema)." : "";
+  const anguloFijado = anguloElegido
+    ? `\n\nÁNGULO YA ELEGIDO (no lo cambies, desarróllalo):\n"${anguloElegido.angulo}"\nQué lo hace distinto: ${anguloElegido.por_que_es_distinto}\nEn el campo "angulo" del JSON devuelve exactamente este ángulo.`
+    : "";
   const dir = await claude({
     model: "claude-sonnet-5", max_tokens: 8000,
     system: `Eres Barbara, directora creativa de condor.ai. Diseñas carruseles de Instagram (${N_SLIDES} slides) de nivel agencia, educativos y que hacen seguir la cuenta. Sigues EXACTAMENTE el template del día. Incluyes el texto exacto a renderizar en cada slide COMO COPY FINAL: en la imagen SOLO aparece lo que lee la persona, JAMÁS palabras estructurales como "titular", "subtítulo", "título", "dato", "texto", "slide" o "CTA", ni rótulos con dos puntos. NUNCA repites ángulos, protagonistas ni textos de las piezas recientes (te las paso). Innova siempre.
@@ -304,7 +341,7 @@ REGLA DE VERACIDAD (no negociable): cada cifra, fecha, medio y hecho que pongas 
 
 Responde SOLO con el JSON.`,
     output_config: { format: { type: "json_schema", schema } },
-    messages: [{ role: "user", content: `Tipo de hoy (${dia}): ${tema.instruccion}\n\nTEMPLATE OBLIGATORIO:\n${tema.template}\n\nPIEZAS RECIENTES (NO repitas estos ángulos, innova):\n${recientes}\n${research ? "\nInvestigación web:\n" + research : ""}${extra}\n\nCrea el carrusel de ${N_SLIDES} slides con un ángulo NUEVO.` }],
+    messages: [{ role: "user", content: `Tipo de hoy (${dia}): ${tema.instruccion}\n\nTEMPLATE OBLIGATORIO:\n${tema.template}\n\nPIEZAS RECIENTES (NO repitas estos ángulos, innova):\n${recientes}\n${research ? "\nInvestigación web:\n" + research : ""}${anguloFijado}${extra}\n\nCrea el carrusel de ${N_SLIDES} slides con un ángulo NUEVO.` }],
   });
   // Si el modelo se queda sin tokens, el JSON llega cortado y JSON.parse tira
   // un "Unterminated string in JSON at position N" que no dice nada de la
@@ -406,7 +443,7 @@ Responde SOLO con el JSON.`,
     text: `🤖 *Barbara* — ${tema.titulo}\n` +
           `Serie: \`${claveSerie}\` · ${imgs.length} slides · ID: \`${runId}\`\n` +
           `🎯 Ángulo: _${plan.angulo || "—"}_\n\n` +
-          `📝 *Caption:*\n\n${plan.caption || ""}\n\n${comoCorregir}`,
+          `📝 *Caption:*\n\n${plan.caption || ""}${avisoAngulo}\n\n${comoCorregir}`,
     parse_mode: "Markdown",
   });
 
