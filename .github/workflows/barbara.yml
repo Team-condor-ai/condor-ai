@@ -46,7 +46,14 @@ jobs:
         # PIN de versión a propósito: instalar @latest hacía que un release rompiente
         # (1.0.0, 27-jun-2026: workspace obligatorio + nuevo auth flow) tumbara a Barbara
         # sola. Subir de versión debe ser un cambio deliberado, no automático.
-        run: npm install -g @higgsfield/cli@0.2.3
+        #
+        # Subido de 0.2.3 a 1.1.23 el 23-ago-2026, y esta vez SÍ era obligatorio:
+        # el re-login del 23-ago se hizo con la 1.1.23 y escribió un
+        # credentials.json con `auth_version: 2` — otro formato (access_token de
+        # 36 chars, refresh de 48, más expires_at/token_type/scope). La 0.2.3 no
+        # lo entiende. El paso de abajo que selecciona workspace ya estaba
+        # preparado para la serie 1.x.
+        run: npm install -g @higgsfield/cli@1.1.23
       - name: Autenticar Higgsfield (descifrar credenciales rotadas)
         if: env.USA_API_HF != 'true'
         env:

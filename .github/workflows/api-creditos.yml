@@ -21,7 +21,7 @@ jobs:
         with:
           node-version: "22"
       - name: Instalar CLI de Higgsfield
-        run: npm install -g @higgsfield/cli@0.2.3
+        run: npm install -g @higgsfield/cli@1.1.23
       - name: Autenticar Higgsfield
         env:
           HF_CREDS_KEY: ${{ secrets.HF_CREDS_KEY }}

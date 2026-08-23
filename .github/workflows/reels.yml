@@ -45,7 +45,7 @@ jobs:
         # PIN de versión a propósito: instalar @latest hacía que un release rompiente
         # (1.0.0, 27-jun-2026: workspace obligatorio + nuevo auth flow) tumbara a Barbara
         # sola. Subir de versión debe ser un cambio deliberado, no automático.
-        run: npm install -g @higgsfield/cli@0.2.3
+        run: npm install -g @higgsfield/cli@1.1.23
       - name: Autenticar Higgsfield (descifrar credenciales rotadas)
         env:
           HF_CREDS_KEY: ${{ secrets.HF_CREDS_KEY }}
