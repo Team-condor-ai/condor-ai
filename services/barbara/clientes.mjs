@@ -18,6 +18,8 @@ import { tg, claude, textOf, genImagen, genVideo, unirClips, REGLA_TEXTO, REGLA_
 import { componerSlide, PLANTILLAS, PLANTILLA_POR_DEFECTO } from "./plantillas.mjs";
 import { piezaAnterior, leerPedido, extraerCambios, instrucciones, verificar, faltantes } from "./correccion.mjs";
 import { elegirAngulo } from "./angulos.mjs";
+import { playbooksPara, bloquePrompt } from "./playbooks.mjs";
+import { elegirPilar, bloquePrompt as bloquePilarPrompt, PILARES } from "./pilares.mjs";
 
 const AK = process.env.ANTHROPIC_API_KEY;
 const TG_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
@@ -175,6 +177,28 @@ async function generarPara(cliente) {
     ? patronesRaw.map(p => `- ${p.patron}`).join(String.fromCharCode(10))
     : "";
 
+  // MEMORIA FUNDACIONAL: lo que Cóndor ya sabe, escrito a mano y verificado.
+  // Es la capa de MENOS peso de las tres — va última en el prompt y su propio
+  // encabezado le dice al modelo que la marca le gana. Ver playbooks.mjs.
+  const playbooks = bloquePrompt(await playbooksPara(db, { tipo: TIPO, rubro }));
+
+  // PILAR DEL DÍA. Se elige por deuda: qué le debe la cuenta a la mezcla que
+  // pidió la marca. Con eso el reparto converge a lo pedido aunque se salten
+  // días o se generen piezas sueltas fuera de calendario. Ver pilares.mjs.
+  //
+  // En un reintento se mantiene el pilar de la pieza anterior: el cliente
+  // pidió corregir ESA pieza, no recibir otra distinta.
+  const historialPilares = (await db.get(
+    `barbara_memoria?barbara_cliente_id=eq.${barbaraId}&pilar=not.is.null` +
+    `&select=pilar&order=creado_en.desc&limit=20`
+  ).catch(() => [])).map(e => e.pilar);
+  const eleccionPilar = isRetry && historialPilares[0] && PILARES[historialPilares[0]]
+    ? { pilar: historialPilares[0], instruccion: PILARES[historialPilares[0]].instruccion, reparto: {} }
+    : elegirPilar(form.pilares, historialPilares);
+  const bloquePilar = bloquePilarPrompt(eleccionPilar);
+  console.log(`[${negocio}] pilar de hoy: ${eleccionPilar.pilar}` +
+    (eleccionPilar.deuda !== undefined ? ` (deuda ${Math.round(eleccionPilar.deuda)}%)` : ""));
+
 
   // El primer color de la paleta manda como color de marca; el segundo, si
   // existe, es el fondo claro. Que el hex sea EXACTO es media ventaja de
@@ -203,7 +227,9 @@ async function generarPara(cliente) {
   const extraRetry = !isRetry ? ""
     : correccion.cambios.length ? instrucciones(correccion.cambios, previa)
     : "\n\n⚠️ ESTE ES UN REINTENTO: el cliente pidió una corrección pero no se pudo interpretar qué. Genera una versión CLARAMENTE MEJOR del mismo tema.";
-  const contexto = `Marca: ${negocio} (rubro: ${rubro || "no especificado"})
+  const contexto = `${bloquePilar}
+
+Marca: ${negocio} (rubro: ${rubro || "no especificado"})
 Paleta de marca: ${paleta}
 Tipografía de marca: ${bb.tipografia || "a criterio, legible y editorial"}
 Detalles a considerar (restricciones/gustos del dueño): ${bb.detalles || "ninguno registrado"}
@@ -222,7 +248,7 @@ LO QUE ESTA MARCA YA TE CORRIGIO (respetalo SIEMPRE, es lo que mas pesa):
 ${reglas}${patrones ? `
 
 LO QUE FUNCIONA EN GENERAL (patrones de rendimiento, no reglas de esta marca):
-${patrones}` : ""}${extraRetry}`;
+${patrones}` : ""}${playbooks}${extraRetry}`;
 
   // ÁNGULO ELEGIDO ANTES DE GENERAR, con un juez semántico aparte.
   //
@@ -447,6 +473,9 @@ Responde SOLO con el JSON.`,
     tipo: TIPO,
     angulo: plan_contenido.angulo || "",
     titulo: negocio,
+    // Sin guardar el pilar, `elegirPilar` no tiene con qué calcular la deuda
+    // y el reparto no converge nunca a la mezcla que pidió la marca.
+    pilar: eleccionPilar.pilar,
     // El plan ES la pieza: los carruseles se componen desde este JSON. Sin
     // guardarlo, el próximo reintento no tiene qué corregir y vuelve a
     // empezar de cero, que es el bug que esto vino a arreglar.
