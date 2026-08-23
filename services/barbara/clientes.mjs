@@ -20,6 +20,8 @@ import { piezaAnterior, leerPedido, extraerCambios, instrucciones, verificar, fa
 import { elegirAngulo } from "./angulos.mjs";
 import { playbooksPara, bloquePrompt } from "./playbooks.mjs";
 import { elegirPilar, bloquePrompt as bloquePilarPrompt, PILARES } from "./pilares.mjs";
+import { revisar, ANCHO_REVISION } from "./revision.mjs";
+import sharp from "sharp";
 
 const AK = process.env.ANTHROPIC_API_KEY;
 const TG_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
@@ -438,6 +440,35 @@ Responde SOLO con el JSON.`,
       }
     }
     if (!imgs.length) throw new Error(`[${negocio}] no se generó ninguna imagen`);
+
+    // REVISIÓN VISUAL antes de mandársela al cliente.
+    //
+    // Acá las piezas se componen en HTML (plantillas.mjs), así que no hay
+    // errores de ortografía —el texto se renderiza tal cual— ni formas
+    // fantasma. Lo que sí pasa es DESBORDE: un titular más largo de lo que
+    // entra en su caja se corta o se monta sobre el cuerpo, y eso sólo se ve
+    // mirando el PNG.
+    //
+    // No se rehace automáticamente como en la cuenta propia: acá el reintento
+    // gasta uno de los 3 intentos del cliente. Se avisa a staff y la pieza
+    // sale igual — el cliente la revisa antes de que se publique.
+    try {
+      const veredictos = await revisar(claude, AK, imgs, {
+        reducir: (b) => sharp(b).resize({ width: ANCHO_REVISION }).png().toBuffer(),
+      });
+      const malas = veredictos.filter((v) => !v.aprobada);
+      if (malas.length) {
+        console.log(`[${negocio}] ⚠️ la revisión marcó ${malas.length} slide(s):`);
+        for (const v of malas) {
+          console.log(`   slide ${v.indice + 1}: ` +
+            (v.problemas || []).map((p) => `${p.tipo}: ${p.detalle}`).join(" · "));
+        }
+      } else {
+        console.log(`[${negocio}] revisión: ${imgs.length}/${imgs.length} aprobadas`);
+      }
+    } catch (e) {
+      console.log(`[${negocio}] revisión no disponible, sigo sin ella:`, String(e).slice(0, 140));
+    }
 
     for (let i = 0; i < imgs.length; i++) {
       const fd = new FormData();

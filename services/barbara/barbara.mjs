@@ -19,6 +19,7 @@ import { apiDisponible, generarImagen as apiImagen } from "./higgsfield-api.mjs"
 import { playbooksPara, bloquePrompt as bloquePlaybooks } from "./playbooks.mjs";
 import { extraerCambios, instrucciones } from "./correccion.mjs";
 import { leerReglas, bloquePrompt as bloqueReglas, aprenderDeCorreccion } from "./reglas.mjs";
+import { ANCHO_REVISION } from "./revision.mjs";
 
 const AK = process.env.ANTHROPIC_API_KEY;
 const TG = process.env.TELEGRAM_BOT_TOKEN;
@@ -641,6 +642,37 @@ Responde SOLO con el JSON.`,
   if (soloPortada) console.log("SOLO_PORTADA=1 — se genera sólo la primera imagen");
 
   // 4) Imágenes con Higgsfield
+  //
+  // Se genera y compone en una función aparte para poder REHACER un slide
+  // suelto después de la revisión, sin repetir el carrusel entero.
+  async function componerSlide(i, contador, esUnica) {
+    const llevaPersonaje = Boolean(tema.personaje) && i % 2 === 0;
+    const personaje = tema.personaje ? (llevaPersonaje ? PERSONAJE_BARBARA : SIN_PERSONAJE) : "";
+    // La portada lleva su propia regla de composición: es la única slide
+    // cuyo trabajo es que la persona deslice, no informar.
+    const esPortada = i === 0 && !esUnica;
+    const url = await genImagen(
+      REGLA_TEXTO + "\n\n" + REGLA_ORTOGRAFIA + "\n\n" + tema.template + contador +
+      (esPortada ? "\n\n" + PORTADA : "") +
+      (personaje ? "\n\n" + personaje : "") + "\n\n" + slides[i].prompt, i);
+    let buf = Buffer.from(await (await fetch(url)).arrayBuffer());
+    // El logo REAL se pega acá, no se le pide al modelo que lo dibuje (ver
+    // el comentario junto a ZONA_LOGO_IZQ). tema.logo es null en las series
+    // cuya referencia aprobada no lleva logo en cada slide.
+    if (tema.logo) buf = await pegarLogoCondor(buf, tema.logo);
+    // Y el personaje igual: archivo real encima del hueco que dejó el modelo.
+    // `i / 2` para que las poses roten de a una entre slides CON personaje
+    // (0, 2, 4 → retrato, brazos, carpeta) y no se repita dos veces seguidas.
+    // En un anuncio el personaje va abajo: el titular ocupa la mitad de
+    // arriba y el subtítulo va justo debajo del centro.
+    if (llevaPersonaje) buf = await pegarPersonajeBarbara(buf, Math.floor(i / 2), esUnica ? "bajo" : "centro");
+    return buf;
+  }
+
+  const contadorDe = (i, esUnica) => esUnica
+    ? "\n\nDo NOT render any slide counter, page number or \"1/1\" anywhere in the frame."
+    : `\n\nSLIDE COUNTER: render exactly the text "${i + 1}/${N_SLIDES}" in the top-right corner, nothing else there. Do not invent a different number or format.`;
+
   const imgs = [];
   for (let i = 0; i < slides.length; i++) {
     try {
@@ -664,33 +696,65 @@ Responde SOLO con el JSON.`,
       // criterio del director. Pedido de Joaquín el 22-ago-2026 — con 6 o 7
       // slides, "un slide sí / uno no, empezando en la portada" YA cumple
       // las cuatro condiciones a la vez sin necesidad de negociarlas.
-      const llevaPersonaje = Boolean(tema.personaje) && i % 2 === 0;
-      const personaje = tema.personaje ? (llevaPersonaje ? PERSONAJE_BARBARA : SIN_PERSONAJE) : "";
-      // La portada lleva su propia regla de composición: es la única slide
-      // cuyo trabajo es que la persona deslice, no informar.
-      const esPortada = i === 0 && !esUnica;
-      const url = await genImagen(
-        REGLA_TEXTO + "\n\n" + REGLA_ORTOGRAFIA + "\n\n" + tema.template + contador +
-        (esPortada ? "\n\n" + PORTADA : "") +
-        (personaje ? "\n\n" + personaje : "") + "\n\n" + slides[i].prompt, i);
-      let buf = Buffer.from(await (await fetch(url)).arrayBuffer());
-      // El logo REAL se pega acá, no se le pide al modelo que lo dibuje (ver
-      // el comentario junto a ZONA_LOGO_IZQ). tema.logo es null en las series
-      // cuya referencia aprobada no lleva logo en cada slide.
-      if (tema.logo) buf = await pegarLogoCondor(buf, tema.logo);
-      // Y el personaje igual: archivo real encima del hueco que dejó el modelo.
-      // `i / 2` para que las poses roten de a una entre slides CON personaje
-      // (0, 2, 4 → retrato, brazos, carpeta) y no se repita dos veces seguidas.
-      // En un anuncio el personaje va abajo: el titular ocupa la mitad de
-      // arriba y el subtitulo va justo debajo del centro.
-      if (llevaPersonaje) buf = await pegarPersonajeBarbara(buf, Math.floor(i / 2), esUnica ? "bajo" : "centro");
-      imgs.push(buf);
+      imgs.push(await componerSlide(i, contador, esUnica));
     } catch (e) {
       if (e.permanent) throw e; // config/auth: no tiene sentido seguir con los demás slides
       console.log("slide", i + 1, "falló:", String(e).slice(0, 140));
     }
   }
   if (!imgs.length) throw new Error("No se generó ninguna imagen");
+
+  // 4b) REVISIÓN VISUAL antes de entregar.
+  //
+  // Nadie miraba las imágenes: el prompt pedía las cosas bien y se asumía que
+  // salían bien. El 23-ago-2026 llegaron a Telegram piezas con palabras
+  // inventadas ("Espar añados"), titulares cortados y el personaje encima del
+  // subtítulo. Ninguno de esos errores se ve en el JSON del plan: pasan al
+  // DIBUJAR, y la única forma de cazarlos es mirar el PNG.
+  //
+  // Un solo reintento por slide. Si a la segunda sigue mal, se entrega igual y
+  // se dice qué se encontró: quedarse sin publicar es peor, y el equipo revisa
+  // en Telegram antes de aprobar.
+  let avisoRevision = "";
+  try {
+    const { revisar, rechazadas, resumen } = await import("./revision.mjs");
+    const sharp = (await import("sharp")).default;
+    const reducir = (b) => sharp(b).resize({ width: ANCHO_REVISION }).png().toBuffer();
+
+    const esUnica = N_SLIDES === 1;
+    let veredictos = await revisar((_k, body) => claude(body), AK, imgs, { reducir });
+    let malas = rechazadas(veredictos);
+    console.log(`revisión: ${imgs.length - malas.length}/${imgs.length} aprobadas`);
+
+    for (const i of malas) {
+      const detalle = (veredictos[i].problemas || []).map((p) => `${p.tipo}: ${p.detalle}`).join(" · ");
+      console.log(`  slide ${i + 1} rechazada — ${detalle}`);
+      try {
+        imgs[i] = await componerSlide(i, contadorDe(i, esUnica), esUnica);
+        console.log(`  slide ${i + 1} rehecha`);
+      } catch (e) {
+        console.log(`  slide ${i + 1}: no se pudo rehacer (${String(e).slice(0, 80)}) — va la original`);
+      }
+    }
+
+    if (malas.length) {
+      // Se vuelve a revisar SOLO lo rehecho, para no pagar la vista completa
+      // de nuevo ni arriesgar que el revisor cambie de opinión sobre lo que ya
+      // había aprobado.
+      const rehechas = malas.map((i) => imgs[i]);
+      const segunda = await revisar((_k, body) => claude(body), AK, rehechas, { reducir });
+      const siguenMal = segunda
+        .map((v, k) => ({ ...v, indice: malas[k] }))
+        .filter((v) => !v.aprobada);
+      avisoRevision = resumen(siguenMal);
+      console.log(siguenMal.length
+        ? `revisión: ${siguenMal.length} sigue(n) con problemas tras rehacer`
+        : "revisión: todo quedó limpio tras rehacer");
+    }
+  } catch (e) {
+    // La revisión NUNCA bloquea la entrega: si falla, se entrega como antes.
+    console.log("revisión no disponible, sigo sin ella:", String(e).slice(0, 160));
+  }
 
   // 5) Guardar exactamente la pieza revisada como artefacto privado de GitHub.
   // La publicación posterior usa estas mismas imágenes; nunca regenera contenido al aprobar.
@@ -749,7 +813,7 @@ Responde SOLO con el JSON.`,
     text: `🤖 *Barbara* — ${tema.titulo}\n` +
           `Serie: \`${claveSerie}\` · ${imgs.length} slides · ID: \`${runId}\`\n` +
           `🎯 Ángulo: _${plan.angulo || "—"}_\n\n` +
-          `📝 *Caption:*\n\n${plan.caption || ""}${avisoAngulo}\n\n${comoCorregir}`,
+          `📝 *Caption:*\n\n${plan.caption || ""}${avisoAngulo}${avisoRevision}\n\n${comoCorregir}`,
     parse_mode: "Markdown",
   });
 
