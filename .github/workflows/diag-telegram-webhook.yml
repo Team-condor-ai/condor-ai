@@ -1,0 +1,26 @@
+name: Diagnóstico puntual - webhook de Telegram
+# Uso único para diagnosticar por qué "Aprobar barbara" no respondió el
+# 23-ago-2026. No expone el token: solo imprime lo que Telegram devuelve
+# sobre SU PROPIO webhook (URL registrada, último error, pendientes).
+on:
+  workflow_dispatch: {}
+
+jobs:
+  diag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: getWebhookInfo
+        env:
+          TG: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        run: |
+          curl -s "https://api.telegram.org/bot${TG}/getWebhookInfo" | node -e '
+            let s=""; process.stdin.on("data",d=>s+=d).on("end",()=>{
+              const j=JSON.parse(s).result;
+              console.log("url:", j.url);
+              console.log("pending_update_count:", j.pending_update_count);
+              console.log("last_error_date:", j.last_error_date ? new Date(j.last_error_date*1000).toISOString() : "(ninguno)");
+              console.log("last_error_message:", j.last_error_message || "(ninguno)");
+              console.log("max_connections:", j.max_connections);
+              console.log("ip_address:", j.ip_address || "(n/a)");
+            });
+          '
