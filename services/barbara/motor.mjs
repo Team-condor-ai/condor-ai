@@ -133,10 +133,72 @@ export async function pegarLogoCondor(buf, posicion = "izquierda") {
   const wordmarkBuf = await sharp(oscuro ? WORDMARK_BLANCO : WORDMARK_NEGRO)
     .resize({ height: altoIcono }).toBuffer();
 
+  // BORRAR LA ZONA ANTES DE PEGAR.
+  //
+  // El template le pide al modelo que deje ese rincón continuo con el fondo, y
+  // el modelo igual dibuja una caja ahí cada tanto: el 23-ago-2026 salió un
+  // rectángulo BLANCO sobre fondo negro, ocupando el 43% de la esquina. Ya se
+  // había reescrito la instrucción una vez por lo mismo (entonces era gris) y
+  // volvió a pasar con otro color.
+  //
+  // Insistirle al modelo no es la solución — no obedecer es su modo de falla
+  // normal. Se pinta la zona con el color real del fondo de alrededor y recién
+  // ahí se pega el logo. Mismo principio que pegar el archivo en vez de
+  // describirlo: no depender de la obediencia del modelo.
+  // La zona se ANCLA A LOS BORDES, no al logo. La caja que dibujó el modelo el
+  // 23-ago arrancaba en el pixel (0,0) y un parche centrado en el logo dejaba
+  // el marco blanco asomando arriba y a la izquierda. El rincón reservado
+  // llega al borde, así que limpiarlo tiene que llegar al borde también.
+  const zona = {
+    left: 0,
+    top: 0,
+    width: posicion === "centro" ? W : Math.min(W, left0 + anchoTotal + Math.round(W * 0.03)),
+    height: Math.min(H, margenY + altoIcono + Math.round(H * 0.025)),
+  };
+
+  const fondo = await colorDeFondoAlrededor(base, zona, W, H);
+  const parche = await sharp({
+    create: { width: zona.width, height: zona.height, channels: 3, background: fondo },
+  }).png().toBuffer();
+
   return base.composite([
+    { input: parche, left: zona.left, top: zona.top },
     { input: iconoBuf, left: left0, top: margenY },
     { input: wordmarkBuf, left: left0 + anchoIcono + gap, top: margenY },
   ]).png().toBuffer();
+}
+
+/**
+ * El color del fondo REAL alrededor de una zona, por mediana.
+ *
+ * Mediana y no promedio: si en la banda de muestreo cae una letra o el borde
+ * de un ícono, el promedio se corre hacia ese color y el parche queda de un
+ * tono que no es el del fondo. La mediana ignora esos pocos píxeles raros.
+ *
+ * Se muestrea una banda POR DEBAJO de la zona (no a los lados): en las cuatro
+ * plantillas el fondo sigue limpio ahí, mientras que a la derecha suele
+ * empezar el contador de slide.
+ */
+async function colorDeFondoAlrededor(sharpImg, zona, W, H) {
+  const alto = Math.max(2, Math.round(H * 0.015));
+  const top = Math.min(H - alto, zona.top + zona.height + Math.round(H * 0.005));
+  const region = {
+    left: zona.left,
+    top: Math.max(0, top),
+    width: Math.max(1, Math.min(zona.width, W - zona.left)),
+    height: alto,
+  };
+
+  const { data, info } = await sharpImg.clone()
+    .extract(region).raw().toBuffer({ resolveWithObject: true });
+
+  const canales = info.channels;
+  const r = [], g = [], b = [];
+  for (let i = 0; i < data.length; i += canales) {
+    r.push(data[i]); g.push(data[i + 1]); b.push(data[i + 2]);
+  }
+  const mediana = (a) => { a.sort((x, y) => x - y); return a[Math.floor(a.length / 2)] || 0; };
+  return { r: mediana(r), g: mediana(g), b: mediana(b) };
 }
 
 // ── El personaje Bárbara, pegado como archivo — nunca dibujado ─────────────
