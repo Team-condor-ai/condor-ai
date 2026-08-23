@@ -60,7 +60,7 @@ const LIMA = "#BCD530";
 // 22-ago-2026. La instrucción tiene que decir lo contrario: seguir exactamente
 // igual que el resto del fondo, sin ningún borde ni panel que delate dónde
 // va a pegarse el logo.
-const ZONA_LOGO_IZQ = "Top-left corner, about one-tenth of the frame's width and height: this area must look EXACTLY like the rest of the background — same colour, same texture, same gradient, continuous with everything around it. Do NOT draw a box, card, panel, chip or any shape there, and do NOT place any text or icon there either. A real logo file gets placed on top of this untouched background afterward — any visible rectangle or colour shift there is a mistake.";
+const ZONA_LOGO_IZQ = "RESERVED TOP BAND — the entire top 13% of the frame height, across its full width, is off limits: NO headline, NO text, NO icon and NO graphic may enter it, and the headline must START BELOW that band. Within it, the top-left corner (about one third of the frame's width) must look EXACTLY like the rest of the background — same colour, same texture, same gradient, continuous with everything around it. Do NOT draw a box, card, panel, chip or any shape there, and do NOT place any text or icon there either. A real logo file gets placed on top of this untouched background afterward — any visible rectangle or colour shift there is a mistake.";
 const ZONA_LOGO_CENTRO = "Top area, centred, about one-third of the frame's width and one-tenth of its height: this area must look EXACTLY like the rest of the background — same colour, same texture, same gradient, continuous with everything around it. Do NOT draw a box, card, panel, chip or any shape there, and do NOT place any text or icon there either. A real logo file gets placed on top of this untouched background afterward — any visible rectangle or colour shift there is a mistake.";
 
 // El personaje "Bárbara" — la mascota, no el logo. Pedido de Joaquín el
@@ -681,7 +681,9 @@ Responde SOLO con el JSON.`,
       // Y el personaje igual: archivo real encima del hueco que dejó el modelo.
       // `i / 2` para que las poses roten de a una entre slides CON personaje
       // (0, 2, 4 → retrato, brazos, carpeta) y no se repita dos veces seguidas.
-      if (llevaPersonaje) buf = await pegarPersonajeBarbara(buf, Math.floor(i / 2));
+      // En un anuncio el personaje va abajo: el titular ocupa la mitad de
+      // arriba y el subtitulo va justo debajo del centro.
+      if (llevaPersonaje) buf = await pegarPersonajeBarbara(buf, Math.floor(i / 2), esUnica ? "bajo" : "centro");
       imgs.push(buf);
     } catch (e) {
       if (e.permanent) throw e; // config/auth: no tiene sentido seguir con los demás slides

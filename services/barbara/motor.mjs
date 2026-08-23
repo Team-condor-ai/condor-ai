@@ -229,21 +229,55 @@ const POSES_BARBARA = [
  * seguidos del mismo carrusel no deben repetir pose, y una corrida repetida
  * tiene que dar el mismo resultado para que sea reproducible.
  */
-export async function pegarPersonajeBarbara(buf, indice = 0) {
+export async function pegarPersonajeBarbara(buf, indice = 0, posicion = "centro") {
   const base = sharp(buf);
   const meta = await base.metadata();
   const W = meta.width, H = meta.height;
 
-  // Un quinto del ancho, centrado — la misma proporción y posición que ya
-  // ocupaba el personaje dibujado en las piezas que Joaquín aprobó.
   const lado = Math.round(W * 0.30);
   const left = Math.round((W - lado) / 2);
-  const top = Math.round((H - lado) / 2);
+  // "centro" para carruseles (donde el template deja el hueco al medio) y
+  // "bajo" para los anuncios: ahí el titular ocupa la mitad de arriba y el
+  // subtítulo va justo debajo, así que un personaje centrado le cae encima.
+  // Pasó en la primera prueba de ad_barbara (23-ago): tapó media línea del
+  // subtítulo.
+  const top = posicion === "bajo"
+    ? Math.round(H * 0.55)
+    : Math.round((H - lado) / 2);
+
+  // BORRAR LA ZONA ANTES DE PEGAR, igual que con el logo. El template pide
+  // dejar el círculo continuo con el fondo y el modelo igual dibuja uno —
+  // en la prueba del 23-ago salió un círculo fantasma MÁS GRANDE que el
+  // personaje, que asomaba alrededor. Se limpia un cuadrado con holgura.
+  const margen = Math.round(lado * 0.22);
+  const zona = {
+    left: Math.max(0, left - margen),
+    top: Math.max(0, top - margen),
+    width: Math.min(W, lado + margen * 2),
+    height: Math.min(H, lado + margen * 2),
+  };
+  zona.width = Math.min(zona.width, W - zona.left);
+  zona.height = Math.min(zona.height, H - zona.top);
+
+  // El color NO se muestrea justo alrededor del círculo: el fantasma que
+  // dibuja el modelo es MÁS GRANDE que el personaje, así que una banda pegada
+  // a la zona cae adentro del fantasma y el parche sale del color equivocado
+  // — se ve como un rectángulo. Se muestrea el borde IZQUIERDO del cuadro, a
+  // la misma altura, que en las cuatro plantillas es fondo limpio.
+  const fondo = await colorDeBordeIzquierdo(base, zona, W);
+  const parche = await sharp({
+    create: { width: zona.width, height: zona.height, channels: 3, background: fondo },
+  }).png().toBuffer();
 
   const pose = POSES_BARBARA[Math.abs(indice) % POSES_BARBARA.length];
-  const personaje = await sharp(pose).resize(lado, lado, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } }).toBuffer();
+  const personaje = await sharp(pose)
+    .resize(lado, lado, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
+    .toBuffer();
 
-  return base.composite([{ input: personaje, left, top }]).png().toBuffer();
+  return base.composite([
+    { input: parche, left: zona.left, top: zona.top },
+    { input: personaje, left, top },
+  ]).png().toBuffer();
 }
 
 // ---- Higgsfield: generar imagen y devolver URL (mismo patrón de reintentos
@@ -370,4 +404,36 @@ export function supabase(url, serviceKey) {
       if (!r.ok) throw new Error("Supabase PATCH " + path + ": " + r.status + " " + (await r.text()).slice(0, 200));
     },
   };
+}
+
+/**
+ * El color del fondo tomado del BORDE IZQUIERDO del cuadro, a la altura de la
+ * zona que se va a tapar.
+ *
+ * Existe aparte de `colorDeFondoAlrededor` por un caso concreto: el círculo
+ * fantasma que el modelo dibuja detrás del personaje es más grande que el
+ * personaje mismo, así que muestrear pegado a la zona cae DENTRO del fantasma
+ * y el parche sale de otro color — se nota como un rectángulo.
+ *
+ * El borde izquierdo, a esa altura, es fondo limpio en las cuatro plantillas:
+ * ninguna pone contenido pegado al margen.
+ */
+async function colorDeBordeIzquierdo(sharpImg, zona, W) {
+  const region = {
+    left: 0,
+    top: zona.top,
+    width: Math.max(2, Math.round(W * 0.03)),
+    height: Math.max(2, zona.height),
+  };
+
+  const { data, info } = await sharpImg.clone()
+    .extract(region).raw().toBuffer({ resolveWithObject: true });
+
+  const canales = info.channels;
+  const r = [], g = [], b = [];
+  for (let i = 0; i < data.length; i += canales) {
+    r.push(data[i]); g.push(data[i + 1]); b.push(data[i + 2]);
+  }
+  const mediana = (a) => { a.sort((x, y) => x - y); return a[Math.floor(a.length / 2)] || 0; };
+  return { r: mediana(r), g: mediana(g), b: mediana(b) };
 }

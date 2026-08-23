@@ -162,11 +162,16 @@ export async function juzgar(claudeFn, apiKey, { candidatos, historial = [] }) {
   }
 
   const lista = candidatos.map((c, i) => `[${i}] ${c.angulo}`).join("\n");
-  const hist = historial.map((h) => `- ${h}`).join("\n");
+  // Los ángulos históricos se recortan a 160 chars. Con 80 piezas y ángulos
+  // largos, el juez tenía que CITAR el parecido dentro de `se_parece_a` y se
+  // quedaba sin tokens: el 23-ago-2026 devolvió 0 chars con
+  // stop_reason=max_tokens. Para decidir si dos ideas son la misma alcanza
+  // con el comienzo de cada una.
+  const hist = historial.map((h) => `- ${String(h).slice(0, 160)}`).join("\n");
 
   const r = await claudeFn(apiKey, {
     model: MODELO,
-    max_tokens: 3000,
+    max_tokens: 6000,
     system:
       "Tu único trabajo es detectar repetición. NO escribes contenido, NO propones ideas, " +
       "NO mejoras nada: comparas y decides.\n\n" +
