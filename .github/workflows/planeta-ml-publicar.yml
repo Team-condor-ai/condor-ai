@@ -28,12 +28,23 @@ on:
         description: 'true = publica de verdad; false = solo valida (dry-run)'
         required: false
         default: 'false'
-  schedule:
-    - cron: '10 20 23 8 *'  # Dom 23-ago 16:10 CLT · límite 6
-    - cron: '40 14 24 8 *'  # Lun 24-ago 10:40 CLT · límite 8
-    - cron: '15 17 25 8 *'  # Mar 25-ago 13:15 CLT · límite 8
-    - cron: '50 15 26 8 *'  # Mié 26-ago 11:50 CLT · límite 8
-    - cron: '5 21 27 8 *'   # Jue 27-ago 17:05 CLT · límite 6
+      max_diario:
+        description: 'Tope de publicaciones en el dia (el reparto en 5 dias quedo sin efecto)'
+        required: false
+        default: '8'
+      min_espera:
+        description: 'Segundos minimos entre publicaciones'
+        required: false
+        default: '480'
+      max_espera:
+        description: 'Segundos maximos entre publicaciones'
+        required: false
+        default: '1080'
+
+# Los  se BORRARON el 23-ago-2026: Joaquin pidio subir todo el mismo
+# dia, asi que el reparto en cinco fechas dejo de tener sentido. Ademas eran
+# crons con fecha fija (23 a 27 de agosto) que iban a volver a dispararse el
+# ano siguiente sobre un lote ya publicado. Ahora la corrida es manual.
 
 permissions:
   contents: write
@@ -65,14 +76,7 @@ jobs:
       - name: Decidir el límite del día
         id: limite
         run: |
-          case "${{ github.event.schedule }}" in
-            "10 20 23 8 *") echo "n=6" >> "$GITHUB_OUTPUT" ;;
-            "40 14 24 8 *") echo "n=8" >> "$GITHUB_OUTPUT" ;;
-            "15 17 25 8 *") echo "n=8" >> "$GITHUB_OUTPUT" ;;
-            "50 15 26 8 *") echo "n=8" >> "$GITHUB_OUTPUT" ;;
-            "5 21 27 8 *")  echo "n=6" >> "$GITHUB_OUTPUT" ;;
-            *) echo "n=${{ inputs.limite || '1' }}" >> "$GITHUB_OUTPUT" ;;
-          esac
+          echo "n=${{ inputs.limite || '1' }}" >> "$GITHUB_OUTPUT"
 
       - name: Publicar (o validar, según el trigger)
         env:
