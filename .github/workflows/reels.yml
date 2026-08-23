@@ -14,6 +14,10 @@ on:
         description: 'forzar industria del trailer (opcional, ej: restaurante)'
         required: false
         default: ''
+      correccion:
+        description: 'qué corregir de la pieza anterior (lo llena el bot de Telegram)'
+        required: false
+        default: ''
       retry:
         description: 'poner 1 para reintento'
         required: false
@@ -97,6 +101,7 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           TIPO: ${{ github.event.inputs.tipo }}
           RETRY: ${{ github.event.inputs.retry }}
+          CORRECCION: ${{ github.event.inputs.correccion }}
           INDUSTRIA: ${{ github.event.inputs.industria }}
       - name: Persistir credenciales rotadas + memoria
         if: always()

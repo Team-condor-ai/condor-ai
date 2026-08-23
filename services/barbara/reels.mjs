@@ -11,11 +11,15 @@
 
 import { execSync, execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
+import { elegirAngulo } from "./angulos.mjs";
+import { leerReglas, bloquePrompt as bloqueReglas, aprenderDeCorreccion } from "./reglas.mjs";
 
 const AK = process.env.ANTHROPIC_API_KEY;
 const TG = process.env.TELEGRAM_BOT_TOKEN;
 const CHAT = process.env.TELEGRAM_CHAT_ID;
 const isRetry = process.env.RETRY === "1";
+// Lo que el equipo escribio despues de "Denuevo barbara" en Telegram.
+const CORRECCION = (process.env.CORRECCION || "").trim();
 const LOG = "services/barbara/content-log.json";
 const AVATAR = "services/barbara/avatar.png";
 
@@ -51,6 +55,59 @@ async function claude(body) {
 const textOf = (d) => (d.content || []).filter((b) => b.type === "text").map((b) => b.text).join("");
 const leerLog = () => { try { return JSON.parse(readFileSync(LOG, "utf8")); } catch { return []; } };
 function guardarEnLog(entry) { const log = leerLog(); log.push(entry); writeFileSync(LOG, JSON.stringify(log.slice(-100), null, 2) + "\n"); }
+
+// ── Lo que los carruseles ya tenían y los reels no ─────────────────────────
+//
+// Las mejoras del 22 y 23-ago (juez de ángulos, reglas del equipo, corrección
+// dirigida) se habían hecho sólo en barbara.mjs. Los reels son 2 de las 5
+// piezas semanales y seguían con "no repitas, acá van las últimas 15" y con el
+// reintento a ciegas. Esto los pone al día.
+//
+// Va acá como funciones compartidas y no copiado en cada generador: son dos
+// (UGC del martes y trailer del jueves) y duplicar era garantizar que se
+// desincronizaran.
+
+/** Elige el ángulo con el juez semántico. Devuelve el bloque para el prompt. */
+async function elegirAnguloReel(instruccion) {
+  // En una corrección dirigida NO se elige ángulo nuevo: el equipo pidió
+  // arreglar algo de ESA pieza. Se mantiene el de la anterior del mismo tipo.
+  if (isRetry && CORRECCION) {
+    const previo = [...leerLog()].reverse().find((e) => e.angulo)?.angulo || "";
+    if (previo) {
+      console.log("corrección dirigida: se mantiene el ángulo anterior");
+      return `\n\nÁNGULO A MANTENER (es una corrección, NO cambies de tema):\n"${previo}"\nEn el campo "angulo" del JSON devuelve exactamente este ángulo.`;
+    }
+    return "";
+  }
+
+  // El historial mezcla carruseles y reels a propósito: para quien sigue la
+  // cuenta, repetir la idea del carrusel del lunes en el reel del martes es
+  // repetir igual, aunque cambie el formato.
+  const historial = leerLog().map((e) => e.angulo).filter(Boolean).slice(-80);
+  try {
+    const eleccion = await elegirAngulo((_k, body) => claude(body), AK, { instruccion, historial });
+    for (const d of eleccion.descartes) {
+      console.log(`ángulo descartado: se parecía a "${d.se_parece_a}" (${d.razon})`);
+    }
+    if (eleccion.agotado) console.log("⚠️ ángulos agotados — se sigue con el mejor disponible");
+    if (!eleccion.angulo) return "";
+    console.log("ángulo elegido:", eleccion.angulo.angulo);
+    return `\n\nÁNGULO YA ELEGIDO (no lo cambies, desarróllalo):\n"${eleccion.angulo.angulo}"\nQué lo hace distinto: ${eleccion.angulo.por_que_es_distinto}\nEn el campo "angulo" del JSON devuelve exactamente este ángulo.`;
+  } catch (e) {
+    // Si el juez falla se sigue sin él: peor, pero publicable.
+    console.log("elección de ángulo falló, sigo sin ella:", String(e).slice(0, 140));
+    return "";
+  }
+}
+
+/** El bloque de reintento: corrección dirigida si la hay, rehacer si no. */
+function bloqueReintento() {
+  if (!isRetry) return "";
+  if (CORRECCION) {
+    return `\n\n⚠️ ESTO ES UNA CORRECCIÓN, NO UNA PIEZA NUEVA.\nEl equipo pidió exactamente esto:\n  · ${CORRECCION}\n\nHaz ese cambio y NADA MÁS: todo lo que no está en el pedido se queda igual (mismo ángulo, mismo tono, misma estructura). No "aproveches" para mejorar otra cosa.`;
+  }
+  return "\n\n⚠️ REINTENTO: la pieza anterior fue rechazada. Haz una claramente mejor y distinta.";
+}
 
 // ---- Higgsfield: generar un clip y devolver su URL ----
 // extraArgs = array de args extra, ej. ["--start-image", AVATAR] o ["--resolution", "720p"].
@@ -129,12 +186,14 @@ const schemaUGC = {
 
 async function hacerUGC() {
   const recientes = leerLog().slice(-15).map(e => `- [${e.fecha} ${e.tipo}] ${e.angulo}`).join("\n") || "(sin historial)";
-  const extra = isRetry ? "\n\n⚠️ REINTENTO: el reel anterior fue rechazado. Haz uno claramente mejor y distinto." : "";
+  const anguloFijado = await elegirAnguloReel("reel UGC de una vocera hablando a cámara sobre implementar IA en un negocio");
+  const reglasEquipo = bloqueReglas(leerReglas());
+  const extra = bloqueReintento();
   const dir = await claude({
     model: "claude-sonnet-5", max_tokens: 2500,
     system: `Eres Barbara, directora creativa de condor.ai (agencia que implementa IA en negocios de Perú y Chile). Diriges un reel UGC vertical 9:16 de una vocera que habla a cámara en ESPAÑOL NEUTRO sobre lo importante que es implementar IA en tu negocio HOY. Tono cercano, real, energía de creadora auténtica, hook potente en los primeros 3 segundos y mucha retención. NUNCA repites ángulos ni frases de las piezas recientes (te las paso). Responde SOLO con el JSON.\n\nREGLAS DEL GUION (críticas): son exactamente 4 tomas de 8 segundos que forman UN SOLO monólogo continuo (~95 palabras en total). Cada toma DEBE tener entre 22 y 26 palabras de diálogo para cubrir sus 8 segundos completos de habla fluida y natural (ni apurada ni con silencios). El discurso AVANZA en cada toma: jamás repitas una idea, frase o palabra clave ya usada en una toma anterior. Piensa el guion completo primero y luego pártelo en 4.`,
     output_config: { format: { type: "json_schema", schema: schemaUGC } },
-    messages: [{ role: "user", content: `Crea el guion del reel UGC de hoy.\n\nPIEZAS RECIENTES (no repitas estos ángulos):\n${recientes}${extra}\n\nDevuelve 4 tomas (escena + diálogo en español neutro). Toma 1 hook, toma 4 cierre con CTA "contáctanos y vemos cómo implementarla en tu negocio".` }],
+    messages: [{ role: "user", content: `Crea el guion del reel UGC de hoy.\n\nPIEZAS RECIENTES (no repitas estos ángulos):\n${recientes}${reglasEquipo}${anguloFijado}${extra}\n\nDevuelve 4 tomas (escena + diálogo en español neutro). Toma 1 hook, toma 4 cierre con CTA "contáctanos y vemos cómo implementarla en tu negocio".` }],
   });
   const plan = JSON.parse(textOf(dir));
   const clips = (plan.clips || []).slice(0, 4);
@@ -183,13 +242,15 @@ async function hacerTrailer() {
   const pool = disponibles.length ? disponibles : INDUSTRIAS;
   const industria = (process.env.INDUSTRIA || "").trim() || pool[Math.floor(Math.random() * pool.length)];
 
-  const extra = isRetry ? "\n\n⚠️ REINTENTO: el trailer anterior fue rechazado. Haz uno claramente mejor y distinto." : "";
+  const anguloFijado = await elegirAnguloReel(`reel trailer cinematográfico sobre cómo la IA transforma un ${industria}`);
+  const reglasEquipo = bloqueReglas(leerReglas());
+  const extra = bloqueReintento();
   const look = "Cinematic premium trailer, vertical 9:16, dramatic camera movement, glossy modern color grade, epic uplifting score energy, futuristic but grounded, real-looking people and spaces of the industry transformed by AI, holographic data and subtle AI interface accents. NO logos, NO watermark, NO real brand names, NO on-screen text.";
   const dir = await claude({
     model: "claude-sonnet-5", max_tokens: 2000,
     system: `Eres Barbara, directora creativa de condor.ai. Diriges un REEL TRAILER cinematográfico vertical 9:16 (~30s, 2 clips de 15s) que muestra una industria concreta transformada por la IA, con máxima técnica de hook y retención. CLAVE: NO es solo cine con música — lleva una VOZ EN OFF en español neutro que EXPLICA, con datos y gancho, cómo la IA transforma esa industria (educativo y persuasivo, no aburrido). Es distinto y NO copia el carrusel del miércoles. NUNCA repites ángulos de las piezas recientes. Responde SOLO con el JSON.`,
     output_config: { format: { type: "json_schema", schema: schemaTrailer } },
-    messages: [{ role: "user", content: `Industria de hoy: ${industria}.\n\nLOOK VISUAL OBLIGATORIO:\n${look}\n\nPIEZAS RECIENTES (no repitas):\n${recientes}${extra}\n\nDevuelve 2 clips (escena en inglés + locución en español de 25-35 palabras c/u) que cuenten, con voz en off explicativa, cómo la IA transforma un ${industria}. La locución debe sonar a trailer: potente, clara y que enseñe algo concreto.` }],
+    messages: [{ role: "user", content: `Industria de hoy: ${industria}.\n\nLOOK VISUAL OBLIGATORIO:\n${look}\n\nPIEZAS RECIENTES (no repitas):\n${recientes}${reglasEquipo}${anguloFijado}${extra}\n\nDevuelve 2 clips (escena en inglés + locución en español de 25-35 palabras c/u) que cuenten, con voz en off explicativa, cómo la IA transforma un ${industria}. La locución debe sonar a trailer: potente, clara y que enseñe algo concreto.` }],
   });
   const plan = JSON.parse(textOf(dir));
   const clips = (plan.clips || []).slice(0, 2);
@@ -232,6 +293,26 @@ async function main() {
   const j = await (await tg("sendVideo", fd, true)).json();
   if (!j.ok) throw new Error("Telegram sendVideo: " + (j.description || ""));
   await tg("sendMessage", { chat_id: CHAT, text: `🎬 *${titulo}* — listo para revisar.\n\n📝 *Caption:*\n${plan.caption || ""}\n\n_Si quedó mal, responde "Denuevo barbara" en el grupo._`, parse_mode: "Markdown" });
+
+  // Aprender de la corrección, si la hubo. Va DESPUÉS de entregar la pieza y
+  // nunca lanza: si falla, el reel de hoy ya salió igual. Las reglas son las
+  // MISMAS que las de los carruseles a propósito — son preferencias de la
+  // marca, no del formato.
+  if (CORRECCION) {
+    const r = await aprenderDeCorreccion((_k, body) => claude(body), AK, CORRECCION);
+    if (r.guardada) {
+      console.log(`regla ${r.reforzada ? "reforzada" : "nueva"}: ${r.regla}`);
+      await tg("sendMessage", {
+        chat_id: CHAT,
+        text: r.reforzada
+          ? `🧠 Anotado (ya lo habían pedido antes): _${r.regla}_`
+          : `🧠 Aprendido para las próximas: _${r.regla}_`,
+        parse_mode: "Markdown",
+      });
+    } else {
+      console.log("no se guardó regla:", r.motivo);
+    }
+  }
 
   guardarEnLog({ fecha: new Date().toISOString().slice(0, 10), tipo: tipoLog, angulo: plan.angulo || "", ...extraLog });
   console.log("OK reel", TIPO, "| ángulo:", plan.angulo, extraLog.industria ? "| industria: " + extraLog.industria : "");
