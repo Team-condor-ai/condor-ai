@@ -79,6 +79,65 @@ const PERSONAJE_BARBARA = `IMPORTANT — reserved circular area: leave a perfect
 
 const SIN_PERSONAJE = "Do NOT include Bárbara, any illustrated character, mascot or human figure anywhere in this slide — icons and typography only.";
 
+// ── QUÉ ES BÁRBARA (y qué NO es) ───────────────────────────────────────────
+//
+// El 23-ago-2026 se publicó un carrusel entero sobre detectar clientes a punto
+// de irse y actuar antes de que cancelen. Nada de eso lo hace Bárbara: es un
+// agente que crea y publica contenido visual, y punto. No sigue leads, no
+// mide churn, no responde comentarios ni mensajes.
+//
+// El problema no fue que el dato estuviera mal — fue vender una capacidad que
+// el producto no tiene, en la cuenta de la propia agencia. Un cliente que
+// llega por ese carrusel llega esperando otra cosa.
+const QUE_ES_BARBARA = `QUÉ ES BÁRBARA (límite duro, no negociable):
+Bárbara es un agente de IA que CREA Y PUBLICA CONTENIDO VISUAL para la marca —
+carruseles, historias y videos— con la identidad del cliente y sin que nadie
+tenga que sentarse a diseñarlos.
+
+Eso es TODO lo que hace hoy. Está PROHIBIDO insinuar, ilustrar o afirmar que
+Bárbara:
+  · hace seguimiento de leads, prospectos o clientes;
+  · detecta o predice quién se va a ir (churn), ni retiene clientes;
+  · responde comentarios, DMs, correos o mensajes de WhatsApp;
+  · atiende clientes, vende, cotiza o agenda;
+  · analiza campañas, mide resultados o gestiona pauta.
+
+Si el ángulo del día necesita alguna de esas capacidades para funcionar, el
+ángulo está mal: cambia de ángulo y quédate en lo que Bárbara sí hace. Esto se
+publica en la cuenta de la propia agencia; prometer lo que el producto no hace
+es el peor lugar donde equivocarse.`;
+
+// ── La portada ─────────────────────────────────────────────────────────────
+//
+// La del 23-ago traía titular de dos líneas, subtítulo, el personaje, un
+// cuadro comparativo VS y DOS cajas de estadísticas. Nadie desliza después de
+// eso: la portada ya contó todo y encima no se lee en el feed.
+//
+// La portada tiene UN trabajo: que la persona deslice. Va dictada, no sugerida.
+const PORTADA = `THIS IS THE COVER (slide 1). Its ONLY job is to make the reader swipe.
+
+Compose it with EXACTLY three things and nothing else:
+  1. ONE headline, very large — it must fill roughly the top third of the frame
+     and be readable on a phone at a glance. Maximum 7 words.
+  2. ONE short supporting line under it. Maximum 10 words.
+  3. The reserved circular area for the Bárbara illustration.
+
+FORBIDDEN on the cover: statistics boxes, percentage figures, comparison or
+"VS" panels, bullet lists, numbered badges, source lines, multiple paragraphs,
+or any second block of body text. If the idea needs a number to land, the
+number goes on slide 2, not here.
+
+Leave generous empty space. A cover that looks empty next to the other slides
+is CORRECT — that contrast is what makes the headline hit.`;
+
+// ── Texto dentro de la imagen ──────────────────────────────────────────────
+//
+// En el carrusel del 23-ago los encabezados de una tabla salieron como "Espar
+// añados" y "Endor cliente": palabras que no existen. El modelo de imagen no
+// escribe, DIBUJA texto — y cuando el prompt no le dicta la cadena exacta,
+// inventa formas que parecen letras. Cuanto más texto y más chico, peor.
+const REGLA_ORTOGRAFIA = `SPELLING (critical): every word rendered in the image must be a correctly spelled, real Spanish word, exactly as given to you. Do NOT invent, abbreviate, split or merge words, and do NOT render placeholder-looking text. If a label, table header or column title appears in the design, its exact wording must come from the copy provided — never improvised. Prefer FEWER words at a LARGER size: small dense text is where misspellings appear.`;
+
 // ── Los 4 templates ─────────────────────────────────────────────────────────
 // Describen SOLO el diseño: retícula, paleta, tipografía y ritmo. El contenido
 // lo inventa Bárbara cada vez y nunca se repite — de eso ya se encarga
@@ -240,7 +299,12 @@ Objetivo: que se lea fácil en el feed del celular sin tener que abrir "ver más
 // largo) el total worst-case pasaba los 2600 — mismo bug que ya se vio una
 // vez con REGLA_TEXTO: lo que se corta es el FINAL del prompt armado, que es
 // justo el contenido específico del slide.
-const MAX_PROMPT = 3600;
+// 23-ago: subido de 3600 a 4400 al agregar PORTADA y REGLA_ORTOGRAFIA. El
+// peor caso (portada + personaje + T_BARBARA_DATOS) da 3758 y se pasaba por
+// 172 — la TERCERA vez que alargar una constante desborda este tope en
+// silencio. Se dejan ~640 de holgura, y la cuenta se verifica antes de
+// commitear cualquier constante nueva.
+const MAX_PROMPT = 4400;
 async function genImagen(prompt, idx) {
   // execFileSync (sin shell) para que saltos de línea/comillas del prompt no rompan el comando.
   //
@@ -457,6 +521,18 @@ async function main() {
 
 REGLA DE VERACIDAD (no negociable): cada cifra, fecha, medio y hecho que pongas en un slide tiene que salir TAL CUAL de la investigación que te paso. Está PROHIBIDO inventar o estimar una estadística, atribuirle algo a un medio real (Bloomberg, Microsoft, Meta, Google, McKinsey…) que no venga en la investigación, o ponerle a una noticia una fecha que no sea la de su publicación real. Esto se publica en la cuenta real de una empresa: un dato inventado con el logo encima es un problema de verdad. Si la investigación no alcanza, haz un carrusel más corto o de ángulo más general — nunca lo rellenes.
 
+${QUE_ES_BARBARA}
+
+LA PORTADA (slide 1) es la que decide si alguien lee el resto. Su titular tiene
+que ser corto y con filo: máximo 7 palabras, más una línea de apoyo de máximo
+10. NO pongas cifras, comparaciones ni listas en la portada — esos van del
+slide 2 en adelante. Si tu portada necesita explicar, no es una portada.
+
+FUENTES: sólo cita una fuente si viene textual de la investigación que te paso,
+con su nombre real. Está PROHIBIDA una línea de fuente genérica inventada del
+tipo "Análisis de Retención de Clientes 2024" o "Estudio Interno": si no
+tienes la fuente real, la pieza va SIN línea de fuente y SIN cifras.
+
 Responde SOLO con el JSON.`,
     output_config: { format: { type: "json_schema", schema } },
     messages: [{ role: "user", content: `Tipo de hoy (${dia}): ${tema.instruccion}\n\nTEMPLATE OBLIGATORIO:\n${tema.template}\n\nPIEZAS RECIENTES (NO repitas estos ángulos, innova):\n${recientes}\n${research ? "\nInvestigación web:\n" + research : ""}${reglasEquipo}${playbooks}${anguloFijado}${extra}\n\nCrea el carrusel de ${N_SLIDES} slides con un ángulo NUEVO.` }],
@@ -493,7 +569,13 @@ Responde SOLO con el JSON.`,
       // las cuatro condiciones a la vez sin necesidad de negociarlas.
       const llevaPersonaje = Boolean(tema.personaje) && i % 2 === 0;
       const personaje = tema.personaje ? (llevaPersonaje ? PERSONAJE_BARBARA : SIN_PERSONAJE) : "";
-      const url = await genImagen(REGLA_TEXTO + "\n\n" + tema.template + contador + (personaje ? "\n\n" + personaje : "") + "\n\n" + slides[i].prompt, i);
+      // La portada lleva su propia regla de composición: es la única slide
+      // cuyo trabajo es que la persona deslice, no informar.
+      const esPortada = i === 0;
+      const url = await genImagen(
+        REGLA_TEXTO + "\n\n" + REGLA_ORTOGRAFIA + "\n\n" + tema.template + contador +
+        (esPortada ? "\n\n" + PORTADA : "") +
+        (personaje ? "\n\n" + personaje : "") + "\n\n" + slides[i].prompt, i);
       let buf = Buffer.from(await (await fetch(url)).arrayBuffer());
       // El logo REAL se pega acá, no se le pide al modelo que lo dibuje (ver
       // el comentario junto a ZONA_LOGO_IZQ). tema.logo es null en las series
