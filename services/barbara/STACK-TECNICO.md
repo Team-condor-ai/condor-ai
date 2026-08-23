@@ -202,25 +202,30 @@ probar sin arriesgar lo que ya funciona.
 
 ### Qué falta para activarla (una sola vez, y nunca más)
 
-1. Crear la key en https://cloud.higgsfield.ai (sección API).
-2. Verificarla sin gastar créditos:
-   ```
-   export HIGGSFIELD_API_KEY_ID=...
-   export HIGGSFIELD_API_KEY_SECRET=...
-   node services/barbara/api-check.mjs            # sólo valida
-   node services/barbara/api-check.mjs --generar  # genera 1 imagen real
-   ```
-3. Subirlas como secrets (los workflows ya las leen):
-   ```
-   gh secret set HIGGSFIELD_API_KEY_ID -R Team-condor-ai/condor-ai
-   gh secret set HIGGSFIELD_API_KEY_SECRET -R Team-condor-ai/condor-ai
-   ```
+**Paso manual, irreducible:** crear la key en
+https://cloud.higgsfield.ai → sección API. No se puede automatizar: la
+API pública no tiene endpoints de gestión de keys (sus 50 rutas son todas
+de modelos) y el dashboard está detrás de Clerk + Cloudflare.
 
-Una vez hecho, se puede borrar todo el andamiaje de OAuth: el paso de
-autenticación del workflow, `hf-creds.enc`, `reauth.sh`, el secret
-`HF_CREDS_KEY` y el paso que re-cifra el token rotado. **No se borró
-todavía a propósito** — primero hay que ver la API funcionando en una
-corrida real.
+**Todo lo demás, en un comando:**
+
+```
+bash services/barbara/activar-api.sh
+```
+
+Pide las credenciales sin eco (acepta `id:secret` pegado junto), las
+valida contra la API, genera una imagen de prueba real, sube los dos
+secrets por stdin y dispara una corrida de Bárbara para confirmar de
+punta a punta.
+
+El workflow ya salta la instalación del CLI, el descifrado del token y el
+re-cifrado en cuanto `HIGGSFIELD_API_KEY_ID` existe (`USA_API_HF`).
+Mientras no exista, el comportamiento es idéntico al de hoy.
+
+Cuando el carrusel llegue bien por la API se puede borrar el andamiaje
+viejo: `reauth.sh`, `hf-creds.enc`, el secret `HF_CREDS_KEY` y los dos
+pasos de OAuth del workflow. **No se borró todavía a propósito** —
+primero hay que verlo funcionando en una corrida real.
 
 ### ⚠️ Bloqueo activo (hasta que se haga lo de arriba): Higgsfield sin autenticación
 
