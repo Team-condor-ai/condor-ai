@@ -421,9 +421,26 @@ async function main() {
         (CORRECCION ? ` Pidieron esto: "${CORRECCION}". Aplícalo.` : "") +
         " Genera una versión CLARAMENTE MEJOR y distinta (mejor diseño, mejor texto, otro enfoque del mismo tema)."
       : "";
+  // El ángulo se FIJA en los dos casos, y por razones opuestas:
+  //   · pieza nueva → el que eligió el juez, para no repetir el historial;
+  //   · corrección  → el de la pieza anterior, para no derivar a otro tema.
+  //
+  // Sin la segunda mitad, saltarse al juez sólo evitaba elegir uno nuevo pero
+  // dejaba al director inventando el suyo: se pedía "acorta los titulares" y
+  // volvía un carrusel de otro tema con titulares cortos. Visto en la primera
+  // corrida real de esta función (23-ago-2026).
+  // Para fijar el ángulo alcanza con el `angulo` de la última entrada — no
+  // hace falta que tenga el plan completo. Importa en la transición: las
+  // entradas anteriores al 23-ago-2026 no guardaban `contenido`, y sin este
+  // respaldo la primera corrección sobre una de ellas volvía a derivar.
+  const anguloPrevio = esCorreccionDirigida
+    ? (previaLocal?.angulo || [...log].reverse().find((e) => e.angulo)?.angulo || "")
+    : "";
   const anguloFijado = anguloElegido
     ? `\n\nÁNGULO YA ELEGIDO (no lo cambies, desarróllalo):\n"${anguloElegido.angulo}"\nQué lo hace distinto: ${anguloElegido.por_que_es_distinto}\nEn el campo "angulo" del JSON devuelve exactamente este ángulo.`
-    : "";
+    : anguloPrevio
+      ? `\n\nÁNGULO A MANTENER (es una corrección, NO cambies de tema):\n"${anguloPrevio}"\nEn el campo "angulo" del JSON devuelve exactamente este ángulo.`
+      : "";
   const dir = await claude({
     model: "claude-sonnet-5", max_tokens: 8000,
     system: `Eres Barbara, directora creativa de condor.ai. Diseñas carruseles de Instagram (${N_SLIDES} slides) de nivel agencia, educativos y que hacen seguir la cuenta. Sigues EXACTAMENTE el template del día. Incluyes el texto exacto a renderizar en cada slide COMO COPY FINAL: en la imagen SOLO aparece lo que lee la persona, JAMÁS palabras estructurales como "titular", "subtítulo", "título", "dato", "texto", "slide" o "CTA", ni rótulos con dos puntos. NUNCA repites ángulos, protagonistas ni textos de las piezas recientes (te las paso). Innova siempre.
