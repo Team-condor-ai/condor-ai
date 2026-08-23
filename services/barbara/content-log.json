@@ -185,5 +185,46 @@
       ],
       "caption": "Tu cliente ya no llega a tu web. 🤖\n\nHoy 1 de cada 5 preguntas en ChatGPT ya tiene intención directa de compra. La gente pregunta '¿qué me conviene comprar?' y la IA responde antes de que tu sitio aparezca.\n\n¿Tu marca está en esa conversación o sigue esperando que la busquen en Google?\n\nEn condor.ai ayudamos a que tu negocio aparezca donde tu cliente ya está decidiendo. Escríbenos al DM y te mostramos cómo.\n\n#IA #Marketing #Ventas #Perú #Chile"
     }
+  },
+  {
+    "fecha": "2026-08-23",
+    "tipo": "miercoles",
+    "serie": "barbara_datos",
+    "angulo": "Los compradores ya no llegan primero a tu web: le preguntan directo a la IA, y cerca del 20% de esas conversaciones en ChatGPT ya tiene intención de compra directa (MarketingProfs, ago 2026).",
+    "titulo": "📊 Bárbara — el dato que lo cambia todo",
+    "runId": "32644467299",
+    "contenido": {
+      "slides": [
+        {
+          "titulo": "La búsqueda ya cambió",
+          "prompt": "Black ground #000000, cream text. Large display serif headline split with lime emphasis. Text to render: 'La búsqueda ya cambió'. Below, smaller sans subhead: 'Ya no escriben en Google. Le preguntan directo a la IA.' Thin lime rule under headline. Badge number 1."
+        },
+        {
+          "titulo": "20% ya quiere comprar",
+          "prompt": "Cream ground #F2EFE6, near-black text, olive accents. One wide outline card with a thin-line chat-bubble icon at left, a very large lime number '20%' and a two-line label beside it: 'de las preguntas en ChatGPT ya muestran intención de compra directa'. Small grey source line bottom-left: 'Fuente: MarketingProfs, 21 de agosto 2026'. Badge number 2."
+        },
+        {
+          "titulo": "Qué es intención comercial",
+          "prompt": "Black ground, cream text, lime accents. Bordered card with a short icon list showing example queries as body copy: '¿Cuál cafetera me conviene comprar?' and '¿Qué CRM me recomiendas para mi negocio?'. Below the list, a line: 'Esas preguntas ya no pasan por tu sitio web, pasan por la IA.' Badge number 3."
+        },
+        {
+          "titulo": "Antes vs ahora",
+          "prompt": "Cream ground, olive accents. Bordered two-column panel split by vertical rule with small circled 'VS'. Left column with circled-cross icon and text: 'Antes: la gente buscaba en Google y llegaba a tu sitio.' Right column with circled-check icon and text: 'Ahora: le pregunta a una IA y la IA responde por ti.' Badge number 4."
+        },
+        {
+          "titulo": "El nuevo escaparate",
+          "prompt": "Black ground, cream text, thin lime rule under headline. Headline emphasis in lime on the word 'escaparate'. Body text: 'La IA se convirtió en el nuevo escaparate: recomienda, compara y decide antes de que tu cliente entre a tu web.' Badge number 5."
+        },
+        {
+          "titulo": "Qué significa para ti",
+          "prompt": "Cream ground, near-black text, olive accent rule. Body copy: 'Si tu marca no aparece en las respuestas de la IA, ya perdiste esa venta antes de que el cliente llegue a tu web.' Badge number 6."
+        },
+        {
+          "titulo": "Da el primer paso",
+          "prompt": "Black ground, cream text, bold lime CTA button-style rounded rectangle. Text inside: 'Escríbenos al DM'. Badge number 7."
+        }
+      ],
+      "caption": "Tu cliente ya no llega a tu web. 🤖\n\nHoy 1 de cada 5 preguntas en ChatGPT ya tiene intención directa de compra. La gente pregunta '¿qué me conviene comprar?' y la IA responde antes de que tu sitio aparezca.\n\n¿Tu marca está en esa conversación o sigue esperando que la busquen en Google?\n\nEn condor.ai ayudamos a que tu negocio aparezca donde tu cliente ya está decidiendo. Escríbenos al DM y te mostramos cómo.\n\n#IA #Marketing #Ventas #Perú #Chile"
+    }
   }
 ]
