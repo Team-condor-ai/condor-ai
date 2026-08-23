@@ -1,12 +1,15 @@
-// condor.ai · Empleada IA "Barbara" — 3 carruseles por semana (GitHub Actions)
-// Lun = Noticiero IA (investiga la web) · Mié = IA por industria · Vie = Filosofía IA.
+// condor.ai · Empleada IA "Barbara" — 4 piezas por semana (GitHub Actions)
+// Lun = carrusel de Cóndor · Mar = anuncio de Cóndor (imagen única)
+// Jue = carrusel de Bárbara · Vie = anuncio de Bárbara (imagen única)
+// Cada marca alterna entre sus DOS templates por semana ISO, así los cuatro
+// templates de carrusel se turnan sin repetirse dos semanas seguidas.
 // Imágenes con HIGGSFIELD (nano_banana_2). Memoria anti-repetición en content-log.json:
 // el director lee lo último creado y recibe la orden de NO repetir e INNOVAR.
 // Manda a Telegram para revisar antes de subir.
 //
 // Secrets: ANTHROPIC_API_KEY, HIGGSFIELD_ACCESS_TOKEN, HIGGSFIELD_REFRESH_TOKEN,
 //          TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
-// Variables: DIA (lunes|miercoles|viernes|test) · RETRY=1 (reintento del comando "Denuevo barbara")
+// Variables: DIA (lunes|martes|jueves|viernes|test) · RETRY=1 (reintento del comando "Denuevo barbara")
 
 import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
@@ -31,9 +34,10 @@ const OUTBOX = process.env.BARBARA_OUTBOX_DIR;
 // Día → tipo
 const rawDia = (process.env.DIA || "").trim().toLowerCase();
 let dia = rawDia;
-if (!["lunes", "miercoles", "viernes"].includes(dia)) {
-  const wd = new Date().getUTCDay(); // 1=Lun 3=Mié 5=Vie
-  dia = wd === 3 ? "miercoles" : wd === 5 ? "viernes" : "lunes";
+if (!["lunes", "martes", "jueves", "viernes"].includes(dia)) {
+  // 1=Lun 2=Mar 4=Jue 5=Vie — los 4 dias del calendario nuevo.
+  const wd = new Date().getUTCDay();
+  dia = { 1: "lunes", 2: "martes", 4: "jueves", 5: "viernes" }[wd] || "lunes";
 }
 
 // ── Piezas de marca compartidas ─────────────────────────────────────────────
@@ -153,7 +157,59 @@ const T_BARBARA_PRODUCTO = `Dark editorial slide, 4:5. Background PURE BLACK #00
 
 const T_BARBARA_DATOS = `Data-driven editorial slide, 4:5, same brand family as the dark Barbara series but on alternating grounds: this slide is EITHER pure black #000000 with cream #F5F1E8 text, OR warm cream #F2EFE6 with near-black text and olive accents — pick one and commit to it, never split the frame. Top-left: a SOLID rounded-square badge filled lime ${LIMA} with the number in black inside it. Headline in a high-contrast DISPLAY SERIF with the emphasised half in lime ${LIMA}, or in deeper olive #8FA524 when the ground is cream so it stays readable. Under it a short lime rule. Body copy in a geometric sans. For statistics, stack two or three wide rounded-rectangle OUTLINE cards, each with a thin-line icon at the left, one very large lime percentage, and a two-line label beside it. For comparisons, draw a bordered two-column panel with a circled-cross list on the left and a circled-check list on the right, split by a vertical rule with a small circled "VS" on it. Optionally one simple two-bar chart, grey against lime, labelled underneath. Bottom-left, a small grey source line. Editorial, dense but ordered. NO photos, NO clip-art.`;
 
+// ── Los 2 templates de imagen única (formato anuncio) ──────────────────────
+//
+// Pedido de Joaquín el 23-ago-2026: además de los carruseles, dos piezas
+// semanales de UNA sola imagen, con lógica de anuncio — un titular grande que
+// haga pensar y una invitación al DM. Poco texto, mucho aire.
+//
+// La diferencia con la portada de un carrusel no es cosmética: una portada
+// invita a DESLIZAR y deja la respuesta adentro; un anuncio tiene que cerrar
+// solo, porque no hay slide 2. Por eso acá sí va el CTA en la misma pieza.
+
+const T_AD_CONDOR = `Single bold advertising image, 4:5 — this is a standalone ad, not a carousel cover. Background PURE BLACK #000000, or near-white #F7F7F8 with one soft blue-to-pink gradient bloom bleeding from a corner — pick one and commit. ${ZONA_LOGO_IZQ}
+
+Composition, top to bottom, and NOTHING else:
+· ONE enormous headline filling the upper half of the frame, in very heavy grotesque sans, tight leading, 2 or 3 short lines. On black it is cream #F5F1E8; on the light ground it is near-black #0A0A0A. ONE key phrase inside it is filled with ${GRADIENTE}.
+· A short horizontal rule in that gradient.
+· ONE line of supporting copy in medium grey at much smaller size — the invitation.
+· At the bottom, a wide rounded-rectangle button OUTLINE stroked in the gradient, holding the call to action in bold.
+
+Optionally ONE large thin-line icon or a single floating 3D isometric render in blue-violet tones, off to one side, with lots of empty space around it. NEVER more than one visual element.
+
+FORBIDDEN: statistics, percentages, bullet lists, comparison panels, slide counters, source lines, photos, stock-photo people, clip-art. Enormous breathing room — this has to read from a thumbnail.`;
+
+const T_AD_BARBARA = `Single bold advertising image, 4:5 — this is a standalone ad, not a carousel cover. Background PURE BLACK #000000 edge to edge. ${ZONA_LOGO_IZQ}
+
+Composition, top to bottom, and NOTHING else:
+· ONE enormous headline filling the upper half of the frame, set in a high-contrast DISPLAY SERIF with Scotch or Didone flavour, cream #F5F1E8, tight leading, 2 or 3 short lines, with the emphasised words in lime ${LIMA}.
+· A short lime rule under it.
+· ONE line of supporting copy in white geometric sans at much smaller size — the invitation.
+· At the bottom, a wide rounded-rectangle button OUTLINE stroked in lime holding the call to action in lime bold.
+
+FORBIDDEN: statistics, percentages, bullet lists, comparison panels, numbered badges, slide counters, source lines, photos, clip-art, any colour beyond black, cream and lime. Enormous breathing room — this has to read from a thumbnail.`;
+
 const SERIES = {
+  ad_condor: {
+    titulo: "📣 Cóndor — anuncio",
+    investiga: false, slides: 1, cta: "Escríbenos al DM",
+    instruccion: "UNA sola imagen tipo anuncio de Cóndor AI (agentes de IA, automatización, páginas web, campañas). " +
+      "Un titular corto que interpele al dueño de negocio y lo haga pensar, del estilo de " +
+      "\"La IA ya despegó. ¿Y tú, te quedas en tierra?\", y debajo una invitación clara del tipo " +
+      "\"Escríbenos al DM y te ayudamos a implementar IA en tu empresa\". " +
+      "El titular NO explica: provoca. Nada de cifras ni listas.",
+    template: T_AD_CONDOR, logo: "izquierda",
+  },
+  ad_barbara: {
+    titulo: "📣 Bárbara — anuncio",
+    investiga: false, slides: 1, cta: "Escríbenos al DM",
+    instruccion: "UNA sola imagen tipo anuncio de Bárbara, la agente de IA que crea y publica el contenido " +
+      "de una marca. Un titular corto y concreto que muestre cuánto trabajo se ahorra, del estilo de " +
+      "\"Bárbara hace en un día lo que 3 community managers\", y debajo una invitación del tipo " +
+      "\"Escríbenos al DM y la instalamos para ti\". " +
+      "Habla del trabajo que deja de hacerse, no de la tecnología. Nada de cifras inventadas.",
+    template: T_AD_BARBARA, logo: "izquierda", personaje: true,
+  },
   noticias: {
     titulo: "📰 Noticiero IA — la semana en IA",
     investiga: true, slides: 6, cta: "Síguenos para más",
@@ -191,6 +247,28 @@ const SERIES = {
 // saldría nunca.
 const ROTATIVAS = ["servicios", "barbara_producto", "barbara_datos"];
 
+// ── El calendario NUEVO (23-ago-2026) ──────────────────────────────────────
+//
+// Joaquín lo redefinió: 4 piezas por semana, dos de cada marca.
+//
+//   Lunes     · carrusel de CÓNDOR   (noticias ↔ servicios)
+//   Martes    · anuncio de CÓNDOR    (imagen única)
+//   Jueves    · carrusel de BÁRBARA  (barbara_producto ↔ barbara_datos)
+//   Viernes   · anuncio de BÁRBARA   (imagen única)
+//
+// Cada marca alterna entre SUS DOS templates por semana ISO, así los cuatro
+// templates de carrusel se turnan sin que ninguno se repita dos semanas
+// seguidas — que es lo que se pidió.
+const CARRUSELES_CONDOR = ["noticias", "servicios"];
+const CARRUSELES_BARBARA = ["barbara_producto", "barbara_datos"];
+
+const CALENDARIO = {
+  lunes: () => CARRUSELES_CONDOR[semanaISO() % 2],
+  martes: () => "ad_condor",
+  jueves: () => CARRUSELES_BARBARA[semanaISO() % 2],
+  viernes: () => "ad_barbara",
+};
+
 // Semana ISO. El índice avanza por semana REAL y no por corrida: contando
 // corridas, un reintento del mismo día adelantaría la rotación y el viernes
 // saldría con la serie que le tocaba a la semana siguiente.
@@ -201,9 +279,11 @@ function semanaISO(d = new Date()) {
 }
 
 function serieDeHoy() {
-  if (dia === "lunes") return "noticias";
-  const slot = dia === "miercoles" ? 0 : 1;
-  return ROTATIVAS[(semanaISO() * 2 + slot) % ROTATIVAS.length];
+  const elegir = CALENDARIO[dia];
+  if (elegir) return elegir();
+  // Día fuera del calendario (una corrida a mano un miércoles, por ejemplo):
+  // se cae al carrusel de Cóndor que toque, que es la pieza más neutra.
+  return CARRUSELES_CONDOR[semanaISO() % 2];
 }
 
 // SERIE=... fuerza una serie concreta (para probar una sin esperar su semana).
@@ -561,7 +641,12 @@ Responde SOLO con el JSON.`,
       // El contador va DICTADO, no insinuado. Dejándoselo al modelo salieron
       // "01", "01 / 05", "3/5", "05" y "04/10" en un mismo carrusel de 6: un
       // modelo de imagen no sabe en qué slide va ni cuántos hay.
-      const contador = `\n\nSLIDE COUNTER: render exactly the text "${i + 1}/${slides.length}" in the top-right corner, nothing else there. Do not invent a different number or format.`;
+      // Una pieza de UNA sola imagen no lleva contador: "1/1" en la esquina
+      // delata que es una plantilla de carrusel y rompe la ilusión de anuncio.
+      const esUnica = slides.length === 1;
+      const contador = esUnica
+        ? "\n\nDo NOT render any slide counter, page number or \"1/1\" anywhere in the frame."
+        : `\n\nSLIDE COUNTER: render exactly the text "${i + 1}/${slides.length}" in the top-right corner, nothing else there. Do not invent a different number or format.`;
       // Portada siempre, alternado, nunca dos seguidas, ≥50% del carrusel:
       // se calcula acá (par/impar, 0-indexado) en vez de dejárselo al
       // criterio del director. Pedido de Joaquín el 22-ago-2026 — con 6 o 7
@@ -571,7 +656,7 @@ Responde SOLO con el JSON.`,
       const personaje = tema.personaje ? (llevaPersonaje ? PERSONAJE_BARBARA : SIN_PERSONAJE) : "";
       // La portada lleva su propia regla de composición: es la única slide
       // cuyo trabajo es que la persona deslice, no informar.
-      const esPortada = i === 0;
+      const esPortada = i === 0 && !esUnica;
       const url = await genImagen(
         REGLA_TEXTO + "\n\n" + REGLA_ORTOGRAFIA + "\n\n" + tema.template + contador +
         (esPortada ? "\n\n" + PORTADA : "") +
@@ -638,8 +723,8 @@ Responde SOLO con el JSON.`,
     "",
     "Para algo puntual, corre el workflow _Barbara_ a mano con:",
     "• `SERIE=" + claveSerie + "` — repite esta misma serie",
-    "• `SERIE=noticias|servicios|barbara_producto|barbara_datos` — cambia de serie",
-    "• `DIA=lunes|miercoles|viernes` — fuerza el día",
+    "• `SERIE=noticias|servicios|barbara_producto|barbara_datos|ad_condor|ad_barbara` — cambia de serie",
+    "• `DIA=lunes|martes|jueves|viernes` — fuerza el día",
     "• `RETRY=1` — salta el candado de 1 pieza por día",
     "",
     "El diseño de cada serie vive en `services/barbara/barbara.mjs`, en la constante `T_" + claveSerie.toUpperCase() + "`. Ahí se cambian colores, tipografía y retícula — el contenido no se toca, lo escribe Bárbara cada vez.",
