@@ -146,25 +146,60 @@ tipo n8n.
 
 ## Estado y qué falta
 
+### Verificación real del juez de ángulos (23-ago-2026)
+
+Corrida `32621181121`, serie `barbara_producto`, contra el historial real
+de la cuenta. El juez descartó dos ángulos y explicó por qué:
+
+- Contra *"La IA como el primer empleado que trabaja 24/7 sin descanso,
+  errores ni excusas"* → *"Ambos venden la misma idea de que la
+  IA/herramienta nunca falla, no se enferma ni se va, a diferencia de un
+  humano."*
+- Contra *"El costo oculto de NO tener IA: cada día que esperas, tu
+  competencia avanza"* → *"Misma idea central de que la inacción hace que
+  el cliente se vaya con la competencia; sólo cambia el canal
+  (Instagram) pero el mensaje de fondo es idéntico."*
+
+Ninguno de los dos comparte palabras con el original — es exactamente el
+parecido que la lista de 15 en texto plano dejaba pasar. El ángulo
+finalmente elegido fue sobre la fricción con las agencias, sin
+antecedente en el historial.
+
+### ⚠️ Bloqueo activo: Higgsfield sin autenticación
+
+Desde el 22-ago-2026 por la tarde, **Bárbara no puede generar imágenes**:
+el token de Higgsfield murió ("Not authenticated"). No es un problema de
+código y no se arregla reintentando — requiere un login OAuth por
+navegador, que sólo puede hacer una persona:
+
+```
+higgsfield auth login          # abre el navegador
+bash services/barbara/reauth.sh # re-cifra, rota el secret y pushea
+```
+
+El CLI local tiene que ser **0.2.x** (CI está pineado a 0.2.3); el que
+está instalado hoy en el PC es 1.1.23, que usa otro flujo de auth. El
+aviso de Telegram ya sale con estos pasos adentro.
+
 **Hecho al 23-ago-2026**
 - Memoria privada en tres tablas, todas leídas por el generador.
 - Memoria global con umbral de muestra y anonimización en origen.
 - Memoria fundacional (`barbara_playbooks`) + CLI para administrarla,
   sembrada con 5 lecciones verificadas en producción.
-- Anti-repetición con juez semántico separado.
-- Pilares de contenido por cliente, elegidos por deuda.
-- 41 tests unitarios; las 8 queries PostgREST nuevas validadas contra
-  la base real.
+- Anti-repetición con juez semántico separado, **verificado en vivo**.
+- Pilares de contenido por cliente, elegidos por deuda, con UI en el
+  portal (cliente edita, staff ve el porcentaje resultante).
+- La cuenta propia de Cóndor también lee los playbooks (opcional: si el
+  workflow no trae los secrets de Supabase, corre igual).
+- 45 tests unitarios; las 8 queries PostgREST nuevas validadas contra
+  la base real; `tsc` y `vite build` limpios.
 
 **Pendiente, en orden de valor**
-1. **Exponer los pilares en el formulario del portal.** Hoy la columna
-   `barbara_formulario.pilares` existe y el motor la respeta, pero no
-   hay UI para que staff la complete — sin eso todos los clientes usan
-   la mezcla por defecto.
-2. **La cuenta propia de Cóndor (`barbara.mjs`) no usa nada de esto.**
-   Sólo tiene el `content-log.json` local: ni reglas, ni playbooks, ni
-   pilares. Es el caso "en casa de herrero, cuchillo de palo". Requiere
-   agregarle los secrets de Supabase a su workflow.
+1. **Re-autenticar Higgsfield** (ver bloqueo arriba). Bloquea todo lo
+   demás — sin esto no se genera ninguna imagen.
+2. **La cuenta propia de Cóndor sigue sin pilares ni memoria propia.**
+   Ya lee playbooks, pero el reparto de series sigue fijo en código y no
+   tiene `barbara_reglas` ni aprende de las correcciones del equipo.
 3. **Investigación web para los demás pilares**, no sólo para
    `noticias`.
 4. **Edición de video** con subtítulos/música — primero confirmar si el
