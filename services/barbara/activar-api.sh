@@ -22,24 +22,79 @@ echo
 echo "Si todavía no creaste la key: https://cloud.higgsfield.ai → sección API."
 echo
 
-# `read -s` no hace eco, así que las credenciales no quedan en pantalla ni en
-# el historial del shell. Se aceptan pegadas por separado o como "id:secret",
-# que es como las muestra el dashboard.
-read -r -s -p "KEY_ID (o pegá 'id:secret' junto): " ENTRADA
-echo
-if [[ "$ENTRADA" == *:* ]]; then
-  KEY_ID="${ENTRADA%%:*}"
-  KEY_SECRET="${ENTRADA#*:}"
-  echo "   (detecté el formato id:secret, separado)"
-else
-  KEY_ID="$ENTRADA"
-  read -r -s -p "KEY_SECRET: " KEY_SECRET
+# De dónde salen las credenciales, en orden de preferencia:
+#   1. un archivo pasado como argumento (con "id:secret" o dos líneas)
+#   2. las variables de entorno, si ya venían exportadas
+#   3. preguntando a mano — sólo si hay una terminal de verdad
+#
+# El caso 3 NO funciona cuando el script se lanza desde Claude Code con `!`:
+# ahí stdin no es una terminal, `read` recibe EOF y con `set -e` el script se
+# cerraba en silencio sin decir por qué. De ahí el chequeo explícito.
+ARCHIVO="${1:-}"
+
+if [ -n "$ARCHIVO" ]; then
+  [ -f "$ARCHIVO" ] || { echo "❌ No encuentro el archivo: $ARCHIVO"; exit 1; }
+  # Acepta "id:secret" en una línea, o el id y el secret en dos líneas.
+  CRUDO="$(tr -d '\r' < "$ARCHIVO" | grep -v '^[[:space:]]*$' | head -2)"
+  if [ "$(printf '%s\n' "$CRUDO" | wc -l)" -ge 2 ]; then
+    KEY_ID="$(printf '%s\n' "$CRUDO" | sed -n 1p | tr -d '[:space:]')"
+    KEY_SECRET="$(printf '%s\n' "$CRUDO" | sed -n 2p | tr -d '[:space:]')"
+  else
+    KEY_ID="${CRUDO%%:*}"
+    KEY_SECRET="${CRUDO#*:}"
+  fi
+  echo "   Credenciales leídas de $ARCHIVO"
+
+elif [ -n "${HIGGSFIELD_API_KEY_ID:-}" ] && [ -n "${HIGGSFIELD_API_KEY_SECRET:-}" ]; then
+  KEY_ID="$HIGGSFIELD_API_KEY_ID"
+  KEY_SECRET="$HIGGSFIELD_API_KEY_SECRET"
+  echo "   Usando las credenciales que ya estaban en el entorno."
+
+elif [ -t 0 ]; then
+  # `read -s` no hace eco: no quedan en pantalla ni en el historial.
+  read -r -s -p "KEY_ID (o pegá 'id:secret' junto): " ENTRADA
   echo
+  if [[ "$ENTRADA" == *:* ]]; then
+    KEY_ID="${ENTRADA%%:*}"
+    KEY_SECRET="${ENTRADA#*:}"
+    echo "   (detecté el formato id:secret, separado)"
+  else
+    KEY_ID="$ENTRADA"
+    read -r -s -p "KEY_SECRET: " KEY_SECRET
+    echo
+  fi
+
+else
+  cat <<'AYUDA'
+❌ No hay una terminal interactiva, así que no puedo pedirte la key acá.
+   (Pasa siempre que se lanza con `!` desde Claude Code.)
+
+Dos formas de seguir, elegí la que te acomode:
+
+A) En una terminal de verdad (Git Bash o la de VS Code), parada en el repo:
+     bash services/barbara/activar-api.sh
+   Ahí sí te la pide sin mostrarla en pantalla.
+
+B) Sin salir de acá: guardá la key en un archivo temporal y pasáselo.
+   Creá un .txt con UNA línea así:   TU_KEY_ID:TU_KEY_SECRET
+   (o dos líneas: el id en la primera, el secret en la segunda)
+   y después:
+     bash services/barbara/activar-api.sh /ruta/al/archivo.txt
+   El script lo borra solo al terminar.
+AYUDA
+  exit 1
 fi
 
 if [ -z "${KEY_ID:-}" ] || [ -z "${KEY_SECRET:-}" ]; then
   echo "❌ Faltó alguno de los dos valores."
   exit 1
+fi
+
+# Si vinieron de un archivo, se borra pase lo que pase — incluso si el script
+# falla a mitad de camino. Un .txt con la key viva olvidado en Descargas es
+# justo el tipo de cosa que después aparece en un backup o en un repo.
+if [ -n "$ARCHIVO" ]; then
+  trap 'rm -f "$ARCHIVO" && echo "   🧹 Borré $ARCHIVO"' EXIT
 fi
 
 export HIGGSFIELD_API_KEY_ID="$KEY_ID"
