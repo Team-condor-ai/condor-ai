@@ -151,40 +151,7 @@
     "serie": "barbara_datos",
     "angulo": "Los compradores ya no llegan primero a tu web: le preguntan directo a la IA, y cerca del 20% de esas conversaciones en ChatGPT ya tiene intención de compra directa (MarketingProfs, ago 2026).",
     "titulo": "📊 Bárbara — el dato que lo cambia todo",
-    "runId": "32644000859",
-    "contenido": {
-      "slides": [
-        {
-          "titulo": "La búsqueda ya cambió",
-          "prompt": "Black ground #000000, cream text. Large display serif headline split with lime emphasis. Text to render: 'La búsqueda ya cambió'. Below, smaller sans subhead: 'Ya no escriben en Google. Le preguntan directo a la IA.' Thin lime rule under headline. Badge number 1."
-        },
-        {
-          "titulo": "20% ya quiere comprar",
-          "prompt": "Cream ground #F2EFE6, near-black text, olive accents. One wide outline card with a thin-line chat-bubble icon at left, a very large lime number '20%' and a two-line label beside it: 'de las preguntas en ChatGPT ya muestran intención de compra directa'. Small grey source line bottom-left: 'Fuente: MarketingProfs, 21 de agosto 2026'. Badge number 2."
-        },
-        {
-          "titulo": "Qué es intención comercial",
-          "prompt": "Black ground, cream text, lime accents. Bordered card with a short icon list showing example queries as body copy: '¿Cuál cafetera me conviene comprar?' and '¿Qué CRM me recomiendas para mi negocio?'. Below the list, a line: 'Esas preguntas ya no pasan por tu sitio web, pasan por la IA.' Badge number 3."
-        },
-        {
-          "titulo": "Antes vs ahora",
-          "prompt": "Cream ground, olive accents. Bordered two-column panel split by vertical rule with small circled 'VS'. Left column with circled-cross icon and text: 'Antes: la gente buscaba en Google y llegaba a tu sitio.' Right column with circled-check icon and text: 'Ahora: le pregunta a una IA y la IA responde por ti.' Badge number 4."
-        },
-        {
-          "titulo": "Anuncios llegan a Europa",
-          "prompt": "Black ground, cream text, lime rule. Headline emphasis in lime. Body text: 'OpenAI empezará a mostrar anuncios dentro de ChatGPT en 31 mercados europeos desde el 24 de agosto.' Small grey source line bottom-left: 'Fuente: MarketingProfs, 21 de agosto 2026'. Badge number 5."
-        },
-        {
-          "titulo": "Qué significa para ti",
-          "prompt": "Cream ground, near-black text, olive accent rule. Body copy: 'Si tu marca no aparece en las respuestas de la IA, ya perdiste esa venta antes de que el cliente llegue a tu web.' Badge number 6."
-        },
-        {
-          "titulo": "Da el primer paso",
-          "prompt": "Black ground, cream text, bold lime CTA button-style rounded rectangle. Text inside: 'Escríbenos al DM'. Badge number 7."
-        }
-      ],
-      "caption": "Tu cliente ya no llega a tu web. 🤖\n\nHoy 1 de cada 5 preguntas en ChatGPT ya tiene intención directa de compra. La gente pregunta '¿qué me conviene comprar?' y la IA responde antes de que tu sitio aparezca.\n\n¿Tu marca está en esa conversación o sigue esperando que la busquen en Google?\n\nEn condor.ai ayudamos a que tu negocio aparezca donde tu cliente ya está decidiendo. Escríbenos al DM y te mostramos cómo.\n\n#IA #Marketing #Ventas #Perú #Chile"
-    }
+    "runId": "32644000859"
   },
   {
     "fecha": "2026-08-23",
@@ -266,6 +233,43 @@
         }
       ],
       "caption": "Tu cliente ya no llega a tu web. 🤖\n\nHoy 1 de cada 5 preguntas en ChatGPT ya tiene intención directa de compra. La gente pregunta '¿qué me conviene comprar?' y la IA responde antes de que tu sitio aparezca.\n\n¿Tu marca está en esa conversación o sigue esperando que la busquen en Google?\n\nEn condor.ai ayudamos a que tu negocio aparezca donde tu cliente ya está decidiendo. Escríbenos al DM y te mostramos cómo.\n\n#IA #Marketing #Ventas #Perú #Chile"
+    }
+  },
+  {
+    "fecha": "2026-08-23",
+    "tipo": "miercoles",
+    "serie": "barbara_producto",
+    "angulo": "Las horas que se van cada semana copiando el mismo post a Instagram, TikTok, Facebook y LinkedIn con distinto tamaño y formato: Bárbara lo adapta y publica en los cuatro sin que nadie toque un editor.",
+    "titulo": "🎀 Bárbara — tu agente de contenido",
+    "runId": "32645723494",
+    "contenido": {
+      "slides": [
+        {
+          "titulo": "El ciclo que te roba la semana",
+          "prompt": "Icon: four simplified line-art screens shaped like different platform layouts (story-shaped, square, landscape, feed-shaped) clustered together, thin lines connecting them to a small clock icon above. Headline in cream with 'cuatro veces' emphasised in lime: 'El mismo post, editado cuatro veces'. Bottom rounded-rectangle outline with a lime pencil icon at left and white sans-serif text: 'Instagram, TikTok, Facebook, LinkedIn'."
+        },
+        {
+          "titulo": "Redimensionar sin pensar",
+          "prompt": "Numbered point 1. Icon: three overlapping rectangle frames of different aspect ratios (vertical, square, horizontal) being cropped, thin lime line art. Headline in cream with 'recortar y ajustar' emphasised in lime: 'Recortar y ajustar cada formato'. Bottom rounded-rectangle outline with a lime clock icon at left and white sans-serif text: 'Bárbara ahorra 4 horas a la semana'."
+        },
+        {
+          "titulo": "Escribir el copy cuatro veces",
+          "prompt": "Numbered point 2. Icon: one large speech bubble splitting into four smaller speech bubbles, thin lime line art. Headline in cream with 'reescribir el texto' emphasised in lime: 'Reescribir el texto para cada red'. Bottom rounded-rectangle outline with a lime clock icon at left and white sans-serif text: 'Bárbara ahorra 3 horas a la semana'."
+        },
+        {
+          "titulo": "Publicar uno por uno",
+          "prompt": "Numbered point 3. Icon: a calendar with four small dots representing platforms scattered across different days, thin lime line art. Headline in cream with 'publicar manualmente' emphasised in lime: 'Publicar manualmente en cada app'. Bottom rounded-rectangle outline with a lime clock icon at left and white sans-serif text: 'Bárbara ahorra 2 horas a la semana'."
+        },
+        {
+          "titulo": "Nueve horas de vuelta",
+          "prompt": "Icon: an hourglass with sand almost fully settled at the bottom, thin lime line art, symbolising reclaimed time. Headline in cream with 'nueve horas' emphasised in lime: 'Nueve horas de vuelta cada semana'. Bottom rounded-rectangle outline with a lime target icon at left and white sans-serif text: '¿Qué harías con ese tiempo?'."
+        },
+        {
+          "titulo": "Bárbara ya está lista",
+          "prompt": "Icon: a single thin lime line-art icon of a speech bubble with a small play triangle inside, centred. Headline in cream with 'Bárbara' emphasised in lime: 'Bárbara publica por ti'. Bottom rounded-rectangle outline with a lime arrow icon at left and white sans-serif text: 'Escríbenos al DM'."
+        }
+      ],
+      "caption": "¿Cuántas veces editaste el mismo post hoy? 😩\n\nInstagram pide una medida, TikTok otra, Facebook otra, LinkedIn otra. Multiplica eso por cada publicación de la semana.\nEso no es crear contenido, es hacer el mismo trabajo cuatro veces.\n\nBárbara, la agente de condor.ai, adapta y publica tu contenido en las cuatro redes sin que nadie abra un editor. Síguenos y escríbenos al DM si quieres recuperar esas horas.\n\n#condorai #IA #marketingdigital #pymes #Peru"
     }
   }
 ]
