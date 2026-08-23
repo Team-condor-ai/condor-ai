@@ -126,3 +126,36 @@ test("elegirAngulo agotado devuelve candidato + bandera, no null ni excepción",
   assert.equal(r.angulo.angulo, "repite 2", "devuelve el mejor disponible para no quedarse sin publicar");
   assert.equal(r.descartes.length, 2);
 });
+
+/* El bug del 23-ago-2026: la primera corrida real murió con "Unterminated
+   string in JSON at position 703", que no dice cuál de las dos causas fue.
+   Estos tests fijan que el mensaje distinga. */
+
+test("parsearJSON culpa a max_tokens cuando el modelo se quedó sin presupuesto", async () => {
+  const { parsearJSON } = await import("./angulos.mjs");
+  assert.throws(
+    () => parsearJSON('{"angulos":[{"angulo":"a med', { stop_reason: "max_tokens" }, "proponer"),
+    (e) => /max_tokens/.test(e.message) && /Sube max_tokens/.test(e.message) && /proponer/.test(e.message),
+  );
+});
+
+test("parsearJSON distingue 'no era JSON' de 'se cortó'", async () => {
+  const { parsearJSON } = await import("./angulos.mjs");
+  assert.throws(
+    () => parsearJSON("lo siento, no puedo", { stop_reason: "end_turn" }, "juzgar"),
+    (e) => /no es JSON válido/.test(e.message) && /end_turn/.test(e.message),
+  );
+});
+
+test("parsearJSON incluye el largo y el comienzo real para poder diagnosticar", async () => {
+  const { parsearJSON } = await import("./angulos.mjs");
+  assert.throws(
+    () => parsearJSON('{"roto', { stop_reason: "end_turn" }, "proponer"),
+    (e) => /6 chars/.test(e.message) && /\{\\"roto/.test(e.message),
+  );
+});
+
+test("parsearJSON devuelve el objeto cuando el JSON está bien", async () => {
+  const { parsearJSON } = await import("./angulos.mjs");
+  assert.deepEqual(parsearJSON('{"ok":1}', { stop_reason: "end_turn" }, "x"), { ok: 1 });
+});

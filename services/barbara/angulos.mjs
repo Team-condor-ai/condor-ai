@@ -118,7 +118,10 @@ export async function proponer(claudeFn, apiKey, {
 
   const r = await claudeFn(apiKey, {
     model: MODELO,
-    max_tokens: 1500,
+    // 4000, no 1500: la primera corrida real (23-ago-2026) devolvio el JSON
+    // cortado. Cinco candidatos con dos campos de prosa cada uno no caben en
+    // 1500, y lo que se corta es el final de la ultima cadena.
+    max_tokens: 4000,
     system:
       "Eres la directora creativa de una cuenta de Instagram que publica varias veces por semana " +
       "y lleva meses al aire. Tu trabajo acá es SOLO proponer ángulos, no escribir la pieza.\n\n" +
@@ -140,7 +143,7 @@ export async function proponer(claudeFn, apiKey, {
     }],
   });
 
-  const { angulos } = JSON.parse(textoDe(claudeFn, r));
+  const { angulos } = parsearJSON(textoDe(claudeFn, r), r, "proponer");
   return (angulos || []).slice(0, n);
 }
 
@@ -163,7 +166,7 @@ export async function juzgar(claudeFn, apiKey, { candidatos, historial = [] }) {
 
   const r = await claudeFn(apiKey, {
     model: MODELO,
-    max_tokens: 1500,
+    max_tokens: 3000,
     system:
       "Tu único trabajo es detectar repetición. NO escribes contenido, NO propones ideas, " +
       "NO mejoras nada: comparas y decides.\n\n" +
@@ -183,7 +186,7 @@ export async function juzgar(claudeFn, apiKey, { candidatos, historial = [] }) {
     }],
   });
 
-  const v = JSON.parse(textoDe(claudeFn, r));
+  const v = parsearJSON(textoDe(claudeFn, r), r, "juzgar");
   const idx = Number.isInteger(v.elegido_index) ? v.elegido_index : -1;
   const valido = idx >= 0 && idx < candidatos.length;
 
@@ -255,4 +258,28 @@ function textoDe(_claudeFn, respuesta) {
     .filter((b) => b.type === "text")
     .map((b) => b.text)
     .join("");
+}
+
+/**
+ * Parsea el JSON diciendo la causa real cuando falla.
+ *
+ * El 23-ago-2026, la primera corrida real de este módulo murió con
+ * "Unterminated string in JSON at position 703" — el mismo mensaje inútil que
+ * ya había costado caro una vez en barbara.mjs. Un JSON cortado tiene dos
+ * causas posibles y el arreglo es distinto para cada una, así que hay que
+ * distinguirlas en vez de adivinar: se quedó sin tokens (subir max_tokens o
+ * acortar el schema), o el modelo devolvió algo que no era JSON (mirar qué).
+ */
+export function parsearJSON(crudo, respuesta, etiqueta) {
+  try {
+    return JSON.parse(crudo);
+  } catch (e) {
+    const razon = respuesta?.stop_reason === "max_tokens"
+      ? `se quedó sin tokens (stop_reason=max_tokens). Sube max_tokens o acorta el schema de ${etiqueta}.`
+      : `devolvió algo que no es JSON válido (stop_reason=${respuesta?.stop_reason}).`;
+    throw new Error(
+      `${etiqueta}: ${razon} ${crudo.length} chars recibidos. ` +
+      `Empieza con: ${JSON.stringify(crudo.slice(0, 120))}. Error: ${String(e).slice(0, 100)}`
+    );
+  }
 }
