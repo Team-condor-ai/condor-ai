@@ -133,6 +133,38 @@ async function anthropic() {
   }
 }
 
+async function kie() {
+  const clave = limpio(process.env.KIE_API_KEY);
+  if (!clave) {
+    await guardar({
+      proveedor: "kie", nombre: "Kie.ai", estado: "requiere_configuracion",
+      unidad_saldo: "créditos", fuente: "Kie.ai API", orden: 15,
+      detalle: "Falta el secret KIE_API_KEY.",
+    });
+    return;
+  }
+  try {
+    const respuesta = await fetch("https://api.kie.ai/api/v1/chat/credit", {
+      headers: { Authorization: `Bearer ${clave}` },
+    });
+    const datos = await respuesta.json();
+    if (!respuesta.ok || datos.code !== 200) throw new Error(`Kie ${respuesta.status}: ${JSON.stringify(datos).slice(0, 180)}`);
+    await guardar({
+      proveedor: "kie", nombre: "Kie.ai", estado: "ok",
+      saldo: Number(datos.data), unidad_saldo: "créditos",
+      fuente: "Kie.ai API", orden: 15,
+      // 1 crédito = $0,005 USD, tarifa publicada de Kie.ai (24-ago-2026).
+      detalle: `≈ $${(Number(datos.data) * 0.005).toFixed(2)} USD de saldo. gpt-image-2 (imagen) + seedance-2-0 (video), reemplaza a Higgsfield.`,
+    });
+  } catch (error) {
+    await guardar({
+      proveedor: "kie", nombre: "Kie.ai", estado: "error",
+      unidad_saldo: "créditos", fuente: "Kie.ai API", orden: 15,
+      detalle: `No se pudo consultar Kie.ai: ${String(error.message ?? error).slice(0, 180)}`,
+    });
+  }
+}
+
 async function blotato() {
   const clave = limpio(process.env.BLOTATO_API_KEY);
   if (!clave) {
@@ -164,5 +196,5 @@ async function blotato() {
   }
 }
 
-await Promise.all([higgsfield(), anthropic(), blotato()]);
+await Promise.all([higgsfield(), anthropic(), kie(), blotato()]);
 console.log("Créditos API sincronizados:", AHORA.toISOString());

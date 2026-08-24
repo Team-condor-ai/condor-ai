@@ -360,19 +360,47 @@ ${patrones}` : ""}${playbooks}${extraRetry}`;
   }
   let verificacion = { cumplidos: null, falta: [] };
 
+  // ── Log de cada prompt de generación (pedido de Joaquín, 24-ago-2026) ────
+  // Una fila por CADA llamada real a Claude que produce un plan de
+  // contenido — no solo la primera — para poder mirar después, pieza por
+  // pieza, exactamente qué se le pidió al modelo y compararlo contra si esa
+  // pieza terminó corregida o aprobada. No bloqueante: si Supabase falla acá,
+  // la generación sigue igual — es diagnóstico, no algo de lo que dependa
+  // publicar.
+  const promptsRegistrados = [];
+  async function registrarPrompt({ sistema, usuario, respuesta, correccionPedida }) {
+    try {
+      const filas = await db.post("barbara_prompts", {
+        barbara_cliente_id: barbaraId, tipo: TIPO, intento: promptsRegistrados.length,
+        prompt_sistema: sistema, prompt_usuario: usuario,
+        respuesta, correccion_pedida: correccionPedida || null,
+      }, { returnMinimal: false });
+      const id = Array.isArray(filas) ? filas[0]?.id : filas?.id;
+      if (id) promptsRegistrados.push(id);
+    } catch (e) {
+      console.log(`[${negocio}] no se pudo registrar el prompt (no bloqueante):`, String(e).slice(0, 120));
+    }
+  }
+
   let plan_contenido, mediaCaption;
 
   if (TIPO === "ugc") {
-    const pedirPlanUGC = async (extra = "") => JSON.parse(textOf(await claude(AK, {
-      model: "claude-sonnet-5", max_tokens: 2500,
-      system: `Eres Bárbara, directora creativa de "${negocio}" (rubro: ${rubro || "no especificado"}). Diriges un video UGC vertical 9:16 (2-3 tomas de 4-6s): UNA PERSONA mostrando el producto o servicio y HABLÁNDOLE A LA CÁMARA, estilo grabado con su propio celular — casero y genuino, nunca un comercial pulido. La persona puede cambiar entre piezas. Sigues la identidad de marca del cliente. NUNCA repites ángulos de las piezas recientes.
+    const pedirPlanUGC = async (extra = "") => {
+      const sistema = `Eres Bárbara, directora creativa de "${negocio}" (rubro: ${rubro || "no especificado"}). Diriges un video UGC vertical 9:16 (2-3 tomas de 4-6s): UNA PERSONA mostrando el producto o servicio y HABLÁNDOLE A LA CÁMARA, estilo grabado con su propio celular — casero y genuino, nunca un comercial pulido. La persona puede cambiar entre piezas. Sigues la identidad de marca del cliente. NUNCA repites ángulos de las piezas recientes.
 
 ${REGLA_VERACIDAD}
 
-Responde SOLO con el JSON.`,
-      output_config: { format: { type: "json_schema", schema: schemaUGC } },
-      messages: [{ role: "user", content: `${contexto}${anguloFijado}${extra}\n\nCrea el UGC con un ángulo NUEVO, fiel a la marca.` }],
-    })));
+Responde SOLO con el JSON.`;
+      const usuario = `${contexto}${anguloFijado}${extra}\n\nCrea el UGC con un ángulo NUEVO, fiel a la marca.`;
+      const plan = JSON.parse(textOf(await claude(AK, {
+        model: "claude-sonnet-5", max_tokens: 2500,
+        system: sistema,
+        output_config: { format: { type: "json_schema", schema: schemaUGC } },
+        messages: [{ role: "user", content: usuario }],
+      })));
+      await registrarPrompt({ sistema, usuario, respuesta: plan, correccionPedida: extra || null });
+      return plan;
+    };
     plan_contenido = await pedirPlanUGC("");
     verificacion = await asegurarCorreccion(pedirPlanUGC, plan_contenido);
     plan_contenido = verificacion.plan || plan_contenido;
@@ -398,16 +426,22 @@ Responde SOLO con el JSON.`,
     mediaCaption = plan_contenido.caption;
   } else {
     const nSlides = TIPO === "historia" ? 1 : 6;
-    const pedirPlanSlides = async (extra = "") => JSON.parse(textOf(await claude(AK, {
-      model: "claude-sonnet-5", max_tokens: 4000,
-      system: `Eres Bárbara, directora creativa de "${negocio}" (rubro: ${rubro || "no especificado"}). Diseñas ${TIPO === "historia" ? "una historia de Instagram (1 imagen)" : `un carrusel de Instagram (${nSlides} slides)`} de nivel agencia. Sigues la identidad de marca del cliente al pie de la letra. Escribes la COPY FINAL de cada slide: el titular y el cuerpo tal cual los va a leer la persona. El diseño lo pone una plantilla de marca, así que NO describes imágenes ni composición — solo escribes las palabras, y tienen que sostenerse solas. NUNCA repites ángulos de las piezas recientes.
+    const pedirPlanSlides = async (extra = "") => {
+      const sistema = `Eres Bárbara, directora creativa de "${negocio}" (rubro: ${rubro || "no especificado"}). Diseñas ${TIPO === "historia" ? "una historia de Instagram (1 imagen)" : `un carrusel de Instagram (${nSlides} slides)`} de nivel agencia. Sigues la identidad de marca del cliente al pie de la letra. Escribes la COPY FINAL de cada slide: el titular y el cuerpo tal cual los va a leer la persona. El diseño lo pone una plantilla de marca, así que NO describes imágenes ni composición — solo escribes las palabras, y tienen que sostenerse solas. NUNCA repites ángulos de las piezas recientes.
 
 ${REGLA_VERACIDAD}
 
-Responde SOLO con el JSON.`,
-      output_config: { format: { type: "json_schema", schema } },
-      messages: [{ role: "user", content: `${contexto}${anguloFijado}${extra}\n\nCrea ${TIPO === "historia" ? "la historia" : `el carrusel de ${nSlides} slides`} con un ángulo NUEVO, fiel a la marca.` }],
-    })));
+Responde SOLO con el JSON.`;
+      const usuario = `${contexto}${anguloFijado}${extra}\n\nCrea ${TIPO === "historia" ? "la historia" : `el carrusel de ${nSlides} slides`} con un ángulo NUEVO, fiel a la marca.`;
+      const plan = JSON.parse(textOf(await claude(AK, {
+        model: "claude-sonnet-5", max_tokens: 4000,
+        system: sistema,
+        output_config: { format: { type: "json_schema", schema } },
+        messages: [{ role: "user", content: usuario }],
+      })));
+      await registrarPrompt({ sistema, usuario, respuesta: plan, correccionPedida: extra || null });
+      return plan;
+    };
     plan_contenido = await pedirPlanSlides("");
     verificacion = await asegurarCorreccion(pedirPlanSlides, plan_contenido);
     plan_contenido = verificacion.plan || plan_contenido;
@@ -526,7 +560,7 @@ Responde SOLO con el JSON.`,
     }
   }
 
-  await db.post("barbara_memoria", {
+  const piezaCreada = await db.post("barbara_memoria", {
     barbara_cliente_id: barbaraId,
     fecha: hoyISO,
     tipo: TIPO,
@@ -542,7 +576,17 @@ Responde SOLO con el JSON.`,
     cambios_pedidos: correccion.cambios.length ? correccion.cambios : null,
     cambios_cumplidos: verificacion.cumplidos || null,
     corrige_a: isRetry && previa ? previa.id : null,
-  });
+  }, { returnMinimal: false });
+
+  // Enlaza cada prompt registrado en esta corrida con la pieza que produjo,
+  // para poder ir de "esta pieza se corrigió 3 veces" a "acá están los 3
+  // prompts exactos que la generaron", sin tener que adivinar por fecha.
+  const piezaId = Array.isArray(piezaCreada) ? piezaCreada[0]?.id : piezaCreada?.id;
+  if (piezaId && promptsRegistrados.length) {
+    await db.patch(`barbara_prompts?id=in.(${promptsRegistrados.join(",")})`, {
+      barbara_memoria_id: piezaId,
+    }).catch((e) => console.log(`[${negocio}] no se pudo enlazar los prompts a la pieza:`, String(e).slice(0, 120)));
+  }
 
   // AVISARLE A STAFF SI LA CORRECCIÓN NO SE LOGRÓ.
   //
