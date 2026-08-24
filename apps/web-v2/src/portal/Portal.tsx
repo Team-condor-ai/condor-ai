@@ -102,10 +102,12 @@ const MENU_STAFF: Grupo[] = [
     titulo: "Agentes IA",
     icono: "barbara",
     entradas: [
-      // "Agentes IA > Barbara > Barbara Clientes" es la jerarquia del encargo;
-      // el menu no anida un tercer nivel, asi que "Barbara" vive DENTRO de la
-      // pagina como chip, pensado para cuando haya un segundo agente.
-      { a: "/acceso/agentes-ia", texto: "Bárbara", icono: "barbara" },
+      // "Bárbara" abre EL portal directo (Cóndor.AI, como cualquier cliente
+      // usando su propio producto) — pedido explícito de Joaquín (24-ago):
+      // sin pasos intermedios, sin lista, sin botón "Ver portal". La lista
+      // completa de clientes de Bárbara (administrar, dar de alta) sigue en
+      // /acceso/agentes-ia, alcanzable desde dentro del portal en Ajustes.
+      { a: "/acceso/barbara", texto: "Bárbara", icono: "barbara" },
       { a: "/acceso/memoria", texto: "Memoria", icono: "memoria" },
     ],
   },

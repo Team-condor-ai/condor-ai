@@ -173,6 +173,13 @@ export function BarbaraModulo({
               <small>Plan</small>
               <span className={"pill " + infoPlan(plan).pill}>{infoPlan(plan).nombre}</span>
             </div>
+            {esStaff && (
+              <div style={{ marginTop: 18 }}>
+                <a href="/acceso/agentes-ia" className="btn">
+                  Administrar todos los clientes de Bárbara →
+                </a>
+              </div>
+            )}
           </div>
         )}
       </div>

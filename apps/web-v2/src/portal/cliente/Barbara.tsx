@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { sb } from "../lib/supabase";
+import { useSesion } from "../auth/sesion";
 import { BarbaraModulo } from "../agentes-ia/BarbaraModulo";
 import type { BarbaraBrandBook, BarbaraCliente, BarbaraFormulario } from "../agentes-ia/tipos";
 
@@ -14,26 +15,44 @@ function uno<T>(v: T | T[] | null | undefined): T | null {
   return Array.isArray(v) ? (v[0] ?? null) : (v ?? null);
 }
 
+const SELECT = "*, clientes(negocio), barbara_brand_book(*), barbara_formulario(*)";
+// Con !inner para que el filtro sobre la tabla embebida realmente aplique
+// (sin el hint, PostgREST no garantiza que .eq() sobre una relación filtre
+// las filas del lado izquierdo).
+const SELECT_STAFF = "*, clientes!inner(negocio), barbara_brand_book(*), barbara_formulario(*)";
+
 /**
- * Lo que ve el cliente de su agente Bárbara. Igual que `MiPlan.tsx`, la
- * consulta NO filtra por email: la policy `cliente_ve_su_barbara` ya limita
- * la tabla a su propia fila.
+ * "/acceso/barbara" — EL portal de Bárbara, para las dos audiencias.
  *
- * Rediseñado el 24-ago-2026: mismo `BarbaraModulo` que usa staff para ver
- * la Bárbara de un cliente — un solo portal para las dos audiencias, con
- * `esStaff={false}` acá porque el cliente no puede apagar reglas aprendidas.
+ * Pedido explícito de Joaquín (24-ago-2026): clic en "Bárbara" del menú de
+ * staff tiene que abrir el portal DIRECTO, sin pasar por una lista de
+ * clientes ni apretar un botón "Ver portal" — Cóndor es cliente de su
+ * propio producto, así que su Bárbara se abre igual que la de cualquier
+ * cliente externo.
+ *
+ * Por eso esta ruta vive ANTES de la bifurcación staff/cliente en
+ * `Portal.tsx` y este componente decide QUÉ fila mostrar según el rol:
+ *   · cliente → su propia fila (RLS ya la limita, sin filtro).
+ *   · staff   → la fila de Cóndor.AI, identificada por el negocio — no por
+ *     un UUID hardcodeado, para no romper si algún día se recrea la fila.
+ *
+ * La lista completa de TODOS los clientes de Bárbara (administrar planes,
+ * dar de alta) sigue en `/acceso/agentes-ia` — accesible desde acá con el
+ * link "Administrar clientes" en Ajustes, no se perdió, solo dejó de ser
+ * la puerta de entrada por defecto.
  */
 export function Barbara() {
+  const sesion = useSesion();
   const [d, setD] = useState<Cargado | null>(null);
   const [cargando, setCargando] = useState(true);
 
   async function cargar() {
     setCargando(true);
-    const { data } = await sb
-      .from("barbara_clientes")
-      .select("*, clientes(negocio), barbara_brand_book(*), barbara_formulario(*)")
-      .limit(1)
-      .maybeSingle();
+    const esStaff = sesion.rol === "staff";
+    const query = esStaff
+      ? sb.from("barbara_clientes").select(SELECT_STAFF).eq("clientes.negocio", "Cóndor.AI")
+      : sb.from("barbara_clientes").select(SELECT).limit(1);
+    const { data } = await query.maybeSingle();
     if (data) {
       const fila = data as unknown as BarbaraCliente & {
         clientes: { negocio: string | null } | null;
@@ -42,7 +61,7 @@ export function Barbara() {
       };
       setD({
         cliente: fila,
-        negocio: fila.clientes?.negocio || "tu marca",
+        negocio: fila.clientes?.negocio || (esStaff ? "Cóndor.AI" : "tu marca"),
         brandBook: uno(fila.barbara_brand_book),
         formulario: uno(fila.barbara_formulario),
       });
@@ -53,16 +72,24 @@ export function Barbara() {
   }
 
   useEffect(() => {
+    if (sesion.cargando) return;
     cargar();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sesion.cargando, sesion.rol]);
 
-  if (cargando)
+  if (sesion.cargando || cargando)
     return <div style={{ minHeight: "100vh", background: "#0A0A0B" }} />;
+
+  const esStaff = sesion.rol === "staff";
 
   if (!d)
     return (
       <div style={{ minHeight: "100vh", background: "#0A0A0B", color: "#F4F5EF", padding: 40 }}>
-        <p>Todavía no tienes Bárbara activada. Escríbenos y la activamos.</p>
+        <p>
+          {esStaff
+            ? "No existe todavía la fila de Cóndor.AI en Bárbara Clientes."
+            : "Todavía no tienes Bárbara activada. Escríbenos y la activamos."}
+        </p>
       </div>
     );
 
@@ -75,8 +102,8 @@ export function Barbara() {
       brandBook={d.brandBook}
       formulario={d.formulario}
       onCambio={cargar}
-      esStaff={false}
-      volverA="/acceso/plan"
+      esStaff={esStaff}
+      volverA={esStaff ? "/acceso/dashboard" : "/acceso/plan"}
       volverTexto="Volver a Cóndor"
     />
   );
