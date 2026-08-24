@@ -1,5 +1,5 @@
 import { Suspense, lazy, useState } from "react";
-import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 
 // El CSS del ERP de Planeta, copiado sin tocar. Se importa SOLO acá y no en
 // main.tsx a propósito: define variables globales (--fondo, --texto…) y un
@@ -192,6 +192,7 @@ export default function Portal() {
   // Se consulta siempre (staff incluido) porque los hooks no pueden ser
   // condicionales — para staff simplemente no se usa el resultado.
   const { tiene: tieneBarbara } = useTieneBarbara();
+  const ubicacion = useLocation();
 
   // `.portal-app` no es decorativo: es el scope del CSS del ERP. Sin este
   // div, las reglas de fondo, tipografía e iconos no se aplican — ver el
@@ -211,6 +212,23 @@ export default function Portal() {
 
   const correo = s.email;
   const nombre = correo.split("@")[0];
+
+  // BÁRBARA ES SU PROPIA APP DENTRO DEL PORTAL, NO UNA PÁGINA MÁS.
+  // ---------------------------------------------------------------------------
+  // Pedido explícito de Joaquín (24-ago-2026): al entrar a Bárbara, el menú y
+  // el chrome de Cóndor desaparecen del todo — se siente como entrar a otra
+  // app, con su propio riel de navegación oscuro y un botón propio para
+  // volver. Por eso estas dos rutas se resuelven ACÁ, antes que `Marco`, en
+  // vez de vivir anidadas dentro de él como el resto de las páginas de staff
+  // o de cliente. `BarbaraModulo` trae su propio botón de "Volver a Cóndor".
+  const enBarbara = /^\/acceso\/(barbara|agentes-ia\/[^/]+\/portal)(\/|$)/.test(ubicacion.pathname);
+  if (enBarbara)
+    return envolver(
+      <Routes>
+        <Route path="barbara" element={<Barbara />} />
+        <Route path="agentes-ia/:id/portal" element={<BarbaraClientePortal />} />
+      </Routes>,
+    );
 
   if (s.rol === "staff")
     return envolver(
@@ -233,7 +251,7 @@ export default function Portal() {
           <Route path="agentes-ia" element={<AgentesIA />} />
           <Route path="memoria" element={<Memoria />} />
           <Route path="agentes-ia/:id" element={<FichaBarbaraCliente />} />
-          <Route path="agentes-ia/:id/portal" element={<BarbaraClientePortal />} />
+          {/* agentes-ia/:id/portal se resuelve más arriba, fuera de Marco */}
           <Route path="*" element={<Navigate to="/acceso/dashboard" replace />} />
         </Routes>
       </Marco>,
@@ -259,7 +277,7 @@ export default function Portal() {
         <Route path="plan" element={<MiPlan />} />
         <Route path="pago/resultado" element={<ResultadoPago />} />
         <Route path="boletas" element={dif(<MisBoletas />)} />
-        <Route path="barbara" element={<Barbara />} />
+        {/* barbara se resuelve más arriba, fuera de Marco */}
         <Route path="cuenta" element={<MiCuenta />} />
         <Route path="*" element={<Navigate to="/acceso/plan" replace />} />
       </Routes>

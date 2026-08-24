@@ -1,69 +1,143 @@
-/* Módulo "Agentes IA > Bárbara" — riel de navegación propio del módulo.
-   Usa los tokens del portal (--panel, --borde, --texto…) para quedar
-   theme-aware en claro/oscuro; el único color nuevo es el acento lima,
-   scoped a este módulo, porque es el color real de marca de Bárbara (ver
-   los templates de carrusel — MARCO_LIMA en plantillas.mjs). */
-:root {
-  --barbara-lima: #C7E62A;
-  --barbara-lima-tx: #2B3300;
-}
-:root[data-theme="dark"], :root:not([data-theme="light"]) {
-  --barbara-lima: #D4FF3D;
-  --barbara-lima-tx: #1A1F00;
-}
+/* Módulo "Agentes IA > Bárbara" — su propia app dentro del portal.
+   Fiel a las 5 capturas de referencia que mandó Joaquín: fondo casi negro,
+   acento lima, tarjetas redondeadas, titulares en serif. Es SIEMPRE oscuro,
+   sin importar el tema claro/oscuro del resto del portal — es la identidad
+   de marca de Bárbara, no una preferencia del usuario.
+
+   CÓMO SE RE-VISTE TODO LO QUE SE REUTILIZA (BrandBookEditor, tablas,
+   .pill, .campo, .btn, el grafo de memoria…) SIN TOCARLOS
+   ---------------------------------------------------------------------------
+   Esos componentes ya usan las variables del portal (--panel, --texto,
+   --borde, --azul…). En vez de reescribir cada clase, este bloque
+   REDEFINE esas mismas variables dentro de `.barbara-modulo` — todo lo que
+   vive adentro hereda el look oscuro+lima automáticamente, incluido el
+   grafo de memoria (sus `.grafo-*` usan los mismos tokens). */
+
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Poppins:wght@400;500;600;700&display=swap');
 
 .barbara-modulo {
+  --fondo: #0A0A0B;
+  --panel: #141416;
+  --panel-2: #1B1C1F;
+  --lateral: #101012;
+  --borde: rgba(255,255,255,.09);
+  --borde-suave: rgba(255,255,255,.05);
+  --texto: #F4F5EF;
+  --texto-2: #A5A69D;
+  --texto-3: #6E6F67;
+  --oscuro: #F4F5EF;
+  --sobre-oscuro: #14180A;
+  --hover: rgba(255,255,255,.05);
+  --activo: rgba(255,255,255,.08);
+  --azul: #D4FF3D;
+  --azul-fuerte: #E4FF77;
+  --azul-suave: rgba(212,255,61,.14);
+  --azul-borde: rgba(212,255,61,.4);
+  --ok-bg: rgba(111,215,154,.14); --ok-tx: #8FE8B4; --ok-bd: rgba(111,215,154,.32);
+  --gris-bg: rgba(255,255,255,.06); --gris-tx: #A5A69D; --gris-bd: rgba(255,255,255,.12);
+  --mal-bg: rgba(240,137,124,.14); --mal-tx: #F0897C; --mal-bd: rgba(240,137,124,.32);
+  --warn-bg: rgba(232,182,95,.14); --warn-tx: #E8B65F; --warn-bd: rgba(232,182,95,.32);
+  --info-bg: rgba(124,182,236,.14); --info-tx: #7CB6EC; --info-bd: rgba(124,182,236,.32);
+  /* `.portal-app aside{background:rgba(var(--vidrio),.72)}` en portal.css es
+     más específico que `.barbara-modulo-rail` sola — sin esto, el riel sale
+     con el vidrio CLARO del tema del sistema (blanco translúcido) en vez de
+     oscuro. Se sobreescribe acá Y con un selector propio más abajo, cinturón
+     y tirantes. */
+  --vidrio: 10,10,11;
+
+  --barbara-serif: 'Fraunces', Georgia, serif;
+  --barbara-sans: 'Poppins', -apple-system, sans-serif;
+
   display: flex;
-  gap: 20px;
+  gap: 16px;
   align-items: flex-start;
+  background: var(--fondo);
+  color: var(--texto);
+  font-family: var(--barbara-sans);
+  min-height: 100vh;
+  margin: -24px -28px;
+  padding: 20px 24px 40px 24px;
+  position: relative;
 }
 
-.barbara-modulo-rail {
-  width: 200px;
-  flex-shrink: 0;
+.barbara-modulo-volver {
+  position: absolute;
+  top: 18px; left: 24px;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 13px 7px 10px;
+  border-radius: 999px;
   background: var(--panel);
   border: 1px solid var(--borde);
-  border-radius: 14px;
-  padding: 14px 10px;
-  position: sticky;
-  top: 16px;
+  color: var(--texto-2);
+  font-size: 12.5px;
+  text-decoration: none;
+  z-index: 5;
 }
+.barbara-modulo-volver:hover { color: var(--texto); border-color: var(--azul-borde); }
 
+/* Riel */
+/* Especificidad (0,2,0), a propósito más alta que `.portal-app aside` (0,1,1)
+   de portal.css: sin esto el riel vuelve al vidrio claro del tema del
+   sistema pase lo que pase con `--vidrio`. El riel en sí no lleva fondo —
+   solo lo llevan las tarjetas de cada grupo, como en la referencia. */
+.barbara-modulo .barbara-modulo-rail {
+  width: 230px;
+  flex-shrink: 0;
+  margin-top: 46px;
+  background: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
 .barbara-modulo-marca {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 4px 8px 14px 8px;
-  margin-bottom: 8px;
-  border-bottom: 1px solid var(--borde-suave);
+  padding: 6px 4px 20px 4px;
 }
 .barbara-modulo-avatar {
-  font-size: 22px;
-  width: 36px; height: 36px;
-  display: flex; align-items: center; justify-content: center;
-  background: var(--barbara-lima);
-  border-radius: 10px;
+  width: 40px; height: 40px;
+  border-radius: 999px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: #000;
 }
-.barbara-modulo-marca b { display: block; font-size: 14.5px; }
-.barbara-modulo-marca .pill { margin-top: 3px; }
+.barbara-modulo-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.barbara-modulo-marca b {
+  font-family: var(--barbara-serif);
+  font-size: 21px; font-weight: 700;
+  display: inline; margin-right: 6px;
+}
+.barbara-modulo-badge-ia {
+  display: inline-block;
+  font-size: 10px; font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--azul-borde);
+  color: var(--azul);
+  vertical-align: middle;
+}
 
-.barbara-modulo-grupo { margin-bottom: 14px; }
+.barbara-modulo-grupo {
+  background: var(--panel);
+  border: 1px solid var(--borde-suave);
+  border-radius: 16px;
+  padding: 8px;
+  margin-bottom: 12px;
+}
 .barbara-modulo-grupo small {
-  display: block;
-  padding: 0 8px 5px 8px;
-  color: var(--texto-3);
-  font-size: 10.5px;
-  letter-spacing: .04em;
-  text-transform: uppercase;
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 8px 8px 8px;
+  color: var(--azul);
+  font-size: 12px;
+  font-weight: 600;
 }
-
 .barbara-modulo-item {
   display: flex;
   align-items: center;
   gap: 9px;
   width: 100%;
   padding: 8px 9px;
-  border-radius: 9px;
+  border-radius: 10px;
   border: none;
   background: transparent;
   color: var(--texto-2);
@@ -71,48 +145,172 @@
   text-align: left;
   cursor: pointer;
 }
+.barbara-modulo-item-dot {
+  width: 5px; height: 5px; border-radius: 999px;
+  background: transparent;
+  flex-shrink: 0;
+}
 .barbara-modulo-item:hover { background: var(--hover); color: var(--texto); }
-.barbara-modulo-item.on {
-  background: var(--barbara-lima);
-  color: var(--barbara-lima-tx);
-  font-weight: 600;
+.barbara-modulo-item.on { color: var(--azul); font-weight: 600; }
+.barbara-modulo-item.on .barbara-modulo-item-dot { background: var(--azul); }
+
+.barbara-modulo-contenido {
+  flex: 1;
+  min-width: 0;
+  margin-top: 46px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.barbara-modulo-contenido h1 {
+  font-family: var(--barbara-serif);
+  font-size: 24px;
+  display: flex; align-items: center; gap: 9px;
+  margin: 0 0 4px 0;
+}
+.barbara-modulo-contenido h3 {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 15px;
+  margin: 0 0 12px 0;
+}
+.barbara-subtitulo { color: var(--texto-2); font-size: 13.5px; margin: 0 0 14px 0; }
+
+.barbara-tarjeta {
+  background: var(--panel);
+  border: 1px solid var(--borde-suave);
+  border-radius: 18px;
+  padding: 22px 24px;
+}
+.barbara-tarjeta-interna {
+  background: var(--panel-2);
+  border: 1px solid var(--borde-suave);
+  border-radius: 14px;
+  padding: 16px;
+  margin-top: 16px;
 }
 
-.barbara-modulo-contenido { flex: 1; min-width: 0; }
+/* Hero (Inicio) */
+.barbara-inicio { display: flex; flex-direction: column; gap: 16px; }
+.barbara-hero {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+  background: var(--panel);
+  border: 1px solid var(--borde-suave);
+  border-radius: 20px;
+  padding: 26px 30px;
+}
+.barbara-hero-img { width: 210px; height: 210px; object-fit: contain; flex-shrink: 0; }
+.barbara-hero-cuerpo { flex: 1; min-width: 0; }
+.barbara-hero-cuerpo h1 {
+  font-family: var(--barbara-serif);
+  font-size: 34px;
+  margin: 0 0 10px 0;
+}
+.barbara-hero-cuerpo p { color: var(--texto-2); font-size: 14.5px; line-height: 1.5; margin: 0 0 18px 0; }
 
 /* Chat */
-.barbara-chat-caja { display: flex; gap: 8px; align-items: flex-end; }
-.barbara-chat-caja textarea { flex: 1; resize: vertical; }
-.barbara-chat-enviar { align-self: flex-end; }
+.barbara-chat-caja {
+  display: flex; gap: 10px; align-items: flex-end;
+  background: var(--panel-2);
+  border: 1px solid var(--borde);
+  border-radius: 16px;
+  padding: 10px 10px 10px 16px;
+}
+.barbara-chat-caja textarea {
+  flex: 1; resize: none; border: none; background: transparent; color: var(--texto);
+  font-family: inherit; font-size: 14px; padding: 6px 0; outline: none;
+}
+.barbara-chat-caja textarea::placeholder { color: var(--texto-3); }
+.barbara-chat-enviar {
+  width: 38px; height: 38px; border-radius: 999px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--azul); color: var(--sobre-oscuro); border: none; flex-shrink: 0;
+}
 
 /* Calendario */
 .barbara-calendario-nav {
   display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 14px;
+  margin-bottom: 16px; flex-wrap: wrap; gap: 10px;
 }
+.barbara-calendario-rango { font-size: 15px; }
+.barbara-calendario-rango small { color: var(--texto-3); text-transform: none; font-weight: 400; }
+.barbara-calendario-controles { display: flex; gap: 6px; align-items: center; }
+.chip-toggle {
+  padding: 6px 13px; border-radius: 999px; border: 1px solid var(--borde);
+  background: transparent; color: var(--texto-2); font-size: 12.5px; cursor: pointer;
+}
+.chip-toggle.on { background: var(--azul); border-color: var(--azul); color: var(--sobre-oscuro); font-weight: 600; }
+
 .barbara-calendario-grilla {
   display: grid;
-  grid-template-columns: repeat(7, minmax(120px, 1fr));
-  gap: 8px;
-  overflow-x: auto;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 3px;
 }
-.barbara-calendario-col {
+.barbara-calendario-diasem {
+  text-align: center; text-transform: uppercase; font-size: 10.5px;
+  color: var(--texto-3); padding-bottom: 6px; letter-spacing: .04em;
+}
+.barbara-calendario-celda {
+  background: var(--panel-2);
+  border-radius: 8px;
+  padding: 6px;
+  min-height: 48px;
+}
+.barbara-calendario-grilla.mes .barbara-calendario-celda { min-height: 78px; }
+.barbara-calendario-celda.fuera { opacity: .35; }
+.barbara-calendario-celda.hoy { outline: 1.5px solid var(--azul); outline-offset: -1.5px; }
+.barbara-calendario-num {
+  font-size: 11.5px; color: var(--texto-2); margin-bottom: 4px;
+  display: flex; align-items: center; gap: 4px;
+}
+.barbara-calendario-num i {
+  width: 5px; height: 5px; border-radius: 999px; background: var(--azul);
+  display: inline-block; font-style: normal;
+}
+.barbara-calendario-chip {
+  display: flex; align-items: center; gap: 4px;
+  background: var(--panel);
+  border-left: 2px solid var(--azul);
+  border-radius: 5px;
+  padding: 3px 6px;
+  margin-bottom: 3px;
+  font-size: 10.5px;
+  overflow: hidden;
+}
+.barbara-calendario-chip small { color: var(--texto-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Análisis */
+.barbara-stats-fila {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+.barbara-stat-tarjeta {
   background: var(--panel-2);
   border: 1px solid var(--borde-suave);
-  border-radius: 10px;
-  padding: 8px;
-  min-height: 90px;
+  border-radius: 14px;
+  padding: 16px;
 }
-.barbara-calendario-col.hoy { border-color: var(--barbara-lima); }
-.barbara-calendario-col-tit {
-  display: flex; justify-content: space-between;
-  text-transform: uppercase; font-size: 10px; color: var(--texto-3);
-  margin-bottom: 6px;
+.barbara-stat-icono { font-size: 20px; display: block; margin-bottom: 8px; }
+.barbara-stat-tarjeta b { display: block; font-size: 12.5px; color: var(--texto-2); font-weight: 500; }
+.barbara-stat-numero { font-family: var(--barbara-serif); font-size: 30px; margin: 4px 0 6px 0; }
+.barbara-stat-tarjeta small { font-size: 11.5px; }
+.barbara-stat-tarjeta small.arriba { color: var(--ok-tx); }
+.barbara-stat-tarjeta small.abajo { color: var(--mal-tx); }
+
+/* Configuración */
+.barbara-config-plan {
+  margin-top: 18px; display: flex; align-items: center; gap: 10px;
 }
-.barbara-calendario-pieza {
-  display: flex; flex-direction: column; gap: 3px;
-  padding: 6px 7px; margin-bottom: 6px;
-  background: var(--panel); border: 1px solid var(--borde-suave); border-radius: 8px;
-  font-size: 12px;
+.barbara-config-plan small { color: var(--texto-2); font-size: 12px; }
+
+/* Grafo de memoria: la tarjeta que lo envuelve ya no necesita el padding
+   estándar (el grafo trae el suyo), y crece más ancho que las demás. */
+.barbara-tarjeta-memoria .grafo-envoltorio { margin-top: 6px; }
+
+@media (max-width: 900px) {
+  .barbara-modulo { flex-direction: column; margin: -16px; padding: 16px; }
+  .barbara-modulo-rail { width: 100%; margin-top: 40px; }
+  .barbara-hero { flex-direction: column; text-align: center; }
 }
-.barbara-calendario-pieza small { color: var(--texto-2); }

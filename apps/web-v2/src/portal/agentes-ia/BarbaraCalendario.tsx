@@ -1,116 +1,123 @@
 import { useEffect, useState } from "react";
 import { sb } from "../lib/supabase";
+import { Ico } from "../disenio/iconos";
 
 type Pieza = {
   id: string;
   fecha: string;
   tipo: string;
   angulo: string | null;
-  pilar: string | null;
   aprobada_sin_cambios: boolean | null;
   correcciones_pedidas: number | null;
 };
 
-const ETIQUETA_TIPO: Record<string, string> = {
-  carrusel: "🖼️ Carrusel", historia: "📱 Historia", ugc: "🎬 UGC",
-};
-
-const DIAS = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"];
+const ICONO_TIPO: Record<string, string> = { carrusel: "🖼️", historia: "📱", ugc: "🎬" };
+const DIAS = ["lun", "mar", "mié", "jue", "vie", "sáb", "dom"];
 
 function lunesDeLaSemana(d: Date) {
   const copia = new Date(d);
-  const dow = (copia.getDay() + 6) % 7; // 0 = lunes
+  const dow = (copia.getDay() + 6) % 7;
   copia.setDate(copia.getDate() - dow);
   copia.setHours(0, 0, 0, 0);
   return copia;
 }
 const iso = (d: Date) => d.toISOString().slice(0, 10);
 
+type Props = { barbaraClienteId: string; vistaInicial?: "semana" | "mes" };
+
 /**
- * El calendario de contenido, con datos REALES de `barbara_memoria` — no
- * hay un calendario editable de piezas futuras todavía (Bárbara genera
- * según el cron del workflow, no según un plan pre-armado), así que esto
- * muestra lo que YA se publicó, semana por semana, con su estado real
- * (aprobada / corregida / pendiente de que el cliente responda).
+ * El calendario de contenido — con datos REALES de `barbara_memoria`. No
+ * existe todavía un calendario EDITABLE de piezas futuras: Bárbara genera
+ * según el cron del workflow, no según un plan pre-armado, así que esto
+ * muestra lo que YA se publicó, con su estado real.
  */
-export function BarbaraCalendario({ barbaraClienteId }: { barbaraClienteId: string }) {
-  const [semana, setSemana] = useState(() => lunesDeLaSemana(new Date()));
+export function BarbaraCalendario({ barbaraClienteId, vistaInicial = "mes" }: Props) {
+  const [vista, setVista] = useState<"semana" | "mes">(vistaInicial);
+  const [ancla, setAncla] = useState(() => new Date());
   const [piezas, setPiezas] = useState<Pieza[]>([]);
   const [cargando, setCargando] = useState(true);
-  const [error, setError] = useState("");
+
+  // Rango real a pedir según la vista: la semana visible, o el mes completo
+  // (incluye los días de relleno del mes anterior/siguiente que se ven en la
+  // grilla, igual que cualquier calendario real).
+  const inicioSemana = lunesDeLaSemana(ancla);
+  const primerDiaMes = new Date(ancla.getFullYear(), ancla.getMonth(), 1);
+  const inicioGrillaMes = lunesDeLaSemana(primerDiaMes);
+
+  const base = vista === "semana" ? inicioSemana : inicioGrillaMes;
+  const baseIso = iso(base);
 
   useEffect(() => {
     let vivo = true;
     setCargando(true);
-    const desde = iso(semana);
-    const hastaD = new Date(semana); hastaD.setDate(hastaD.getDate() + 6);
-    const hasta = iso(hastaD);
+    const desde = new Date(baseIso);
+    const hasta = new Date(desde); hasta.setDate(hasta.getDate() + (vista === "semana" ? 6 : 41));
     sb.from("barbara_memoria")
-      .select("id,fecha,tipo,angulo,pilar,aprobada_sin_cambios,correcciones_pedidas")
+      .select("id,fecha,tipo,angulo,aprobada_sin_cambios,correcciones_pedidas")
       .eq("barbara_cliente_id", barbaraClienteId)
-      .gte("fecha", desde).lte("fecha", hasta)
-      .order("fecha", { ascending: true })
-      .then(({ data, error }) => {
-        if (!vivo) return;
-        if (error) setError(error.message);
-        else { setPiezas((data ?? []) as Pieza[]); setError(""); }
-        setCargando(false);
-      });
+      .gte("fecha", iso(desde)).lte("fecha", iso(hasta))
+      .then(({ data }) => { if (vivo) { setPiezas((data ?? []) as Pieza[]); setCargando(false); } });
     return () => { vivo = false; };
-  }, [barbaraClienteId, semana]);
+  }, [barbaraClienteId, vista, baseIso]);
 
-  const porDia = (offset: number) => {
-    const d = new Date(semana); d.setDate(d.getDate() + offset);
-    const f = iso(d);
-    return { fecha: d, piezas: piezas.filter((p) => p.fecha === f) };
-  };
+  const dias: Date[] = [];
+  const cantidad = vista === "semana" ? 7 : 42;
+  for (let i = 0; i < cantidad; i++) { const d = new Date(base); d.setDate(d.getDate() + i); dias.push(d); }
+
+  const piezasDe = (d: Date) => piezas.filter((p) => p.fecha === iso(d));
+  const HOY = iso(new Date());
+
+  // Mayúscula SOLO en la primera letra — `text-transform: capitalize` en CSS
+  // pone mayúscula en cada palabra, y en español "Agosto De 2026" está mal.
+  const conMayuscula = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+  const etiquetaRango = vista === "semana"
+    ? `${inicioSemana.toLocaleDateString("es-CL", { day: "numeric", month: "short" })} – ${new Date(new Date(inicioSemana).setDate(inicioSemana.getDate() + 6)).toLocaleDateString("es-CL", { day: "numeric", month: "short" })}`
+    : conMayuscula(ancla.toLocaleDateString("es-CL", { month: "long", year: "numeric" }));
+
+  function mover(delta: number) {
+    setAncla((a) => {
+      const n = new Date(a);
+      if (vista === "semana") n.setDate(n.getDate() + delta * 7);
+      else n.setMonth(n.getMonth() + delta);
+      return n;
+    });
+  }
 
   return (
     <div className="barbara-calendario">
       <div className="barbara-calendario-nav">
-        <button className="btn chico" onClick={() => setSemana((s) => { const n = new Date(s); n.setDate(n.getDate() - 7); return n; })}>
-          ← Semana anterior
-        </button>
-        <b>{semana.toLocaleDateString("es-CL", { day: "numeric", month: "short" })} – {(() => { const f = new Date(semana); f.setDate(f.getDate() + 6); return f.toLocaleDateString("es-CL", { day: "numeric", month: "short" }); })()}</b>
-        <button className="btn chico" onClick={() => setSemana((s) => { const n = new Date(s); n.setDate(n.getDate() + 7); return n; })}>
-          Semana siguiente →
-        </button>
+        <b className="barbara-calendario-rango">{etiquetaRango} <small>(GMT-4)</small></b>
+        <div className="barbara-calendario-controles">
+          <button className={"chip-toggle" + (vista === "semana" ? " on" : "")} onClick={() => setVista("semana")}>Semana</button>
+          <button className={"chip-toggle" + (vista === "mes" ? " on" : "")} onClick={() => setVista("mes")}>Mes</button>
+          <button className="chip-toggle" onClick={() => setAncla(new Date())}>Hoy</button>
+          <button className="icono-btn" onClick={() => mover(-1)}>{Ico.volver({ t: 14 })}</button>
+          <button className="icono-btn" onClick={() => mover(1)} style={{ transform: "scaleX(-1)" }}>{Ico.volver({ t: 14 })}</button>
+        </div>
       </div>
 
-      {error && <p className="error">{error}</p>}
-      {cargando && <p className="vacio">Cargando…</p>}
-
-      {!cargando && (
-        <div className="barbara-calendario-grilla">
-          {DIAS.map((nombre, i) => {
-            const { fecha, piezas: delDia } = porDia(i);
-            const hoy = iso(fecha) === iso(new Date());
-            return (
-              <div key={nombre} className={"barbara-calendario-col" + (hoy ? " hoy" : "")}>
-                <div className="barbara-calendario-col-tit">
-                  <span>{nombre}</span>
-                  <small>{fecha.getDate()}</small>
+      <div className={"barbara-calendario-grilla" + (vista === "mes" ? " mes" : "")}>
+        {DIAS.map((d) => <div key={d} className="barbara-calendario-diasem">{d}</div>)}
+        {dias.map((d) => {
+          const enMes = vista === "semana" || d.getMonth() === ancla.getMonth();
+          const hoy = iso(d) === HOY;
+          const delDia = piezasDe(d);
+          return (
+            <div key={d.toISOString()} className={"barbara-calendario-celda" + (hoy ? " hoy" : "") + (enMes ? "" : " fuera")}>
+              <div className="barbara-calendario-num">{hoy && <i />}{d.getDate()}</div>
+              {delDia.map((p) => (
+                <div key={p.id} className="barbara-calendario-chip">
+                  <span>{ICONO_TIPO[p.tipo] || "📄"}</span>
+                  <small>{p.angulo ? (p.angulo.length > 28 ? p.angulo.slice(0, 26) + "…" : p.angulo) : p.tipo}</small>
                 </div>
-                {delDia.length === 0 && <p className="tenue" style={{ fontSize: 12 }}>—</p>}
-                {delDia.map((p) => (
-                  <div key={p.id} className="barbara-calendario-pieza">
-                    <b>{ETIQUETA_TIPO[p.tipo] || p.tipo}</b>
-                    {p.angulo && <small>{p.angulo}</small>}
-                    <span className={"pill " + (
-                      p.aprobada_sin_cambios === true ? "ok"
-                        : (p.correcciones_pedidas ?? 0) > 0 ? "gris"
-                        : "azul"
-                    )}>
-                      {p.aprobada_sin_cambios === true ? "Aprobada"
-                        : (p.correcciones_pedidas ?? 0) > 0 ? `${p.correcciones_pedidas} corrección(es)`
-                        : "Esperando respuesta"}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            );
-          })}
-        </div>
+              ))}
+            </div>
+          );
+        })}
+      </div>
+
+      {!cargando && piezas.length === 0 && (
+        <p className="tenue" style={{ marginTop: 10 }}>Sin piezas en este rango todavía.</p>
       )}
     </div>
   );

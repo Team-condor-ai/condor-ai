@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { sb } from "../../lib/supabase";
-import { Ico } from "../../disenio/iconos";
 import { BarbaraModulo } from "../../agentes-ia/BarbaraModulo";
 import type { BarbaraBrandBook, BarbaraCliente, BarbaraFormulario } from "../../agentes-ia/tipos";
 
@@ -57,31 +56,35 @@ export function BarbaraClientePortal() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
+  if (cargando)
+    return <div style={{ minHeight: "100vh", background: "#0A0A0B" }} />;
+
+  if (error)
+    return (
+      <div style={{ minHeight: "100vh", background: "#0A0A0B", color: "#F4F5EF", padding: 40 }}>
+        <p>{error}</p>
+      </div>
+    );
+
+  if (!d)
+    return (
+      <div style={{ minHeight: "100vh", background: "#0A0A0B", color: "#F4F5EF", padding: 40 }}>
+        <p>Ese cliente de Bárbara no existe.</p>
+      </div>
+    );
+
   return (
-    <>
-      <div className="barra">
-        <Link to={`/acceso/agentes-ia/${id}`} className="icono-btn" title="Volver a la ficha">
-          {Ico.volver({ t: 16 })}
-        </Link>
-        <h1>{d?.negocio || "Bárbara"}</h1>
-      </div>
-      <div className="cuerpo">
-        {cargando && <p className="vacio">Cargando…</p>}
-        {error && <p className="error">{error}</p>}
-        {!cargando && !error && !d && <p className="vacio">Ese cliente de Bárbara no existe.</p>}
-        {d && (
-          <BarbaraModulo
-            barbaraClienteId={d.cliente.id}
-            negocio={d.negocio}
-            plan={d.cliente.plan}
-            rubro={d.cliente.rubro}
-            brandBook={d.brandBook}
-            formulario={d.formulario}
-            onCambio={cargar}
-            esStaff
-          />
-        )}
-      </div>
-    </>
+    <BarbaraModulo
+      barbaraClienteId={d.cliente.id}
+      negocio={d.negocio}
+      plan={d.cliente.plan}
+      rubro={d.cliente.rubro}
+      brandBook={d.brandBook}
+      formulario={d.formulario}
+      onCambio={cargar}
+      esStaff
+      volverA={`/acceso/agentes-ia/${id}`}
+      volverTexto="Volver a la ficha"
+    />
   );
 }

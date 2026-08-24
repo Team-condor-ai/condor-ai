@@ -56,34 +56,28 @@ export function Barbara() {
     cargar();
   }, []);
 
-  if (cargando) return <div className="cuerpo"><p className="vacio">Cargando…</p></div>;
+  if (cargando)
+    return <div style={{ minHeight: "100vh", background: "#0A0A0B" }} />;
 
   if (!d)
     return (
-      <div className="cuerpo">
-        <p className="vacio">
-          Todavía no tienes Bárbara activada. Escríbenos y la activamos.
-        </p>
+      <div style={{ minHeight: "100vh", background: "#0A0A0B", color: "#F4F5EF", padding: 40 }}>
+        <p>Todavía no tienes Bárbara activada. Escríbenos y la activamos.</p>
       </div>
     );
 
   return (
-    <>
-      <div className="barra">
-        <h1>Bárbara</h1>
-      </div>
-      <div className="cuerpo">
-        <BarbaraModulo
-          barbaraClienteId={d.cliente.id}
-          negocio={d.negocio}
-          plan={d.cliente.plan}
-          rubro={d.cliente.rubro}
-          brandBook={d.brandBook}
-          formulario={d.formulario}
-          onCambio={cargar}
-          esStaff={false}
-        />
-      </div>
-    </>
+    <BarbaraModulo
+      barbaraClienteId={d.cliente.id}
+      negocio={d.negocio}
+      plan={d.cliente.plan}
+      rubro={d.cliente.rubro}
+      brandBook={d.brandBook}
+      formulario={d.formulario}
+      onCambio={cargar}
+      esStaff={false}
+      volverA="/acceso/plan"
+      volverTexto="Volver a Cóndor"
+    />
   );
 }
