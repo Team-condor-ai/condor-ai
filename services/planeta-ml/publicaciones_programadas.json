@@ -82,5 +82,45 @@
     "precio": 27490,
     "stock_inicial": 3,
     "descripcion_http": 201
+  },
+  "nueva:blood_sugar": {
+    "item_id": "MLC4394301172",
+    "fecha": "2026-08-24",
+    "titulo": "Blood Sugar Complex Toplux 60 Cápsulas Sin Sabor",
+    "precio": 25490,
+    "stock_inicial": 3,
+    "descripcion_http": 201
+  },
+  "vieja:rejuvia": {
+    "item_id": "MLC4394159476",
+    "fecha": "2026-08-24",
+    "titulo": "Rejuvia 30 Cápsulas Suplemento Alimentario Sin Sabor",
+    "precio": 23490,
+    "stock_inicial": 14,
+    "descripcion_http": 201
+  },
+  "vieja:nad_pro_max": {
+    "item_id": "MLC4394303564",
+    "fecha": "2026-08-24",
+    "titulo": "Nad Pro Max Coq10 Resveratrol 600mg 60 Cápsulas",
+    "precio": 23490,
+    "stock_inicial": 2,
+    "descripcion_http": 201
+  },
+  "nueva:zooone": {
+    "item_id": "MLC4394162532",
+    "fecha": "2026-08-24",
+    "titulo": "Zooone Luteína Zinc Vitaminas C E 60 Cápsulas",
+    "precio": 25490,
+    "stock_inicial": 3,
+    "descripcion_http": 201
+  },
+  "nueva:magnesio_complex": {
+    "item_id": "MLC4394305700",
+    "fecha": "2026-08-24",
+    "titulo": "Bioforce Magnesium Complex 1000mg 90 Cápsulas",
+    "precio": 25490,
+    "stock_inicial": 3,
+    "descripcion_http": 201
   }
 }

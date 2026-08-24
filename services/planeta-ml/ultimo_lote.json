@@ -1,81 +1,69 @@
 {
-  "fecha": "2026-08-23",
+  "fecha": "2026-08-24",
   "modo": "ejecutar",
-  "publicados_hoy_antes": 1,
+  "publicados_hoy_antes": 0,
   "max_diario": 8,
   "pendientes_totales": 36,
   "seleccionados": [
     {
-      "cuenta": "agustin",
-      "producto": "memorix",
-      "titulo": "Memorix 60 Cápsulas Suplemento Alimentario Sin Sabor",
-      "stock": 6,
-      "costo": 6000.0,
+      "cuenta": "nueva",
+      "producto": "blood_sugar",
+      "titulo": "Blood Sugar Complex Toplux 60 Cápsulas Sin Sabor",
+      "stock": 3,
+      "costo": 7000.0,
       "precio": 25490,
-      "utilidad": 6814,
+      "utilidad": 5814,
       "publicado": true,
-      "item_id": "MLC4391528712",
-      "permalink": "http://articulo.mercadolibre.cl/MLC-4391528712-memorix-60-capsulas-suplemento-alimentario-sin-sabor-sin-sabor-_JM"
+      "item_id": "MLC4394301172",
+      "permalink": "http://articulo.mercadolibre.cl/MLC-4394301172-blood-sugar-complex-toplux-60-capsulas-sin-sabor-sin-sabor-_JM"
     },
     {
       "cuenta": "vieja",
-      "producto": "oil_of_oregano",
-      "titulo": "Carlyle Organic Oil Of Oregano 59ml Gotero",
-      "stock": 3,
+      "producto": "rejuvia",
+      "titulo": "Rejuvia 30 Cápsulas Suplemento Alimentario Sin Sabor",
+      "stock": 14,
       "costo": 6000.0,
       "precio": 23490,
       "utilidad": 5534,
       "publicado": true,
-      "item_id": "MLC2187509467",
-      "permalink": "http://articulo.mercadolibre.cl/MLC-2187509467-carlyle-organic-oil-of-oregano-59ml-gotero-sin-sabor-_JM"
+      "item_id": "MLC4394159476",
+      "permalink": "http://articulo.mercadolibre.cl/MLC-4394159476-rejuvia-30-capsulas-suplemento-alimentario-sin-sabor-sin-sabor-_JM"
     },
     {
       "cuenta": "vieja",
-      "producto": "rosetimes",
-      "titulo": "Rosetimes Bálsamo Facial Hidratante En Barra 8g",
-      "stock": 3,
-      "costo": 4000.0,
-      "precio": 21490,
-      "utilidad": 6254,
-      "publicado": true,
-      "item_id": "MLC2187457877",
-      "permalink": "http://articulo.mercadolibre.cl/MLC-2187457877-rosetimes-balsamo-facial-hidratante-en-barra-8g-_JM"
-    },
-    {
-      "cuenta": "vieja",
-      "producto": "dr_melaxin",
-      "titulo": "Dr Melaxin Peel Shot Spray Exfoliante Ácido Kójico",
-      "stock": 4,
-      "costo": 6900.0,
-      "precio": 24990,
-      "utilidad": 5594,
-      "publicado": true,
-      "item_id": "MLC2187509675",
-      "permalink": "http://articulo.mercadolibre.cl/MLC-2187509675-dr-melaxin-peel-shot-spray-exfoliante-acido-kojico-_JM"
-    },
-    {
-      "cuenta": "vieja",
-      "producto": "magnesio_12en1",
-      "titulo": "Magnesio 12 En 1 Complex 720mg 60 Cápsulas Sin Sabor",
+      "producto": "nad_pro_max",
+      "titulo": "Nad Pro Max Coq10 Resveratrol 600mg 60 Cápsulas",
       "stock": 2,
       "costo": 6000.0,
       "precio": 23490,
       "utilidad": 5534,
       "publicado": true,
-      "item_id": "MLC2187626097",
-      "permalink": "http://articulo.mercadolibre.cl/MLC-2187626097-magnesio-12-en-1-complex-720mg-60-capsulas-sin-sabor-sin-sabor-_JM"
+      "item_id": "MLC4394303564",
+      "permalink": "http://articulo.mercadolibre.cl/MLC-4394303564-nad-pro-max-coq10-resveratrol-600mg-60-capsulas-sin-sabor-_JM"
     },
     {
-      "cuenta": "agustin",
+      "cuenta": "nueva",
+      "producto": "zooone",
+      "titulo": "Zooone Luteína Zinc Vitaminas C E 60 Cápsulas",
+      "stock": 3,
+      "costo": 7000.0,
+      "precio": 25490,
+      "utilidad": 5814,
+      "publicado": true,
+      "item_id": "MLC4394162532",
+      "permalink": "http://articulo.mercadolibre.cl/MLC-4394162532-zooone-luteina-zinc-vitaminas-c-e-60-capsulas-60-capsulas-_JM"
+    },
+    {
+      "cuenta": "nueva",
       "producto": "magnesio_complex",
       "titulo": "Bioforce Magnesium Complex 1000mg 90 Cápsulas",
       "stock": 3,
       "costo": 7000.0,
-      "precio": 27490,
-      "utilidad": 7094,
+      "precio": 25490,
+      "utilidad": 5814,
       "publicado": true,
-      "item_id": "MLC2187626227",
-      "permalink": "http://articulo.mercadolibre.cl/MLC-2187626227-bioforce-magnesium-complex-1000mg-90-capsulas-sin-sabor-_JM"
+      "item_id": "MLC4394305700",
+      "permalink": "http://articulo.mercadolibre.cl/MLC-4394305700-bioforce-magnesium-complex-1000mg-90-capsulas-sin-sabor-_JM"
     }
   ],
   "exclusiones": {
