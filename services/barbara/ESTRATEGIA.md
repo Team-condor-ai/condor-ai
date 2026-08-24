@@ -122,27 +122,70 @@ funciona con datos reales de clientes propios. Es 100% propio,
 legalmente limpio, y más valioso que un resumen genérico porque nadie
 más lo tiene.
 
-## 6. Planes comerciales (rediseñados desde cero)
+## 6. Planes comerciales (versión 24-ago-2026 — reemplaza la tabla anterior)
 
-Nombres pensados sobre la misma metáfora del cerebro que crece con el
-cliente:
+**Se descartaron los nombres "Semilla/Memoria/Cerebro" y el setup inicial
+cobrado aparte.** Quedan **Bárbara / Bárbara Go / Bárbara Plus**, sin costo
+de instalación, suscripción mensual automática por MercadoPago.
 
-| | **Bárbara Semilla** | **Bárbara Memoria** | **Bárbara Cerebro** |
+### El comprador (definido esta sesión, no derivarlo de otra parte)
+
+**Pyme chica-mediana chilena que ya evaluó y descartó contratar.** No es el
+emprendimiento de una persona sola con el celular — tiene equipo, ya gasta
+plata en marketing, y sabe que un community manager part-time corre
+$350.000-500.000 CLP/mes y una agencia chica $500.000-900.000 CLP/mes. No
+compra por no tener plata: compra por no querer el compromiso de coordinar
+reuniones ni depender de una sola persona que se puede ir. Bárbara tiene que
+sentirse como reemplazar esa contratación a una fracción del costo, nunca
+como "una app barata para emprendedores".
+
+### Alcance actual — a propósito acotado
+
+**Solo contenido orgánico.** La gestión de campañas pagadas (Meta/Google
+Ads) que estaba en el Plus original **se sacó del plan** — Bárbara hoy no
+hace eso. Puede volver como producto aparte más adelante, pero no se cobra
+ni se promete todavía.
+
+| | **Bárbara** | **Bárbara Go** | **Bárbara Plus** |
 |---|---|---|---|
-| Para quién | Recién arranca, quiere probar | Ya tiene ritmo, quiere que mejore solo | Marca que quiere el sistema completo |
-| Memoria privada | Básica (solo onboarding) | Completa, aprende cada semana | Completa + ajuste fino de personalidad de marca |
-| Memoria global (lectura) | ❌ | ✅ | ✅ + prioridad de promoción de sus propios patrones |
-| Biblioteca fundacional propia | ❌ | Parcial | Completa |
-| Publicaciones/mes | 12 (3/semana) | 24 (6/semana) | Ilimitado dentro de uso razonable |
-| Series/pilares | 2 fijos | Los definidos + rotación completa | Los definidos + templates a medida |
-| Consistencia de personaje/logo | ✅ | ✅ | ✅ + variantes de personaje a medida |
-| Reporte | Mensual | Semanal a Telegram | Semanal + llamada de estrategia mensual |
-| Setup inicial | $150.000 CLP | $200.000 CLP | $350.000 CLP |
-| Mensualidad | $180.000 CLP | $320.000 CLP | $550.000 CLP |
+| Precio | $49.990/mes | $89.990/mes | $119.990/mes |
+| Carruseles/mes | 12 | 12 | 12 |
+| Historias/mes | — | 20 | 20 |
+| Video UGC/mes | — | 4 (Seedance 2.0, 720p) | 4 |
+| Chat con Bárbara (Sonnet) | básico | conversacional, retroalimentación real | prioritario |
+| Revisión con IA antes de entregar | — | — | ✅ |
+| Publicación | Instagram | Instagram | + TikTok/LinkedIn/Facebook |
+| Reporte mensual | — | — | ✅ |
+| Pago | MercadoPago, suscripción automática | ídem | ídem |
 
-Estos números asumen costo de motor 100% Sonnet (sin Haiku) — con el
-costo real de Sonnet + Higgsfield + Blotato por cliente en las decenas
-de miles de CLP al mes, cada plan deja margen sano incluso en Semilla.
-Memoria y Cerebro cobran más no porque cuesten mucho más de correr,
-sino porque el valor percibido — "aprende solo, cada vez mejor" — es
-sustancialmente más alto.
+### Costo real por cliente/mes (con todo adentro, reintentos incluidos)
+
+Motores: `gpt-image-2` (imagen, vía Kie.ai) y `seedance-2-0` (video, vía
+Kie.ai — ver STACK-TECNICO.md). Buffers: 1,7x en imagen (técnico + correcciones
+de cliente), 2,6x en video. Chat: Sonnet, volumen derivado de que ~40% de las
+piezas reciben corrección y hay retroalimentación libre (~4 mensajes/pieza
+publicada) — cada pieza además dispara 2 llamadas de memoria (nota +
+clasificación).
+
+| | Bárbara | Go | Plus |
+|---|---|---|---|
+| Imagen | $5.814 | $7.429 | $7.429 |
+| Video | — | $15.438 | $15.438 |
+| Anthropic (generación) | $1.500 | $1.500 | $1.775 |
+| Chat + memoria (Sonnet) | $970 | $2.909 | $3.181 |
+| Infra compartida | $3.000 | $3.000 | $3.000 |
+| Pasarela MercadoPago (~3,8%) | $1.900 | $3.420 | $4.560 |
+| **Costo total** | **$13.184** | **$33.696** | **$35.383** |
+| **Margen** | **73,6%** | **62,6%** | **70,5%** |
+
+Nota abierta: como Plus ya no lleva gestión de campañas, su costo quedó casi
+idéntico al de Go (la diferencia real es solo chat/revisión extra) — el
+salto de precio de $89.990 a $119.990 hoy se justifica por features de
+servicio (multicanal, prioridad, reporte), no por más contenido ni más
+trabajo real. Vale la pena que Plus tenga algo más tangible (más piezas, o
+multicanal real publicando de verdad en 3-4 redes) para que el precio se
+sienta justificado.
+
+Sin costo de onboarding ni de soporte continuo en el modelo — se sacaron a
+propósito de la cuenta esta sesión; si en la práctica terminan consumiendo
+tiempo real del equipo, hay que volver a meterlos.

@@ -165,7 +165,54 @@ parecido que la lista de 15 en texto plano dejaba pasar. El ángulo
 finalmente elegido fue sobre la fricción con las agencias, sin
 antecedente en el historial.
 
-## Higgsfield: del CLI con OAuth a la API con key estática
+## Migración a Kie.ai (24-ago-2026) — reemplaza a Higgsfield
+
+**Se abandonó Higgsfield.** La sección de abajo ("Higgsfield: del CLI con
+OAuth a la API con key estática") queda como historial de por qué se
+intentó y por qué no alcanzó — el problema de fondo (OAuth que caduca) se
+repitió una cuarta vez el 24-ago: la cuenta autenticada en CI resultó ser
+una cuenta **free de 0 créditos** distinta a la Plus que se había migrado
+el 22-ago, y encima el mismo día el workflow de `patrones.mjs` falló por
+faltarle un `npm install`.
+
+**Decisión de modelos, pedido explícito de Joaquín**: nunca más Nano
+Banana — el modelo de imagen es **`gpt-image-2`** (OpenAI, lanzado
+21-abr-2026). Ver [[feedback_no_nano_banana_gpt_image_2]] en memoria. Video
+sube de `seedance1_5` a **`seedance-2-0`** (ByteDance) — más calidad, motor
+distinto al lite que usaba Higgsfield.
+
+**Por qué Kie.ai y no ir directo a OpenAI + BytePlus**: investigado a fondo
+— el precio es prácticamente el mismo yendo directo (Kie no tiene margen de
+descuento real sobre ninguno de los dos). La ventaja de Kie es
+**una sola cuenta y una sola key estática** para los dos modelos, en vez de
+mantener dos integraciones separadas — y BytePlus (dueño de Seedance) pide
+verificación regional al registrarse, más fricción que Kie.ai.
+
+**Se descartó Seedance 2.5**: cuesta ~2x más que 2.0 a la misma
+resolución por mejoras incrementales (mejor consistencia de personaje,
+iluminación) que no se notan en un UGC vertical de 5 segundos para redes.
+Tampoco valió la promo de -28% en 1080p de Kie (vigente hasta 17-sep-2026):
+incluso con descuento sale ~4x más caro por segundo que 2.0 a 720p, y 2.5
+genera nativo en 480p/720p — el 1080p ahí es upscale, no más resolución
+real.
+
+**Código**: `services/barbara/kie-api.mjs` — mismo patrón asíncrono que
+`higgsfield-api.mjs` (crear tarea → hacer polling), pero con
+`Authorization: Bearer <key>` fija en vez de OAuth, endpoint
+`POST /api/v1/jobs/createTask` + `GET /api/v1/jobs/recordInfo`. `motor.mjs`
+y `barbara.mjs` prefieren Kie si existe `KIE_API_KEY`; sin esa key siguen
+con el camino de Higgsfield (API oficial o CLI) sin cambios. Los workflows
+(`barbara.yml`, `barbara-clientes.yml`) saltan por completo instalar/
+autenticar el CLI de Higgsfield cuando `KIE_API_KEY` está seteado.
+
+⚠️ **Sin verificar contra una cuenta real todavía** — no existe la cuenta
+de Kie.ai (falta que Joaquín la cree, cargue crédito, y setee el secret).
+Los nombres de campo de `recordInfo` (`resultJson.resultUrls`) están
+documentados por la doc pública de Kie, no confirmados en vivo. Antes de
+confiar en esto en producción: correr `verificarCredenciales` y una
+generación de prueba real, mismo paso que ya se hizo con nano-banana.
+
+## Higgsfield: del CLI con OAuth a la API con key estática (histórico — reemplazado por Kie.ai, ver arriba)
 
 **El problema de raíz.** El CLI (`higgsfield generate create …`) se
 autentica con OAuth: un `access_token` que caduca y un `refresh_token`
@@ -296,9 +343,12 @@ aviso de Telegram ya sale con estos pasos adentro.
   la base real; `tsc` y `vite build` limpios.
 
 **Pendiente, en orden de valor**
-1. **Crear la API key de Higgsfield** (ver arriba). Levanta a Bárbara y
-   además elimina para siempre el re-login manual. Es lo único que
-   bloquea todo lo demás.
+1. **Crear la cuenta de Kie.ai, cargar crédito, y setear el secret
+   `KIE_API_KEY`** (ver "Migración a Kie.ai" arriba). Es lo único que
+   bloquea todo lo demás — sin esto Bárbara sigue con Higgsfield roto.
+   Después de eso: correr una generación de prueba real antes de confiar
+   en el código en producción (los campos exactos de la respuesta de Kie
+   no están verificados todavía).
 2. **La cuenta propia de Cóndor sigue sin pilares ni memoria propia.**
    Ya lee playbooks, pero el reparto de series sigue fijo en código y no
    tiene `barbara_reglas` ni aprende de las correcciones del equipo.
