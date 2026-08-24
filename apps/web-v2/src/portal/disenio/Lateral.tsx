@@ -1,13 +1,18 @@
 import { useEffect, useRef, useState } from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import gsap from "gsap";
 import { Ico, type NombreIcono } from "./iconos";
+import { navegarConTransicion } from "./vistaTransicion";
 
 export type Entrada = {
   a: string;
   texto: string;
   icono: NombreIcono;
   pronto?: boolean;
+  /** Esta entrada cambia de "mundo" visual (hoy: Bárbara) — navega con la
+   * transición de cross-fade en vez del salto instantáneo normal. Ver
+   * `vistaTransicion.ts`. */
+  transicion?: boolean;
 };
 
 /** Una categoría del menú: su nombre, su icono y las pestañas que agrupa. */
@@ -48,6 +53,7 @@ export function Lateral({ grupos, nombre, detalle, onSalir, abierto, cerrar }: P
   const menuRef = useRef<HTMLElement>(null);
   const marcaRef = useRef<HTMLSpanElement>(null);
   const sitio = useLocation();
+  const navegar = useNavigate();
 
   const quieto =
     typeof window !== "undefined" &&
@@ -140,7 +146,13 @@ export function Lateral({ grupos, nombre, detalle, onSalir, abierto, cerrar }: P
                     <NavLink
                       key={e.a}
                       to={e.a}
-                      onClick={cerrar}
+                      onClick={(ev) => {
+                        cerrar();
+                        if (e.transicion) {
+                          ev.preventDefault();
+                          navegarConTransicion(navegar, e.a);
+                        }
+                      }}
                       className={({ isActive }) => "nav-item" + (isActive ? " on" : "")}
                       style={{ position: "relative", textDecoration: "none", color: "inherit" }}
                     >

@@ -107,7 +107,7 @@ const MENU_STAFF: Grupo[] = [
       // sin pasos intermedios, sin lista, sin botón "Ver portal". La lista
       // completa de clientes de Bárbara (administrar, dar de alta) sigue en
       // /acceso/agentes-ia, alcanzable desde dentro del portal en Ajustes.
-      { a: "/acceso/barbara", texto: "Bárbara", icono: "barbara" },
+      { a: "/acceso/barbara", texto: "Bárbara", icono: "barbara", transicion: true },
       { a: "/acceso/memoria", texto: "Memoria", icono: "memoria" },
     ],
   },
@@ -137,7 +137,7 @@ const MENU_CLIENTE_BASE: Entrada[] = [
 ];
 
 const ITEM_CUENTA: Entrada = { a: "/acceso/cuenta", texto: "Mi cuenta", icono: "ajustes" };
-const ITEM_BARBARA: Entrada = { a: "/acceso/barbara", texto: "Bárbara", icono: "agentesia" };
+const ITEM_BARBARA: Entrada = { a: "/acceso/barbara", texto: "Bárbara", icono: "agentesia", transicion: true };
 
 function Marco({
   menu,

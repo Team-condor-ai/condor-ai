@@ -1,5 +1,7 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Ico } from "../disenio/iconos";
+import { navegarConTransicion } from "../disenio/vistaTransicion";
 import { infoPlan, type BarbaraBrandBook, type BarbaraFormulario } from "./tipos";
 import { ReglasAprendidas } from "./ReglasAprendidas";
 import { BarbaraChat } from "./BarbaraChat";
@@ -58,12 +60,16 @@ export function BarbaraModulo({
   barbaraClienteId, negocio, plan, rubro, brandBook, formulario, onCambio, esStaff, volverA, volverTexto,
 }: Props) {
   const [seccion, setSeccion] = useState<Seccion>("chat");
+  const navegar = useNavigate();
 
   return (
     <div className="barbara-modulo">
-      <a href={volverA} className="barbara-modulo-volver">
+      <button
+        className="barbara-modulo-volver"
+        onClick={() => navegarConTransicion(navegar, volverA)}
+      >
         {Ico.volver({ t: 15 })} {volverTexto}
-      </a>
+      </button>
 
       <aside className="barbara-modulo-rail">
         <div className="barbara-modulo-marca">
@@ -175,9 +181,9 @@ export function BarbaraModulo({
             </div>
             {esStaff && (
               <div style={{ marginTop: 18 }}>
-                <a href="/acceso/agentes-ia" className="btn">
+                <button className="btn" onClick={() => navegarConTransicion(navegar, "/acceso/agentes-ia")}>
                   Administrar todos los clientes de Bárbara →
-                </a>
+                </button>
               </div>
             )}
           </div>
