@@ -13,6 +13,7 @@ import { writeFileSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import sharp from "sharp";
 import { apiDisponible, generarImagen as apiImagen, generarVideo as apiVideo } from "./higgsfield-api.mjs";
+import { apiDisponible as kieDisponible, generarImagen as kieImagen, generarVideo as kieVideo } from "./kie-api.mjs";
 
 const ASSETS = fileURLToPath(new URL("./assets/", import.meta.url));
 
@@ -286,10 +287,11 @@ export async function pegarPersonajeBarbara(buf, indice = 0, posicion = "centro"
 export async function genImagen(prompt, idx) {
   const safe = prompt.replace(/\s+/g, " ").trim().slice(0, 1500);
 
-  // Si hay credenciales de la API oficial, se usa ésa: son estáticas y no
-  // caducan, a diferencia del OAuth del CLI que obliga a re-loguearse a mano
-  // cada tanto (ver el encabezado de higgsfield-api.mjs). Sin credenciales,
-  // sigue el CLI exactamente como siempre.
+  // Migración 24-ago-2026: Kie.ai (gpt-image-2) es el camino preferido — key
+  // estática, no el OAuth de Higgsfield que se rompió cuatro veces. Ver
+  // kie-api.mjs. Si no hay KIE_API_KEY, sigue con lo de antes (API oficial de
+  // Higgsfield si está, si no el CLI) sin cambiar nada de ese camino.
+  if (kieDisponible()) return kieImagen(safe, { aspectRatio: "4:5", resolucion: "2K" });
   if (apiDisponible()) return apiImagen(safe, { aspectRatio: "4:5", formato: "png" });
 
   const args = ["generate", "create", "nano_banana_2", "--prompt", safe, "--aspect_ratio", "4:5", "--resolution", "1k", "--wait", "--wait-timeout", "8m"];
@@ -324,10 +326,13 @@ export async function genImagen(prompt, idx) {
 export async function genVideo(prompt, dur, idx, extraArgs = []) {
   const safe = prompt.replace(/\s+/g, " ").trim().slice(0, 1500);
 
-  // Igual que genImagen: la API oficial primero si está configurada.
+  // Igual que genImagen: Kie.ai (seedance-2-0) primero si está configurado.
   // `extraArgs` (hoy sólo `--image` para una foto de referencia, que todavía
-  // no se usa) es del CLI; si algún día se usa, hay que mapearlo a
-  // `image-to-video` en vez de `text-to-video`, así que se cae al CLI.
+  // no se usa) es del CLI; si algún día se usa, hay que mapear a
+  // image-to-video en la API que corresponda, así que por ahora se cae al CLI.
+  if (kieDisponible() && !extraArgs.length) {
+    return kieVideo(safe, { duracion: dur, aspectRatio: "9:16", resolucion: "720p" });
+  }
   if (apiDisponible() && !extraArgs.length) {
     return apiVideo(safe, { duracion: dur, aspectRatio: "9:16", resolucion: "720" });
   }

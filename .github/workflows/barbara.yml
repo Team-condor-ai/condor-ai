@@ -54,6 +54,9 @@ jobs:
       # rotado) sobra: son ~40s por corrida y, sobre todo, superficie de falla
       # que ya tumbo a Barbara tres veces. Ver higgsfield-api.mjs.
       USA_API_HF: ${{ secrets.HIGGSFIELD_API_KEY_ID != '' }}
+      # Migración 24-ago-2026: si hay KIE_API_KEY, ni el CLI ni la API oficial
+      # de Higgsfield hacen falta — genImagen la prefiere. Ver kie-api.mjs.
+      USA_KIE: ${{ secrets.KIE_API_KEY != '' }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -63,7 +66,7 @@ jobs:
         working-directory: services/barbara
         run: npm install
       - name: Instalar CLI de Higgsfield
-        if: env.USA_API_HF != 'true'
+        if: env.USA_API_HF != 'true' && env.USA_KIE != 'true'
         # PIN de versión a propósito: instalar @latest hacía que un release rompiente
         # (1.0.0, 27-jun-2026: workspace obligatorio + nuevo auth flow) tumbara a Barbara
         # sola. Subir de versión debe ser un cambio deliberado, no automático.
@@ -76,7 +79,7 @@ jobs:
         # preparado para la serie 1.x.
         run: npm install -g @higgsfield/cli@1.1.23
       - name: Autenticar Higgsfield (descifrar credenciales rotadas)
-        if: env.USA_API_HF != 'true'
+        if: env.USA_API_HF != 'true' && env.USA_KIE != 'true'
         env:
           HF_CREDS_KEY: ${{ secrets.HF_CREDS_KEY }}
           HF_ACCESS: ${{ secrets.HIGGSFIELD_ACCESS_TOKEN }}
@@ -119,8 +122,10 @@ jobs:
         run: node services/barbara/barbara.mjs
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Kie.ai (gpt-image-2), key estática — genImagen la prefiere primero.
+          KIE_API_KEY: ${{ secrets.KIE_API_KEY }}
           # API oficial de Higgsfield: credenciales ESTATICAS, no caducan.
-          # Si estan, genImagen/genVideo las prefieren sobre el CLI (OAuth).
+          # Fallback si no hay KIE_API_KEY.
           HIGGSFIELD_API_KEY_ID: ${{ secrets.HIGGSFIELD_API_KEY_ID }}
           HIGGSFIELD_API_KEY_SECRET: ${{ secrets.HIGGSFIELD_API_KEY_SECRET }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}

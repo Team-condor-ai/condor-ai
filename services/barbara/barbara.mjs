@@ -16,6 +16,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { pegarLogoCondor, pegarPersonajeBarbara, supabase } from "./motor.mjs";
 import { elegirAngulo } from "./angulos.mjs";
 import { apiDisponible, generarImagen as apiImagen } from "./higgsfield-api.mjs";
+import { apiDisponible as kieDisponible, generarImagen as kieImagen } from "./kie-api.mjs";
 import { playbooksPara, bloquePrompt as bloquePlaybooks } from "./playbooks.mjs";
 import { extraerCambios, instrucciones } from "./correccion.mjs";
 import { leerReglas, bloquePrompt as bloqueReglas, aprenderDeCorreccion } from "./reglas.mjs";
@@ -401,11 +402,12 @@ async function genImagen(prompt, idx) {
   }
   const safe = armado.slice(0, MAX_PROMPT);
 
-  // API oficial si está configurada. Es el arreglo de raíz al problema que
-  // dejó a Bárbara muda el 29-jun, el 22-ago y el 23-ago: el CLI se autentica
-  // con OAuth (token que caduca + refresh que rota), y cada vez que la cadena
-  // se corta hay que volver a loguearse por navegador. Las credenciales de la
-  // API son estáticas. Ver higgsfield-api.mjs.
+  // Migración 24-ago-2026: Kie.ai (gpt-image-2) primero — key estática, sin
+  // el OAuth de Higgsfield que dejó a Bárbara muda el 29-jun, 22/23/24-ago
+  // (esta última vez por créditos agotados en la cuenta equivocada). Ver
+  // kie-api.mjs. Sin KIE_API_KEY, sigue el camino de siempre (API oficial de
+  // Higgsfield si está, si no el CLI) sin tocar nada de eso.
+  if (kieDisponible()) return kieImagen(safe, { aspectRatio: "4:5", resolucion: "2K" });
   if (apiDisponible()) return apiImagen(safe, { aspectRatio: "4:5", formato: "png" });
 
   const args = ["generate", "create", "nano_banana_2", "--prompt", safe, "--aspect_ratio", "4:5", "--resolution", "1k", "--wait", "--wait-timeout", "8m"];
