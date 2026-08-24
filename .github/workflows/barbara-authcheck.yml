@@ -35,6 +35,8 @@ jobs:
             printf '{"access_token":"%s","refresh_token":"%s"}' "$HF_ACCESS" "$HF_REFRESH" > ~/.config/higgsfield/credentials.json
           fi
           sha256sum ~/.config/higgsfield/credentials.json | awk '{print $1}' > /tmp/hf_before.sha
+      - name: TEMP diagnostico cuenta
+        run: higgsfield account status --json || true
       - name: Chequear autenticación y avisar si hace falta re-loguear
         run: node services/barbara/authcheck.mjs
         env:
