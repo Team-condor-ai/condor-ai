@@ -102,6 +102,27 @@ def analizar():
         poco_stock = [i for i in activos
                       if 0 < (i.get("available_quantity") or 0) <= STOCK_CRITICO]
 
+        # ── POR QUÉ ESTÁ PAUSADO (24-ago-2026) ─────────────────────────────
+        #
+        # "Pausado" no es un solo motivo. Se separa en tres, porque cada uno
+        # pide una acción distinta:
+        #   restringido   ML le puso un sub_status (forbidden, under_review,
+        #                 etc.) -- no se reactiva solo reponiendo stock, hay
+        #                 que resolver lo que ML está marcando primero.
+        #   sin_stock     available_quantity <= 0. Es el recorte automático
+        #                 haciendo su trabajo -- correcto, no hay nada que
+        #                 reintentar.
+        #   con_stock     ML dice que SÍ hay stock disponible y sigue
+        #                 pausado igual. Esto es lo raro: plata sentada sin
+        #                 vender por algo que no es falta de stock.
+        pausados_restringidos = [i for i in pausados if i.get("sub_status")]
+        pausados_con_stock = [i for i in pausados
+                              if not i.get("sub_status")
+                              and (i.get("available_quantity") or 0) > 0]
+        pausados_sin_stock = [i for i in pausados
+                              if not i.get("sub_status")
+                              and (i.get("available_quantity") or 0) <= 0]
+
         informe["cuentas"][cuenta] = {
             "nickname": datos["nickname"],
             "total": len(datos["items"]),
@@ -110,6 +131,9 @@ def analizar():
             "cerrados": len(cerrados),
             "sin_stock": len(sin_stock),
             "stock_critico": len(poco_stock),
+            "pausados_restringidos": len(pausados_restringidos),
+            "pausados_con_stock": len(pausados_con_stock),
+            "pausados_sin_stock": len(pausados_sin_stock),
         }
 
         # ALERTA: activo con 0 disponible. Es lo que termina en cancelación, y
@@ -118,6 +142,21 @@ def analizar():
             informe["alertas"].append({
                 "nivel": "alto", "cuenta": cuenta, "item": i["id"],
                 "que": f"ACTIVO sin stock: {i.get('title','')[:60]}",
+            })
+        # ALERTA: pausado con stock disponible según ML -- candidato real a
+        # reactivar, no requiere reponer nada.
+        for i in pausados_con_stock:
+            informe["alertas"].append({
+                "nivel": "alto", "cuenta": cuenta, "item": i["id"],
+                "que": (f"PAUSADO con {i.get('available_quantity')} disponibles: "
+                        f"{i.get('title','')[:50]}"),
+            })
+        # ALERTA: ML lo tiene restringido -- no se arregla con stock.
+        for i in pausados_restringidos:
+            informe["alertas"].append({
+                "nivel": "medio", "cuenta": cuenta, "item": i["id"],
+                "que": (f"restringido por ML ({','.join(i.get('sub_status') or [])}): "
+                        f"{i.get('title','')[:45]}"),
             })
         for i in poco_stock:
             informe["alertas"].append({
@@ -181,6 +220,10 @@ def imprimir(inf):
         if d["sin_stock"] or d["stock_critico"]:
             print(f"  {'':<10} └─ sin stock: {d['sin_stock']} · "
                   f"stock crítico (≤{STOCK_CRITICO}): {d['stock_critico']}")
+        if d["pausados"]:
+            print(f"  {'':<10} └─ de los pausados: {d['pausados_con_stock']} con stock "
+                  f"(reactivar) · {d['pausados_restringidos']} restringidos por ML · "
+                  f"{d['pausados_sin_stock']} sin stock (correcto)")
 
     altas = [a for a in inf["alertas"] if a["nivel"] == "alto"]
     medias = [a for a in inf["alertas"] if a["nivel"] == "medio"]
