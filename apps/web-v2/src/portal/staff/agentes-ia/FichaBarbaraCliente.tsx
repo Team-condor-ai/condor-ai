@@ -165,6 +165,9 @@ export function FichaBarbaraCliente() {
         <span className={"pill " + (d.cliente.activo ? "ok" : "gris")}>
           {d.cliente.activo ? "Activo" : "Inactivo"}
         </span>
+        <Link to={`/acceso/agentes-ia/${d.cliente.id}/portal`} className="btn" style={{ marginLeft: "auto" }}>
+          Ver portal de Bárbara
+        </Link>
       </div>
 
       <div className="cuerpo">

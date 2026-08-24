@@ -11,6 +11,7 @@ import "./disenio/estilo.css";
 import "./disenio/piezas.css";
 import "./disenio/portal.css";
 import "./disenio/acceso.css";
+import "./disenio/barbara.css";
 
 import { useSesion, salir } from "./auth/sesion";
 import { Login } from "./auth/Login";
@@ -30,6 +31,7 @@ import { Mapa } from "./staff/Mapa";
 import { AgentesIA } from "./staff/agentes-ia/AgentesIA";
 import { Memoria } from "./staff/memoria/Memoria";
 import { FichaBarbaraCliente } from "./staff/agentes-ia/FichaBarbaraCliente";
+import { BarbaraClientePortal } from "./staff/agentes-ia/BarbaraClientePortal";
 
 import { MiPlan } from "./cliente/MiPlan";
 import { ResultadoPago } from "./cliente/ResultadoPago";
@@ -231,6 +233,7 @@ export default function Portal() {
           <Route path="agentes-ia" element={<AgentesIA />} />
           <Route path="memoria" element={<Memoria />} />
           <Route path="agentes-ia/:id" element={<FichaBarbaraCliente />} />
+          <Route path="agentes-ia/:id/portal" element={<BarbaraClientePortal />} />
           <Route path="*" element={<Navigate to="/acceso/dashboard" replace />} />
         </Routes>
       </Marco>,
