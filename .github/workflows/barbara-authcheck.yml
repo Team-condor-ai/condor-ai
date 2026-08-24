@@ -36,7 +36,12 @@ jobs:
           fi
           sha256sum ~/.config/higgsfield/credentials.json | awk '{print $1}' > /tmp/hf_before.sha
       - name: TEMP diagnostico cuenta
-        run: higgsfield account status --json || true
+        env:
+          HF_WORKSPACE_ID: ${{ secrets.HIGGSFIELD_WORKSPACE_ID }}
+        run: |
+          higgsfield workspace set "${HF_WORKSPACE_ID:-a269a272-1e58-4b90-b117-0419c44b475c}" || true
+          higgsfield account status --json || true
+          higgsfield workspace list --json || true
       - name: Chequear autenticación y avisar si hace falta re-loguear
         run: node services/barbara/authcheck.mjs
         env:
