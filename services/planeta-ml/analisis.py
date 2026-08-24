@@ -106,22 +106,39 @@ def analizar():
         #
         # "Pausado" no es un solo motivo. Se separa en tres, porque cada uno
         # pide una acción distinta:
-        #   restringido   ML le puso un sub_status (forbidden, under_review,
-        #                 etc.) -- no se reactiva solo reponiendo stock, hay
-        #                 que resolver lo que ML está marcando primero.
-        #   sin_stock     available_quantity <= 0. Es el recorte automático
-        #                 haciendo su trabajo -- correcto, no hay nada que
-        #                 reintentar.
-        #   con_stock     ML dice que SÍ hay stock disponible y sigue
-        #                 pausado igual. Esto es lo raro: plata sentada sin
-        #                 vender por algo que no es falta de stock.
-        pausados_restringidos = [i for i in pausados if i.get("sub_status")]
-        pausados_con_stock = [i for i in pausados
-                              if not i.get("sub_status")
-                              and (i.get("available_quantity") or 0) > 0]
-        pausados_sin_stock = [i for i in pausados
-                              if not i.get("sub_status")
-                              and (i.get("available_quantity") or 0) <= 0]
+        #   restringido   sub_status FUERA de lo esperable (forbidden,
+        #                 under_review, by_market, etc.) -- señal real de
+        #                 riesgo de cuenta, no se arregla solo con stock.
+        #   sin_stock     out_of_stock / paused_by_seller (con o sin
+        #                 available_quantity>0 -- ML a veces no lo baja a 0
+        #                 hasta el próximo ciclo). Es el recorte automático
+        #                 haciendo su trabajo. Correcto, nada que reintentar.
+        #   con_stock     pausado SIN sub_status de stock y con
+        #                 available_quantity>0. Esto es lo raro de verdad:
+        #                 plata sentada sin vender sin motivo aparente.
+        #
+        # OJO: verificado en vivo (24-ago-2026) que "out_of_stock" y
+        # "paused_by_seller" son los ÚNICOS sub_status que aparecen hoy en
+        # las 3 cuentas (373 pausados) -- son los que ML pone SOLO cuando
+        # el propio vendedor (nuestro webhook de recorte) pausó por falta de
+        # stock, no una restricción de ML. Un primer intento clasificaba
+        # esto como "restringido" y generaba una alarma falsa de cuenta en
+        # riesgo -- se corrigió antes de reportarlo.
+        _SUBSTATUS_STOCK = {"out_of_stock", "paused_by_seller"}
+        pausados_restringidos = [
+            i for i in pausados
+            if set(i.get("sub_status") or []) - _SUBSTATUS_STOCK
+        ]
+        pausados_sin_stock = [
+            i for i in pausados
+            if set(i.get("sub_status") or []) & _SUBSTATUS_STOCK
+            and not (set(i.get("sub_status") or []) - _SUBSTATUS_STOCK)
+        ]
+        pausados_con_stock = [
+            i for i in pausados
+            if not i.get("sub_status")
+            and (i.get("available_quantity") or 0) > 0
+        ]
 
         informe["cuentas"][cuenta] = {
             "nickname": datos["nickname"],
@@ -151,11 +168,14 @@ def analizar():
                 "que": (f"PAUSADO con {i.get('available_quantity')} disponibles: "
                         f"{i.get('title','')[:50]}"),
             })
-        # ALERTA: ML lo tiene restringido -- no se arregla con stock.
+        # ALERTA: ML lo tiene restringido por algo que NO es stock -- señal
+        # real de riesgo de cuenta, nivel alto a propósito (ver el
+        # comentario sobre out_of_stock/paused_by_seller más arriba: si
+        # llegó hasta acá es porque el sub_status es otra cosa).
         for i in pausados_restringidos:
             informe["alertas"].append({
-                "nivel": "medio", "cuenta": cuenta, "item": i["id"],
-                "que": (f"restringido por ML ({','.join(i.get('sub_status') or [])}): "
+                "nivel": "alto", "cuenta": cuenta, "item": i["id"],
+                "que": (f"RESTRINGIDO por ML ({','.join(i.get('sub_status') or [])}): "
                         f"{i.get('title','')[:45]}"),
             })
         for i in poco_stock:
