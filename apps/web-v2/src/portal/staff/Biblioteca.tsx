@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { sb, fecha } from "../lib/supabase";
 import { Ico } from "../disenio/iconos";
+import { useConfirmacion } from "../disenio/Confirmacion";
 import { IconoArchivo, IconoCarpeta, familiaDe } from "../disenio/iconosArchivo";
 import type { ArchivoBiblioteca, CarpetaBiblioteca } from "./tipos";
 
@@ -38,6 +39,7 @@ function pesar(bytes: number | null) {
 }
 
 export function Biblioteca() {
+  const confirmar = useConfirmacion();
   const [carpetas, setCarpetas] = useState<CarpetaBiblioteca[]>([]);
   const [archivos, setArchivos] = useState<ArchivoBiblioteca[]>([]);
   const [cargando, setCargando] = useState(true);
@@ -180,19 +182,17 @@ export function Biblioteca() {
       const dentro =
         carpetas.filter((x) => x.padre_id === sel.id).length +
         archivos.filter((x) => x.carpeta_id === sel.id).length;
-      const ok = window.confirm(
-        `¿Eliminar la carpeta "${c?.nombre}"?` +
-          (dentro
-            ? `\n\nSe va a llevar ${dentro} elemento${dentro === 1 ? "" : "s"} que tiene dentro, y todo lo que haya más abajo.`
-            : "") +
-          "\n\nEsto no se puede deshacer.",
+      const ok = await confirmar(
+        `¿Eliminar la carpeta "${c?.nombre}"?`,
+        (dentro ? `Se eliminarán también ${dentro} elemento${dentro === 1 ? "" : "s"} dentro de ella.` : "") + "\n\nEsto no se puede deshacer.",
+        "Eliminar",
       );
       if (!ok) return;
       const { error } = await sb.from("biblioteca_carpetas").delete().eq("id", sel.id);
       if (error) setError(error.message);
     } else {
       const a = archivos.find((x) => x.id === sel.id);
-      if (!window.confirm(`¿Eliminar "${a?.nombre}"?`)) return;
+      if (!await confirmar(`¿Eliminar "${a?.nombre}"?`, undefined, "Eliminar")) return;
       const { error } = await sb.from("biblioteca").delete().eq("id", sel.id);
       if (error) setError(error.message);
     }

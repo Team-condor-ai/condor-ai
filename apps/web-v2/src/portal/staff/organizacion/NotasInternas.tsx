@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { sb, fecha } from "../../lib/supabase";
 import { Ico } from "../../disenio/iconos";
+import { useConfirmacion } from "../../disenio/Confirmacion";
 import type { NotaInterna } from "../tipos";
 
 const CATEGORIAS_SUGERIDAS = ["Nota", "Cuenta", "Acceso", "Proveedor"];
@@ -20,6 +21,7 @@ function pesar(bytes: number | null) {
  * de Storage nueva.
  */
 export function NotasInternas() {
+  const confirmar = useConfirmacion();
   const [notas, setNotas] = useState<NotaInterna[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
@@ -60,7 +62,7 @@ export function NotasInternas() {
   });
 
   async function borrar(n: NotaInterna) {
-    if (!window.confirm(`¿Borrar "${n.titulo}"? Esto no se puede deshacer.`)) return;
+    if (!await confirmar(`¿Borrar "${n.titulo}"?`, "Esto no se puede deshacer.", "Borrar")) return;
     const { error } = await sb.from("notas_internas").delete().eq("id", n.id);
     if (error) setError(error.message);
     else setNotas((p) => p.filter((x) => x.id !== n.id));

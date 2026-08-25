@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { sb, fecha, plata } from "../../lib/supabase";
 import { Ico } from "../../disenio/iconos";
+import { useConfirmacion } from "../../disenio/Confirmacion";
 import { EditorReunion } from "../EditorReunion";
 import { NotasInternas } from "./NotasInternas";
 import type {
@@ -440,6 +441,7 @@ function Calendario({
   restaurarReunion: (reunion: Reunion) => void;
   error: (mensaje: string) => void;
 }) {
+  const confirmar = useConfirmacion();
   const [mes, setMes] = useState(() => new Date());
   const [ahora] = useState(() => Date.now());
   const [ajustando, setAjustando] = useState<{
@@ -703,7 +705,7 @@ function Calendario({
     .sort((a, b) => +new Date(b.fecha_hora) - +new Date(a.fecha_hora));
 
   async function eliminar(r: Reunion) {
-    if (!window.confirm(`¿Eliminar la reunión "${r.titulo}"?`)) return;
+    if (!await confirmar(`¿Eliminar la reunión "${r.titulo}"?`, undefined, "Eliminar")) return;
     quitarReunion(r.id);
     const { error: fallo } = await sb
       .from("reuniones")
@@ -1085,6 +1087,7 @@ function EditorTarea({
   cerrar: () => void;
   guardado: () => void;
 }) {
+  const confirmar = useConfirmacion();
   const hoy = new Date().toISOString().slice(0, 10);
   const [agendada, setAgendada] = useState(
     !!(tarea?.inicio || tarea?.vence || agendarInicial),
@@ -1188,7 +1191,7 @@ function EditorTarea({
     } else guardado();
   }
   async function borrar() {
-    if (!tarea || !window.confirm("¿Eliminar esta tarea?")) return;
+    if (!tarea || !await confirmar("¿Eliminar esta tarea?", undefined, "Eliminar")) return;
     await sb.from("tareas").delete().eq("id", tarea.id);
     guardado();
   }

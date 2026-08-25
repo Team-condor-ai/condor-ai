@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { sb, plata, fecha, enlaceWeb } from "../lib/supabase";
 import { Ico } from "../disenio/iconos";
+import { useConfirmacion } from "../disenio/Confirmacion";
 import { MenuAcciones } from "../disenio/MenuAcciones";
 import { BarraLista } from "./BarraLista";
 import { EditorCliente } from "./EditorCliente";
@@ -35,6 +36,7 @@ function Pill({ v }: { v: Estado }) {
 }
 
 export function Clientes() {
+  const confirmar = useConfirmacion();
   const [filas, setFilas] = useState<Cliente[]>([]);
   const [cobros, setCobros] = useState<Cobro[]>([]);
   const [pagos, setPagos] = useState<PagoResumen[]>([]);
@@ -204,11 +206,10 @@ export function Clientes() {
     // eso pide confirmación con el nombre a la vista: no hay deshacer.
     const nombre = c.negocio || c.nombre || c.email || "este cliente";
     const r = resumenDe.get(c.id);
-    const ok = window.confirm(
-      `Vas a eliminar "${nombre}" para siempre, junto con sus ${r?.n ?? 0} cobro(s) y ` +
-        `todo su historial de pagos (${plata(r?.recibido ?? 0, c.moneda)} recibidos).\n\n` +
-        `Esto NO se puede deshacer. Si solo quieres dejar de verlo en la lista, ` +
-        `usa "Archivar" en vez de esto.\n\n¿Eliminar de todas formas?`,
+    const ok = await confirmar(
+      `¿Eliminar "${nombre}" para siempre?`,
+      `También se eliminarán sus ${r?.n ?? 0} cobro(s) y todo el historial de pagos (${plata(r?.recibido ?? 0, c.moneda)} recibidos).\n\nEsto no se puede deshacer. Si solo quieres dejar de verlo en la lista, usa “Archivar”.`,
+      "Eliminar definitivamente",
     );
     if (!ok) return;
     const { error } = await sb.from("clientes").delete().eq("id", c.id);

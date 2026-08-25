@@ -17,6 +17,7 @@ import { useSesion, salir } from "./auth/sesion";
 import { Login } from "./auth/Login";
 import { Lateral, type Entrada, type Grupo } from "./disenio/Lateral";
 import { Ico } from "./disenio/iconos";
+import { ConfirmacionProvider } from "./disenio/Confirmacion";
 import { Clientes } from "./staff/Clientes";
 import { Dashboard } from "./staff/Dashboard";
 import { Ratia } from "./staff/ratia/Ratia";
@@ -191,6 +192,10 @@ function Marco({
  * ver el comentario en `auth/sesion.ts`.
  */
 export default function Portal() {
+  return <ConfirmacionProvider><PortalContenido /></ConfirmacionProvider>;
+}
+
+function PortalContenido() {
   const s = useSesion();
   // Se consulta siempre (staff incluido) porque los hooks no pueden ser
   // condicionales — para staff simplemente no se usa el resultado.

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { sb, plata, fecha } from "../../lib/supabase";
 import { Ico } from "../../disenio/iconos";
+import { useConfirmacion } from "../../disenio/Confirmacion";
 import { lineasDe, type Asiento, type Cuenta, type PasivoAbierto } from "./tipos";
 
 const CODIGO_TARJETA_CORPORATIVA = "2105";
@@ -25,6 +26,7 @@ export function Pasivos({
   cuentas: Cuenta[];
   recargar: () => void;
 }) {
+  const confirmar = useConfirmacion();
   const [abiertos, setAbiertos] = useState<PasivoAbierto[]>([]);
   const [saldados, setSaldados] = useState<Asiento[]>([]);
   const [cargando, setCargando] = useState(true);
@@ -189,13 +191,15 @@ export function Pasivos({
                             className="btn"
                             disabled={!tarjeta || procesando === item.asiento_id}
                             title={!tarjeta ? "Falta la cuenta 2105 Tarjeta de crédito corporativa" : ""}
-                            onClick={() =>
-                              tarjeta &&
-                              window.confirm(
-                                `¿Marcar "${item.glosa}" como pagado sin afectar el líquido? Se reclasifica a "${tarjeta.nombre}", ninguna cuenta de Caja/Banco/Mercado Pago baja.`,
-                              ) &&
-                              saldar(item, tarjeta.id, "Pagado sin afectar el líquido")
-                            }
+                            onClick={async () => {
+                              if (!tarjeta) return;
+                              const ok = await confirmar(
+                                `¿Marcar "${item.glosa}" como pagado?`,
+                                `Se reclasifica a "${tarjeta.nombre}" sin bajar ninguna cuenta de Caja, Banco o Mercado Pago.`,
+                                "Marcar pagado",
+                              );
+                              if (ok) await saldar(item, tarjeta.id, "Pagado sin afectar el líquido");
+                            }}
                           >
                             Marcar pagado
                           </button>

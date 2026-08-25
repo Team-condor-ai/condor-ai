@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { sb } from "../lib/supabase";
+import { useConfirmacion } from "../disenio/Confirmacion";
 
 /**
  * MCP / CLI — que el Claude de cada uno lea y escriba en el portal.
@@ -10,6 +11,7 @@ import { sb } from "../lib/supabase";
  * login de verdad, así que no hace falta inventar uno nuevo.
  */
 export function Mcp() {
+  const confirmar = useConfirmacion();
   const [token, setToken] = useState<string | null>(null);
   const [nombre, setNombre] = useState("");
   const [cargando, setCargando] = useState(true);
@@ -34,12 +36,11 @@ export function Mcp() {
   }, []);
 
   async function rotar() {
-    if (
-      !confirm(
-        "Se genera un token nuevo y el actual deja de servir.\n\n" +
-          "Vas a tener que volver a correr el `claude mcp add` con el nuevo.",
-      )
-    ) {
+    if (!await confirmar(
+      "¿Rotar el token de MCP?",
+      "Se genera un token nuevo y el actual deja de servir. Tendrás que volver a ejecutar `claude mcp add` con el nuevo.",
+      "Rotar token",
+    )) {
       return;
     }
     setRotando(true);

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { sb, fecha } from "../../lib/supabase";
+import { useConfirmacion } from "../../disenio/Confirmacion";
 
 /**
  * Memoria global de Bárbara: lo que funciona entre TODOS los clientes.
@@ -34,6 +35,7 @@ type Patron = {
 };
 
 export function PatronesGlobales() {
+  const confirmar = useConfirmacion();
   const [patrones, setPatrones] = useState<Patron[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
@@ -55,14 +57,11 @@ export function PatronesGlobales() {
   }, []);
 
   async function alternar(p: Patron) {
-    if (
-      !p.activo &&
-      !confirm(
-        `Encender este patrón lo aplica a TODOS los clientes en su próxima ` +
-          `pieza:\n\n“${p.patron}”\n\nSalió de ${p.muestras} piezas. ` +
-          `¿Lo enciendes?`,
-      )
-    ) {
+    if (!p.activo && !await confirmar(
+      "¿Encender este patrón global?",
+      `Lo aplica a todos los clientes en su próxima pieza.\n\n“${p.patron}”\n\nSalió de ${p.muestras} piezas.`,
+      "Encender",
+    )) {
       return;
     }
     setPatrones((prev) =>
