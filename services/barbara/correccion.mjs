@@ -98,7 +98,14 @@ const schemaVerificacion = {
 };
 
 /** La última pieza generada para ese cliente, con su contenido. */
-export async function piezaAnterior(db, barbaraId, tipo) {
+export async function piezaAnterior(db, barbaraId, tipo, piezaId = "") {
+  if (piezaId) {
+    const exacta = await db.get(
+      `barbara_memoria?id=eq.${piezaId}&barbara_cliente_id=eq.${barbaraId}` +
+      `&select=id,fecha,angulo,contenido,creado_en,tipo&limit=1`,
+    ).catch(() => []);
+    return exacta[0] || null;
+  }
   const filas = await db.get(
     `barbara_memoria?barbara_cliente_id=eq.${barbaraId}&tipo=eq.${tipo}` +
     `&select=id,fecha,angulo,contenido,creado_en&order=creado_en.desc&limit=1`
@@ -114,10 +121,11 @@ export async function piezaAnterior(db, barbaraId, tipo) {
  * mensaje viejo no es una corrección de la pieza de hoy — y tomarlo como tal
  * haría que Bárbara "corrija" algo que nadie pidió.
  */
-export async function leerPedido(db, barbaraId, desdeISO) {
+export async function leerPedido(db, barbaraId, desdeISO, piezaId = "") {
   const desde = desdeISO ? `&creado_en=gt.${desdeISO}` : "";
+  const pieza = piezaId ? `&pieza_id=eq.${piezaId}` : "";
   const filas = await db.get(
-    `barbara_chats?barbara_cliente_id=eq.${barbaraId}&remitente=eq.cliente${desde}` +
+    `barbara_chats?barbara_cliente_id=eq.${barbaraId}&remitente=eq.cliente${pieza}${desde}` +
     `&select=mensaje,creado_en&order=creado_en.desc&limit=${MAX_MENSAJES}`
   ).catch(() => []);
   return filas.reverse().map((f) => f.mensaje).filter(Boolean);

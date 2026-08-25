@@ -51,17 +51,11 @@ export function ChatVisor({ barbaraClienteId }: { barbaraClienteId: string }) {
     );
 
   return (
-    <div className="lista-sel" style={{ maxHeight: 360 }}>
+    <div className="barbara-chat-historial" aria-label="Conversación con Bárbara">
       {mensajes.map((m) => (
-        <div key={m.id} className="fila-sel" style={{ cursor: "default" }}>
-          <span>
-            <b>
-              {ETIQUETA[m.remitente]} <small>· {fecha(m.creado_en)}</small>
-            </b>
-            <small style={{ whiteSpace: "pre-wrap", color: "var(--texto)" }}>
-              {m.mensaje}
-            </small>
-          </span>
+        <div key={m.id} className={"barbara-chat-mensaje " + m.remitente}>
+          <b>{ETIQUETA[m.remitente]} <small>· {fecha(m.creado_en)}</small></b>
+          <p>{m.mensaje}</p>
         </div>
       ))}
     </div>

@@ -17,6 +17,7 @@ import { useSesion, salir } from "./auth/sesion";
 import { Login } from "./auth/Login";
 import { Lateral, type Entrada, type Grupo } from "./disenio/Lateral";
 import { Ico } from "./disenio/iconos";
+import { ConfirmacionProvider } from "./disenio/Confirmacion";
 import { Clientes } from "./staff/Clientes";
 import { Dashboard } from "./staff/Dashboard";
 import { Ratia } from "./staff/ratia/Ratia";
@@ -96,7 +97,7 @@ const MENU_STAFF: Grupo[] = [
       { a: "/acceso/organizacion/tablero", texto: "Tablero", icono: "tablero" },
       { a: "/acceso/organizacion/calendario", texto: "Calendario", icono: "reuniones" },
       { a: "/acceso/organizacion/metas", texto: "Metas", icono: "meta" },
-      { a: "/acceso/organizacion/notas", texto: "Notas internas", icono: "documentos" },
+      { a: "/acceso/organizacion/informacion", texto: "Información interna", icono: "documentos" },
     ],
   },
   {
@@ -191,6 +192,12 @@ function Marco({
  * ver el comentario en `auth/sesion.ts`.
  */
 export default function Portal() {
+  // El confirmador debe vivir DENTRO de `.portal-app`: sus variables de tema y
+  // el scope del CSS del portal son los que garantizan contraste en oscuro.
+  return <div className="portal-app"><ConfirmacionProvider><PortalContenido /></ConfirmacionProvider></div>;
+}
+
+function PortalContenido() {
   const s = useSesion();
   // Se consulta siempre (staff incluido) porque los hooks no pueden ser
   // condicionales — para staff simplemente no se usa el resultado.

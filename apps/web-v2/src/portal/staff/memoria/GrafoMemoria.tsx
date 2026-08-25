@@ -51,7 +51,9 @@ const CATEGORIAS: { tipo: keyof typeof TIPO_NODO_MEMORIA; angulo: number }[] = [
 const CX = 460, CY = 300, R_HUB = 175, R_HOJA = 105;
 const rad = (deg: number) => (deg * Math.PI) / 180;
 
-export function GrafoMemoria({ barbaraClienteId, negocio }: { barbaraClienteId: string; negocio: string }) {
+export function GrafoMemoria({
+  barbaraClienteId, negocio, puedeEditar = false,
+}: { barbaraClienteId: string; negocio: string; puedeEditar?: boolean }) {
   const [reglas, setReglas] = useState<Regla[]>([]);
   const [nodos, setNodos] = useState<BarbaraMemoriaNodo[]>([]);
   const [patrones, setPatrones] = useState<Patron[]>([]);
@@ -126,6 +128,7 @@ export function GrafoMemoria({ barbaraClienteId, negocio }: { barbaraClienteId: 
   const perfilNodo = nodos.find((n) => n.tipo === "perfil");
 
   async function alternarActivo(n: Nodo) {
+    if (!puedeEditar) return;
     const { error } = n.tipo === "correccion"
       ? await sb.rpc("barbara_establecer_regla_activa", { p_regla_id: n.id, p_activa: !n.activo })
       : await sb.rpc("barbara_establecer_nodo_activo", { p_nodo_id: n.id, p_activo: !n.activo });
@@ -291,7 +294,7 @@ export function GrafoMemoria({ barbaraClienteId, negocio }: { barbaraClienteId: 
             {seleccionado.peso > 1 && (
               <p className="tenue">Reforzado {seleccionado.peso} veces.</p>
             )}
-            {seleccionado.tipo !== "patron" && (
+            {puedeEditar && seleccionado.tipo !== "patron" && (
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                 <button className="btn chico" onClick={() => alternarActivo(seleccionado)}>
                   {seleccionado.activo ? "Apagar" : "Encender"}
@@ -311,22 +314,22 @@ export function GrafoMemoria({ barbaraClienteId, negocio }: { barbaraClienteId: 
           <p className="tenue">Toca un nodo para ver el detalle.</p>
         )}
 
-        <hr className="grafo-sep" />
+        {puedeEditar && <><hr className="grafo-sep" />
+          <div className="grafo-acciones">
+            <button className="btn chico" onClick={() => setCreando("gusto")}>+ Gusto</button>
+            <button className="btn chico" onClick={() => setCreando("dato")}>+ Dato</button>
+            <button className="btn chico" onClick={sintetizarPerfil} disabled={sintetizando}>
+              {sintetizando ? "Sintetizando…" : perfilNodo ? "Actualizar perfil" : "Sintetizar perfil"}
+            </button>
+          </div>
+          {perfilNodo && (
+            <p className="tenue" style={{ marginTop: 6 }}>
+              Perfil actualizado {fecha(perfilNodo.actualizado_en)}.
+            </p>
+          )}
+        </>}
 
-        <div className="grafo-acciones">
-          <button className="btn chico" onClick={() => setCreando("gusto")}>+ Gusto</button>
-          <button className="btn chico" onClick={() => setCreando("dato")}>+ Dato</button>
-          <button className="btn chico" onClick={sintetizarPerfil} disabled={sintetizando}>
-            {sintetizando ? "Sintetizando…" : perfilNodo ? "Actualizar perfil" : "Sintetizar perfil"}
-          </button>
-        </div>
-        {perfilNodo && (
-          <p className="tenue" style={{ marginTop: 6 }}>
-            Perfil actualizado {fecha(perfilNodo.actualizado_en)}.
-          </p>
-        )}
-
-        {(creando || editando) && (
+        {puedeEditar && (creando || editando) && (
           <form className="grafo-form" onSubmit={crearNodo} key={editando?.id || creando || "form"}>
             <label className="campo-lbl">
               {(editando?.tipo || creando) === "gusto" ? "Gusto" : "Dato"}

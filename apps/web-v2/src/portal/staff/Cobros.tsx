@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { sb, plata, fecha } from "../lib/supabase";
 import { Ico } from "../disenio/iconos";
+import { useConfirmacion } from "../disenio/Confirmacion";
 import { useCambio } from "../lib/cambio";
 import {
   nombreCobro,
@@ -14,6 +15,7 @@ type Tipo = "todos" | "unico" | "mensual";
 type Estado = "todos" | "pagado" | "pendiente" | "rechazado";
 
 export function Cobros() {
+  const confirmar = useConfirmacion();
   const [pagos, setPagos] = useState<Pago[]>([]);
   const [cobros, setCobros] = useState<Cobro[]>([]);
   const [clientes, setClientes] = useState<Cliente[]>([]);
@@ -144,9 +146,10 @@ export function Cobros() {
   async function eliminarPendiente(pago: Pago) {
     if (pago.estado && pago.estado !== "pendiente") return;
     const cli = clm.get(pago.cliente_id);
-    const ok = window.confirm(
-      `¿Eliminar este pago pendiente de ${cli?.negocio || cli?.nombre || "el cliente"}?\n\n` +
-        "Esto limpia el registro interno, pero no cancela un link o intento de cobro que siga activo en Mercado Pago.",
+    const ok = await confirmar(
+      `¿Eliminar este pago pendiente de ${cli?.negocio || cli?.nombre || "el cliente"}?`,
+      "Esto limpia el registro interno, pero no cancela un link o intento de cobro que siga activo en Mercado Pago.",
+      "Eliminar",
     );
     if (!ok) return;
     const anterior = pagos;

@@ -1,14 +1,15 @@
 import { useEffect, useState } from "react";
 import { sb, plata, fecha } from "../../lib/supabase";
 import { Ico } from "../../disenio/iconos";
+import { useConfirmacion } from "../../disenio/Confirmacion";
 import { lineasDe, type Asiento, type Cuenta, type PasivoAbierto } from "./tipos";
 
-const CODIGO_TARJETA_CORPORATIVA = "2105";
+const CODIGO_DEBITO_CORPORATIVA = "1104";
 
 /**
  * Pasivos, uno por uno: cobrarlos de la plata líquida real, o marcarlos
- * pagados sin tocarla cuando ya se cobraron solos por otro medio (ej. una
- * tarjeta corporativa cargando Meta Ads automáticamente).
+ * pagados sin tocarla cuando ya se cobraron solos desde la tarjeta de débito
+ * corporativa, que no se concilia en el portal.
  *
  * POR QUÉ NO BASTABA CON EL SALDO DE LA CUENTA
  * ---------------------------------------------------------------------------
@@ -25,6 +26,7 @@ export function Pasivos({
   cuentas: Cuenta[];
   recargar: () => void;
 }) {
+  const confirmar = useConfirmacion();
   const [abiertos, setAbiertos] = useState<PasivoAbierto[]>([]);
   const [saldados, setSaldados] = useState<Asiento[]>([]);
   const [cargando, setCargando] = useState(true);
@@ -37,7 +39,7 @@ export function Pasivos({
   const liquidas = cuentas.filter((c) => c.liquida);
   const pasivas = cuentas.filter((c) => c.tipo === "pasivo");
   const gastos = cuentas.filter((c) => c.tipo === "gasto");
-  const tarjeta = cuentas.find((c) => c.codigo === CODIGO_TARJETA_CORPORATIVA);
+  const debitoCorporativo = cuentas.find((c) => c.codigo === CODIGO_DEBITO_CORPORATIVA);
 
   async function cargar() {
     setCargando(true);
@@ -187,15 +189,17 @@ export function Pasivos({
                           </button>
                           <button
                             className="btn"
-                            disabled={!tarjeta || procesando === item.asiento_id}
-                            title={!tarjeta ? "Falta la cuenta 2105 Tarjeta de crédito corporativa" : ""}
-                            onClick={() =>
-                              tarjeta &&
-                              window.confirm(
-                                `¿Marcar "${item.glosa}" como pagado sin afectar el líquido? Se reclasifica a "${tarjeta.nombre}", ninguna cuenta de Caja/Banco/Mercado Pago baja.`,
-                              ) &&
-                              saldar(item, tarjeta.id, "Pagado sin afectar el líquido")
-                            }
+                            disabled={!debitoCorporativo || procesando === item.asiento_id}
+                            title={!debitoCorporativo ? "Falta la cuenta 1104 Tarjeta de débito corporativa" : ""}
+                            onClick={async () => {
+                              if (!debitoCorporativo) return;
+                              const ok = await confirmar(
+                                `¿Marcar "${item.glosa}" como pagado?`,
+                                `Se registra como pagado desde "${debitoCorporativo.nombre}" sin bajar Caja, Banco ni Mercado Pago.`,
+                                "Marcar pagado",
+                              );
+                              if (ok) await saldar(item, debitoCorporativo.id, "Pagado desde débito corporativo");
+                            }}
                           >
                             Marcar pagado
                           </button>
@@ -210,9 +214,9 @@ export function Pasivos({
         )}
         <p className="conteo" style={{ marginTop: 10 }}>
           <b>Cobrar</b> baja una cuenta líquida real (Caja, Banco o Mercado
-          Pago). <b>Marcar pagado</b> es para gastos que ya se cobraron solos
-          por otro medio (ej. tarjeta corporativa): salda el pasivo sin restar
-          nada de la plata disponible.
+          Pago). <b>Marcar pagado</b> registra el pago desde la tarjeta de
+          débito corporativa: el pasivo queda en cero sin restar nada de la
+          plata disponible que el portal concilia.
         </p>
       </section>
 

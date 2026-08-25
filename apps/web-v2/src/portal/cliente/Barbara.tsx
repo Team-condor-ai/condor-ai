@@ -103,6 +103,8 @@ export function Barbara() {
       formulario={d.formulario}
       onCambio={cargar}
       esStaff={esStaff}
+      activo={d.cliente.activo}
+      telegramListo={Boolean(d.cliente.telegram_chat_id)}
       volverA={esStaff ? "/acceso/dashboard" : "/acceso/plan"}
       volverTexto="Volver a Cóndor"
     />

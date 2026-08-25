@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { sb, plata } from "../../lib/supabase";
 import { Ico } from "../../disenio/iconos";
+import { useConfirmacion } from "../../disenio/Confirmacion";
 import { CampoVivo } from "../CampoVivo";
 import { lineasDe, type Asiento, type Cuenta, type GastoFijo } from "./tipos";
 
@@ -38,6 +39,7 @@ export function GastosFijos({
   asientos: Asiento[];
   recargar: () => void;
 }) {
+  const confirmar = useConfirmacion();
   const [fijos, setFijos] = useState<GastoFijo[]>([]);
   const [cargado, setCargado] = useState(false);
   const [error, setError] = useState("");
@@ -88,7 +90,7 @@ export function GastosFijos({
   }
 
   async function borrar(g: GastoFijo) {
-    if (!window.confirm(`¿Quitar "${g.nombre}" de los gastos fijos?\n\nLos asientos que ya se anotaron NO se borran.`)) return;
+    if (!await confirmar(`¿Quitar "${g.nombre}" de los gastos fijos?`, "Los asientos que ya se anotaron no se borran.", "Quitar")) return;
     await sb.from("gastos_fijos").delete().eq("id", g.id);
     setFijos((p) => p.filter((x) => x.id !== g.id));
   }

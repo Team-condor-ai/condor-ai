@@ -11,6 +11,9 @@ type Props = {
   brandBook: BarbaraBrandBook | null;
   formulario: BarbaraFormulario | null;
   onCambio: () => void;
+  esStaff?: boolean;
+  activo?: boolean | null;
+  telegramListo?: boolean;
 };
 
 async function consultarOperacion(barbaraClienteId: string) {
@@ -30,7 +33,7 @@ async function consultarOperacion(barbaraClienteId: string) {
 /** Reutiliza el editor de marca (staff) + el formulario de entrada (cliente):
  * los dos son igual de válidos para cualquiera que esté configurando SU
  * Bárbara, sea un cliente externo o Cóndor viendo la suya. */
-export function BarbaraConfiguracion({ barbaraClienteId, negocio, rubro, brandBook, formulario, onCambio }: Props) {
+export function BarbaraConfiguracion({ barbaraClienteId, negocio, rubro, brandBook, formulario, onCambio, esStaff = false, activo = true, telegramListo = false }: Props) {
   const [editandoFormulario, setEditandoFormulario] = useState(false);
   const [canales, setCanales] = useState<{ id: string; plataforma: string; activo: boolean; auto_publicar: boolean }[]>([]);
   const [zonaHoraria, setZonaHoraria] = useState("America/Santiago");
@@ -78,19 +81,20 @@ export function BarbaraConfiguracion({ barbaraClienteId, negocio, rubro, brandBo
   }
 
   return (
-    <div>
-      <section className="bloque" style={{ marginBottom: 18 }}>
+    <div className="barbara-configuracion">
+      <EstadoOperacion activo={activo} telegramListo={telegramListo} brandBook={brandBook} formulario={formulario} />
+      <section className="barbara-config-seccion">
         <h3>Identidad de marca</h3>
-        <BrandBookEditor
+        {esStaff ? <BrandBookEditor
           barbaraClienteId={barbaraClienteId}
           negocio={negocio}
           rubro={rubro}
           inicial={brandBook}
           onGuardado={onCambio}
-        />
+        /> : <ResumenMarca brandBook={brandBook} />}
       </section>
 
-      <section className="bloque">
+      <section className="barbara-config-seccion">
         <h3>Formulario de entrada</h3>
         <p className="parrafo" style={{ color: "var(--texto-2)" }}>
           Qué tipo de piezas quieres, a quién le hablas, tu tono y qué evitar.
@@ -140,4 +144,30 @@ export function BarbaraConfiguracion({ barbaraClienteId, negocio, rubro, brandBo
       )}
     </div>
   );
+}
+
+function EstadoOperacion({ activo, telegramListo, brandBook, formulario }: { activo: boolean | null; telegramListo: boolean; brandBook: BarbaraBrandBook | null; formulario: BarbaraFormulario | null }) {
+  const tieneFormulario = Boolean(formulario && (formulario.publico_objetivo || formulario.tono || formulario.producto_destacar || (formulario.tipo_contenido?.length ?? 0) > 0));
+  const puntos = [
+    { texto: "Cuenta activa", listo: Boolean(activo) },
+    { texto: "Identidad de marca", listo: Boolean(brandBook) },
+    { texto: "Brief de contenido", listo: tieneFormulario },
+    { texto: "Canal de entrega", listo: telegramListo },
+  ];
+  const listos = puntos.filter((p) => p.listo).length;
+  return <section className="barbara-estado-operacion">
+    <header><div><small>Estado operativo</small><b>{listos === puntos.length ? "Bárbara está lista para entregar" : `${listos} de ${puntos.length} pasos completados`}</b></div><span className={"pill " + (listos === puntos.length ? "ok" : "warn")}>{listos === puntos.length ? "Lista" : "Configuración pendiente"}</span></header>
+    <div>{puntos.map((p) => <span key={p.texto} className={p.listo ? "listo" : "pendiente"}>{p.listo ? "✓" : "○"} {p.texto}</span>)}</div>
+  </section>;
+}
+
+function ResumenMarca({ brandBook }: { brandBook: BarbaraBrandBook | null }) {
+  if (!brandBook) return <p className="tenue">Tu identidad visual todavía está siendo configurada por el equipo.</p>;
+  const colores = brandBook.paleta_colores?.filter((c) => /^#[0-9a-f]{6}$/i.test(c.hex)) ?? [];
+  return <div className="barbara-marca-resumen">
+    <div><small>Paleta de marca</small><span className="barbara-marca-colores">{colores.length ? colores.map((c) => <i key={c.hex} title={c.uso || c.hex} style={{ background: c.hex }} />) : "Sin paleta registrada"}</span></div>
+    <div><small>Tipografía</small><b>{brandBook.tipografia || "Definida por el equipo"}</b></div>
+    {brandBook.detalles && <p>{brandBook.detalles}</p>}
+    <p className="tenue">¿Necesitas cambiar la identidad? Escríbenos y la ajustamos antes de la siguiente pieza.</p>
+  </div>;
 }

@@ -107,6 +107,23 @@ export type BarbaraChat = {
   creado_en: string | null;
 };
 
+export type BarbaraPieza = {
+  id: string;
+  barbara_cliente_id: string;
+  fecha: string;
+  tipo: string;
+  angulo: string | null;
+  contenido: { slides?: { titular: string; cuerpo: string }[]; clips?: { escena: string; duracion: number }[]; caption?: string; texto_en_pantalla?: string } | null;
+  estado: "en_revision" | "requiere_ajuste" | "aprobada" | "publicada" | "historica";
+  correcciones_pedidas: number | null;
+  revision_comentario: string | null;
+  revisada_en: string | null;
+  canal_publicacion?: string | null;
+  publicacion_url?: string | null;
+  publicada_en?: string | null;
+  creado_en: string;
+};
+
 export type BarbaraCorrecciones = {
   id: string;
   barbara_cliente_id: string;
@@ -133,6 +150,14 @@ export const BARBARA_PLAN_INFO: Record<
   barbara: { nombre: "Bárbara", pill: "gris" },
   go: { nombre: "Go", pill: "azul" },
   plus: { nombre: "Plus", pill: "ok", nota: "responde el chat" },
+};
+
+/** Capacidad mensual visible. El motor usa el mismo contrato en
+ * `services/barbara/planes.mjs`; mantenerlos sincronizados es intencional. */
+export const BARBARA_CUOTAS: Record<string, Record<"carrusel" | "historia" | "ugc", number>> = {
+  barbara: { carrusel: 12, historia: 0, ugc: 0 },
+  go: { carrusel: 12, historia: 20, ugc: 4 },
+  plus: { carrusel: 12, historia: 20, ugc: 4 },
 };
 
 /** `plan` llega como `string` plano desde la base (no hay CHECK constraint).

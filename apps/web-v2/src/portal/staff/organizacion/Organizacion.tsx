@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { sb, fecha, plata } from "../../lib/supabase";
 import { Ico } from "../../disenio/iconos";
+import { useConfirmacion } from "../../disenio/Confirmacion";
 import { EditorReunion } from "../EditorReunion";
 import { NotasInternas } from "./NotasInternas";
 import type {
@@ -200,7 +201,7 @@ export function Organizacion() {
               {Ico.reuniones({ t: 15 })} Agendar reunión
             </button>
           </div>
-        ) : vista === "notas" ? null : (
+        ) : vista === "notas" || vista === "informacion" ? null : (
           <button className="btn solido" onClick={() => setEditando("nueva")}>
             {Ico.mas({ t: 15 })} Nueva tarea
           </button>
@@ -228,10 +229,10 @@ export function Organizacion() {
             {Ico.meta({ t: 15 })} Metas
           </button>
           <button
-            className={vista === "notas" ? "on" : ""}
-            onClick={() => navega("/acceso/organizacion/notas")}
+            className={vista === "notas" || vista === "informacion" ? "on" : ""}
+            onClick={() => navega("/acceso/organizacion/informacion")}
           >
-            {Ico.documentos({ t: 15 })} Notas internas
+            {Ico.documentos({ t: 15 })} Información interna
           </button>
         </div>
         {cargando ? (
@@ -311,22 +312,24 @@ export function Organizacion() {
                           <h3>{t.titulo}</h3>
                           {t.descripcion && <p>{t.descripcion}</p>}
                           <div className="tarea-pie">
-                            <span>
+                            <span className="tarea-cliente">
                               {t.cliente_id
                                 ? cliente.get(t.cliente_id)?.negocio ||
                                   "Cliente"
                                 : "Cóndor"}
                             </span>
-                            {t.asignados?.slice(0, 2).map((nombre) => (
+                            {(t.asignados?.length ?? 0) > 0 && <div className="tarea-asignados" aria-label={`Asignados: ${t.asignados.join(", ")}`}>
+                            {t.asignados.slice(0, 4).map((nombre) => (
                               <span className="persona-mini" key={nombre} title={nombre}>
                                 {nombre.slice(0, 2).toUpperCase()}
                               </span>
                             ))}
-                            {(t.asignados?.length ?? 0) > 2 && (
-                              <span className="persona-mini" title={t.asignados.slice(2).join(", ")}>
-                                +{t.asignados.length - 2}
+                            {(t.asignados?.length ?? 0) > 4 && (
+                              <span className="persona-mini mas" title={t.asignados.slice(4).join(", ")}>
+                                +{t.asignados.length - 4}
                               </span>
                             )}
+                            </div>}
                           </div>
                           {t.etiquetas?.length > 0 && (
                             <div className="etiquetas">
@@ -378,7 +381,7 @@ export function Organizacion() {
             }
             error={setError}
           />
-        ) : vista === "notas" ? (
+        ) : vista === "notas" || vista === "informacion" ? (
           <NotasInternas />
         ) : (
           <Metas metas={metas} metricas={metricas} editar={setEditandoMeta} />
@@ -440,6 +443,7 @@ function Calendario({
   restaurarReunion: (reunion: Reunion) => void;
   error: (mensaje: string) => void;
 }) {
+  const confirmar = useConfirmacion();
   const [mes, setMes] = useState(() => new Date());
   const [ahora] = useState(() => Date.now());
   const [ajustando, setAjustando] = useState<{
@@ -703,7 +707,7 @@ function Calendario({
     .sort((a, b) => +new Date(b.fecha_hora) - +new Date(a.fecha_hora));
 
   async function eliminar(r: Reunion) {
-    if (!window.confirm(`¿Eliminar la reunión "${r.titulo}"?`)) return;
+    if (!await confirmar(`¿Eliminar la reunión "${r.titulo}"?`, undefined, "Eliminar")) return;
     quitarReunion(r.id);
     const { error: fallo } = await sb
       .from("reuniones")
@@ -1085,6 +1089,7 @@ function EditorTarea({
   cerrar: () => void;
   guardado: () => void;
 }) {
+  const confirmar = useConfirmacion();
   const hoy = new Date().toISOString().slice(0, 10);
   const [agendada, setAgendada] = useState(
     !!(tarea?.inicio || tarea?.vence || agendarInicial),
@@ -1188,7 +1193,7 @@ function EditorTarea({
     } else guardado();
   }
   async function borrar() {
-    if (!tarea || !window.confirm("¿Eliminar esta tarea?")) return;
+    if (!tarea || !await confirmar("¿Eliminar esta tarea?", undefined, "Eliminar")) return;
     await sb.from("tareas").delete().eq("id", tarea.id);
     guardado();
   }

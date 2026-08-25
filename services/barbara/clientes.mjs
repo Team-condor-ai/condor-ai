@@ -27,6 +27,7 @@ import { persistirMedia } from "./persistencia.mjs";
 import { fechaLocalISO, proponerHorario } from "./planificador.mjs";
 import { cancelarGeneracion, confirmarGeneracion, fallarGeneracion, reclamarGeneracion } from "./generaciones.mjs";
 import { finalizarTelemetria, guardarTelemetria, iniciarTelemetria, verificarPresupuesto } from "./telemetria.mjs";
+import { inicioMesUTC, limitePlan, metaAcumulada } from "./planes.mjs";
 import sharp from "sharp";
 
 const AK = process.env.ANTHROPIC_API_KEY;
@@ -36,6 +37,8 @@ const isTest = process.env.TEST === "1";
 const isRetry = process.env.RETRY === "1";
 const TIPO = (process.env.TIPO || "carrusel").trim().toLowerCase();
 const SOLO_CLIENTE = (process.env.CLIENTE_ID || "").trim();
+const PIEZA_ID = (process.env.PIEZA_ID || "").trim();
+const RESPETAR_RITMO = process.env.RITMO === "1";
 
 if (!AK || !SB_URL || !SB_KEY) {
   console.error("Faltan variables: ANTHROPIC_API_KEY / SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY");
@@ -129,6 +132,28 @@ async function generarPara(cliente) {
   if (!bb || !form) {
     console.log(`[${negocio}] falta brand book o formulario todavía — se salta hasta que el staff los complete.`);
     return;
+  }
+
+  // El plan es una regla del motor, no solo una etiqueta del portal. Una
+  // pieza nueva cuenta contra el mes; un RETRY corrige la ya entregada y no.
+  if (!isRetry) {
+    const limite = limitePlan(plan, TIPO);
+    if (!limite) {
+      console.log(`[${negocio}] el plan ${plan} no incluye ${TIPO}.`);
+      return;
+    }
+    const usadas = await db.get(
+      `barbara_memoria?barbara_cliente_id=eq.${barbaraId}&tipo=eq.${TIPO}` +
+      `&fecha=gte.${inicioMesUTC()}&corrige_a=is.null&select=id`,
+    ).catch(() => []);
+    if (usadas.length >= limite) {
+      console.log(`[${negocio}] cuota mensual de ${TIPO} completa (${limite}/${limite}).`);
+      return;
+    }
+    if (RESPETAR_RITMO && usadas.length >= metaAcumulada(limite)) {
+      console.log(`[${negocio}] ${TIPO} va al ritmo mensual (${usadas.length}/${metaAcumulada(limite)} para hoy).`);
+      return;
+    }
   }
 
   // Candado: no publicar dos veces el mismo tipo el mismo día para este
@@ -314,8 +339,8 @@ async function generarPara(cliente) {
   // Ver el encabezado de `correccion.mjs`.
   let previa = null, correccion = { cambios: [], es_correccion: false };
   if (isRetry) {
-    previa = await piezaAnterior(db, barbaraId, TIPO);
-    const mensajes = await leerPedido(db, barbaraId, previa?.creado_en);
+    previa = await piezaAnterior(db, barbaraId, TIPO, PIEZA_ID);
+    const mensajes = await leerPedido(db, barbaraId, previa?.creado_en, PIEZA_ID);
     correccion = await extraerCambios(AK, mensajes, previa);
     console.log(`[${negocio}] corrección: ${correccion.cambios.length} cambio(s) pedido(s)` +
       (correccion.cambios.length ? " — " + correccion.cambios.map(c => c.que).join(", ") : ""));
@@ -647,6 +672,7 @@ Responde SOLO con el JSON.`;
     // El worker de outbox sólo reclama después de que `barbara_media` exista.
     // Nunca se envía Telegram antes de tener una copia persistente.
     entrega_estado: "incompleta",
+    estado: "en_revision",
   }, { returnMinimal: false });
 
   // Enlaza cada prompt registrado en esta corrida con la pieza que produjo,
@@ -799,7 +825,7 @@ Responde SOLO con el JSON.`;
 }
 
 async function main() {
-  console.log("Bárbara clientes | tipo:", TIPO, "| solo:", SOLO_CLIENTE || "(todos los activos)");
+  console.log("Bárbara clientes | tipo:", TIPO, "| solo:", SOLO_CLIENTE || "(todos los activos)", "| pieza:", PIEZA_ID || "(última)");
   if (isTest) {
     const clientes = await db.get("barbara_clientes?activo=eq.true&select=id");
     console.log(`Conexión OK. Clientes activos: ${clientes.length}`);
@@ -808,7 +834,7 @@ async function main() {
 
   const filtroId = SOLO_CLIENTE ? `&id=eq.${SOLO_CLIENTE}` : "";
   const clientes = await db.get(
-    `barbara_clientes?activo=eq.true${filtroId}&select=id,plan,rubro,telegram_chat_id,cliente_id,zona_horaria,clientes(negocio),barbara_brand_book(paleta_colores,tipografia,detalles,logo_url),barbara_formulario(tipo_contenido,publico_objetivo,tono,restricciones,ejemplos_referencia,producto_destacar)`
+    `barbara_clientes?activo=eq.true${filtroId}&select=id,plan,rubro,telegram_chat_id,cliente_id,zona_horaria,clientes(negocio),barbara_brand_book(paleta_colores,tipografia,detalles,logo_url),barbara_formulario(tipo_contenido,publico_objetivo,tono,restricciones,ejemplos_referencia,producto_destacar,pilares)`
   );
 
   if (!clientes.length) {

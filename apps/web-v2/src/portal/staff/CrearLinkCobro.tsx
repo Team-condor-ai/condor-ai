@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { invocar, plata } from "../lib/supabase";
 import { Ico } from "../disenio/iconos";
+import { useConfirmacion } from "../disenio/Confirmacion";
 import { nombreCobro, type Cliente, type Cobro } from "./tipos";
 
 type Props = {
@@ -29,6 +30,7 @@ type Props = {
  * El monto NUNCA viaja desde acá: `crear-pago` lo lee de la fila del cobro.
  */
 export function CrearLinkCobro({ cliente, cobro, cerrar, guardado }: Props) {
+  const confirmar = useConfirmacion();
   const [enviarCorreo, setEnviarCorreo] = useState(!!cliente.email);
   const [trabajando, setTrabajando] = useState(false);
   const [error, setError] = useState("");
@@ -48,7 +50,7 @@ export function CrearLinkCobro({ cliente, cobro, cerrar, guardado }: Props) {
     ev?.preventDefault();
     if (
       forzarNuevo &&
-      !window.confirm("Se invalidará el intento pendiente interno y se creará un enlace con la cuenta de Mercado Pago actual. ¿Continuar?")
+      !await confirmar("¿Crear un enlace nuevo?", "Se invalidará el intento pendiente interno y se creará un enlace con la cuenta de Mercado Pago actual.", "Crear enlace")
     ) return;
     setTrabajando(true);
     setError("");

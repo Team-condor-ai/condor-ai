@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { sb } from "../lib/supabase";
 import { Ico } from "../disenio/iconos";
+import { useConfirmacion } from "../disenio/Confirmacion";
 import { EditorReunion } from "./EditorReunion";
 import type { Reunion } from "./tipos";
 
@@ -28,6 +29,7 @@ function cuando(iso: string) {
 }
 
 export function Reuniones() {
+  const confirmar = useConfirmacion();
   const [filas, setFilas] = useState<Reunion[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
@@ -66,7 +68,7 @@ export function Reuniones() {
   }, [filas]);
 
   async function eliminar(r: Reunion) {
-    if (!window.confirm(`¿Eliminar la reunión "${r.titulo}"?`)) return;
+    if (!await confirmar(`¿Eliminar la reunión "${r.titulo}"?`, undefined, "Eliminar")) return;
     const { error } = await sb.from("reuniones").delete().eq("id", r.id);
     if (error) setError(error.message);
     else cargar();

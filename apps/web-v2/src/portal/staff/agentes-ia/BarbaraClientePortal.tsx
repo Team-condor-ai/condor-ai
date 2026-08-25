@@ -83,6 +83,8 @@ export function BarbaraClientePortal() {
       formulario={d.formulario}
       onCambio={cargar}
       esStaff
+      activo={d.cliente.activo}
+      telegramListo={Boolean(d.cliente.telegram_chat_id)}
       volverA={`/acceso/agentes-ia/${id}`}
       volverTexto="Volver a la ficha"
     />

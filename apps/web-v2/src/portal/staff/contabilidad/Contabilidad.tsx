@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { sb, plata, fecha } from "../../lib/supabase";
 import { Ico } from "../../disenio/iconos";
+import { useConfirmacion } from "../../disenio/Confirmacion";
 import { Barras, corto, mesDe, mesesDelAnio, NavAnio } from "../graficos";
 import { RegistrarMovimiento } from "./RegistrarMovimiento";
 import { GastosFijos } from "./GastosFijos";
@@ -44,6 +45,7 @@ type Pestana = (typeof PESTANAS)[number]["id"];
  * asiento de cierre, que es justo lo que nadie se acuerda de hacer.
  */
 export function Contabilidad() {
+  const confirmar = useConfirmacion();
   const [params] = useSearchParams();
   const [cuentas, setCuentas] = useState<Cuenta[]>([]);
   const [saldos, setSaldos] = useState<SaldoCuenta[]>([]);
@@ -190,12 +192,7 @@ export function Contabilidad() {
     const detalle = (a.asiento_lineas ?? [])
       .map((l) => cuentas.find((c) => c.id === l.cuenta_id)?.nombre ?? "—")
       .join(" / ");
-    if (
-      !window.confirm(
-        `¿Deshacer "${a.glosa}" (${detalle})?\n\nEsto borra el asiento y no se puede recuperar.`,
-      )
-    )
-      return;
+    if (!await confirmar(`¿Deshacer "${a.glosa}"?`, `${detalle}\n\nEsto borra el asiento y no se puede recuperar.`, "Deshacer")) return;
     const { error } = await sb.from("asientos").delete().eq("id", a.id);
     if (error) setError(error.message);
     else cargar();

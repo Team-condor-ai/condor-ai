@@ -1,123 +1,86 @@
 import { useEffect, useMemo, useState } from "react";
 import { sb, fecha } from "../lib/supabase";
+import { useConfirmacion } from "../disenio/Confirmacion";
+import type { BarbaraPieza } from "./tipos";
 
-type Media = {
-  id: string; storage_path: string; tipo: "imagen" | "video" | "portada" | "documento";
-  mime_type: string; bytes: number | null; sha256: string | null; url?: string;
-};
-type Decision = {
-  pilar: string | null;
-  memoria_privada: { id?: string; clase?: string }[];
-  patrones_globales: { evidencia_clave?: string }[];
-  decision_angulo: { modo?: string; descartes?: unknown[] };
-  decision_horario: { razon?: string; modo?: string } | null;
-};
-type Fila = {
-  id: string; fecha: string; tipo: string; angulo: string | null; creado_en: string;
-  contenido: { caption?: string } | null; barbara_media: Media[] | null;
-  barbara_decisiones: Decision | Decision[] | null;
+const ETIQUETA_TIPO: Record<string, string> = { carrusel: "Carrusel", historia: "Historia", ugc: "Video UGC" };
+const ESTADO: Record<BarbaraPieza["estado"], { texto: string; pill: string }> = {
+  en_revision: { texto: "Por revisar", pill: "azul" }, requiere_ajuste: { texto: "Ajuste solicitado", pill: "warn" },
+  aprobada: { texto: "Aprobada", pill: "ok" }, publicada: { texto: "Publicada", pill: "ok" }, historica: { texto: "Histórica", pill: "gris" },
 };
 
-const ETIQUETA_TIPO: Record<string, string> = {
-  carrusel: "🖼️ Carrusel", historia: "📱 Historia", ugc: "🎬 UGC",
-};
+/** El plan textual es la fuente real que el motor conserva. Mientras los
+ * medios viven en Telegram, permite una revisión trazable y por versión. */
+export function BarbaraBiblioteca({ barbaraClienteId, esStaff = false }: { barbaraClienteId: string; esStaff?: boolean }) {
+  const confirmar = useConfirmacion();
+  const [piezas, setPiezas] = useState<BarbaraPieza[]>([]);
+  const [cargando, setCargando] = useState(true); const [error, setError] = useState("");
+  const [busqueda, setBusqueda] = useState(""); const [abierta, setAbierta] = useState<string | null>(null);
+  const [ajustando, setAjustando] = useState<string | null>(null); const [pedido, setPedido] = useState("");
+  const [procesando, setProcesando] = useState<string | null>(null);
+  const [canal, setCanal] = useState("Instagram");
 
-/** Biblioteca real: metadata en barbara_media y URLs firmadas de un bucket
- * privado. Las URLs expiran; nunca se vuelve público el material del cliente. */
-export function BarbaraBiblioteca({ barbaraClienteId }: { barbaraClienteId: string }) {
-  const [filas, setFilas] = useState<Fila[]>([]);
-  const [cargando, setCargando] = useState(true);
-  const [error, setError] = useState("");
-  const [busqueda, setBusqueda] = useState("");
-
-  useEffect(() => {
-    let vivo = true;
-    (async () => {
-      const r = await sb.from("barbara_memoria")
-        .select("id,fecha,tipo,angulo,contenido,creado_en,barbara_media(id,storage_path,tipo,mime_type,bytes,sha256),barbara_decisiones(pilar,memoria_privada,patrones_globales,decision_angulo,decision_horario)")
-        .eq("barbara_cliente_id", barbaraClienteId)
-        .order("creado_en", { ascending: false }).limit(200);
-      if (!vivo) return;
-      if (r.error) { setError(r.error.message); setCargando(false); return; }
-      const piezas = (r.data ?? []) as unknown as Fila[];
-      const paths = piezas.flatMap((p) => p.barbara_media ?? []).map((m) => m.storage_path);
-      const urls = new Map<string, string>();
-      if (paths.length) {
-        const firmadas = await sb.storage.from("barbara-media").createSignedUrls(paths, 60 * 60);
-        if (firmadas.error) {
-          setError("No se pudieron abrir los archivos privados: " + firmadas.error.message);
-        } else {
-          for (const item of firmadas.data ?? []) {
-            if (item.path && item.signedUrl) urls.set(item.path, item.signedUrl);
-          }
-        }
-      }
-      if (!vivo) return;
-      setFilas(piezas.map((p) => ({
-        ...p,
-        barbara_media: (p.barbara_media ?? []).map((m) => ({ ...m, url: urls.get(m.storage_path) })),
-      })));
-      setCargando(false);
-    })();
-    return () => { vivo = false; };
-  }, [barbaraClienteId]);
-
+  async function cargar() {
+    setCargando(true);
+    const { data, error } = await sb.from("barbara_memoria")
+      .select("id,barbara_cliente_id,fecha,tipo,angulo,contenido,estado,correcciones_pedidas,revision_comentario,revisada_en,canal_publicacion,publicacion_url,publicada_en,creado_en")
+      .eq("barbara_cliente_id", barbaraClienteId).order("creado_en", { ascending: false }).limit(200);
+    if (error) setError(error.message); else { setPiezas((data ?? []) as BarbaraPieza[]); setError(""); }
+    setCargando(false);
+  }
+  useEffect(() => { void cargar(); }, [barbaraClienteId]);
   const filtradas = useMemo(() => {
     const q = busqueda.trim().toLowerCase();
-    if (!q) return filas;
-    return filas.filter((f) => [f.angulo, f.tipo, f.contenido?.caption]
-      .filter(Boolean).join(" ").toLowerCase().includes(q));
-  }, [filas, busqueda]);
+    return q ? piezas.filter((p) => [p.angulo, p.tipo, p.contenido?.caption].some((v) => v?.toLowerCase().includes(q))) : piezas;
+  }, [piezas, busqueda]);
 
-  return (
-    <div>
-      <input className="campo" placeholder="Buscar por ángulo, tipo o caption…"
-        value={busqueda} onChange={(e) => setBusqueda(e.target.value)}
-        style={{ marginBottom: 14, maxWidth: 380 }} />
+  async function aprobar(pieza: BarbaraPieza) {
+    if (!await confirmar("¿Aprobar esta pieza?", "Quedará marcada como aprobada. La publicación se controla por separado; nada se publica automáticamente.", "Aprobar")) return;
+    setProcesando(pieza.id); setError("");
+    const { data, error } = await sb.functions.invoke("barbara-chat", { body: { accion: "aprobar", barbara_cliente_id: barbaraClienteId, pieza_id: pieza.id } });
+    setProcesando(null); if (error) setError((data as { error?: string } | null)?.error || error.message); else void cargar();
+  }
+  async function enviarAjuste(pieza: BarbaraPieza) {
+    const mensaje = pedido.trim(); if (!mensaje) { setError("Describe qué cambiar de esta pieza."); return; }
+    setProcesando(pieza.id); setError("");
+    const { data, error } = await sb.functions.invoke("barbara-chat", { body: { accion: "correccion", barbara_cliente_id: barbaraClienteId, pieza_id: pieza.id, mensaje } });
+    setProcesando(null);
+    if (error) { setError((data as { error?: string } | null)?.error || error.message); return; }
+    setPedido(""); setAjustando(null); void cargar();
+  }
+  async function marcarPublicada(pieza: BarbaraPieza) {
+    if (!await confirmar("¿Registrar publicación?", `Se marcará como publicada en ${canal}. Esta acción registra un hecho; no publica en ninguna red por sí sola.`, "Registrar")) return;
+    setProcesando(pieza.id); setError("");
+    const { data, error } = await sb.functions.invoke("barbara-chat", { body: { accion: "publicar", barbara_cliente_id: barbaraClienteId, pieza_id: pieza.id, canal } });
+    setProcesando(null); if (error) setError((data as { error?: string } | null)?.error || error.message); else void cargar();
+  }
 
-      {error && <p className="error">{error}</p>}
-      {cargando && <p className="vacio">Cargando biblioteca privada…</p>}
-      {!cargando && filtradas.length === 0 && <p className="vacio">Sin piezas todavía.</p>}
-
-      {!cargando && filtradas.length > 0 && (
-        <div className="barbara-biblioteca-grid">
-          {filtradas.map((f) => {
-            const media = f.barbara_media ?? [];
-            const portada = media.find((m) => m.tipo === "portada") || media[0];
-            const decision = Array.isArray(f.barbara_decisiones) ? f.barbara_decisiones[0] : f.barbara_decisiones;
-            return (
-              <article className="barbara-biblioteca-pieza" key={f.id}>
-                <div className="barbara-biblioteca-preview">
-                  {portada?.url && portada.mime_type.startsWith("image/") &&
-                    <img src={portada.url} alt={f.angulo || f.tipo} loading="lazy" />}
-                  {portada?.url && portada.mime_type.startsWith("video/") &&
-                    <video src={portada.url} controls preload="metadata" />}
-                  {!portada?.url && <span>{ETIQUETA_TIPO[f.tipo]?.split(" ")[0] || "📄"}</span>}
-                </div>
-                <div className="barbara-biblioteca-info">
-                  <small>{fecha(f.creado_en)} · {ETIQUETA_TIPO[f.tipo] || f.tipo}</small>
-                  <strong>{f.angulo || "Pieza sin ángulo registrado"}</strong>
-                  {f.contenido?.caption && <p>{f.contenido.caption}</p>}
-                  <span>{media.length ? `${media.length} archivo${media.length === 1 ? "" : "s"} privado${media.length === 1 ? "" : "s"}` : "Pieza histórica: archivo sólo en Telegram"}</span>
-                  {decision && (
-                    <details className="barbara-biblioteca-razon">
-                      <summary>Por qué Bárbara eligió esto</summary>
-                      <span>Pilar: {decision.pilar || "sin registrar"}</span>
-                      <span>{decision.memoria_privada?.length || 0} recuerdos privados y {decision.patrones_globales?.length || 0} patrones globales evaluados.</span>
-                      <span>Ángulo: {decision.decision_angulo?.modo || "director creativo"}{decision.decision_angulo?.descartes?.length ? ` · descartó ${decision.decision_angulo.descartes.length} repetición(es)` : ""}.</span>
-                      {decision.decision_horario && <span>Horario: {decision.decision_horario.razon || decision.decision_horario.modo || "propuesto por disponibilidad"}.</span>}
-                    </details>
-                  )}
-                </div>
-              </article>
-            );
-          })}
-        </div>
-      )}
-
-      <p className="tenue" style={{ marginTop: 14 }}>
-        Los nuevos archivos quedan guardados en una biblioteca privada y verificable. Las piezas anteriores a esta función pueden seguir viviendo sólo en Telegram.
-      </p>
-    </div>
-  );
+  return <div className="barbara-entregas">
+    <div className="barbara-entregas-cabecera"><p className="barbara-subtitulo">Revisa el contenido, apruébalo o pide un ajuste puntual. Aprobar no publica nada automáticamente.</p><input className="campo" placeholder="Buscar una pieza…" value={busqueda} onChange={(e) => setBusqueda(e.target.value)} /></div>
+    {error && <p className="error">{error}</p>}
+    {cargando ? <p className="vacio">Cargando entregas…</p> : filtradas.length === 0 ? <p className="vacio">Todavía no hay piezas para revisar.</p> : <div className="barbara-entregas-lista">
+      {filtradas.map((pieza) => {
+        const estado = ESTADO[pieza.estado] ?? ESTADO.historica; const contenido = pieza.contenido; const expandida = abierta === pieza.id;
+        return <article className="barbara-entrega" key={pieza.id}>
+          <button type="button" className="barbara-entrega-resumen" onClick={() => setAbierta(expandida ? null : pieza.id)} aria-expanded={expandida}>
+            <span><b>{ETIQUETA_TIPO[pieza.tipo] || pieza.tipo}</b><small>{fecha(pieza.creado_en)} · {pieza.angulo || "Sin ángulo registrado"}</small></span>
+            <span className="barbara-entrega-meta"><span className={"pill " + estado.pill}>{estado.texto}</span><span aria-hidden="true">{expandida ? "−" : "+"}</span></span>
+          </button>
+          {expandida && <div className="barbara-entrega-detalle">
+            {contenido?.slides && <ol className="barbara-slides">{contenido.slides.map((slide, i) => <li key={i}><b>{slide.titular}</b>{slide.cuerpo && <p>{slide.cuerpo}</p>}</li>)}</ol>}
+            {contenido?.texto_en_pantalla && <p className="barbara-entrega-hook">{contenido.texto_en_pantalla}</p>}
+            {contenido?.clips && <p className="tenue">Video planificado en {contenido.clips.length} tomas. La versión audiovisual está en Telegram.</p>}
+            {contenido?.caption && <details className="barbara-caption"><summary>Ver caption</summary><p>{contenido.caption}</p></details>}
+            {pieza.revision_comentario && <p className="barbara-entrega-comentario">Último ajuste: {pieza.revision_comentario}</p>}
+            {pieza.estado === "publicada" && <p className="barbara-entrega-publicada">Publicada en {pieza.canal_publicacion || "un canal registrado"}{pieza.publicacion_url ? " · enlace disponible" : ""}.</p>}
+            {(pieza.estado === "en_revision" || pieza.estado === "requiere_ajuste") && <div className="barbara-entrega-acciones">
+              {ajustando === pieza.id ? <div className="barbara-ajuste-form"><textarea className="campo" autoFocus rows={3} value={pedido} onChange={(e) => setPedido(e.target.value)} placeholder="Ej: Acorta el titular del slide 2, sin cambiar el resto." /><div><button className="btn" type="button" onClick={() => { setAjustando(null); setPedido(""); }}>Cancelar</button><button className="btn solido" type="button" disabled={procesando === pieza.id} onClick={() => void enviarAjuste(pieza)}>{procesando === pieza.id ? "Enviando…" : "Enviar ajuste"}</button></div></div> : <><button className="btn" type="button" onClick={() => setAjustando(pieza.id)}>Pedir ajuste</button><button className="btn solido" type="button" disabled={procesando === pieza.id} onClick={() => void aprobar(pieza)}>{procesando === pieza.id ? "Aprobando…" : "Aprobar pieza"}</button></>}
+            </div>}
+            {esStaff && pieza.estado === "aprobada" && <div className="barbara-publicar-form"><select className="campo" value={canal} onChange={(e) => setCanal(e.target.value)}><option>Instagram</option><option>TikTok</option><option>LinkedIn</option><option>Facebook</option></select><button className="btn solido" type="button" disabled={procesando === pieza.id} onClick={() => void marcarPublicada(pieza)}>{procesando === pieza.id ? "Registrando…" : "Registrar publicación"}</button></div>}
+          </div>}
+        </article>;
+      })}
+    </div>}
+    <p className="tenue">Las imágenes y videos se mantienen en Telegram por ahora; aquí queda el contenido, su versión y la decisión de revisión.</p>
+  </div>;
 }

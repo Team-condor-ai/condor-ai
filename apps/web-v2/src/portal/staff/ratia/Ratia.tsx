@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { sb, plata, fecha } from "../../lib/supabase";
 import { Ico } from "../../disenio/iconos";
+import { useConfirmacion } from "../../disenio/Confirmacion";
 import { MenuAcciones } from "../../disenio/MenuAcciones";
 import { Barras, Delta, NavAnio, corto, mesDe, mesesDelAnio } from "../graficos";
 import { EditorSuscriptor } from "./EditorSuscriptor";
@@ -35,6 +36,7 @@ const nombrePlan = (id: string | null) =>
  * `ingresos_ratia`, que es plata real.
  */
 export function Ratia() {
+  const confirmar = useConfirmacion();
   const [suscriptores, setSuscriptores] = useState<SuscriptorRatia[]>([]);
   const [ingresos, setIngresos] = useState<IngresoRatia[]>([]);
   const [cargando, setCargando] = useState(true);
@@ -144,7 +146,7 @@ export function Ratia() {
   }, [suscriptores]);
 
   async function borrar(s: SuscriptorRatia) {
-    if (!window.confirm(`¿Eliminar a "${s.nombre}"?\n\nSus ingresos ya registrados NO se borran: quedan en la contabilidad.`)) return;
+    if (!await confirmar(`¿Eliminar a "${s.nombre}"?`, "Sus ingresos ya registrados no se borran: quedan en la contabilidad.", "Eliminar")) return;
     const { error } = await sb.from("suscriptores_ratia").delete().eq("id", s.id);
     if (error) setError(error.message);
     else void cargar(true);

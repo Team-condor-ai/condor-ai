@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { sb, invocar, plata, fecha, enlaceWeb } from "../lib/supabase";
 import { Ico } from "../disenio/iconos";
+import { useConfirmacion } from "../disenio/Confirmacion";
 import { CampoVivo } from "./CampoVivo";
 import { EditorCobro } from "./EditorCobro";
 import { AnotarPago } from "./AnotarPago";
@@ -54,6 +55,7 @@ export function ContenidoCliente({
   /** Avisa quién es el cliente, para que el encabezado de arriba lo muestre. */
   alCargar?: (c: Cliente | null) => void;
 }) {
+  const confirmar = useConfirmacion();
   const [c, setC] = useState<Cliente | null>(null);
   const [cobros, setCobros] = useState<Cobro[]>([]);
   const [pagos, setPagos] = useState<Pago[]>([]);
@@ -142,7 +144,7 @@ export function ContenidoCliente({
   }
 
   async function cambiarEstado(cobro: Cobro, estado: string, aviso?: string) {
-    if (aviso && !window.confirm(aviso)) return;
+    if (aviso && !await confirmar("¿Confirmar cambio de estado?", aviso, "Confirmar")) return;
     const { error } = await sb
       .from("cobros")
       .update({ estado })
@@ -157,7 +159,7 @@ export function ContenidoCliente({
   ) {
     if (
       accion === "cancelar" &&
-      !window.confirm("Se cancelará la suscripción en Mercado Pago y dejarán de hacerse cobros automáticos. Esta acción no se puede deshacer. ¿Continuar?")
+      !await confirmar("¿Cancelar la suscripción?", "Se cancelará en Mercado Pago y dejarán de hacerse cobros automáticos. Esta acción no se puede deshacer.", "Cancelar suscripción")
     ) return;
     setGestionando(cobro.id);
     setError("");
@@ -173,9 +175,10 @@ export function ContenidoCliente({
 
   async function eliminarPagoPendiente(pago: Pago) {
     if (pago.estado && pago.estado !== "pendiente") return;
-    const ok = window.confirm(
-      "¿Eliminar este pago pendiente?\n\n" +
-        "Se quitará del historial interno, pero un link activo en Mercado Pago no se cancela con esta acción.",
+    const ok = await confirmar(
+      "¿Eliminar este pago pendiente?",
+      "Se quitará del historial interno, pero un link activo en Mercado Pago no se cancela con esta acción.",
+      "Eliminar",
     );
     if (!ok) return;
     const anterior = pagos;

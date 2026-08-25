@@ -247,21 +247,11 @@ async function tgSend(chatId: number | string, text: string) {
 // Dispara barbara-clientes.yml con RETRY=1 para el cliente correspondiente,
 // pidiendo el MISMO tipo de contenido de su última pieza generada (si no hay
 // historial todavía, "carrusel" por defecto).
-async function dispararReintento(sb: any, barbaraClienteId: string): Promise<boolean> {
+async function dispararReintento(sb: any, barbaraClienteId: string, piezaId: string, tipo: string): Promise<boolean> {
   if (!GH_TOKEN) {
     console.error("GITHUB_DISPATCH_TOKEN sin configurar: no se puede disparar el reintento.");
     return false;
   }
-
-  let tipo = "carrusel";
-  const { data: memoria } = await sb
-    .from("barbara_memoria")
-    .select("tipo")
-    .eq("barbara_cliente_id", barbaraClienteId)
-    .order("creado_en", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (memoria?.tipo) tipo = memoria.tipo;
 
   const r = await fetch(
     `https://api.github.com/repos/${REPO}/actions/workflows/${WORKFLOW}/dispatches`,
@@ -275,7 +265,8 @@ async function dispararReintento(sb: any, barbaraClienteId: string): Promise<boo
       },
       body: JSON.stringify({
         ref: "main",
-        inputs: { cliente_id: barbaraClienteId, retry: "1", tipo },
+        // Conserva la entrega original incluso si después aparece otra.
+        inputs: { cliente_id: barbaraClienteId, pieza_id: piezaId, retry: "1", tipo },
       }),
     },
   );
@@ -370,9 +361,26 @@ Deno.serve(async (req) => {
     await tgSend(chatId, `🎤 Entendí: _${texto}_`);
   }
 
+  // Telegram no permite elegir una tarjeta. Solo se corrige la entrega más
+  // reciente que sigue en revisión; una respuesta tardía no toca algo cerrado.
+  const { data: piezaObjetivo, error: errPieza } = await sb
+    .from("barbara_memoria")
+    .select("id, tipo, correcciones_pedidas")
+    .eq("barbara_cliente_id", barbaraClienteId)
+    .in("estado", ["en_revision", "requiere_ajuste"])
+    .order("creado_en", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (errPieza) console.error("error buscando pieza pendiente:", errPieza.message);
+  if (!piezaObjetivo) {
+    await tgSend(chatId, "No hay una entrega pendiente de revisión para corregir. Cuando Bárbara envíe una nueva, podrás responderle por acá.");
+    return new Response("ok", { status: 200 });
+  }
+
   // 4) Registrar el mensaje del cliente en el espejo del chat.
   const { error: errInsert } = await sb.from("barbara_chats").insert({
     barbara_cliente_id: barbaraClienteId,
+    pieza_id: piezaObjetivo.id,
     remitente: "cliente",
     mensaje: texto,
     telegram_message_id: telegramMessageId,
@@ -453,6 +461,7 @@ Deno.serve(async (req) => {
   sb.from("barbara_memoria")
     .select("id, correcciones_pedidas")
     .eq("barbara_cliente_id", barbaraClienteId)
+    .eq("id", piezaObjetivo.id)
     .order("creado_en", { ascending: false })
     .limit(1)
     .maybeSingle()
@@ -465,13 +474,17 @@ Deno.serve(async (req) => {
           // Ya no puede contar como "aprobada sin cambios": el cliente pidió
           // uno. Se cierra acá mismo en vez de esperar a la pieza siguiente.
           aprobada_sin_cambios: false,
+          estado: "requiere_ajuste",
+          revision_comentario: texto,
+          revisada_en: new Date().toISOString(),
+          revisada_por: "Cliente vía Telegram",
         })
         .eq("id", pieza.id);
     })
-    .catch((e: unknown) => console.error("marcar pieza:", String(e).slice(0, 120)));
+    .then(undefined, (e: unknown) => console.error("marcar pieza:", String(e).slice(0, 120)));
 
   // 8) Intento 1 o 2: disparar el reintento y confirmar al cliente.
-  const disparado = await dispararReintento(sb, barbaraClienteId);
+  const disparado = await dispararReintento(sb, barbaraClienteId, piezaObjetivo.id, piezaObjetivo.tipo || "carrusel");
   await tgSend(
     chatId,
     disparado

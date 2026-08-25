@@ -11,6 +11,7 @@ import { BarbaraCalendario } from "./BarbaraCalendario";
 import { BarbaraBiblioteca } from "./BarbaraBiblioteca";
 import { BarbaraAnalisis } from "./BarbaraAnalisis";
 import { BarbaraConfiguracion } from "./BarbaraConfiguracion";
+import { BarbaraUso } from "./BarbaraUso";
 import { GrafoMemoria } from "../staff/memoria/GrafoMemoria";
 import { Mcp } from "../staff/Mcp";
 
@@ -23,7 +24,7 @@ const NAV: { grupo: string; icono: keyof typeof Ico; items: { id: Seccion; texto
   ] },
   { grupo: "Contenido", icono: "reuniones", items: [
     { id: "calendario", texto: "Calendario", icono: "reuniones" },
-    { id: "biblioteca", texto: "Biblioteca", icono: "biblioteca" },
+    { id: "biblioteca", texto: "Entregas", icono: "biblioteca" },
     { id: "memoria", texto: "Memoria", icono: "memoria" },
   ] },
   { grupo: "Ajustes", icono: "ajustes", items: [
@@ -42,6 +43,8 @@ type Props = {
   onCambio: () => void;
   /** Staff ve además "Lo que Bárbara aprendió" con permiso de apagar reglas. */
   esStaff?: boolean;
+  activo?: boolean | null;
+  telegramListo?: boolean;
   /** A dónde vuelve el botón de la esquina superior izquierda. */
   volverA: string;
   volverTexto: string;
@@ -59,7 +62,7 @@ type Props = {
  * de volver propio, es la única salida.
  */
 export function BarbaraModulo({
-  barbaraClienteId, negocio, plan, rubro, brandBook, formulario, onCambio, esStaff, volverA, volverTexto,
+  barbaraClienteId, negocio, plan, rubro, brandBook, formulario, onCambio, esStaff, activo, telegramListo, volverA, volverTexto,
 }: Props) {
   const [seccion, setSeccion] = useState<Seccion>("chat");
   const navegar = useNavigate();
@@ -67,21 +70,22 @@ export function BarbaraModulo({
 
   return (
     <div className="barbara-modulo">
-      <button
-        className="barbara-modulo-volver"
-        onClick={() => navegarConTransicion(navegar, volverA, "vuelve")}
-      >
-        {Ico.volver({ t: 15 })} {volverTexto}
-      </button>
-
-      <aside className="barbara-modulo-rail">
-        <div className="barbara-modulo-marca">
-          <span className="barbara-modulo-avatar">
-            <img src="/assets/barbara/avatar.png" alt="" />
-          </span>
-          <div>
-            <b>Bárbara</b>
-            <span className="barbara-modulo-badge-ia">IA</span>
+      <aside className="barbara-modulo-rail" aria-label="Navegación de Bárbara">
+        <div className="barbara-modulo-rail-cabecera">
+          <button
+            className="barbara-modulo-volver"
+            onClick={() => navegarConTransicion(navegar, volverA, "vuelve")}
+          >
+            {Ico.volver({ t: 15 })} {volverTexto}
+          </button>
+          <div className="barbara-modulo-marca">
+            <span className="barbara-modulo-avatar">
+              <img src="/assets/barbara/avatar.png" alt="" />
+            </span>
+            <div>
+              <b>Bárbara</b>
+              <span className="barbara-modulo-badge-ia">IA</span>
+            </div>
           </div>
         </div>
 
@@ -91,9 +95,11 @@ export function BarbaraModulo({
               <small>{Ico[g.icono]({ t: 12 })} {g.grupo}</small>
               {g.items.map((item) => (
                 <button
+                  type="button"
                   key={item.id}
                   className={"barbara-modulo-item" + (seccion === item.id ? " on" : "")}
                   onClick={() => setSeccion(item.id)}
+                  aria-current={seccion === item.id ? "page" : undefined}
                 >
                   <span className="barbara-modulo-item-dot" />
                   {Ico[item.icono]({ t: 16 })}
@@ -105,7 +111,7 @@ export function BarbaraModulo({
         </nav>
       </aside>
 
-      <div className="barbara-modulo-contenido">
+      <main className="barbara-modulo-contenido">
         {seccion === "chat" && (
           <div className="barbara-inicio">
             <div className="barbara-hero">
@@ -117,6 +123,8 @@ export function BarbaraModulo({
                 <BarbaraChat barbaraClienteId={barbaraClienteId} />
               </div>
             </div>
+
+            <BarbaraUso barbaraClienteId={barbaraClienteId} plan={plan} />
 
             <div className="barbara-tarjeta">
               <h3>{Ico.reuniones({ t: 17 })} Tu semana de contenido ✨</h3>
@@ -149,8 +157,8 @@ export function BarbaraModulo({
 
         {seccion === "biblioteca" && (
           <div className="barbara-tarjeta">
-            <h1>{Ico.biblioteca({ t: 22 })} Biblioteca ✨</h1>
-            <BarbaraBiblioteca barbaraClienteId={barbaraClienteId} />
+            <h1>{Ico.biblioteca({ t: 22 })} Entregas y revisión ✨</h1>
+            <BarbaraBiblioteca barbaraClienteId={barbaraClienteId} esStaff={Boolean(esStaff)} />
           </div>
         )}
 
@@ -158,7 +166,7 @@ export function BarbaraModulo({
           <div className="barbara-tarjeta barbara-tarjeta-memoria">
             <h1>{Ico.memoria({ t: 22 })} Memoria ✨</h1>
             <p className="barbara-subtitulo">La memoria de Bárbara. Conecta ideas, contenidos e insights.</p>
-            <GrafoMemoria barbaraClienteId={barbaraClienteId} negocio={negocio} />
+            <GrafoMemoria barbaraClienteId={barbaraClienteId} negocio={negocio} puedeEditar={Boolean(esStaff)} />
           </div>
         )}
 
@@ -178,6 +186,9 @@ export function BarbaraModulo({
               brandBook={brandBook}
               formulario={formulario}
               onCambio={onCambio}
+              esStaff={esStaff}
+              activo={activo}
+              telegramListo={telegramListo}
             />
             <div className="barbara-config-plan">
               <small>Plan</small>
@@ -192,7 +203,7 @@ export function BarbaraModulo({
             )}
           </div>
         )}
-      </div>
+      </main>
     </div>
   );
 }
