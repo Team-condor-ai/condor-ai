@@ -64,21 +64,22 @@ export function BarbaraModulo({
 
   return (
     <div className="barbara-modulo">
-      <button
-        className="barbara-modulo-volver"
-        onClick={() => navegarConTransicion(navegar, volverA)}
-      >
-        {Ico.volver({ t: 15 })} {volverTexto}
-      </button>
-
-      <aside className="barbara-modulo-rail">
-        <div className="barbara-modulo-marca">
-          <span className="barbara-modulo-avatar">
-            <img src="/assets/barbara/avatar.png" alt="" />
-          </span>
-          <div>
-            <b>Bárbara</b>
-            <span className="barbara-modulo-badge-ia">IA</span>
+      <aside className="barbara-modulo-rail" aria-label="Navegación de Bárbara">
+        <div className="barbara-modulo-rail-cabecera">
+          <button
+            className="barbara-modulo-volver"
+            onClick={() => navegarConTransicion(navegar, volverA)}
+          >
+            {Ico.volver({ t: 15 })} {volverTexto}
+          </button>
+          <div className="barbara-modulo-marca">
+            <span className="barbara-modulo-avatar">
+              <img src="/assets/barbara/avatar.png" alt="" />
+            </span>
+            <div>
+              <b>Bárbara</b>
+              <span className="barbara-modulo-badge-ia">IA</span>
+            </div>
           </div>
         </div>
 
@@ -88,9 +89,11 @@ export function BarbaraModulo({
               <small>{Ico[g.icono]({ t: 12 })} {g.grupo}</small>
               {g.items.map((item) => (
                 <button
+                  type="button"
                   key={item.id}
                   className={"barbara-modulo-item" + (seccion === item.id ? " on" : "")}
                   onClick={() => setSeccion(item.id)}
+                  aria-current={seccion === item.id ? "page" : undefined}
                 >
                   <span className="barbara-modulo-item-dot" />
                   {Ico[item.icono]({ t: 16 })}
@@ -102,7 +105,7 @@ export function BarbaraModulo({
         </nav>
       </aside>
 
-      <div className="barbara-modulo-contenido">
+      <main className="barbara-modulo-contenido">
         {seccion === "chat" && (
           <div className="barbara-inicio">
             <div className="barbara-hero">
@@ -188,7 +191,7 @@ export function BarbaraModulo({
             )}
           </div>
         )}
-      </div>
+      </main>
     </div>
   );
 }

@@ -19,8 +19,8 @@ export function BarbaraConfiguracion({ barbaraClienteId, negocio, rubro, brandBo
   const [editandoFormulario, setEditandoFormulario] = useState(false);
 
   return (
-    <div>
-      <section className="bloque" style={{ marginBottom: 18 }}>
+    <div className="barbara-configuracion">
+      <section className="barbara-config-seccion">
         <h3>Identidad de marca</h3>
         <BrandBookEditor
           barbaraClienteId={barbaraClienteId}
@@ -31,7 +31,7 @@ export function BarbaraConfiguracion({ barbaraClienteId, negocio, rubro, brandBo
         />
       </section>
 
-      <section className="bloque">
+      <section className="barbara-config-seccion">
         <h3>Formulario de entrada</h3>
         <p className="parrafo" style={{ color: "var(--texto-2)" }}>
           Qué tipo de piezas quieres, a quién le hablas, tu tono y qué evitar.
