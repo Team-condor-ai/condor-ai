@@ -31,7 +31,16 @@ type Patron = {
   activo: boolean;
   nota: string | null;
   actualizado_en: string;
+  marcas: number;
+  confianza_numerica: number | null;
+  evidencia: { id?: string; direccion?: string; tasa?: number; tasa_resto?: number; delta?: number } | null;
 };
+
+async function consultarPatrones() {
+  return sb.from("barbara_patrones")
+    .select("id,patron,tipo,muestras,marcas,confianza_numerica,evidencia,activo,nota,actualizado_en")
+    .order("activo", { ascending: false }).order("muestras", { ascending: false });
+}
 
 export function PatronesGlobales() {
   const [patrones, setPatrones] = useState<Patron[]>([]);
@@ -40,18 +49,22 @@ export function PatronesGlobales() {
 
   async function cargar() {
     setCargando(true);
-    const { data, error } = await sb
-      .from("barbara_patrones")
-      .select("id, patron, tipo, muestras, activo, nota, actualizado_en")
-      .order("activo", { ascending: false })
-      .order("muestras", { ascending: false });
+    const { data, error } = await consultarPatrones();
     if (error) setError(error.message);
     else setPatrones(data ?? []);
     setCargando(false);
   }
 
   useEffect(() => {
-    cargar();
+    let vivo = true;
+    const timer = window.setTimeout(() => {
+      void consultarPatrones().then(({ data, error }) => {
+        if (!vivo) return;
+        if (error) setError(error.message); else setPatrones((data ?? []) as Patron[]);
+        setCargando(false);
+      });
+    }, 0);
+    return () => { vivo = false; window.clearTimeout(timer); };
   }, []);
 
   async function alternar(p: Patron) {
@@ -59,7 +72,8 @@ export function PatronesGlobales() {
       !p.activo &&
       !confirm(
         `Encender este patrón lo aplica a TODOS los clientes en su próxima ` +
-          `pieza:\n\n“${p.patron}”\n\nSalió de ${p.muestras} piezas. ` +
+          `pieza:\n\n“${p.patron}”\n\nEvidencia: ${p.muestras} piezas de ${p.marcas} marcas, ` +
+          `diferencia ${Math.round((p.evidencia?.delta || 0) * 100)} puntos. ` +
           `¿Lo enciendes?`,
       )
     ) {
@@ -68,10 +82,9 @@ export function PatronesGlobales() {
     setPatrones((prev) =>
       prev.map((x) => (x.id === p.id ? { ...x, activo: !x.activo } : x)),
     );
-    const { error } = await sb
-      .from("barbara_patrones")
-      .update({ activo: !p.activo, actualizado_en: new Date().toISOString() })
-      .eq("id", p.id);
+    const { error } = await sb.rpc("barbara_configurar_patron_global", {
+      p_patron_id: p.id, p_activo: !p.activo,
+    });
     if (error) {
       setError(error.message);
       cargar();
@@ -111,6 +124,10 @@ export function PatronesGlobales() {
                   <div className="regla-meta">
                     {p.tipo ? <span className="etiqueta-cat">{p.tipo}</span> : null}
                     <span className="veces">{p.muestras} piezas</span>
+                    <span className="veces">{p.marcas} marcas</span>
+                    {p.evidencia?.delta != null && (
+                      <span className="veces">{p.evidencia.delta > 0 ? "+" : ""}{Math.round(p.evidencia.delta * 100)} pts vs. resto</span>
+                    )}
                     {p.nota ? <span className="origen">{p.nota}</span> : null}
                     <span className="veces">{fecha(p.actualizado_en)}</span>
                   </div>

@@ -37,6 +37,7 @@
  *   node services/barbara/patrones.mjs --aplicar
  */
 import { claude, textOf, supabase } from "./motor.mjs";
+import { construirContrastes, huellaEvidencia, materialAnonimo } from "./rendimiento.mjs";
 
 const SB_URL = process.env.SUPABASE_URL;
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -66,7 +67,7 @@ const schema = {
       items: {
         type: "object",
         additionalProperties: false,
-        required: ["patron", "tipo", "confianza", "nota"],
+        required: ["patron", "tipo", "confianza", "nota", "evidencia_id"],
         properties: {
           patron: {
             type: "string",
@@ -77,6 +78,7 @@ const schema = {
           tipo: { type: "string", enum: ["carrusel", "historia", "ugc", "general"] },
           confianza: { type: "string", enum: ["alta", "media", "baja"] },
           nota: { type: "string", description: "En qué se apoya, para poder auditarlo después." },
+          evidencia_id: { type: "string", description: "ID exacto entre corchetes del contraste que sustenta el patrón." },
         },
       },
     },
@@ -88,7 +90,7 @@ async function main() {
      generada todavía no dice nada — el cliente aún puede corregirla. */
   const piezas = await db.get(
     "barbara_memoria?aprobada_sin_cambios=not.is.null" +
-    "&select=tipo,angulo,correcciones_pedidas,aprobada_sin_cambios,barbara_cliente_id" +
+    "&select=id,tipo,pilar,contenido,correcciones_pedidas,aprobada_sin_cambios,barbara_cliente_id" +
     "&order=creado_en.desc&limit=400"
   );
 
@@ -111,38 +113,43 @@ async function main() {
     return 0;
   }
 
-  /* ANONIMIZACIÓN EN ORIGEN. Al modelo le llega el tipo de pieza y el ángulo
-     creativo, nunca de qué marca es ni de qué rubro. El `barbara_cliente_id`
-     se descarta acá: ni siquiera viaja como identificador opaco, porque con un
-     id se pueden agrupar piezas y reconstruir a un cliente. */
-  const linea = (p) => `- [${p.tipo}] ${p.angulo}`;
-  const material =
-    `PIEZAS QUE EL CLIENTE APROBÓ SIN PEDIR NINGÚN CAMBIO (${bien.length}):\n` +
-    bien.map(linea).join("\n") +
-    `\n\nPIEZAS QUE EL CLIENTE PIDIÓ CORREGIR (${mal.length}):\n` +
-    mal.map(linea).join("\n");
+  // ANONIMIZACIÓN ESTRUCTURAL: ni siquiera viajan ángulos. El modelo recibe
+  // sólo contrastes agregados (ej. titular corto: 75% vs 42%) que ya pasaron
+  // mínimos de muestra y variedad de marcas. Así no puede reconstruir una
+  // cuenta ni inventar una diferencia que los datos no mostraron.
+  const contrastes = construirContrastes(piezas);
+  if (!contrastes.length) {
+    console.log("\nNo hay contrastes multi-marca con diferencia suficiente. No se fuerza ningún patrón.");
+    return 0;
+  }
+  const material = materialAnonimo(contrastes);
+  const huella = huellaEvidencia(piezas);
+  if (APLICAR) {
+    const corrida = await db.get(`barbara_patrones_corridas?huella=eq.${huella}&select=id&limit=1`).catch(() => []);
+    if (corrida.length) {
+      console.log("\nEsta evidencia exacta ya fue procesada. No se duplican muestras ni patrones.");
+      return 0;
+    }
+  }
 
   const r = await claude(AK, {
     model: "claude-sonnet-5",
     max_tokens: 2000,
     system:
-      "Analizas qué distingue al contenido de redes que se aprueba a la primera del que hay " +
-      "que rehacer. Recibes ángulos creativos de varias marcas distintas, ya anonimizados.\n\n" +
-      "Devuelve solo patrones de FORMA y ESTRUCTURA que sirvan al generar la próxima pieza " +
-      "de cualquier marca: cómo abre, cómo cierra, qué largo, qué tipo de gancho, qué " +
-      "estructura narrativa. Nunca menciones marcas, productos ni rubros — si un patrón solo " +
-      "se sostiene nombrando un rubro, no es global y no va.\n\n" +
-      "Sé conservador: es preferible devolver dos patrones sólidos que ocho tibios. Un patrón " +
-      "falso acá se le aplica a TODOS los clientes a la vez. Si la diferencia entre los dos " +
-      "grupos se explica por casualidad, devuelve la lista vacía y ya.",
+      "Redactas recomendaciones de forma y estructura usando EXCLUSIVAMENTE contrastes estadísticos agregados. " +
+      "Cada recomendación debe citar en evidencia_id exactamente uno de los IDs entre corchetes recibidos. " +
+      "Si el contraste dice mejor, recomienda ese rasgo; si dice peor, recomienda evitarlo. " +
+      "No agregues causas, audiencias, marcas, productos ni tácticas que el contraste no mida. " +
+      "Es preferible devolver dos patrones sustentados que ocho interpretaciones.",
     output_config: { format: { type: "json_schema", schema } },
     messages: [{ role: "user", content: material }],
   });
 
   const { patrones } = JSON.parse(textOf(r));
+  const contrastePorId = new Map(contrastes.map((c) => [c.id, c]));
   /* Los de confianza baja no se guardan. La tabla influye en la generación de
      todos los clientes: el listón para entrar tiene que ser alto. */
-  const buenos = (patrones || []).filter((p) => p.confianza !== "baja");
+  const buenos = (patrones || []).filter((p) => p.confianza !== "baja" && contrastePorId.has(p.evidencia_id));
 
   console.log(`\nEl modelo devolvió ${patrones?.length ?? 0} patrones; ` +
               `${buenos.length} con confianza suficiente:\n`);
@@ -153,18 +160,23 @@ async function main() {
     return 0;
   }
 
-  const yaHay = await db.get("barbara_patrones?select=id,patron,muestras");
+  const yaHay = await db.get("barbara_patrones?select=id,patron,muestras,evidencia_clave");
   let nuevos = 0, reforzados = 0;
 
   for (const p of buenos) {
-    /* Un patrón que se vuelve a observar no se duplica: sube `muestras`. Que
-       reaparezca ES la señal de que no era casualidad, y `muestras` es
-       justamente el número que alguien va a mirar para decidir encenderlo. */
-    const igual = yaHay.find(
-      (x) => x.patron.trim().toLowerCase() === p.patron.trim().toLowerCase());
+    const evidencia = contrastePorId.get(p.evidencia_id);
+    // La clave estable del contraste evita duplicar el mismo hallazgo cuando
+    // el redactor cambie una palabra. Las muestras son el tamaño REAL del
+    // grupo actual, no una suma semanal del mismo historial.
+    const igual = yaHay.find((x) => x.evidencia_clave === p.evidencia_id);
     if (igual) {
       await db.patch(`barbara_patrones?id=eq.${igual.id}`, {
-        muestras: (igual.muestras || 0) + piezas.length,
+        patron: p.patron,
+        muestras: evidencia.muestras,
+        marcas: evidencia.marcas,
+        confianza_numerica: Math.min(1, Math.abs(evidencia.delta)),
+        evidencia: evidencia,
+        nota: p.nota,
         actualizado_en: new Date().toISOString(),
       });
       reforzados++;
@@ -172,13 +184,25 @@ async function main() {
       await db.post("barbara_patrones", {
         patron: p.patron,
         tipo: p.tipo,
-        muestras: piezas.length,
+        muestras: evidencia.muestras,
+        marcas: evidencia.marcas,
+        confianza_numerica: Math.min(1, Math.abs(evidencia.delta)),
+        evidencia_clave: p.evidencia_id,
+        evidencia,
         activo: false,           // se enciende a mano, nunca solo
-        nota: `${p.nota} · destilado de ${piezas.length} piezas de ${marcas.size} marcas.`,
+        nota: `${p.nota} · contraste agregado de ${evidencia.muestras} piezas / ${evidencia.marcas} marcas.`,
       });
       nuevos++;
     }
   }
+
+  await db.post("barbara_patrones_corridas", {
+    huella,
+    piezas: piezas.length,
+    marcas: marcas.size,
+    contrastes: contrastes.length,
+    patrones_guardados: buenos.length,
+  });
 
   console.log(`\nGuardados: ${nuevos} nuevos, ${reforzados} reforzados.`);
   console.log("Nacen APAGADOS a propósito: revísalos en el portal y enciende " +
