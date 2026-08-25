@@ -67,10 +67,9 @@
    salida rápida. La regla de siempre — lo que entra desacelera, lo que sale
    acelera; al revés se siente pesado.
 
-   La duración total (~620 ms) es larga para UI de producto, donde el rango
-   sano de una transición de ruta son 240-360 ms. Es deliberado y es la
-   excepción: esto no ocurre al navegar entre pantallas, ocurre UNA vez al
-   cruzar de una app a otra. Es el único momento expresivo del portal.       */
+   (codex) La duración total queda en ~430 ms: alcanza para leer el cambio de
+   mundo, pero se acerca más a la respuesta inmediata de las transiciones de
+   producto. El módulo se DESLIZA; las secciones internas CRECEN más abajo. */
 
 ::view-transition { background: #0A0A0B; }
 
@@ -83,10 +82,10 @@
 }
 
 ::view-transition-old(root) {
-  animation: barbara-portal-cede .34s cubic-bezier(.4, 0, 1, 1) both;
+  animation: barbara-portal-cede .2s cubic-bezier(.4, 0, 1, 1) both;
 }
 ::view-transition-new(root) {
-  animation: barbara-telon-entra .5s cubic-bezier(.16, 1, .3, 1) .12s both;
+  animation: barbara-telon-entra .38s cubic-bezier(.16, 1, .3, 1) .05s both;
 }
 
 @keyframes barbara-portal-cede {
@@ -425,6 +424,65 @@ html[data-barbara-sentido="vuelve"]::view-transition-old(root) {
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+/* ── CRECER · navegación interna de Bárbara ──────────────────────────────
+   (codex) MUI Grow combina escala y opacidad desde el centro. Acá usamos el
+   mismo principio con CSS nativo: el contenido se monta ya en su posición,
+   crece 2,8% y enfoca al asentarse. No hay desplazamiento de layout ni dos
+   pantallas superpuestas, por lo que el clic sigue sintiéndose instantáneo.
+
+   Las dos esquinas lima no son un borde decorativo permanente: se dibujan
+   mientras la sección crece y luego bajan de intensidad. Marcan las aristas
+   del nuevo plano sin encerrar todo el contenido en otra tarjeta. */
+.barbara-seccion-crecer {
+  position: relative;
+  min-width: 0;
+  transform-origin: 50% 14%;
+  animation: barbara-seccion-crece .34s cubic-bezier(.2, .8, .2, 1) both;
+  isolation: isolate;
+}
+.barbara-seccion-crecer::before,
+.barbara-seccion-crecer::after {
+  position: absolute;
+  z-index: 3;
+  width: 72px;
+  height: 34px;
+  pointer-events: none;
+  content: "";
+  opacity: 0;
+  animation: barbara-arista-aparece .46s cubic-bezier(.16, 1, .3, 1) .04s both;
+}
+.barbara-seccion-crecer::before {
+  top: -1px;
+  left: -1px;
+  border-top: 1px solid rgba(205,251,62,.72);
+  border-left: 1px solid rgba(205,251,62,.72);
+  border-radius: var(--barbara-radius, 18px) 0 0 0;
+  transform-origin: top left;
+}
+.barbara-seccion-crecer::after {
+  right: -1px;
+  bottom: -1px;
+  border-right: 1px solid rgba(205,251,62,.46);
+  border-bottom: 1px solid rgba(205,251,62,.46);
+  border-radius: 0 0 var(--barbara-radius, 18px) 0;
+  transform-origin: bottom right;
+}
+@keyframes barbara-seccion-crece {
+  from { opacity: 0; transform: scale(.972); filter: blur(2px); }
+  58%  { opacity: 1; }
+  to   { opacity: 1; transform: scale(1); filter: blur(0); }
+}
+@keyframes barbara-arista-aparece {
+  0%   { opacity: 0; transform: scale(.35); }
+  38%  { opacity: 1; }
+  100% { opacity: .34; transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .barbara-seccion-crecer { animation: none; }
+  .barbara-seccion-crecer::before,
+  .barbara-seccion-crecer::after { animation: none; opacity: .22; transform: none; }
 }
 .barbara-modulo-contenido h1 {
   font-family: var(--barbara-serif);

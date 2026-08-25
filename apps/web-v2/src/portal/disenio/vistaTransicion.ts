@@ -21,12 +21,11 @@ function prefiereMenosMovimiento() {
  * (atrás/adelante).
  *
  * El navegador ya resuelve esto: `startViewTransition` saca una foto de la
- * pantalla ANTES del cambio, deja que React actualice el DOM, saca otra foto
- * DESPUÉS, y cruza las dos con una animación — funciona igual sin importar
- * qué disparó la navegación. El cross-fade nativo YA hace "el color cambia
- * mientras el portal anterior se desvanece"; acá solo se afina el timing
- * (ver `::view-transition-*` en barbara.css) para que se sienta con un
- * asentamiento suave en vez del fundido lineal por defecto.
+ * pantalla ANTES del cambio, deja que React actualice el DOM y saca otra foto
+ * DESPUÉS. (codex) `barbara.css` transforma esas dos capturas en un Slide
+ * direccional: la app nueva entra desde el borde con tres aristas lima y la
+ * pantalla vieja cede hacia atrás. Al volver se invierte el sentido; no es un
+ * fundido genérico ni hace falta mantener dos árboles React montados.
  *
  * `flushSync` es necesario: sin él, `navigate()` actualiza el estado de forma
  * asíncrona y la API saca la "foto después" antes de que React haya pintado

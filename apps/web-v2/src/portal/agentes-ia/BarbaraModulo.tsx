@@ -31,6 +31,16 @@ const NAV: { grupo: string; icono: keyof typeof Ico; items: { id: Seccion; texto
   ] },
 ];
 
+const NOMBRE_SECCION: Record<Seccion, string> = {
+  chat: "Bárbara IA",
+  analisis: "Análisis y reportes",
+  calendario: "Calendario",
+  biblioteca: "Entregas y revisión",
+  memoria: "Memoria",
+  mcp: "MCP",
+  configuracion: "Configuración",
+};
+
 type Props = {
   barbaraClienteId: string;
   negocio: string;
@@ -111,6 +121,16 @@ export function BarbaraModulo({
       </aside>
 
       <main className="barbara-modulo-contenido">
+        {/* (codex) `key` vuelve a montar únicamente el lienzo al cambiar de
+            sección. Así el crecimiento se reproduce una vez por navegación,
+            sin reiniciar el riel ni los estados internos del módulo. Es el
+            equivalente liviano de Grow de MUI: escala + opacidad, con un solo
+            hijo DOM, pero sin sumar toda la librería al bundle del portal. */}
+        <section
+          key={seccion}
+          className="barbara-seccion-crecer"
+          aria-label={NOMBRE_SECCION[seccion]}
+        >
         {seccion === "chat" && (
           <div className="barbara-inicio">
             <div className="barbara-hero">
@@ -194,6 +214,7 @@ export function BarbaraModulo({
             )}
           </div>
         )}
+        </section>
       </main>
     </div>
   );

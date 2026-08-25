@@ -10,7 +10,7 @@ export type Entrada = {
   icono: NombreIcono;
   pronto?: boolean;
   /** Esta entrada cambia de "mundo" visual (hoy: Bárbara) — navega con la
-   * transición de cross-fade en vez del salto instantáneo normal. Ver
+   * transición Slide direccional en vez del salto instantáneo normal. Ver
    * `vistaTransicion.ts`. */
   transicion?: boolean;
 };
