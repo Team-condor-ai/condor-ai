@@ -22,6 +22,7 @@ import { playbooksPara, bloquePrompt } from "./playbooks.mjs";
 import { elegirPilar, bloquePrompt as bloquePilarPrompt, PILARES } from "./pilares.mjs";
 import { revisar, ANCHO_REVISION } from "./revision.mjs";
 import { prepararMemoria } from "./memoria.mjs";
+import { persistirMedia } from "./persistencia.mjs";
 import sharp from "sharp";
 
 const AK = process.env.ANTHROPIC_API_KEY;
@@ -401,6 +402,7 @@ ${patrones}` : ""}${playbooks}${extraRetry}`;
   }
 
   let plan_contenido, mediaCaption;
+  let mediaEntregables = [];
 
   if (TIPO === "ugc") {
     const pedirPlanUGC = async (extra = "") => {
@@ -434,6 +436,7 @@ Responde SOLO con el JSON.`;
     }
     if (!urls.length) throw new Error(`[${negocio}] no se generó ningún clip UGC`);
     const videoBuf = await unirClips(urls);
+    mediaEntregables = [{ buffer: videoBuf, tipo: "video", mimeType: "video/mp4" }];
 
     const fd = new FormData();
     fd.append("chat_id", telegram_chat_id);
@@ -492,6 +495,11 @@ Responde SOLO con el JSON.`;
       }
     }
     if (!imgs.length) throw new Error(`[${negocio}] no se generó ninguna imagen`);
+    mediaEntregables = imgs.map((buffer, i) => ({
+      buffer,
+      tipo: i === 0 ? "portada" : "imagen",
+      mimeType: "image/png",
+    }));
 
     // REVISIÓN VISUAL antes de mandársela al cliente.
     //
@@ -600,6 +608,18 @@ Responde SOLO con el JSON.`;
   // para poder ir de "esta pieza se corrigió 3 veces" a "acá están los 3
   // prompts exactos que la generaron", sin tener que adivinar por fecha.
   const piezaId = Array.isArray(piezaCreada) ? piezaCreada[0]?.id : piezaCreada?.id;
+  if (!piezaId) throw new Error(`[${negocio}] Supabase no devolvió id de la pieza; no se puede catalogar su media`);
+
+  // Telegram recibió la copia de revisión, pero la biblioteca propia es la
+  // fuente persistente. Un fallo acá marca el run en rojo: perder assets no
+  // puede pasar como éxito silencioso. Cada archivo queda con SHA-256.
+  const mediaPersistida = await persistirMedia(db, {
+    barbaraClienteId: barbaraId,
+    piezaId,
+    assets: mediaEntregables,
+  });
+  console.log(`[${negocio}] biblioteca: ${mediaPersistida.length} asset(s) persistidos y verificados`);
+
   if (piezaId && promptsRegistrados.length) {
     await db.patch(`barbara_prompts?id=in.(${promptsRegistrados.join(",")})`, {
       barbara_memoria_id: piezaId,

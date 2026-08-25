@@ -1,28 +1,21 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { sb, fecha } from "../lib/supabase";
 
-type Fila = { id: string; fecha: string; tipo: string; angulo: string | null; creado_en: string };
+type Media = {
+  id: string; storage_path: string; tipo: "imagen" | "video" | "portada" | "documento";
+  mime_type: string; bytes: number | null; sha256: string | null; url?: string;
+};
+type Fila = {
+  id: string; fecha: string; tipo: string; angulo: string | null; creado_en: string;
+  contenido: { caption?: string } | null; barbara_media: Media[] | null;
+};
 
 const ETIQUETA_TIPO: Record<string, string> = {
   carrusel: "🖼️ Carrusel", historia: "📱 Historia", ugc: "🎬 UGC",
 };
 
-/**
- * "Biblioteca" — historial buscable de piezas, NO una galería de imágenes.
- *
- * POR QUÉ NO HAY MINIATURAS
- * ---------------------------------------------------------------------------
- * Cada imagen/video se manda directo a Telegram (`sendPhoto`/`sendVideo`) y
- * nunca pasa por almacenamiento propio — no hay un bucket ni una URL
- * permanente guardada en ningún lado. Mostrar una "biblioteca visual" acá
- * significaría inventar datos que no existen. Lo real es esto: el registro
- * completo de qué se generó, cuándo y con qué ángulo — las imágenes viven en
- * la conversación de Telegram del cliente, que es la fuente real hoy.
- *
- * Si en algún momento se agrega almacenamiento permanente de cada pieza
- * (Supabase Storage, por ejemplo), esta pantalla es donde se conectarían
- * las miniaturas reales — no antes.
- */
+/** Biblioteca real: metadata en barbara_media y URLs firmadas de un bucket
+ * privado. Las URLs expiran; nunca se vuelve público el material del cliente. */
 export function BarbaraBiblioteca({ barbaraClienteId }: { barbaraClienteId: string }) {
   const [filas, setFilas] = useState<Fila[]>([]);
   const [cargando, setCargando] = useState(true);
@@ -32,58 +25,81 @@ export function BarbaraBiblioteca({ barbaraClienteId }: { barbaraClienteId: stri
   useEffect(() => {
     let vivo = true;
     setCargando(true);
-    sb.from("barbara_memoria")
-      .select("id,fecha,tipo,angulo,creado_en")
-      .eq("barbara_cliente_id", barbaraClienteId)
-      .order("creado_en", { ascending: false })
-      .limit(200)
-      .then(({ data, error }) => {
-        if (!vivo) return;
-        if (error) setError(error.message);
-        else { setFilas((data ?? []) as Fila[]); setError(""); }
-        setCargando(false);
-      });
+    (async () => {
+      const r = await sb.from("barbara_memoria")
+        .select("id,fecha,tipo,angulo,contenido,creado_en,barbara_media(id,storage_path,tipo,mime_type,bytes,sha256)")
+        .eq("barbara_cliente_id", barbaraClienteId)
+        .order("creado_en", { ascending: false }).limit(200);
+      if (!vivo) return;
+      if (r.error) { setError(r.error.message); setCargando(false); return; }
+      const piezas = (r.data ?? []) as unknown as Fila[];
+      const paths = piezas.flatMap((p) => p.barbara_media ?? []).map((m) => m.storage_path);
+      const urls = new Map<string, string>();
+      if (paths.length) {
+        const firmadas = await sb.storage.from("barbara-media").createSignedUrls(paths, 60 * 60);
+        if (firmadas.error) {
+          setError("No se pudieron abrir los archivos privados: " + firmadas.error.message);
+        } else {
+          for (const item of firmadas.data ?? []) {
+            if (item.path && item.signedUrl) urls.set(item.path, item.signedUrl);
+          }
+        }
+      }
+      if (!vivo) return;
+      setFilas(piezas.map((p) => ({
+        ...p,
+        barbara_media: (p.barbara_media ?? []).map((m) => ({ ...m, url: urls.get(m.storage_path) })),
+      })));
+      setCargando(false);
+    })();
     return () => { vivo = false; };
   }, [barbaraClienteId]);
 
-  const filtradas = busqueda.trim()
-    ? filas.filter((f) => (f.angulo || "").toLowerCase().includes(busqueda.toLowerCase()))
-    : filas;
+  const filtradas = useMemo(() => {
+    const q = busqueda.trim().toLowerCase();
+    if (!q) return filas;
+    return filas.filter((f) => [f.angulo, f.tipo, f.contenido?.caption]
+      .filter(Boolean).join(" ").toLowerCase().includes(q));
+  }, [filas, busqueda]);
 
   return (
     <div>
-      <input
-        className="campo"
-        placeholder="Buscar por ángulo…"
-        value={busqueda}
-        onChange={(e) => setBusqueda(e.target.value)}
-        style={{ marginBottom: 14, maxWidth: 340 }}
-      />
+      <input className="campo" placeholder="Buscar por ángulo, tipo o caption…"
+        value={busqueda} onChange={(e) => setBusqueda(e.target.value)}
+        style={{ marginBottom: 14, maxWidth: 380 }} />
 
       {error && <p className="error">{error}</p>}
-      {cargando && <p className="vacio">Cargando…</p>}
+      {cargando && <p className="vacio">Cargando biblioteca privada…</p>}
       {!cargando && filtradas.length === 0 && <p className="vacio">Sin piezas todavía.</p>}
 
       {!cargando && filtradas.length > 0 && (
-        <div className="tabla-caja">
-          <table>
-            <thead><tr><th>Fecha</th><th>Tipo</th><th>Ángulo</th></tr></thead>
-            <tbody>
-              {filtradas.map((f) => (
-                <tr key={f.id}>
-                  <td>{fecha(f.creado_en)}</td>
-                  <td>{ETIQUETA_TIPO[f.tipo] || f.tipo}</td>
-                  <td>{f.angulo || "—"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="barbara-biblioteca-grid">
+          {filtradas.map((f) => {
+            const media = f.barbara_media ?? [];
+            const portada = media.find((m) => m.tipo === "portada") || media[0];
+            return (
+              <article className="barbara-biblioteca-pieza" key={f.id}>
+                <div className="barbara-biblioteca-preview">
+                  {portada?.url && portada.mime_type.startsWith("image/") &&
+                    <img src={portada.url} alt={f.angulo || f.tipo} loading="lazy" />}
+                  {portada?.url && portada.mime_type.startsWith("video/") &&
+                    <video src={portada.url} controls preload="metadata" />}
+                  {!portada?.url && <span>{ETIQUETA_TIPO[f.tipo]?.split(" ")[0] || "📄"}</span>}
+                </div>
+                <div className="barbara-biblioteca-info">
+                  <small>{fecha(f.creado_en)} · {ETIQUETA_TIPO[f.tipo] || f.tipo}</small>
+                  <strong>{f.angulo || "Pieza sin ángulo registrado"}</strong>
+                  {f.contenido?.caption && <p>{f.contenido.caption}</p>}
+                  <span>{media.length ? `${media.length} archivo${media.length === 1 ? "" : "s"} privado${media.length === 1 ? "" : "s"}` : "Pieza histórica: archivo sólo en Telegram"}</span>
+                </div>
+              </article>
+            );
+          })}
         </div>
       )}
 
       <p className="tenue" style={{ marginTop: 14 }}>
-        Las imágenes y videos viven en tu conversación de Telegram con Bárbara — acá está el
-        registro completo de qué se generó y cuándo.
+        Los nuevos archivos quedan guardados en una biblioteca privada y verificable. Las piezas anteriores a esta función pueden seguir viviendo sólo en Telegram.
       </p>
     </div>
   );

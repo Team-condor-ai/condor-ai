@@ -385,6 +385,9 @@ export async function unirClips(urls) {
 // sin SDK — Bárbara nunca ha tenido dependencias pesadas) ----
 export function supabase(url, serviceKey) {
   const H = { apikey: serviceKey, Authorization: `Bearer ${serviceKey}`, "Content-Type": "application/json" };
+  const rutaStorage = (bucket, path = "") =>
+    `${url}/storage/v1/object/${encodeURIComponent(bucket)}` +
+    (path ? "/" + String(path).split("/").map(encodeURIComponent).join("/") : "");
   return {
     async get(path) {
       const r = await fetch(`${url}/rest/v1/${path}`, { headers: H });
@@ -407,6 +410,29 @@ export function supabase(url, serviceKey) {
         body: JSON.stringify(body),
       });
       if (!r.ok) throw new Error("Supabase PATCH " + path + ": " + r.status + " " + (await r.text()).slice(0, 200));
+    },
+    async upload(bucket, path, body, { contentType = "application/octet-stream", upsert = false } = {}) {
+      const r = await fetch(rutaStorage(bucket, path), {
+        method: "POST",
+        headers: {
+          apikey: serviceKey,
+          Authorization: `Bearer ${serviceKey}`,
+          "Content-Type": contentType,
+          "x-upsert": upsert ? "true" : "false",
+          "Cache-Control": "max-age=31536000, immutable",
+        },
+        body,
+      });
+      if (!r.ok) throw new Error("Supabase Storage upload " + path + ": " + r.status + " " + (await r.text()).slice(0, 200));
+      return r.json().catch(() => ({}));
+    },
+    async remove(bucket, paths) {
+      const r = await fetch(rutaStorage(bucket), {
+        method: "DELETE",
+        headers: H,
+        body: JSON.stringify({ prefixes: paths }),
+      });
+      if (!r.ok) throw new Error("Supabase Storage remove: " + r.status + " " + (await r.text()).slice(0, 200));
     },
   };
 }
