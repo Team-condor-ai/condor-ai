@@ -134,12 +134,23 @@ export type PerfilAdmin = {
   nombre: string;
 };
 
-/** Datos de cuentas, accesos y notas rápidas del equipo — Organización > Notas internas. */
+export type DatosCuentaInterna = {
+  entidad?: string;
+  titular?: string;
+  usuario?: string;
+  clave?: string;
+  url?: string;
+};
+
+/** Datos sensibles y contexto operativo — Organización > Información interna. */
 export type NotaInterna = {
   id: string;
   titulo: string;
   contenido: string | null;
   categoria: string;
+  tipo: "nota" | "cuenta";
+  cliente_id: string | null;
+  datos_cuenta: DatosCuentaInterna | null;
   archivo_url: string | null;
   archivo_nombre: string | null;
   archivo_peso_bytes: number | null;

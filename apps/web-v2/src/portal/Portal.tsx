@@ -97,7 +97,7 @@ const MENU_STAFF: Grupo[] = [
       { a: "/acceso/organizacion/tablero", texto: "Tablero", icono: "tablero" },
       { a: "/acceso/organizacion/calendario", texto: "Calendario", icono: "reuniones" },
       { a: "/acceso/organizacion/metas", texto: "Metas", icono: "meta" },
-      { a: "/acceso/organizacion/notas", texto: "Notas internas", icono: "documentos" },
+      { a: "/acceso/organizacion/informacion", texto: "Información interna", icono: "documentos" },
     ],
   },
   {
