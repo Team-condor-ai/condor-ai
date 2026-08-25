@@ -41,6 +41,8 @@ type Props = {
   onCambio: () => void;
   /** Staff ve además "Lo que Bárbara aprendió" con permiso de apagar reglas. */
   esStaff?: boolean;
+  activo?: boolean | null;
+  telegramListo?: boolean;
   /** A dónde vuelve el botón de la esquina superior izquierda. */
   volverA: string;
   volverTexto: string;
@@ -58,7 +60,7 @@ type Props = {
  * de volver propio, es la única salida.
  */
 export function BarbaraModulo({
-  barbaraClienteId, negocio, plan, rubro, brandBook, formulario, onCambio, esStaff, volverA, volverTexto,
+  barbaraClienteId, negocio, plan, rubro, brandBook, formulario, onCambio, esStaff, activo, telegramListo, volverA, volverTexto,
 }: Props) {
   const [seccion, setSeccion] = useState<Seccion>("chat");
   const navegar = useNavigate();
@@ -181,6 +183,8 @@ export function BarbaraModulo({
               formulario={formulario}
               onCambio={onCambio}
               esStaff={esStaff}
+              activo={activo}
+              telegramListo={telegramListo}
             />
             <div className="barbara-config-plan">
               <small>Plan</small>

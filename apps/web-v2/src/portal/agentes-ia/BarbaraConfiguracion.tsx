@@ -11,16 +11,19 @@ type Props = {
   formulario: BarbaraFormulario | null;
   onCambio: () => void;
   esStaff?: boolean;
+  activo?: boolean | null;
+  telegramListo?: boolean;
 };
 
 /** Reutiliza el editor de marca (staff) + el formulario de entrada (cliente):
  * los dos son igual de válidos para cualquiera que esté configurando SU
  * Bárbara, sea un cliente externo o Cóndor viendo la suya. */
-export function BarbaraConfiguracion({ barbaraClienteId, negocio, rubro, brandBook, formulario, onCambio, esStaff = false }: Props) {
+export function BarbaraConfiguracion({ barbaraClienteId, negocio, rubro, brandBook, formulario, onCambio, esStaff = false, activo = true, telegramListo = false }: Props) {
   const [editandoFormulario, setEditandoFormulario] = useState(false);
 
   return (
     <div className="barbara-configuracion">
+      <EstadoOperacion activo={activo} telegramListo={telegramListo} brandBook={brandBook} formulario={formulario} />
       <section className="barbara-config-seccion">
         <h3>Identidad de marca</h3>
         {esStaff ? <BrandBookEditor
@@ -52,6 +55,21 @@ export function BarbaraConfiguracion({ barbaraClienteId, negocio, rubro, brandBo
       )}
     </div>
   );
+}
+
+function EstadoOperacion({ activo, telegramListo, brandBook, formulario }: { activo: boolean | null; telegramListo: boolean; brandBook: BarbaraBrandBook | null; formulario: BarbaraFormulario | null }) {
+  const tieneFormulario = Boolean(formulario && (formulario.publico_objetivo || formulario.tono || formulario.producto_destacar || (formulario.tipo_contenido?.length ?? 0) > 0));
+  const puntos = [
+    { texto: "Cuenta activa", listo: Boolean(activo) },
+    { texto: "Identidad de marca", listo: Boolean(brandBook) },
+    { texto: "Brief de contenido", listo: tieneFormulario },
+    { texto: "Canal de entrega", listo: telegramListo },
+  ];
+  const listos = puntos.filter((p) => p.listo).length;
+  return <section className="barbara-estado-operacion">
+    <header><div><small>Estado operativo</small><b>{listos === puntos.length ? "Bárbara está lista para entregar" : `${listos} de ${puntos.length} pasos completados`}</b></div><span className={"pill " + (listos === puntos.length ? "ok" : "warn")}>{listos === puntos.length ? "Lista" : "Configuración pendiente"}</span></header>
+    <div>{puntos.map((p) => <span key={p.texto} className={p.listo ? "listo" : "pendiente"}>{p.listo ? "✓" : "○"} {p.texto}</span>)}</div>
+  </section>;
 }
 
 function ResumenMarca({ brandBook }: { brandBook: BarbaraBrandBook | null }) {
