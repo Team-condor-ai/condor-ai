@@ -32,6 +32,32 @@ grant all on public.barbara_alertas_operativas to service_role;
 create or replace function public.barbara_sincronizar_alertas_operativas(p_alertas jsonb)
 returns table (clave text, claim_token uuid, severidad text, resumen text, detalles jsonb)
 language plpgsql security definer set search_path = public as $$
+-- ── POR QUÉ ESTA DIRECTIVA (Claude, 25-ago-2026) ────────────────────────
+-- `returns table (clave text, claim_token uuid, severidad text, resumen
+-- text, detalles jsonb)` declara esos cinco nombres como variables PL/pgSQL
+-- (parámetros OUT). Cada vez que aparecen SIN calificar dentro del cuerpo,
+-- Postgres no sabe si son la variable o la columna homónima y aborta con:
+--
+--   42702: column reference "clave" is ambiguous
+--
+-- Eso hacía fallar la corrida programada de `barbara-auditoria-operativa`
+-- cada hora, incluso con el snapshot vacío.
+--
+-- Calificar los SELECT no alcanza: `on conflict (clave)` es una cláusula de
+-- inferencia de índice donde NO se puede usar un alias de tabla — la sintaxis
+-- no lo admite. Comprobado en la base real: con los SELECT ya calificados,
+-- el error seguía apuntando justo a esa línea.
+--
+-- `use_column` resuelve toda ambigüedad a favor de la COLUMNA, que es lo
+-- correcto acá: los parámetros de entrada llevan prefijo `p_` (no chocan con
+-- nada) y los OUT sólo se usan implícitamente en el `return query` final,
+-- que ya viene calificado con `a.`.
+--
+-- No se renombraron los OUT a `o_clave` etc. —la otra salida posible— porque
+-- esos nombres son los de las columnas que devuelve la función, y
+-- `auditoria-operativa.mjs` lee `a.clave`, `a.claim_token` y `a.severidad`:
+-- renombrarlos arreglaba el SQL y rompía al llamador.
+#variable_conflict use_column
 begin
   if auth.role() <> 'service_role' then raise exception 'sólo service_role'; end if;
   if jsonb_typeof(coalesce(p_alertas,'[]'::jsonb)) <> 'array' or jsonb_array_length(coalesce(p_alertas,'[]'::jsonb)) > 200 then
@@ -48,8 +74,16 @@ begin
     as x(clave text,tipo text,severidad text,resumen text,detalles jsonb)
   where x.clave ~ '^[a-f0-9]{32}$' and x.severidad in ('critica','alta','media') and length(trim(x.resumen)) > 0;
 
+  -- Las columnas van CALIFICADAS con el alias `e`, y no es cosmético:
+  -- `returns table (clave text, claim_token uuid, severidad text, resumen
+  -- text, detalles jsonb)` declara esos cinco nombres como variables
+  -- PL/pgSQL (parámetros OUT). Sin el alias, Postgres no sabe si `clave` es
+  -- la variable o la columna y aborta con
+  --   42702: column reference "clave" is ambiguous
+  -- Eso hacía fallar la corrida programada de `barbara-auditoria-operativa`
+  -- cada hora (25-ago-2026).
   insert into public.barbara_alertas_operativas (clave,tipo,severidad,resumen,detalles)
-  select clave,tipo,severidad,resumen,detalles from pg_temp.alertas_entrada
+  select e.clave,e.tipo,e.severidad,e.resumen,e.detalles from pg_temp.alertas_entrada e
   on conflict (clave) do update set
     tipo=excluded.tipo, severidad=excluded.severidad, resumen=excluded.resumen, detalles=excluded.detalles,
     estado='activa', apariciones=barbara_alertas_operativas.apariciones+1,
