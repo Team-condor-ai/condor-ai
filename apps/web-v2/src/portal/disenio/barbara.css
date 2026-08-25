@@ -512,6 +512,31 @@
 .barbara-modulo .mcp-copiable { border-radius: var(--barbara-radius-interno); background: #101113; }
 .barbara-modulo .cuerpo { padding: 0; }
 .barbara-modulo .barra { padding: 0; background: transparent; border: 0; }
+.barbara-chat-ayuda { margin: 7px 0 0; color: var(--texto-3); font-size: 11.5px; }
+.barbara-entregas { display: grid; gap: 14px; }
+.barbara-entregas-cabecera { display: flex; align-items: end; justify-content: space-between; gap: 14px; }
+.barbara-entregas-cabecera .barbara-subtitulo { margin: 0; max-width: 570px; }
+.barbara-entregas-cabecera .campo { max-width: 260px; }
+.barbara-entregas-lista { display: grid; gap: 9px; }
+.barbara-entrega { overflow: hidden; border: 1px solid var(--borde); border-radius: var(--barbara-radius-interno); background: #101113; }
+.barbara-entrega-resumen { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 58px; gap: 12px; padding: 11px 14px; border: 0; background: transparent; color: var(--texto); text-align: left; cursor: pointer; }
+.barbara-entrega-resumen:hover { background: rgba(255,255,255,.035); }
+.barbara-entrega-resumen > span:first-child { display: grid; min-width: 0; gap: 2px; }
+.barbara-entrega-resumen b { font-size: 13px; font-weight: 600; }
+.barbara-entrega-resumen small { overflow: hidden; color: var(--texto-2); font-size: 11.5px; text-overflow: ellipsis; white-space: nowrap; }
+.barbara-entrega-meta { display: flex; align-items: center; gap: 10px; flex: none; color: var(--texto-2); }
+.barbara-entrega-detalle { display: grid; gap: 14px; padding: 0 14px 14px; border-top: 1px solid var(--borde-suave); }
+.barbara-slides { display: grid; gap: 8px; padding: 0; margin: 14px 0 0; list-style: none; counter-reset: slides; }
+.barbara-slides li { position: relative; padding: 10px 12px 10px 37px; border-radius: 10px; background: var(--panel-2); counter-increment: slides; }
+.barbara-slides li::before { position: absolute; top: 10px; left: 12px; color: var(--azul); content: counter(slides); font-size: 11px; font-weight: 700; }
+.barbara-slides li b { display: block; font-size: 13px; }
+.barbara-slides li p,.barbara-caption p { margin: 4px 0 0; color: var(--texto-2); font-size: 12.5px; white-space: pre-wrap; }
+.barbara-entrega-hook,.barbara-entrega-comentario { margin: 0; padding: 10px 12px; border-radius: 10px; background: var(--panel-2); color: var(--texto-2); font-size: 12.5px; }
+.barbara-entrega-comentario { border-left: 2px solid var(--warn-tx); }
+.barbara-caption summary { color: var(--azul); cursor: pointer; font-size: 12.5px; }
+.barbara-entrega-acciones { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.barbara-ajuste-form { display: grid; width: min(100%, 620px); gap: 8px; }
+.barbara-ajuste-form > div { display: flex; justify-content: flex-end; gap: 8px; }
 
 @media (max-width: 900px) {
   .barbara-modulo {
@@ -559,4 +584,6 @@
   .barbara-calendario-chip { padding: 2px 4px; }
   .barbara-calendario-chip span { display: none; }
   .barbara-stats-fila { grid-template-columns: 1fr 1fr; }
+  .barbara-entregas-cabecera { align-items: stretch; flex-direction: column; }
+  .barbara-entregas-cabecera .campo { max-width: none; }
 }

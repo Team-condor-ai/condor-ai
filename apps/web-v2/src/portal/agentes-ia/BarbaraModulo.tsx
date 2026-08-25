@@ -21,7 +21,7 @@ const NAV: { grupo: string; icono: keyof typeof Ico; items: { id: Seccion; texto
   ] },
   { grupo: "Contenido", icono: "reuniones", items: [
     { id: "calendario", texto: "Calendario", icono: "reuniones" },
-    { id: "biblioteca", texto: "Biblioteca", icono: "biblioteca" },
+    { id: "biblioteca", texto: "Entregas", icono: "biblioteca" },
     { id: "memoria", texto: "Memoria", icono: "memoria" },
   ] },
   { grupo: "Ajustes", icono: "ajustes", items: [
@@ -148,7 +148,7 @@ export function BarbaraModulo({
 
         {seccion === "biblioteca" && (
           <div className="barbara-tarjeta">
-            <h1>{Ico.biblioteca({ t: 22 })} Biblioteca ✨</h1>
+            <h1>{Ico.biblioteca({ t: 22 })} Entregas y revisión ✨</h1>
             <BarbaraBiblioteca barbaraClienteId={barbaraClienteId} />
           </div>
         )}

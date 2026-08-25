@@ -23,6 +23,10 @@ on:
         description: 'UUID de barbara_clientes para probar con uno solo (vacío = todos los activos)'
         required: false
         default: ''
+      pieza_id:
+        description: 'UUID de la pieza a corregir; se usa solo junto a retry=1'
+        required: false
+        default: ''
       test:
         description: 'poner 1 para solo validar conexión, sin generar nada'
         required: false
@@ -95,6 +99,7 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           TIPO: ${{ github.event.inputs.tipo }}
           CLIENTE_ID: ${{ github.event.inputs.cliente_id }}
+          PIEZA_ID: ${{ github.event.inputs.pieza_id }}
           TEST: ${{ github.event.inputs.test }}
           RETRY: ${{ github.event.inputs.retry }}
       - name: Persistir credenciales de Higgsfield si rotaron

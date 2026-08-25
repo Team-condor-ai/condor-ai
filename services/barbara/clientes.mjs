@@ -31,6 +31,7 @@ const isTest = process.env.TEST === "1";
 const isRetry = process.env.RETRY === "1";
 const TIPO = (process.env.TIPO || "carrusel").trim().toLowerCase();
 const SOLO_CLIENTE = (process.env.CLIENTE_ID || "").trim();
+const PIEZA_ID = (process.env.PIEZA_ID || "").trim();
 
 if (!AK || !TG_TOKEN || !SB_URL || !SB_KEY) {
   console.error("Faltan variables: ANTHROPIC_API_KEY / TELEGRAM_BOT_TOKEN / SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY");
@@ -239,8 +240,8 @@ async function generarPara(cliente) {
   // Ver el encabezado de `correccion.mjs`.
   let previa = null, correccion = { cambios: [], es_correccion: false };
   if (isRetry) {
-    previa = await piezaAnterior(db, barbaraId, TIPO);
-    const mensajes = await leerPedido(db, barbaraId, previa?.creado_en);
+    previa = await piezaAnterior(db, barbaraId, TIPO, PIEZA_ID);
+    const mensajes = await leerPedido(db, barbaraId, previa?.creado_en, PIEZA_ID);
     correccion = await extraerCambios(AK, mensajes, previa);
     console.log(`[${negocio}] corrección: ${correccion.cambios.length} cambio(s) pedido(s)` +
       (correccion.cambios.length ? " — " + correccion.cambios.map(c => c.que).join(", ") : ""));
@@ -576,6 +577,7 @@ Responde SOLO con el JSON.`;
     cambios_pedidos: correccion.cambios.length ? correccion.cambios : null,
     cambios_cumplidos: verificacion.cumplidos || null,
     corrige_a: isRetry && previa ? previa.id : null,
+    estado: "en_revision",
   }, { returnMinimal: false });
 
   // Enlaza cada prompt registrado en esta corrida con la pieza que produjo,
@@ -610,7 +612,7 @@ Responde SOLO con el JSON.`;
 }
 
 async function main() {
-  console.log("Bárbara clientes | tipo:", TIPO, "| solo:", SOLO_CLIENTE || "(todos los activos)");
+  console.log("Bárbara clientes | tipo:", TIPO, "| solo:", SOLO_CLIENTE || "(todos los activos)", "| pieza:", PIEZA_ID || "(última)");
   if (isTest) {
     const clientes = await db.get("barbara_clientes?activo=eq.true&select=id");
     console.log(`Conexión OK. Clientes activos: ${clientes.length}`);

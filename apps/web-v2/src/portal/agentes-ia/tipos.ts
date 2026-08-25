@@ -107,6 +107,20 @@ export type BarbaraChat = {
   creado_en: string | null;
 };
 
+export type BarbaraPieza = {
+  id: string;
+  barbara_cliente_id: string;
+  fecha: string;
+  tipo: string;
+  angulo: string | null;
+  contenido: { slides?: { titular: string; cuerpo: string }[]; clips?: { escena: string; duracion: number }[]; caption?: string; texto_en_pantalla?: string } | null;
+  estado: "en_revision" | "requiere_ajuste" | "aprobada" | "publicada" | "historica";
+  correcciones_pedidas: number | null;
+  revision_comentario: string | null;
+  revisada_en: string | null;
+  creado_en: string;
+};
+
 export type BarbaraCorrecciones = {
   id: string;
   barbara_cliente_id: string;
