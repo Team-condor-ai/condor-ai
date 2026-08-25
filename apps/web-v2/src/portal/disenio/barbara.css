@@ -361,8 +361,12 @@
    un riel continuo para orientarse, una sola escala de radios y paneles de
    contenido que se leen como capas del mismo producto. */
 .barbara-modulo {
-  --barbara-radio: 18px;
-  --barbara-radio-interno: 13px;
+  /* Una sola familia de radios: el sidebar marca la pauta y cada superficie
+     del módulo la hereda. Los alias preservan los componentes ya existentes. */
+  --barbara-radio: 22px;
+  --barbara-radio-interno: 15px;
+  --barbara-radius: var(--barbara-radio);
+  --barbara-radius-interno: var(--barbara-radio-interno);
   display: grid;
   grid-template-columns: 246px minmax(0, 1fr);
   gap: 20px;
@@ -521,9 +525,9 @@
 .barbara-calendario-controles { flex-wrap: wrap; }
 .chip-toggle { min-height: 34px; border-radius: 9px; }
 .barbara-calendario-grilla { gap: 4px; }
-.barbara-calendario-celda { border: 1px solid transparent; border-radius: 10px; background: #101113; padding: 8px; }
+.barbara-calendario-celda { border: 1px solid transparent; border-radius: 12px; background: #101113; padding: 8px; }
 .barbara-calendario-celda.hoy { outline: 0; border-color: var(--azul-borde); background: rgba(212,255,61,.06); }
-.barbara-calendario-chip { border-radius: 6px; background: var(--panel-2); }
+.barbara-calendario-chip { border-radius: 9px; background: var(--panel-2); }
 
 .barbara-stat-tarjeta { border-radius: var(--barbara-radius-interno); background: #101113; border-color: var(--borde); }
 .barbara-modulo .tabla-caja { border-radius: var(--barbara-radius-interno); border-color: var(--borde); background: #101113; }
@@ -547,11 +551,11 @@
 .barbara-entrega-meta { display: flex; align-items: center; gap: 10px; flex: none; color: var(--texto-2); }
 .barbara-entrega-detalle { display: grid; gap: 14px; padding: 0 14px 14px; border-top: 1px solid var(--borde-suave); }
 .barbara-slides { display: grid; gap: 8px; padding: 0; margin: 14px 0 0; list-style: none; counter-reset: slides; }
-.barbara-slides li { position: relative; padding: 10px 12px 10px 37px; border-radius: 10px; background: var(--panel-2); counter-increment: slides; }
+.barbara-slides li { position: relative; padding: 10px 12px 10px 37px; border-radius: 12px; background: var(--panel-2); counter-increment: slides; }
 .barbara-slides li::before { position: absolute; top: 10px; left: 12px; color: var(--azul); content: counter(slides); font-size: 11px; font-weight: 700; }
 .barbara-slides li b { display: block; font-size: 13px; }
 .barbara-slides li p,.barbara-caption p { margin: 4px 0 0; color: var(--texto-2); font-size: 12.5px; white-space: pre-wrap; }
-.barbara-entrega-hook,.barbara-entrega-comentario { margin: 0; padding: 10px 12px; border-radius: 10px; background: var(--panel-2); color: var(--texto-2); font-size: 12.5px; }
+.barbara-entrega-hook,.barbara-entrega-comentario { margin: 0; padding: 10px 12px; border-radius: 12px; background: var(--panel-2); color: var(--texto-2); font-size: 12.5px; }
 .barbara-entrega-comentario { border-left: 2px solid var(--warn-tx); }
 .barbara-entrega-publicada { margin: 0; color: var(--ok-tx); font-size: 12.5px; }
 .barbara-caption summary { color: var(--azul); cursor: pointer; font-size: 12.5px; }
