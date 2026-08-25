@@ -1,0 +1,30 @@
+name: Barbara - avisos de rendimiento
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: barbara-notificador-hitos
+  cancel-in-progress: false
+
+jobs:
+  notificar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: services/barbara/package-lock.json
+      - run: npm ci
+        working-directory: services/barbara
+      - run: node notificador-hitos.mjs
+        working-directory: services/barbara
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}

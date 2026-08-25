@@ -6,6 +6,12 @@ type Fila = {
   aprobada_sin_cambios: boolean | null; correcciones_pedidas: number | null; creado_en: string;
 };
 
+type Metrica = {
+  programacion_id: string; barbara_memoria_id: string; plataforma: string; capturado_en: string;
+  me_gusta: number; comentarios: number; compartidos: number; guardados: number;
+  alcance: number; impresiones: number; reproducciones: number; clics: number; interacciones: number;
+};
+
 const ICONO_TIPO: Record<string, string> = { carrusel: "🖼️", historia: "📱", ugc: "🎬" };
 
 /**
@@ -21,12 +27,13 @@ const ICONO_TIPO: Record<string, string> = { carrusel: "🖼️", historia: "�
 export function BarbaraAnalisis({ barbaraClienteId }: { barbaraClienteId: string }) {
   const [filas, setFilas] = useState<Fila[]>([]);
   const [filasPrev, setFilasPrev] = useState<Fila[]>([]);
+  const [metricas, setMetricas] = useState<Metrica[]>([]);
+  const [metricasDisponibles, setMetricasDisponibles] = useState(true);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
     let vivo = true;
-    setCargando(true);
     const hoy = new Date();
     const hace30 = new Date(hoy); hace30.setDate(hace30.getDate() - 30);
     const hace60 = new Date(hoy); hace60.setDate(hace60.getDate() - 60);
@@ -40,10 +47,19 @@ export function BarbaraAnalisis({ barbaraClienteId }: { barbaraClienteId: string
         .select("id,fecha,tipo,angulo,aprobada_sin_cambios,correcciones_pedidas,creado_en")
         .eq("barbara_cliente_id", barbaraClienteId)
         .gte("fecha", hace60.toISOString().slice(0, 10)).lt("fecha", hace30.toISOString().slice(0, 10)),
-    ]).then(([r1, r2]) => {
+      sb.from("barbara_metricas_actuales")
+        .select("programacion_id,barbara_memoria_id,plataforma,capturado_en,me_gusta,comentarios,compartidos,guardados,alcance,impresiones,reproducciones,clics,interacciones")
+        .eq("barbara_cliente_id", barbaraClienteId),
+    ]).then(([r1, r2, r3]) => {
       if (!vivo) return;
       if (r1.error) setError(r1.error.message);
-      else { setFilas((r1.data ?? []) as Fila[]); setFilasPrev((r2.data ?? []) as Fila[]); setError(""); }
+      else {
+        setFilas((r1.data ?? []) as Fila[]);
+        setFilasPrev((r2.data ?? []) as Fila[]);
+        setMetricas((r3.data ?? []) as Metrica[]);
+        setMetricasDisponibles(!r3.error);
+        setError("");
+      }
       setCargando(false);
     });
     return () => { vivo = false; };
@@ -55,6 +71,12 @@ export function BarbaraAnalisis({ barbaraClienteId }: { barbaraClienteId: string
   const tasaAprobacion = total ? Math.round((aprobadas / total) * 100) : 0;
   const tasaAprobacionPrev = totalPrev ? Math.round((filasPrev.filter((f) => f.aprobada_sin_cambios === true).length / totalPrev) * 100) : 0;
   const porTipo = filas.reduce<Record<string, number>>((acc, f) => { acc[f.tipo] = (acc[f.tipo] ?? 0) + 1; return acc; }, {});
+  const totalesRed = metricas.reduce((acc, m) => ({
+    alcance: acc.alcance + Number(m.alcance || 0),
+    interacciones: acc.interacciones + Number(m.interacciones || 0),
+    reproducciones: acc.reproducciones + Number(m.reproducciones || 0),
+  }), { alcance: 0, interacciones: 0, reproducciones: 0 });
+  const formato = (n: number) => new Intl.NumberFormat("es-CL", { notation: n >= 10_000 ? "compact" : "standard", maximumFractionDigits: 1 }).format(n);
 
   const variacion = (actual: number, previo: number) =>
     previo === 0 ? null : Math.round(((actual - previo) / previo) * 100);
@@ -68,6 +90,29 @@ export function BarbaraAnalisis({ barbaraClienteId }: { barbaraClienteId: string
   return (
     <div>
       <div className="barbara-stats-fila">
+        {metricasDisponibles && metricas.length > 0 && (
+          <>
+            <div className="barbara-stat-tarjeta">
+              <span className="barbara-stat-icono">👀</span>
+              <b>Alcance confirmado</b>
+              <div className="barbara-stat-numero">{formato(totalesRed.alcance)}</div>
+              <small>{metricas.length} publicación(es) medidas</small>
+            </div>
+            <div className="barbara-stat-tarjeta">
+              <span className="barbara-stat-icono">💬</span>
+              <b>Interacciones reales</b>
+              <div className="barbara-stat-numero">{formato(totalesRed.interacciones)}</div>
+              <small>Me gusta, comentarios, compartidos, guardados y clics</small>
+            </div>
+            {totalesRed.reproducciones > 0 && (
+              <div className="barbara-stat-tarjeta">
+                <span className="barbara-stat-icono">▶️</span>
+                <b>Reproducciones</b>
+                <div className="barbara-stat-numero">{formato(totalesRed.reproducciones)}</div>
+              </div>
+            )}
+          </>
+        )}
         <div className="barbara-stat-tarjeta">
           <span className="barbara-stat-icono">✅</span>
           <b>Piezas · 30 días</b>
@@ -94,6 +139,26 @@ export function BarbaraAnalisis({ barbaraClienteId }: { barbaraClienteId: string
           </div>
         ))}
       </div>
+
+      {metricas.length > 0 && (
+        <div className="barbara-tarjeta-interna">
+          <h3>📈 Rendimiento por publicación</h3>
+          <div className="tabla-caja">
+            <table>
+              <thead><tr><th>Red</th><th>Actualizado</th><th>Alcance</th><th>Interacciones</th><th>Guardados</th></tr></thead>
+              <tbody>{[...metricas].sort((a, b) => b.alcance - a.alcance).map((m) => (
+                <tr key={m.programacion_id}>
+                  <td style={{ textTransform: "capitalize" }}>{m.plataforma}</td>
+                  <td>{fecha(m.capturado_en)}</td>
+                  <td>{formato(m.alcance)}</td>
+                  <td>{formato(m.interacciones)}</td>
+                  <td>{formato(m.guardados)}</td>
+                </tr>
+              ))}</tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       <div className="barbara-tarjeta-interna">
         <h3>{ICONO_TIPO.carrusel} Piezas de los últimos 30 días</h3>
@@ -127,10 +192,10 @@ export function BarbaraAnalisis({ barbaraClienteId }: { barbaraClienteId: string
         )}
       </div>
 
-      <p className="tenue" style={{ marginTop: 14 }}>
-        Todavía no hay integración con métricas de Instagram/TikTok (alcance, interacciones) —
-        esto muestra lo que Bárbara sabe de verdad: qué generó y cómo respondió la marca.
-      </p>
+      {!metricasDisponibles && <p className="tenue" style={{ marginTop: 14 }}>
+        Las métricas externas todavía no están habilitadas en este entorno. Las cifras visibles arriba
+        corresponden sólo a producción y aprobaciones verificadas por Bárbara.
+      </p>}
     </div>
   );
 }
