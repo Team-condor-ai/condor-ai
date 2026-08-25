@@ -43,7 +43,7 @@ const NOMBRE_SECCION: Record<Seccion, string> = {
 
 const POSES_BARBARA = Array.from(
   { length: 50 },
-  (_, indice) => `/assets/barbara/poses-transparent/barbara-${String(indice + 1).padStart(2, "0")}.png`,
+  (_, indice) => `/assets/barbara/personaje/barbara-${String(indice + 1).padStart(2, "0")}.png`,
 );
 
 /** (codex) Una pose se conserva mientras el usuario está dentro de Bárbara,
