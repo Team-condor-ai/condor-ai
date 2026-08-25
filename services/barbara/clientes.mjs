@@ -200,7 +200,7 @@ async function generarPara(cliente) {
   // un patron cruzado es ruido, y aprender de ruido es peor que no aprender.
   // El tubo queda armado para cuando haya volumen.
   const patronesRaw = await db.get(
-    `barbara_patrones?activo=eq.true&select=patron,muestras&order=muestras.desc&limit=10`
+    `barbara_patrones?activo=eq.true&select=patron,tipo,muestras,confianza_numerica,evidencia_clave&order=muestras.desc&limit=20`
   ).catch(() => []);
   const memoriaSeleccionada = prepararMemoria({
     reglas: reglasRaw,

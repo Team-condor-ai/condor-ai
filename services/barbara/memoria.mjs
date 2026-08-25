@@ -158,10 +158,15 @@ export function seleccionarPrivada({
 }
 
 /** Los patrones globales sólo son consejos anonimizados previamente aprobados. */
-export function seleccionarGlobales(patrones = [], { maxChars = MAX_GLOBAL } = {}) {
+export function seleccionarGlobales(patrones = [], { maxChars = MAX_GLOBAL, contexto = {} } = {}) {
+  const tipo = typeof contexto === "object" ? contexto.tipo : null;
   const candidatas = patrones
-    .filter((p) => p.activo === true && p.patron)
-    .map((p) => ({ texto: String(p.patron).trim(), puntaje: Math.max(0, p.muestras || 0) }))
+    .filter((p) => p.activo === true && p.patron && (!tipo || !p.tipo || p.tipo === "general" || p.tipo === tipo))
+    .map((p) => ({
+      texto: String(p.patron).trim(),
+      puntaje: Math.max(0, p.muestras || 0) + Math.max(0, Number(p.confianza_numerica || 0)) * 50,
+      evidencia_clave: p.evidencia_clave || null,
+    }))
     .sort((a, b) => b.puntaje - a.puntaje || a.texto.localeCompare(b.texto, "es"));
   const seleccionadas = dentroDePresupuesto(sinDuplicados(candidatas), maxChars);
   return { seleccionadas, texto: seleccionadas.map((x) => `- ${x.texto}`).join("\n") };
@@ -170,7 +175,7 @@ export function seleccionarGlobales(patrones = [], { maxChars = MAX_GLOBAL } = {
 /** Un único objeto auditable que el generador puede registrar o imprimir. */
 export function prepararMemoria({ reglas, nodos, relaciones, patrones, contexto, ahora, maxPrivada, maxGlobal } = {}) {
   const privada = seleccionarPrivada({ reglas, nodos, relaciones, contexto, ahora, maxChars: maxPrivada });
-  const global = seleccionarGlobales(patrones, { maxChars: maxGlobal });
+  const global = seleccionarGlobales(patrones, { maxChars: maxGlobal, contexto });
   return {
     privada,
     global,

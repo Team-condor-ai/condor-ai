@@ -32,6 +32,15 @@ test("un patrón global apagado nunca entra al prompt", () => {
   assert.equal(r.texto, "");
 });
 
+test("un patrón de UGC no contamina un carrusel", () => {
+  const r = seleccionarGlobales([
+    { patron: "patrón de video", tipo: "ugc", muestras: 50, activo: true },
+    { patron: "patrón general", tipo: "general", muestras: 5, activo: true },
+  ], { contexto: { tipo: "carrusel" } });
+  assert.doesNotMatch(r.texto, /video/);
+  assert.match(r.texto, /general/);
+});
+
 test("patrones activos se priorizan por muestra y la salida es auditable", () => {
   const r = prepararMemoria({ ahora, patrones: [
     { patron: "menos evidencia", muestras: 2, activo: true },
