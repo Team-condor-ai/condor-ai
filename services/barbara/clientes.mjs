@@ -163,7 +163,7 @@ async function generarPara(cliente) {
   // guardaba en `barbara_chats` y nadie volvia a leer esa tabla nunca.
   const reglasRaw = await db.get(
     `barbara_reglas?barbara_cliente_id=eq.${barbaraId}&activa=eq.true` +
-    `&select=regla,veces_reforzada&order=veces_reforzada.desc&limit=25`
+    `&select=id,regla,veces_reforzada,creado_en,actualizado_en&order=veces_reforzada.desc&limit=40`
   ).catch(() => []);
 
   // GUSTOS, DATOS Y PERFIL de esta marca (`barbara_memoria_nodos`).
@@ -180,7 +180,16 @@ async function generarPara(cliente) {
   // refuerzo.
   const nodosRaw = await db.get(
     `barbara_memoria_nodos?barbara_cliente_id=eq.${barbaraId}&activo=eq.true` +
-    `&select=tipo,titulo,contenido,peso&order=peso.desc&limit=30`
+    `&select=id,tipo,titulo,contenido,peso,origen,creado_en,actualizado_en&order=peso.desc&limit=60`
+  ).catch(() => []);
+
+  // El grafo agrega contexto de un salto: por ejemplo, una nota sobre un
+  // producto puede traer la preferencia visual que el cliente vinculó a ESE
+  // producto sin llenar el prompt con todas sus preferencias. La migración
+  // nace desacoplada, por eso una base aún no migrada cae a lista vacía.
+  const relacionesRaw = await db.get(
+    `barbara_memoria_relaciones?barbara_cliente_id=eq.${barbaraId}&activa=eq.true` +
+    `&select=origen_id,destino_id,tipo,peso`
   ).catch(() => []);
 
   // MEMORIA GLOBAL: patrones aprendidos entre todos los clientes. Solo entran
@@ -188,16 +197,27 @@ async function generarPara(cliente) {
   // un patron cruzado es ruido, y aprender de ruido es peor que no aprender.
   // El tubo queda armado para cuando haya volumen.
   const patronesRaw = await db.get(
-    `barbara_patrones?activo=eq.true&select=patron&order=muestras.desc&limit=10`
+    `barbara_patrones?activo=eq.true&select=patron,muestras&order=muestras.desc&limit=10`
   ).catch(() => []);
-  const memoriaSeleccionada = prepararMemoria({ reglas: reglasRaw, nodos: nodosRaw, patrones: patronesRaw });
+  const memoriaSeleccionada = prepararMemoria({
+    reglas: reglasRaw,
+    nodos: nodosRaw,
+    relaciones: relacionesRaw,
+    patrones: patronesRaw,
+    contexto: {
+      tipo: TIPO,
+      rubro,
+      consulta: [form.producto_destacar, form.publico_objetivo, ...(form.tipo_contenido || [])].filter(Boolean).join(" "),
+    },
+  });
   const reglas = memoriaSeleccionada.privada.texto || "(todavía no hay memoria privada aplicable)";
   const perfil = memoriaSeleccionada.privada.seleccionadas
     .filter((m) => m.clase === "perfil").map((m) => m.texto).join(" ");
   const gustosDatos = memoriaSeleccionada.privada.seleccionadas
     .filter((m) => m.clase === "gusto" || m.clase === "dato").map((m) => `- ${m.texto}`).join(String.fromCharCode(10));
   const patrones = memoriaSeleccionada.global.texto;
-  console.log(`[${negocio}] memoria: ${memoriaSeleccionada.diagnostico.privada_usada} privada(s), ${memoriaSeleccionada.diagnostico.global_usada} patrón(es) global(es)`);
+  console.log(`[${negocio}] memoria: ${memoriaSeleccionada.diagnostico.privada_usada} privada(s), ${memoriaSeleccionada.diagnostico.global_usada} patrón(es) global(es)` +
+    (relacionesRaw.length ? `, ${relacionesRaw.length} relación(es) evaluadas` : ""));
 
   // MEMORIA FUNDACIONAL: lo que Cóndor ya sabe, escrito a mano y verificado.
   // Es la capa de MENOS peso de las tres — va última en el prompt y su propio
