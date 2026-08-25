@@ -1,0 +1,151 @@
+/* La landing del DM de Rat.IA — identidad propia, NO la de Bárbara.
+   Lima + negro son los mismos tonos de `plantillas_ratia.py` (LIMA =
+   rgb(185,230,6)), así que quien viene del post de Instagram ve continuidad
+   entre la pieza que miró y la página a la que llegó. Mobile-first a
+   propósito: casi todo este tráfico abre el link DENTRO de Instagram, en su
+   navegador embebido angosto. */
+
+.ratia-oferta-pagina {
+  min-height: 100svh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  background: #0A0A0A;
+  color: #F3F1E7;
+  font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+}
+
+.ratia-oferta-tarjeta {
+  /* `min-width: 0` es lo que de verdad hace que esto encoja en un teléfono.
+     Por defecto un ítem flex tiene `min-width: auto`, que en Chrome se
+     resuelve contra el contenido MÁS ANCHO de cualquier descendiente que no
+     pueda partirse -- acá el checkbox de consentimiento (`display:flex`
+     anidado, fila) con su texto largo. Sin esto, la tarjeta se negaba a
+     bajar de cierto ancho mínimo y se salía del viewport en un iPhone real
+     (390px), cortando el texto a la derecha -- se vio en la captura antes
+     de este fix, no se adivinó. */
+  min-width: 0;
+  width: 100%;
+  max-width: 420px;
+  background: #141414;
+  border: 1px solid rgba(243, 241, 231, 0.12);
+  border-radius: 20px;
+  padding: 28px 24px 30px;
+}
+
+.ratia-oferta-rotulo {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #B9E606;
+  margin-bottom: 10px;
+}
+
+.ratia-oferta-tarjeta h1 {
+  font-size: 24px;
+  line-height: 1.2;
+  margin: 0 0 6px 0;
+  text-wrap: balance;
+}
+
+.ratia-oferta-tienda {
+  color: rgba(243, 241, 231, 0.65);
+  font-size: 14px;
+  margin: 0 0 18px 0;
+}
+
+.ratia-oferta-aviso {
+  font-size: 13px;
+  line-height: 1.5;
+  color: rgba(243, 241, 231, 0.7);
+  background: rgba(233, 96, 65, 0.12);
+  border: 1px solid rgba(233, 96, 65, 0.28);
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin: 0 0 18px 0;
+}
+
+.ratia-oferta-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ratia-oferta-campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: rgba(243, 241, 231, 0.75);
+}
+
+.ratia-oferta-campo input {
+  font-size: 16px; /* 16px+ evita que iOS haga zoom automático al enfocar */
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(243, 241, 231, 0.18);
+  background: #0A0A0A;
+  color: #F3F1E7;
+}
+.ratia-oferta-campo input:focus {
+  outline: none;
+  border-color: #B9E606;
+}
+
+.ratia-oferta-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: rgba(243, 241, 231, 0.65);
+}
+.ratia-oferta-check span {
+  min-width: 0;
+}
+.ratia-oferta-check input {
+  margin-top: 3px;
+  flex: none;
+  width: 16px;
+  height: 16px;
+  accent-color: #B9E606;
+}
+
+.ratia-oferta-error {
+  color: #E96041;
+  font-size: 13px;
+  margin: 0;
+}
+
+.ratia-oferta-boton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 20px;
+  border-radius: 999px;
+  border: none;
+  background: #B9E606;
+  color: #0A0A0A;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+.ratia-oferta-boton:hover { background: #fff; }
+.ratia-oferta-boton:active { transform: scale(0.98); }
+.ratia-oferta-boton:disabled { opacity: 0.6; cursor: default; }
+
+.ratia-oferta-listo {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-items: flex-start;
+}
+.ratia-oferta-listo p { margin: 0; font-size: 14px; }

@@ -6,6 +6,7 @@ import "./App.css";
 import Layout from "./Layout";
 import Home from "./pages/Home";
 import Colombia from "./pages/Colombia";
+import RatiaOferta from "./pages/RatiaOferta";
 import { Perdido, Cargando, Salvavidas } from "./Perdido";
 // En diferido a propósito: así Vite deja el portal y el CSS del ERP en un
 // chunk aparte que el sitio público no descarga. Es lo que evita que la home
@@ -45,6 +46,11 @@ createRoot(document.getElementById("root")!).render(
 
         {/* Landing de campaña — standalone, sin el chrome del sitio */}
         <Route path="colombia" element={<Colombia />} />
+
+        {/* Donde cae el link del DM de Rat.IA (ManyChat) -- pide correo +
+            consentimiento antes de entregar el link real. Ver
+            `RatiaOferta.tsx` y la migración `20260825_ratia_leads.sql`. */}
+        <Route path="ratia/oferta" element={<RatiaOferta />} />
 
         {/* CUALQUIER OTRA URL.
             GitHub Pages entrega 404.html (la cáscara del SPA) para todo lo
