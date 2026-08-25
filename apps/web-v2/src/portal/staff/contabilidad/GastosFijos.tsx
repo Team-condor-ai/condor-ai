@@ -6,6 +6,7 @@ import { lineasDe, type Asiento, type Cuenta, type GastoFijo } from "./tipos";
 
 /** Un gasto fijo recién creado no tiene cuenta: hay que elegirla a propósito. */
 const SIN_CUENTA = "— elegir cuenta —";
+const SIN_MEDIO = "— elegir medio —";
 
 /**
  * Los gastos que se repiten todos los meses.
@@ -19,6 +20,14 @@ const SIN_CUENTA = "— elegir cuenta —";
  * El cruce se hace por glosa y mes: no es infalible —si alguien lo anota con
  * otro texto, no lo reconoce— pero sí es honesto: prefiere decir "falta" y que
  * alguien mire, antes que dar por pagado algo que no lo está.
+ *
+ * "AUTOMÁTICO" NO PASA POR ACÁ
+ * ---------------------------------------------------------------------------
+ * Un gasto fijo con `automatico = true` no depende de que alguien abra esta
+ * pantalla: un job diario en Supabase (`contabilizar_gastos_fijos_automaticos`,
+ * vía pg_cron) lo anota solo al llegar a `dia_del_mes`, con su propia
+ * referencia única para no duplicar si corre más de una vez. Acá solo se
+ * prende el interruptor y se elige de dónde sale la plata.
  */
 export function GastosFijos({
   cuentas,
@@ -54,7 +63,7 @@ export function GastosFijos({
     // El mismo fallback silencioso de antes: anotaba en la primera cuenta del
     // plan y el gasto aparecía como sueldo. Mejor negarse y decir por qué.
     const cuentaGasto = g.cuenta_id;
-    const medio = liquidas[0]?.id;
+    const medio = g.medio_pago_id ?? liquidas[0]?.id;
     if (!cuentaGasto) { setError(`Elige la cuenta de "${g.nombre}" antes de anotarlo.`); return; }
     if (!medio) { setError("No hay ninguna cuenta líquida para pagar el gasto."); return; }
     setTrabajando(g.id);
@@ -84,8 +93,34 @@ export function GastosFijos({
     setFijos((p) => p.filter((x) => x.id !== g.id));
   }
 
+  async function actualizar(g: GastoFijo, cambios: Partial<GastoFijo>) {
+    const { error: errorActualizar } = await sb.from("gastos_fijos").update(cambios).eq("id", g.id);
+    if (errorActualizar) {
+      setError(errorActualizar.message);
+      return false;
+    }
+    setFijos((previos) => previos.map((x) => (x.id === g.id ? { ...x, ...cambios } : x)));
+    return true;
+  }
+
+  async function cambiarAutomatico(g: GastoFijo, automatico: boolean) {
+    if (automatico && !g.cuenta_id) {
+      setError(`Elige la cuenta de gasto de "${g.nombre}" antes de automatizarlo.`);
+      return;
+    }
+    if (automatico && !g.medio_pago_id) {
+      setError(`Elige desde qué cuenta se paga "${g.nombre}" antes de automatizarlo.`);
+      return;
+    }
+    if (automatico && !g.dia_del_mes) {
+      setError(`Elige el día de cobro de "${g.nombre}" antes de automatizarlo.`);
+      return;
+    }
+    await actualizar(g, { automatico });
+  }
+
   const total = fijos.filter((g) => g.activo).reduce((t, g) => t + (g.monto ?? 0), 0);
-  const faltan = fijos.filter((g) => g.activo && !yaPagado(g));
+  const faltan = fijos.filter((g) => g.activo && !g.automatico && !yaPagado(g));
 
   return (
     <section className="bloque">
@@ -118,7 +153,7 @@ export function GastosFijos({
         <div className="tabla-caja" style={{ marginTop: 10 }}>
           <table>
             <thead>
-              <tr><th>Gasto</th><th className="num">Monto</th><th>Cuenta</th><th>Este mes</th><th></th></tr>
+              <tr><th>Gasto</th><th className="num">Monto</th><th>Cuenta</th><th>Día</th><th>Pago</th><th>Automático</th><th>Este mes</th><th></th></tr>
             </thead>
             <tbody>
               {fijos.map((g) => {
@@ -160,9 +195,41 @@ export function GastosFijos({
                         }}
                       />
                     </td>
+                    <td style={{ minWidth: 82 }}>
+                      <CampoVivo
+                        etiqueta="" tipo="number" valor={g.dia_del_mes ? String(g.dia_del_mes) : ""}
+                        guardar={async (v) => {
+                          const dia = Math.min(31, Math.max(1, Math.round(Number(v) || 0))) || null;
+                          return (await actualizar(g, { dia_del_mes: dia })) ? null : "No se pudo guardar";
+                        }}
+                      />
+                    </td>
+                    <td style={{ minWidth: 180 }}>
+                      <CampoVivo
+                        etiqueta=""
+                        valor={liquidas.find((c) => c.id === g.medio_pago_id)?.nombre ?? SIN_MEDIO}
+                        opciones={[SIN_MEDIO, ...liquidas.map((c) => c.nombre)]}
+                        guardar={async (v) => {
+                          const id = liquidas.find((c) => c.nombre === v)?.id ?? null;
+                          return (await actualizar(g, { medio_pago_id: id })) ? null : "No se pudo guardar";
+                        }}
+                      />
+                    </td>
+                    <td>
+                      <label title="Al llegar al día indicado, se anotará sin intervención manual" style={{ display: "inline-flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
+                        <input
+                          type="checkbox"
+                          checked={Boolean(g.automatico)}
+                          onChange={(e) => void cambiarAutomatico(g, e.target.checked)}
+                        />
+                        {g.automatico ? "Sí" : "No"}
+                      </label>
+                    </td>
                     <td>
                       {pagado ? (
                         <span className="pill ok">anotado</span>
+                      ) : g.automatico ? (
+                        <span className="pill gris">programado</span>
                       ) : (
                         <button
                           className="btn chico"

@@ -179,6 +179,28 @@ export function Contabilidad() {
     };
   }, [saldos, cuentas, asientos, anio]);
 
+  // Deshacer solo se ofrece para lo que el equipo anotó a mano (el egreso/
+  // ingreso rápido, el asiento manual, un gasto fijo anotado con un clic).
+  // Un asiento de origen 'cobro' o 'meta_ads' está ligado a un pago real o a
+  // un sync externo — borrarlo ahí desincroniza los libros del sistema que lo
+  // generó, así que esos no se ofrecen para borrar desde acá.
+  const ORIGENES_BORRABLES = new Set(["manual", "manual-contador", "fijo"]);
+
+  async function borrarAsiento(a: Asiento) {
+    const detalle = (a.asiento_lineas ?? [])
+      .map((l) => cuentas.find((c) => c.id === l.cuenta_id)?.nombre ?? "—")
+      .join(" / ");
+    if (
+      !window.confirm(
+        `¿Deshacer "${a.glosa}" (${detalle})?\n\nEsto borra el asiento y no se puede recuperar.`,
+      )
+    )
+      return;
+    const { error } = await sb.from("asientos").delete().eq("id", a.id);
+    if (error) setError(error.message);
+    else cargar();
+  }
+
   const grupos = useMemo(() => {
     const g: Record<string, SaldoCuenta[]> = {};
     for (const s of saldos) (g[s.tipo] ??= []).push(s);
@@ -443,6 +465,7 @@ export function Contabilidad() {
                       <th>Cuentas</th>
                       <th className="num">Monto</th>
                       <th>Origen</th>
+                      <th></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -471,6 +494,17 @@ export function Contabilidad() {
                           <td className="num">{plata(total)}</td>
                           <td>
                             <span className="pill gris">{a.origen}</span>
+                          </td>
+                          <td className="acciones">
+                            {ORIGENES_BORRABLES.has(a.origen) && (
+                              <button
+                                className="icono-btn peligro"
+                                title="Deshacer (borra el asiento)"
+                                onClick={() => borrarAsiento(a)}
+                              >
+                                {Ico.eliminar({ t: 15 })}
+                              </button>
+                            )}
                           </td>
                         </tr>
                       );

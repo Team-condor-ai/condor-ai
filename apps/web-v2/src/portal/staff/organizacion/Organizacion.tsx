@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { sb, fecha, plata } from "../../lib/supabase";
 import { Ico } from "../../disenio/iconos";
 import { EditorReunion } from "../EditorReunion";
+import { NotasInternas } from "./NotasInternas";
 import type {
   Cliente,
   Cobro,
@@ -199,7 +200,7 @@ export function Organizacion() {
               {Ico.reuniones({ t: 15 })} Agendar reunión
             </button>
           </div>
-        ) : (
+        ) : vista === "notas" ? null : (
           <button className="btn solido" onClick={() => setEditando("nueva")}>
             {Ico.mas({ t: 15 })} Nueva tarea
           </button>
@@ -225,6 +226,12 @@ export function Organizacion() {
             onClick={() => navega("/acceso/organizacion/metas")}
           >
             {Ico.meta({ t: 15 })} Metas
+          </button>
+          <button
+            className={vista === "notas" ? "on" : ""}
+            onClick={() => navega("/acceso/organizacion/notas")}
+          >
+            {Ico.documentos({ t: 15 })} Notas internas
           </button>
         </div>
         {cargando ? (
@@ -371,6 +378,8 @@ export function Organizacion() {
             }
             error={setError}
           />
+        ) : vista === "notas" ? (
+          <NotasInternas />
         ) : (
           <Metas metas={metas} metricas={metricas} editar={setEditandoMeta} />
         )}

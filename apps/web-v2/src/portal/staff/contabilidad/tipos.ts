@@ -65,6 +65,10 @@ export type GastoFijo = {
   cuenta_id: string | null;
   dia_del_mes: number | null;
   activo: boolean;
+  /** Si es true, el job diario lo anota solo al llegar a dia_del_mes. */
+  automatico: boolean;
+  /** Cuenta líquida de la que sale la plata cuando se anota automático. */
+  medio_pago_id: string | null;
   notas: string | null;
   creado_en: string | null;
 };
