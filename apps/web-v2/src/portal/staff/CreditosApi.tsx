@@ -53,9 +53,19 @@ const BASE: CreditoApi[] = [
   },
 ];
 
-// El portal nunca revela claves: los secretos viven en GitHub/Supabase, no
-// en una base que pueda terminar enviándolos a un navegador.
-const PROVEEDORES_REVELABLES = new Set<string>();
+// Los que el equipo puede revelar y copiar desde acá (pedido de Joaquín,
+// 25-ago-2026: que no haya que pedírselas a nadie ni buscarlas en los
+// secretos de GitHub).
+//
+// Estar en esta lista NO es lo que da el acceso: la Edge Function
+// `revelar-credencial` verifica `admins` en cada llamada y es la única
+// puerta a `api_credenciales` (esa tabla no tiene policy de SELECT para
+// `authenticated`). Esta constante sólo decide qué botón se dibuja.
+//
+// Para sumar un proveedor: agregarlo acá Y guardar su fila en
+// `api_credenciales`. Si falta la fila, la función responde 404 con el
+// motivo en vez de fallar en silencio.
+const PROVEEDORES_REVELABLES = new Set<string>(["kie", "anthropic", "blotato"]);
 
 const etiquetas: Record<EstadoCredito, string> = {
   ok: "Conectado",

@@ -1,6 +1,14 @@
-// El portal no revela secretos. Las claves viven únicamente en secretos de
-// GitHub/Supabase y esta función conserva el endpoint sólo para responder de
-// forma explícita si una versión antigua del frontend intenta usarlo.
+// Revela una credencial guardada, SÓLO al equipo de Cóndor.
+//
+// (Claude, 25-ago-2026) Codex había dejado este endpoint devolviendo 410
+// para todo el 24-ago. Joaquín pidió explícitamente reactivarlo: quiere que
+// el equipo pueda ver y copiar las keys desde el portal de staff, en vez de
+// tener que pedírselas a alguien o buscarlas en los secretos de GitHub.
+//
+// Lo que NO se relajó al reactivarlo: sigue verificando `es_admin` contra la
+// tabla `admins` en cada llamada, sin caché, y `api_credenciales` sigue sin
+// ninguna policy de SELECT para `authenticated` — esta función es la única
+// puerta. Un cliente externo con la anon key no puede leer nada.
 //
 // POR QUÉ ESTO ES SU PROPIA FUNCIÓN Y NO UN SELECT DIRECTO
 // ---------------------------------------------------------------------------
@@ -44,7 +52,35 @@ Deno.serve(async (req) => {
   const { data: admin } = await sb.from("admins").select("email").eq("email", user.email).maybeSingle();
   if (!admin) return json({ error: "solo el equipo puede revelar credenciales" }, 403);
 
+  let proveedor = "";
+  try {
+    proveedor = String(((await req.json()) as { proveedor?: string })?.proveedor || "").trim();
+  } catch { /* se valida abajo */ }
+  if (!proveedor) return json({ error: "falta el proveedor" }, 400);
+
+  const { data: fila, error } = await sb
+    .from("api_credenciales")
+    .select("proveedor, valor, nota, actualizado_en, actualizado_por")
+    .eq("proveedor", proveedor)
+    .maybeSingle();
+
+  if (error) return json({ error: error.message }, 500);
+  if (!fila) {
+    return json({
+      error: `No hay una credencial guardada para "${proveedor}". Se agrega desde la base (tabla api_credenciales).`,
+    }, 404);
+  }
+
+  // Queda registrado QUIÉN reveló QUÉ y cuándo. Una key que el equipo
+  // entero puede copiar necesita una traza: si algún día aparece filtrada,
+  // esto es lo único que permite acotar por dónde salió.
+  console.log(`[revelar-credencial] ${user.email} reveló "${proveedor}"`);
+
   return json({
-    error: "Las credenciales no se revelan desde el portal. Gestiona la clave en los secretos del proveedor o de GitHub.",
-  }, 410);
+    proveedor: fila.proveedor,
+    valor: fila.valor,
+    nota: fila.nota,
+    actualizado_en: fila.actualizado_en,
+    actualizado_por: fila.actualizado_por,
+  });
 });
