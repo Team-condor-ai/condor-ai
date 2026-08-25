@@ -21,5 +21,11 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src"]
+  "include": ["src"],
+  // Las pruebas corren con `node --experimental-strip-types --test`, que
+  // trae sus propios tipos de Node. Este proyecto compila para el
+  // navegador (`types: ["vite/client"]`), así que sin excluirlas el build
+  // falla con "Cannot find name 'node:test'" — el mismo motivo por el
+  // que `scripts/` tampoco entra acá.
+  "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx"]
 }

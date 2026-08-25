@@ -11,7 +11,8 @@
     "cf:deploy": "npm run build && npm run cf:check && wrangler deploy",
     "cf:preview": "npm run build && npm run cf:check && wrangler dev",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:saludo": "node --experimental-strip-types --test src/portal/agentes-ia/saludo.test.ts"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",

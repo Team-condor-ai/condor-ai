@@ -36,12 +36,38 @@ function prefiereMenosMovimiento() {
  * instantánea de siempre, sin animación — nunca un fallback roto ni una
  * versión degradada rara.
  */
-export function navegarConTransicion(navigate: NavigateFunction, to: string) {
+/**
+ * `entra` = del portal hacia Bárbara. `vuelve` = de Bárbara hacia el portal.
+ *
+ * El sentido existe porque la animación tiene DIRECCIÓN (ver `barbara.css`):
+ * el telón negro con sus filos lima barre de izquierda a derecha al entrar y
+ * al revés al salir. Sin esto, volver se sentiría como entrar de nuevo — que
+ * es exactamente la desorientación que la continuidad espacial evita: el
+ * usuario tiene que poder sentir que DESHIZO el movimiento, no que hizo otro.
+ */
+export type Sentido = "entra" | "vuelve";
+
+export function navegarConTransicion(
+  navigate: NavigateFunction,
+  to: string,
+  sentido: Sentido = "entra",
+) {
   if (prefiereMenosMovimiento() || !document.startViewTransition) {
     navigate(to);
     return;
   }
-  document.startViewTransition(() => {
+  // El atributo va en <html> porque los pseudo-elementos ::view-transition-*
+  // cuelgan del documento, no del árbol de React: es el único lugar desde
+  // donde el CSS de la animación puede leer el sentido.
+  const raiz = document.documentElement;
+  raiz.dataset.barbaraSentido = sentido;
+  const transicion = document.startViewTransition(() => {
     flushSync(() => navigate(to));
+  });
+  // Se limpia con `finished` y no con un temporizador: si el navegador
+  // interrumpe la transición (otra navegación encima), `finished` igual
+  // resuelve y el atributo no queda pegado hasta la próxima.
+  transicion.finished.finally(() => {
+    delete raiz.dataset.barbaraSentido;
   });
 }

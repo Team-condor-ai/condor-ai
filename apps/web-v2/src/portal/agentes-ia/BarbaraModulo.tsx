@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Ico } from "../disenio/iconos";
 import { navegarConTransicion } from "../disenio/vistaTransicion";
+import { useNombreUsuario } from "../auth/nombreUsuario";
+import { saludo, subtituloSaludo } from "./saludo";
 import { infoPlan, type BarbaraBrandBook, type BarbaraFormulario } from "./tipos";
 import { ReglasAprendidas } from "./ReglasAprendidas";
 import { BarbaraChat } from "./BarbaraChat";
@@ -61,12 +63,13 @@ export function BarbaraModulo({
 }: Props) {
   const [seccion, setSeccion] = useState<Seccion>("chat");
   const navegar = useNavigate();
+  const nombreUsuario = useNombreUsuario();
 
   return (
     <div className="barbara-modulo">
       <button
         className="barbara-modulo-volver"
-        onClick={() => navegarConTransicion(navegar, volverA)}
+        onClick={() => navegarConTransicion(navegar, volverA, "vuelve")}
       >
         {Ico.volver({ t: 15 })} {volverTexto}
       </button>
@@ -108,8 +111,9 @@ export function BarbaraModulo({
             <div className="barbara-hero">
               <img src="/assets/barbara/hero.png" alt="Bárbara" className="barbara-hero-img" />
               <div className="barbara-hero-cuerpo">
-                <h1>¡Hola! Soy Bárbara ✨</h1>
-                <p>Tu agente de IA para impulsar {negocio} cada semana.<br />¿En qué puedo ayudarte hoy?</p>
+                <span className="barbara-rotulo">Bárbara · tu agente de contenido</span>
+                <h1>{saludo(nombreUsuario)}</h1>
+                <p>{subtituloSaludo(negocio)}</p>
                 <BarbaraChat barbaraClienteId={barbaraClienteId} />
               </div>
             </div>
@@ -181,7 +185,7 @@ export function BarbaraModulo({
             </div>
             {esStaff && (
               <div style={{ marginTop: 18 }}>
-                <button className="btn" onClick={() => navegarConTransicion(navegar, "/acceso/agentes-ia")}>
+                <button className="btn" onClick={() => navegarConTransicion(navegar, "/acceso/agentes-ia", "vuelve")}>
                   Administrar todos los clientes de Bárbara →
                 </button>
               </div>

@@ -13,43 +13,163 @@
    vive adentro hereda el look oscuro+lima automáticamente, incluido el
    grafo de memoria (sus `.grafo-*` usan los mismos tokens). */
 
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Poppins:wght@400;500;600;700&display=swap');
+/* Fraunces + Inter: EXACTAMENTE el par de la landing de Bárbara
+   (`public/productos/barbara/index.html`). Antes acá era Fraunces + Poppins,
+   así que el producto y su propia página de venta no se parecían: Poppins es
+   geométrica y redonda, Inter es neutra y de altura-x alta. Pedido de Joaquín
+   (25-ago): que la tipografía del módulo se base en la landing.
 
-/* ── Transición "cambio de mundo" al entrar/salir de Bárbara ──────────────
-   Pedido de Joaquín (24-ago): que el portal se desvanezca con animación y
-   los colores cambien de forma fluida, no un corte duro. Se dispara desde
-   `disenio/vistaTransicion.ts` (View Transitions API nativa) en el link
-   "Bárbara" del menú y en los botones "Volver" del módulo.
+   Inter además está dibujada para texto de interfaz en pantalla —densidad
+   alta, números tabulares, formas que no se confunden a 11 px— que es
+   literalmente todo lo que hay en este módulo. */
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap');
 
-   Por qué esta curva y no un fundido lineal: `cubic-bezier(.16,1,.3,1)` es
-   la aproximación estándar de un resorte "critically damped" (arranca
-   rápido, asienta suave, sin rebote) — la sensación por defecto que Apple
-   usa para casi toda transición de interfaz que no nace de un gesto de
-   arrastre. Une opacidad CON una escala leve (1 → 0.985 → 1) en vez de solo
-   opacidad: eso es lo que hace que una superficie se sienta "materializar",
-   no simplemente desvanecerse — mismo principio que un panel de vidrio real
-   apareciendo, no un plano perdiendo transparencia.
+/* ── EL TELÓN: la transición de entrada y salida de Bárbara ───────────────
 
-   Solo opacidad/transform (nunca blur en el documento completo): son las
-   únicas propiedades que el navegador compone en GPU sin recalcular layout,
-   así que esto no rankea sin importar cuán pesada esté la página real. */
+   Pedido de Joaquín (25-ago): "que el portal se torne negro y los detalles
+   color verde se desplacen animadamente", fluido y profesional. La versión
+   anterior (24-ago) era un cross-fade con una escala leve: correcto, pero
+   sin dirección ni carácter — se sentía como cambiar de página, no como
+   entrar a otra app.
+
+   LA IDEA: UN TELÓN, NO UN FUNDIDO
+   ---------------------------------------------------------------------------
+   Tres cosas pasan en orden, y el orden es el diseño:
+
+     1. El portal de Cóndor CEDE — se va a negro mientras retrocede un poco
+        en Z. Se apaga hacia el negro de Bárbara, no hacia el blanco del
+        tema claro: por eso `::view-transition` pinta el fondo #0A0A0B, que
+        es lo que queda visible en el hueco entre las dos animaciones.
+     2. En ese hueco de ~120 ms la pantalla ES negra. Ese silencio es lo que
+        separa los dos mundos; sin él las dos interfaces se pisan y se ve
+        sucio.
+     3. Bárbara BARRE hacia adentro, y su borde de ataque lleva tres filos
+        lima a distinta distancia y opacidad. Eso es "los detalles verdes que
+        se desplazan": no adornos que aparecen, sino luz que viaja con el
+        borde. Los tres filos a 0 / 14 / 44 px son un rastro, no una línea —
+        un solo filo se lee como un borde; tres se leen como movimiento.
+
+   POR QUÉ translateX Y NO clip-path
+   ---------------------------------------------------------------------------
+   Los filos lima viven en el `box-shadow` del borde de ataque, o sea FUERA
+   de la caja. `clip-path` recorta la sombra junto con el contenido y los
+   filos desaparecerían; `transform` no recorta nada y además es la única
+   propiedad, junto con `opacity`, que el navegador compone en GPU sin
+   recalcular layout. La animación va a 60 fps sin importar cuán pesada esté
+   la página real debajo.
+
+   POR QUÉ ESTAS CURVAS
+   ---------------------------------------------------------------------------
+   `cubic-bezier(.16,1,.3,1)` para lo que ENTRA: es la aproximación estándar
+   de un resorte críticamente amortiguado — arranca rápido y asienta suave,
+   sin rebote. Un telón que rebota se ve barato.
+   `cubic-bezier(.4,0,1,1)` (ease-in) para lo que SALE: arranque suave y
+   salida rápida. La regla de siempre — lo que entra desacelera, lo que sale
+   acelera; al revés se siente pesado.
+
+   La duración total (~620 ms) es larga para UI de producto, donde el rango
+   sano de una transición de ruta son 240-360 ms. Es deliberado y es la
+   excepción: esto no ocurre al navegar entre pantallas, ocurre UNA vez al
+   cruzar de una app a otra. Es el único momento expresivo del portal.       */
+
+::view-transition { background: #0A0A0B; }
+
 ::view-transition-old(root),
 ::view-transition-new(root) {
-  animation-duration: .5s;
-  animation-timing-function: cubic-bezier(.16, 1, .3, 1);
+  /* Sin esto, el navegador mezcla las dos capas y el negro del hueco se
+     contamina con el portal claro que todavía se está yendo. */
+  mix-blend-mode: normal;
+  animation-fill-mode: both;
 }
-::view-transition-old(root) { animation-name: barbara-mundo-sale; }
-::view-transition-new(root) { animation-name: barbara-mundo-entra; }
-@keyframes barbara-mundo-sale {
+
+::view-transition-old(root) {
+  animation: barbara-portal-cede .34s cubic-bezier(.4, 0, 1, 1) both;
+}
+::view-transition-new(root) {
+  animation: barbara-telon-entra .5s cubic-bezier(.16, 1, .3, 1) .12s both;
+}
+
+@keyframes barbara-portal-cede {
   from { opacity: 1; transform: scale(1); }
-  to   { opacity: 0; transform: scale(.985); }
+  to   { opacity: 0; transform: scale(.96); }
 }
-@keyframes barbara-mundo-entra {
-  from { opacity: 0; transform: scale(.985); }
-  to   { opacity: 1; transform: scale(1); }
+
+/* El barrido. `--filo` invierte el lado del rastro lima según el sentido:
+   los filos van SIEMPRE detrás del borde de ataque, nunca delante. */
+/* CÓMO SE DIBUJA EL RASTRO, QUE NO ES OBVIO
+   Una `box-shadow` sin blur ni spread es una COPIA de la caja corrida N px:
+   sólo se ve la franja de N px que asoma por el borde, el resto queda tapado
+   por la caja misma. Y las sombras se pintan en orden: la primera arriba.
+
+   O sea que tres sombras a 5 / 18 / 46 px pintan tres bandas contiguas —
+   0-5 px al 100%, 5-18 px al 38%, 18-46 px al 12%— y eso es el degradé
+   escalonado que se lee como luz viajando.
+
+   La primera versión tenía la banda fuerte en `0px`: una copia sin correr no
+   asoma NADA, así que el 100% no se veía nunca y quedaban sólo las dos
+   débiles superpuestas. En la captura se veía un verde oliva apagado en vez
+   del lima de marca. Se detectó renderizando los fotogramas, no leyendo el
+   CSS. */
+@keyframes barbara-telon-entra {
+  from {
+    transform: translate3d(var(--barbara-desde, 8%), 0, 0);
+    opacity: 0;
+    box-shadow:
+      calc(var(--barbara-filo, -1) * 5px) 0 0 0 rgba(205, 251, 62, 0),
+      calc(var(--barbara-filo, -1) * 18px) 0 0 0 rgba(205, 251, 62, 0),
+      calc(var(--barbara-filo, -1) * 46px) 0 0 0 rgba(205, 251, 62, 0);
+  }
+  30% { opacity: 1; }
+  55% {
+    box-shadow:
+      calc(var(--barbara-filo, -1) * 5px) 0 0 0 rgba(205, 251, 62, 1),
+      calc(var(--barbara-filo, -1) * 18px) 0 0 0 rgba(205, 251, 62, .38),
+      calc(var(--barbara-filo, -1) * 46px) 0 0 0 rgba(205, 251, 62, .12);
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+    box-shadow:
+      calc(var(--barbara-filo, -1) * 5px) 0 0 0 rgba(205, 251, 62, 0),
+      calc(var(--barbara-filo, -1) * 18px) 0 0 0 rgba(205, 251, 62, 0),
+      calc(var(--barbara-filo, -1) * 46px) 0 0 0 rgba(205, 251, 62, 0);
+  }
 }
+
+/* Entrar: Bárbara viene desde la derecha, el rastro lima queda a su izquierda.
+   Volver: el portal viene desde la izquierda y el rastro queda a su derecha —
+   el movimiento se DESHACE, no se repite. Ver `Sentido` en vistaTransicion.ts. */
+html[data-barbara-sentido="entra"]::view-transition-new(root) {
+  --barbara-desde: 7%;
+  --barbara-filo: -1;
+}
+html[data-barbara-sentido="vuelve"]::view-transition-new(root) {
+  --barbara-desde: -7%;
+  --barbara-filo: 1;
+}
+
+/* Al volver, lo que cede es Bárbara y crece un poco en vez de encogerse: se
+   ALEJA hacia el fondo como quien cierra una app, en vez de retroceder igual
+   que el portal. El hueco sigue siendo negro y eso está bien acá — es
+   continuo con la pantalla que se está dejando, no un parpadeo. */
+html[data-barbara-sentido="vuelve"]::view-transition-old(root) {
+  animation-name: barbara-barbara-cede;
+}
+@keyframes barbara-barbara-cede {
+  from { opacity: 1; transform: scale(1); }
+  to   { opacity: 0; transform: scale(1.03); }
+}
+
+/* Accesibilidad: "reducir movimiento" no significa "sin transición", significa
+   sin DESPLAZAMIENTO. Se conserva un fundido corto para no perder la
+   continuidad de "algo cambió" — un corte duro desorienta más que un fundido.
+   `vistaTransicion.ts` además ni siquiera arranca la transición en ese caso;
+   esto cubre a quien active la preferencia con la animación ya corriendo. */
 @media (prefers-reduced-motion: reduce) {
-  ::view-transition-old(root), ::view-transition-new(root) { animation: none; }
+  ::view-transition-old(root) { animation: barbara-fundido-sale .12s linear both; }
+  ::view-transition-new(root) { animation: barbara-fundido-entra .12s linear both; }
+  @keyframes barbara-fundido-sale  { to   { opacity: 0; } }
+  @keyframes barbara-fundido-entra { from { opacity: 0; } }
 }
 
 .barbara-modulo {
@@ -66,10 +186,17 @@
   --sobre-oscuro: #14180A;
   --hover: rgba(255,255,255,.05);
   --activo: rgba(255,255,255,.08);
-  --azul: #D4FF3D;
-  --azul-fuerte: #E4FF77;
-  --azul-suave: rgba(212,255,61,.14);
-  --azul-borde: rgba(212,255,61,.4);
+  /* El lima EXACTO de la landing (`--lima:#CDFB3E`). Acá vivía un #D4FF3D
+     aproximado de las capturas; a un ojo suelto son el mismo verde, pero
+     puestos uno al lado del otro —la landing y el portal abiertos en dos
+     pestañas— el de acá tiraba más amarillo. La marca la define la landing.
+     Sigue llamándose `--azul` porque ese es el nombre del token de ACENTO en
+     el portal (`portal.css`), y todo lo que se reutiliza adentro lo lee con
+     ese nombre; renombrarlo obligaría a tocar cada componente heredado. */
+  --azul: #CDFB3E;
+  --azul-fuerte: #DFFF7B;
+  --azul-suave: rgba(205,251,62,.14);
+  --azul-borde: rgba(205,251,62,.4);
   --ok-bg: rgba(111,215,154,.14); --ok-tx: #8FE8B4; --ok-bd: rgba(111,215,154,.32);
   --gris-bg: rgba(255,255,255,.06); --gris-tx: #A5A69D; --gris-bd: rgba(255,255,255,.12);
   --mal-bg: rgba(240,137,124,.14); --mal-tx: #F0897C; --mal-bd: rgba(240,137,124,.32);
@@ -83,7 +210,7 @@
   --vidrio: 10,10,11;
 
   --barbara-serif: 'Fraunces', Georgia, serif;
-  --barbara-sans: 'Poppins', -apple-system, sans-serif;
+  --barbara-sans: 'Inter', -apple-system, 'Segoe UI', system-ui, sans-serif;
 
   display: flex;
   gap: 16px;
@@ -91,10 +218,53 @@
   background: var(--fondo);
   color: var(--texto);
   font-family: var(--barbara-sans);
+  /* Texto claro sobre fondo casi negro engorda: el antialiasing por defecto
+     de macOS suma peso y a 12-13 px Inter se empasta. `antialiased` lo
+     devuelve al grosor dibujado. Es la corrección estándar para UI en
+     oscuro, y la landing la aplica por el mismo motivo. */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;
   margin: -24px -28px;
   padding: 20px 24px 40px 24px;
   position: relative;
+}
+
+/* ── Cómo se comporta la display ─────────────────────────────────────────
+   Fraunces es una variable font con eje óptico (opsz 9..144): el mismo
+   archivo dibuja letras distintas según el tamaño — más contraste y remates
+   finos en grande, trazo más parejo en chico. `font-optical-sizing: auto`
+   hace que el navegador mueva ese eje solo con el font-size. Sin esto, un
+   titular de 34 px se renderiza con el dibujo pensado para texto corrido y
+   se ve romo; es la mitad de por qué Fraunces vale la pena.
+
+   El tracking negativo va sólo en la display y sólo porque es GRANDE: en
+   tamaños de titular el espaciado por defecto se ve suelto. Nunca aplicarlo
+   al texto de interfaz — ahí aprieta y cuesta leer.
+
+   `text-wrap: balance` reparte las líneas de un titular en vez de dejar una
+   palabra huérfana abajo. Sólo en titulares: en párrafos largos el navegador
+   lo ignora igual (límite de ~6 líneas) y cuesta rendimiento. */
+.barbara-modulo :is(h1, h2, h3),
+.barbara-stat-numero {
+  font-optical-sizing: auto;
+  letter-spacing: -.018em;
+  line-height: 1.14;
+  text-wrap: balance;
+}
+
+/* El rótulo de la landing: versalita lima, muy espaciada. Es el gesto
+   tipográfico que más identifica a Bárbara —aparece sobre cada sección de
+   `productos/barbara/index.html`— y acá no existía. Se trae con su rol
+   intacto: etiqueta de sección, nunca texto corrido ni botón. */
+.barbara-rotulo {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--azul);
+  margin-bottom: 10px;
 }
 
 .barbara-modulo-volver {
