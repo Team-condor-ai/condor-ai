@@ -544,10 +544,13 @@
 .barbara-slides li p,.barbara-caption p { margin: 4px 0 0; color: var(--texto-2); font-size: 12.5px; white-space: pre-wrap; }
 .barbara-entrega-hook,.barbara-entrega-comentario { margin: 0; padding: 10px 12px; border-radius: 10px; background: var(--panel-2); color: var(--texto-2); font-size: 12.5px; }
 .barbara-entrega-comentario { border-left: 2px solid var(--warn-tx); }
+.barbara-entrega-publicada { margin: 0; color: var(--ok-tx); font-size: 12.5px; }
 .barbara-caption summary { color: var(--azul); cursor: pointer; font-size: 12.5px; }
 .barbara-entrega-acciones { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .barbara-ajuste-form { display: grid; width: min(100%, 620px); gap: 8px; }
 .barbara-ajuste-form > div { display: flex; justify-content: flex-end; gap: 8px; }
+.barbara-publicar-form { display: flex; align-items: end; gap: 8px; flex-wrap: wrap; }
+.barbara-publicar-form .campo { width: min(190px, 100%); }
 
 @media (max-width: 900px) {
   .barbara-modulo {

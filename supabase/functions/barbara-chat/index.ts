@@ -70,15 +70,15 @@ Deno.serve(async (req) => {
   const { data: { user } } = await sbUsuario.auth.getUser();
   if (!user?.email) return json({ error: "no autenticado" }, 401);
 
-  let accion = "chat", barbaraClienteId = "", mensaje = "", piezaId = "";
+  let accion = "chat", barbaraClienteId = "", mensaje = "", piezaId = "", canal = "";
   try {
     const body = await req.json();
     accion = String(body?.accion || "chat"); barbaraClienteId = String(body?.barbara_cliente_id || "").trim();
-    mensaje = String(body?.mensaje || "").trim().slice(0, 2000); piezaId = String(body?.pieza_id || "").trim();
+    mensaje = String(body?.mensaje || "").trim().slice(0, 2000); piezaId = String(body?.pieza_id || "").trim(); canal = String(body?.canal || "").trim().slice(0, 80);
   } catch { return json({ error: "cuerpo inválido" }, 400); }
-  if (!barbaraClienteId || !["chat", "correccion", "aprobar"].includes(accion)) return json({ error: "solicitud inválida" }, 400);
+  if (!barbaraClienteId || !["chat", "correccion", "aprobar", "publicar"].includes(accion)) return json({ error: "solicitud inválida" }, 400);
   if (["chat", "correccion"].includes(accion) && !mensaje) return json({ error: "escribe un mensaje" }, 400);
-  if (["correccion", "aprobar"].includes(accion) && !piezaId) return json({ error: "falta la pieza a revisar" }, 400);
+  if (["correccion", "aprobar", "publicar"].includes(accion) && !piezaId) return json({ error: "falta la pieza a revisar" }, 400);
 
   const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
   const { data: admin } = await sb.from("admins").select("email").eq("email", user.email).maybeSingle();
@@ -103,6 +103,16 @@ Deno.serve(async (req) => {
     await sb.from("barbara_memoria").update({ estado: "aprobada", revisada_en: ahora, revisada_por: user.email, revision_comentario: null }).eq("id", piezaId);
     const confirmacion = "Pieza aprobada. La publicación sigue siendo una acción separada y controlada.";
     await insertarChat(sb, barbaraClienteId, admin ? "staff" : "cliente", "Aprobé una pieza.", piezaId);
+    await insertarChat(sb, barbaraClienteId, "barbara", confirmacion, piezaId);
+    return json({ ok: true, respuesta: confirmacion });
+  }
+
+  if (accion === "publicar") {
+    if (!admin) return json({ error: "solo el equipo puede registrar una publicación" }, 403);
+    if (pieza.estado !== "aprobada") return json({ error: "primero debe aprobarse la pieza" }, 400);
+    const confirmacion = "Publicación registrada. El estado de la entrega quedó actualizado.";
+    await sb.from("barbara_memoria").update({ estado: "publicada", canal_publicacion: canal || "Canal no especificado", publicada_en: new Date().toISOString(), publicada_por: user.email }).eq("id", piezaId);
+    await insertarChat(sb, barbaraClienteId, "staff", `Registré la publicación en ${canal || "un canal"}.`, piezaId);
     await insertarChat(sb, barbaraClienteId, "barbara", confirmacion, piezaId);
     return json({ ok: true, respuesta: confirmacion });
   }

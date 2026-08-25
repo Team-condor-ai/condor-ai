@@ -118,6 +118,9 @@ export type BarbaraPieza = {
   correcciones_pedidas: number | null;
   revision_comentario: string | null;
   revisada_en: string | null;
+  canal_publicacion?: string | null;
+  publicacion_url?: string | null;
+  publicada_en?: string | null;
   creado_en: string;
 };
 

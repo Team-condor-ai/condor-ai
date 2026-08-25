@@ -152,7 +152,7 @@ export function BarbaraModulo({
         {seccion === "biblioteca" && (
           <div className="barbara-tarjeta">
             <h1>{Ico.biblioteca({ t: 22 })} Entregas y revisión ✨</h1>
-            <BarbaraBiblioteca barbaraClienteId={barbaraClienteId} />
+            <BarbaraBiblioteca barbaraClienteId={barbaraClienteId} esStaff={Boolean(esStaff)} />
           </div>
         )}
 
