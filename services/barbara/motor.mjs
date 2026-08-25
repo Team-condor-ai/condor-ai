@@ -411,6 +411,14 @@ export function supabase(url, serviceKey) {
       });
       if (!r.ok) throw new Error("Supabase PATCH " + path + ": " + r.status + " " + (await r.text()).slice(0, 200));
     },
+    async rpc(nombre, body = {}) {
+      const r = await fetch(`${url}/rest/v1/rpc/${encodeURIComponent(nombre)}`, {
+        method: "POST", headers: H, body: JSON.stringify(body),
+      });
+      if (!r.ok) throw new Error("Supabase RPC " + nombre + ": " + r.status + " " + (await r.text()).slice(0, 240));
+      const raw = await r.text();
+      return raw ? JSON.parse(raw) : null;
+    },
     async upload(bucket, path, body, { contentType = "application/octet-stream", upsert = false } = {}) {
       const r = await fetch(rutaStorage(bucket, path), {
         method: "POST",
@@ -433,6 +441,16 @@ export function supabase(url, serviceKey) {
         body: JSON.stringify({ prefixes: paths }),
       });
       if (!r.ok) throw new Error("Supabase Storage remove: " + r.status + " " + (await r.text()).slice(0, 200));
+    },
+    async sign(bucket, path, expiresIn = 3600) {
+      const r = await fetch(`${url}/storage/v1/object/sign/${encodeURIComponent(bucket)}/${String(path).split("/").map(encodeURIComponent).join("/")}`, {
+        method: "POST", headers: H, body: JSON.stringify({ expiresIn }),
+      });
+      if (!r.ok) throw new Error("Supabase Storage sign " + path + ": " + r.status + " " + (await r.text()).slice(0, 200));
+      const data = await r.json();
+      const signed = data.signedURL || data.signedUrl;
+      if (!signed) throw new Error("Supabase no devolvió URL firmada para " + path);
+      return /^https?:\/\//.test(signed) ? signed : new URL(signed, url).toString();
     },
   };
 }

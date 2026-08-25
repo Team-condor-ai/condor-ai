@@ -402,6 +402,12 @@
   margin-top: 18px; display: flex; align-items: center; gap: 10px;
 }
 .barbara-config-plan small { color: var(--texto-2); font-size: 12px; }
+.barbara-canal {
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:11px 0;border-top:1px solid var(--borde-suave);
+}
+.barbara-canal>span { display:flex;flex-direction:column;gap:3px; }
+.barbara-canal small { color:var(--texto-2);font-size:11px; }
 
 /* Grafo de memoria: la tarjeta que lo envuelve ya no necesita el padding
    estándar (el grafo trae el suyo), y crece más ancho que las demás. */

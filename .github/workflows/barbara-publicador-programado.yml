@@ -1,0 +1,40 @@
+name: Barbara - publicador programado
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+    inputs:
+      limite:
+        description: "Máximo de piezas a reclamar"
+        required: false
+        default: "10"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: barbara-publicador-programado
+  cancel-in-progress: false
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: services/barbara/package-lock.json
+      - name: Instalar dependencias reproducibles
+        run: npm ci --prefix services/barbara
+      - name: Reclamar, publicar y confirmar piezas vencidas
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          BLOTATO_API_KEY: ${{ secrets.BLOTATO_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          LIMITE: ${{ inputs.limite || '10' }}
+        run: node services/barbara/publicador-programado.mjs
