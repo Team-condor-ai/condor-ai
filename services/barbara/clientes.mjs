@@ -619,7 +619,7 @@ async function main() {
 
   const filtroId = SOLO_CLIENTE ? `&id=eq.${SOLO_CLIENTE}` : "";
   const clientes = await db.get(
-    `barbara_clientes?activo=eq.true${filtroId}&select=id,plan,rubro,telegram_chat_id,cliente_id,clientes(negocio),barbara_brand_book(paleta_colores,tipografia,detalles,logo_url),barbara_formulario(tipo_contenido,publico_objetivo,tono,restricciones,ejemplos_referencia,producto_destacar)`
+    `barbara_clientes?activo=eq.true${filtroId}&select=id,plan,rubro,telegram_chat_id,cliente_id,clientes(negocio),barbara_brand_book(paleta_colores,tipografia,detalles,logo_url),barbara_formulario(tipo_contenido,publico_objetivo,tono,restricciones,ejemplos_referencia,producto_destacar,pilares)`
   );
 
   if (!clientes.length) {

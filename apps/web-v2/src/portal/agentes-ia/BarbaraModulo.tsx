@@ -157,7 +157,7 @@ export function BarbaraModulo({
           <div className="barbara-tarjeta barbara-tarjeta-memoria">
             <h1>{Ico.memoria({ t: 22 })} Memoria ✨</h1>
             <p className="barbara-subtitulo">La memoria de Bárbara. Conecta ideas, contenidos e insights.</p>
-            <GrafoMemoria barbaraClienteId={barbaraClienteId} negocio={negocio} />
+            <GrafoMemoria barbaraClienteId={barbaraClienteId} negocio={negocio} puedeEditar={Boolean(esStaff)} />
           </div>
         )}
 
@@ -177,6 +177,7 @@ export function BarbaraModulo({
               brandBook={brandBook}
               formulario={formulario}
               onCambio={onCambio}
+              esStaff={esStaff}
             />
             <div className="barbara-config-plan">
               <small>Plan</small>

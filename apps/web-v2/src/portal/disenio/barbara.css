@@ -449,6 +449,13 @@
 .barbara-configuracion { display: grid; gap: 14px; }
 .barbara-config-seccion { padding: 20px; }
 .barbara-config-seccion h3 { font-family: var(--barbara-serif); font-size: 19px; letter-spacing: -.015em; }
+.barbara-marca-resumen { display: grid; gap: 13px; }
+.barbara-marca-resumen > div { display: grid; gap: 5px; }
+.barbara-marca-resumen small { color: var(--texto-3); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; }
+.barbara-marca-resumen b { color: var(--texto); font-size: 13px; font-weight: 500; }
+.barbara-marca-resumen p { margin: 0; color: var(--texto-2); font-size: 13px; line-height: 1.5; }
+.barbara-marca-colores { display: flex; align-items: center; min-height: 28px; }
+.barbara-marca-colores i { width: 28px; height: 28px; margin-right: -5px; border: 2px solid var(--panel-2); border-radius: 50%; box-shadow: 0 0 0 1px var(--borde); }
 .barbara-modulo .aviso { border-radius: var(--barbara-radius-interno); }
 .barbara-modulo .campo { border-radius: 10px; background: #101113; border-color: var(--borde); color: var(--texto); }
 .barbara-modulo .campo:focus { border-color: var(--azul-borde); background: #101113; box-shadow: 0 0 0 3px rgba(212,255,61,.11); }
