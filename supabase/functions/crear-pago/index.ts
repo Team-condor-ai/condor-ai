@@ -25,7 +25,7 @@ const CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods
 const json = (o: unknown, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "Content-Type": "application/json", ...CORS } });
 
 // Correo de cobro estético (HTML) con el botón de pago
-function emailCobro(cliente: any, tipo: string, monto: number, moneda: string, link: string, detalle = "") {
+function emailCobro(cliente: any, tipo: string, monto: number, moneda: string, link: string, detalle = "", montoClp: number | null = null) {
   // Un cobro puntual lleva su propio nombre ("la landing de septiembre"); decirle
   // "el pago inicial (setup)" a un cliente que lleva meses con nosotros confunde.
   const concepto = detalle
@@ -45,6 +45,7 @@ function emailCobro(cliente: any, tipo: string, monto: number, moneda: string, l
         <table cellpadding="0" cellspacing="0" style="margin:0 auto 22px"><tr><td style="border-radius:999px;background:linear-gradient(115deg,#2747ff,#7a5bff,#ff3b4e)">
           <a href="${link}" style="display:inline-block;padding:15px 34px;color:#fff;font-size:16px;font-weight:700;text-decoration:none;border-radius:999px">Pagar ${moneda} ${Number(monto).toLocaleString()} →</a>
         </td></tr></table>
+        ${montoClp != null ? `<p style="font-size:13px;color:#888;line-height:1.6;margin:0 0 6px;text-align:center">Mercado Pago te cobrará el equivalente en pesos chilenos: <b>CLP ${Number(montoClp).toLocaleString("es-CL")}</b> al tipo de cambio del momento.</p>` : ""}
         <p style="font-size:13px;color:#888;line-height:1.6;margin:0 0 6px;text-align:center">🔒 Pago 100% seguro procesado por Mercado Pago.<br>Nunca vemos ni guardamos los datos de tu tarjeta.</p>
         <p style="font-size:13px;color:#888;line-height:1.6;margin:18px 0 0">¿Dudas? Escríbenos por WhatsApp al +56 9 8898 9824 o entra a <a href="${portalBase()}" style="color:#2747ff">tu portal</a>.</p>
       </td></tr>
@@ -226,9 +227,30 @@ Deno.serve(async (req) => {
   }
   if (monto <= 0) return json({ error: "el cobro no tiene monto" }, 400);
 
+  // COBRAR EN OTRA MONEDA NO ES POSIBLE EN MERCADO PAGO CHILE
+  // ---------------------------------------------------------------------------
+  // La cuenta de Mercado Pago es chilena (site MLC): solo emite cobros en CLP,
+  // la API rechaza cualquier otra moneda. `moneda`/`monto` siguen siendo lo que
+  // el cliente ve y lo que se negoció (ej. USD) — acá se convierte a CLP con el
+  // tipo de cambio del día (misma tabla que usa la función `tipo-cambio`) y ESO
+  // es lo único que se le manda a Mercado Pago.
+  let montoCargo = monto;
+  let tasaCambioAplicada: number | null = null;
+  if (moneda !== "CLP") {
+    const { data: tc } = await sb.from("tipos_cambio").select("a_clp").eq("moneda", moneda).maybeSingle();
+    const tasa = Number(tc?.a_clp);
+    if (!tasa || tasa <= 0) {
+      return json({
+        error: `No hay tipo de cambio guardado para ${moneda} todavía. Espera a que la función tipo-cambio lo traiga y vuelve a intentar.`,
+      }, 400);
+    }
+    tasaCambioAplicada = tasa;
+    montoCargo = Math.round(monto * tasa);
+  }
+
   let cuentaMp: { id: string; sitio: string; moneda: string };
   try {
-    cuentaMp = await validarMonedaCuenta(MP, moneda);
+    cuentaMp = await validarMonedaCuenta(MP, "CLP");
   } catch (e) {
     return json({ error: e instanceof Error ? e.message : String(e) }, 400);
   }
@@ -342,7 +364,7 @@ Deno.serve(async (req) => {
           external_reference: referencia,
           payer_email: cliente.email,
           back_url: retorno,
-          auto_recurring: { frequency: 1, frequency_type: "months", transaction_amount: monto, currency_id: moneda },
+          auto_recurring: { frequency: 1, frequency_type: "months", transaction_amount: montoCargo, currency_id: "CLP" },
           status: "pending",
         }),
       });
@@ -360,6 +382,11 @@ Deno.serve(async (req) => {
         ...(d.id ? { mp_preapproval_id: String(d.id) } : {}),
         mp_cuenta_id: cuentaMp.id,
         mp_checkout_creado_en: new Date().toISOString(),
+        ...(tasaCambioAplicada != null ? {
+          monto_clp_cobrado: montoCargo,
+          tasa_cambio_aplicada: tasaCambioAplicada,
+          tasa_cambio_en: new Date().toISOString(),
+        } : {}),
       };
     } else {
       // Pago único (setup u otro)
@@ -370,7 +397,7 @@ Deno.serve(async (req) => {
           "X-Idempotency-Key": `condor-pago-${pago!.id}`,
         },
         body: JSON.stringify({
-          items: [{ title: concepto, quantity: 1, unit_price: monto, currency_id: moneda }],
+          items: [{ title: concepto, quantity: 1, unit_price: montoCargo, currency_id: "CLP" }],
           ...(cliente.email ? { payer: { email: cliente.email } } : {}),
           back_urls: { success: retorno, failure: retorno, pending: retorno },
           auto_return: "approved",
@@ -397,6 +424,11 @@ Deno.serve(async (req) => {
         mp_preference_id: d.id ? String(d.id) : null,
         mp_cuenta_id: cuentaMp.id,
         mp_checkout_creado_en: new Date().toISOString(),
+        ...(tasaCambioAplicada != null ? {
+          monto_clp_cobrado: montoCargo,
+          tasa_cambio_aplicada: tasaCambioAplicada,
+          tasa_cambio_en: new Date().toISOString(),
+        } : {}),
       };
     }
 
@@ -433,7 +465,7 @@ Deno.serve(async (req) => {
       correoEnviado = await enviarCorreo(
         cliente.email,
         tipoCobro === "mensual" ? "Tu mensualidad de condor.ai" : "Tu pago de condor.ai está listo 🦅",
-        emailCobro(cliente, tipoCobro, monto, moneda, initPoint, cobro.titulo || ""),
+        emailCobro(cliente, tipoCobro, monto, moneda, initPoint, cobro.titulo || "", tasaCambioAplicada != null ? montoCargo : null),
       );
       if (pago) await sb.from("pagos").update({ cobro_enviado_en: new Date().toISOString() }).eq("id", pago.id);
     }

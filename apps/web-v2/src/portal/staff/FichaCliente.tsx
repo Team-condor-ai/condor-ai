@@ -437,7 +437,7 @@ export function ContenidoCliente({
                               Editar
                             </button>
 
-                            {co.tipo === "unico" && co.estado !== "anulado" && (
+                            {co.tipo === "unico" && co.estado === "pendiente" && (
                               <button
                                 className="btn peligro"
                                 onClick={() => cambiarEstado(co, "anulado")}

@@ -19,7 +19,7 @@ type Tarea = {
   descripcion: string | null;
   estado: EstadoTarea;
   prioridad: Prioridad;
-  asignado_a: string | null;
+  asignados: string[];
   cliente_id: string | null;
   inicio: string | null;
   inicio_hora: string | null;
@@ -132,7 +132,7 @@ export function Organizacion() {
       filtro === "todas" ||
       (filtro === "vencidas"
         ? !!t.vence && t.vence < hoy && t.estado !== "hecha"
-        : !!t.asignado_a),
+        : (t.asignados?.length ?? 0) > 0),
   );
 
   async function mover(id: string, estado: EstadoTarea) {
@@ -310,9 +310,14 @@ export function Organizacion() {
                                   "Cliente"
                                 : "Cóndor"}
                             </span>
-                            {t.asignado_a && (
-                              <span className="persona-mini">
-                                {t.asignado_a.slice(0, 2).toUpperCase()}
+                            {t.asignados?.slice(0, 2).map((nombre) => (
+                              <span className="persona-mini" key={nombre} title={nombre}>
+                                {nombre.slice(0, 2).toUpperCase()}
+                              </span>
+                            ))}
+                            {(t.asignados?.length ?? 0) > 2 && (
+                              <span className="persona-mini" title={t.asignados.slice(2).join(", ")}>
+                                +{t.asignados.length - 2}
                               </span>
                             )}
                           </div>
@@ -891,7 +896,7 @@ function Calendario({
                               {t.inicio_hora ? `${t.inicio_hora.slice(0, 5)} · ` : ""}
                               {t.cliente_id
                                 ? cliente.get(t.cliente_id)?.negocio
-                                : t.asignado_a || "Cóndor"}
+                                : t.asignados?.join(", ") || "Cóndor"}
                             </small>
                           </span>
                         </span>
@@ -1080,7 +1085,6 @@ function EditorTarea({
     descripcion: tarea?.descripcion ?? "",
     estado: tarea?.estado ?? "por_hacer",
     prioridad: tarea?.prioridad ?? "media",
-    asignado_a: tarea?.asignado_a ?? "",
     cliente_id: tarea?.cliente_id ?? "",
     inicio: tarea?.inicio ?? tarea?.vence ?? (agendarInicial ? hoy : ""),
     inicio_hora: tarea?.inicio_hora?.slice(0, 5) ?? "",
@@ -1088,6 +1092,22 @@ function EditorTarea({
     vence_hora: tarea?.vence_hora?.slice(0, 5) ?? "",
     etiquetas: (tarea?.etiquetas ?? []).join(", "),
   });
+  // Responsables: texto libre, pero varios — sin tabla de usuarios detrás.
+  const [asignados, setAsignados] = useState<string[]>(tarea?.asignados ?? []);
+  const [nuevoAsignado, setNuevoAsignado] = useState("");
+  function agregarAsignado() {
+    const v = nuevoAsignado.trim();
+    if (!v) return;
+    setAsignados((p) => (p.includes(v) ? p : [...p, v]));
+    setNuevoAsignado("");
+  }
+  // Cliente con buscador: el <select> nativo se vuelve interminable con
+  // muchos clientes. Se escribe el nombre y se elige de una lista filtrada.
+  const clienteElegido = clientes.find((c) => c.id === (tarea?.cliente_id ?? ""));
+  const [busquedaCliente, setBusquedaCliente] = useState(
+    clienteElegido ? clienteElegido.negocio || clienteElegido.nombre || "" : "",
+  );
+  const [clienteAbierto, setClienteAbierto] = useState(false);
   const [error, setError] = useState("");
   const set = (k: keyof typeof f, v: string) => setF((p) => ({ ...p, [k]: v }));
   function cambiarAgenda(valor: boolean) {
@@ -1118,7 +1138,7 @@ function EditorTarea({
       descripcion: f.descripcion.trim() || null,
       estado: f.estado,
       prioridad: f.prioridad,
-      asignado_a: f.asignado_a.trim() || null,
+      asignados,
       cliente_id: f.cliente_id || null,
       inicio: agendada ? f.inicio || f.vence || null : null,
       vence: agendada ? f.vence || f.inicio || null : null,
@@ -1223,30 +1243,100 @@ function EditorTarea({
           </div>
           <div className="dos">
             <label className="campo-lbl">
-              Responsable
+              Responsables{" "}
+              <span style={{ fontWeight: 400, opacity: 0.7 }}>
+                · Enter o coma agrega
+              </span>
+              {asignados.length > 0 && (
+                <div className="chips" style={{ marginBottom: 4 }}>
+                  {asignados.map((nombre) => (
+                    <button
+                      key={nombre}
+                      type="button"
+                      className="chip on"
+                      title="Quitar"
+                      onClick={() =>
+                        setAsignados((p) => p.filter((x) => x !== nombre))
+                      }
+                    >
+                      {nombre} ✕
+                    </button>
+                  ))}
+                </div>
+              )}
               <input
                 className="campo"
-                value={f.asignado_a}
-                onChange={(e) => set("asignado_a", e.target.value)}
+                value={nuevoAsignado}
                 placeholder="Nombre o equipo"
+                onChange={(e) => setNuevoAsignado(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === ",") {
+                    e.preventDefault();
+                    agregarAsignado();
+                  }
+                }}
+                onBlur={agregarAsignado}
               />
             </label>
-            <label className="campo-lbl">
+            <label className="campo-lbl" style={{ position: "relative" }}>
               Cliente
-              <select
+              <input
                 className="campo"
-                value={f.cliente_id}
-                onChange={(e) => set("cliente_id", e.target.value)}
-              >
-                <option value="">Trabajo interno de Cóndor</option>
-                {clientes
-                  .filter((c) => !c.archivado)
-                  .map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.negocio || c.nombre}
-                    </option>
-                  ))}
-              </select>
+                value={busquedaCliente}
+                placeholder="Buscar cliente…"
+                onChange={(e) => {
+                  setBusquedaCliente(e.target.value);
+                  setClienteAbierto(true);
+                  if (!e.target.value.trim()) set("cliente_id", "");
+                }}
+                onFocus={() => setClienteAbierto(true)}
+                onBlur={() => setTimeout(() => setClienteAbierto(false), 150)}
+              />
+              {clienteAbierto && (
+                <div
+                  style={{
+                    position: "absolute", top: "100%", left: 0, right: 0, zIndex: 20,
+                    marginTop: 4, maxHeight: 220, overflowY: "auto",
+                    background: "var(--panel)", border: "1px solid var(--borde)",
+                    borderRadius: 10, boxShadow: "0 8px 24px -12px rgba(0,0,0,.35)",
+                  }}
+                >
+                  <div
+                    style={{ padding: "8px 10px", cursor: "pointer", fontSize: 13.5 }}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      set("cliente_id", "");
+                      setBusquedaCliente("");
+                      setClienteAbierto(false);
+                    }}
+                  >
+                    Trabajo interno de Cóndor
+                  </div>
+                  {clientes
+                    .filter(
+                      (c) =>
+                        !c.archivado &&
+                        (c.negocio || c.nombre || "")
+                          .toLowerCase()
+                          .includes(busquedaCliente.trim().toLowerCase()),
+                    )
+                    .slice(0, 30)
+                    .map((c) => (
+                      <div
+                        key={c.id}
+                        style={{ padding: "8px 10px", cursor: "pointer", fontSize: 13.5 }}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          set("cliente_id", c.id);
+                          setBusquedaCliente(c.negocio || c.nombre || "");
+                          setClienteAbierto(false);
+                        }}
+                      >
+                        {c.negocio || c.nombre}
+                      </div>
+                    ))}
+                </div>
+              )}
             </label>
           </div>
           <div className="chips modo-agenda" aria-label="Dónde mostrar la tarea">

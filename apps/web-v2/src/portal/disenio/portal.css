@@ -601,13 +601,16 @@ textarea.campo{resize:vertical;min-height:56px}
 
 /* Una categoría: el título la pliega. Baja el ruido cuando el menú crece, y
    la preferencia se recuerda por persona. */
-.portal-app .nav-grupo{display:flex;flex-direction:column;gap:1px}
+.portal-app .nav-grupo{
+  display:flex;flex-direction:column;gap:1px;padding:5px;
+  border-radius:14px;border:1px solid var(--borde);background:var(--panel);
+}
 .portal-app .nav-grupo+.nav-grupo{margin-top:9px}
 .portal-app .nav-grupo-tit{
   display:flex;align-items:center;gap:7px;width:100%;
-  padding:6px 10px 5px;background:none;border:0;cursor:pointer;
-  font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
-  color:var(--texto-3);border-radius:8px;transition:color .15s,background .15s;
+  padding:7px 8px 6px;background:none;border:0;cursor:pointer;
+  font-size:12.5px;font-weight:750;letter-spacing:.03em;text-transform:uppercase;
+  color:var(--texto-2);border-radius:8px;transition:color .15s,background .15s;
 }
 .portal-app .nav-grupo-tit span{flex:1;text-align:left}
 .portal-app .nav-grupo-tit:hover{color:var(--texto-2);background:var(--hover)}

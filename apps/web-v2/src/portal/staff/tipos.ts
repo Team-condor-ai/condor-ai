@@ -134,6 +134,20 @@ export type PerfilAdmin = {
   nombre: string;
 };
 
+/** Datos de cuentas, accesos y notas rápidas del equipo — Organización > Notas internas. */
+export type NotaInterna = {
+  id: string;
+  titulo: string;
+  contenido: string | null;
+  categoria: string;
+  archivo_url: string | null;
+  archivo_nombre: string | null;
+  archivo_peso_bytes: number | null;
+  creado_por: string | null;
+  creado_en: string;
+  actualizado_en: string;
+};
+
 /** Archivos subidos a `public.biblioteca`. */
 export type ArchivoBiblioteca = {
   id: string;

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { sb } from "../lib/supabase";
 import { MONEDAS, type Cobro } from "./tipos";
 
@@ -35,6 +35,20 @@ export function EditorCobro({ clienteId, monedaCliente, cobro, cerrar, guardado 
   const [proximo, setProximo] = useState(cobro?.proximo_cobro ?? "");
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState("");
+  const [tasaClp, setTasaClp] = useState<number | null>(null);
+
+  // Mercado Pago Chile solo cobra en CLP: si la moneda del cobro es otra, se
+  // muestra el equivalente que de verdad se le va a cobrar al cliente. El
+  // cálculo real (con la tasa del momento del checkout) lo hace `crear-pago`.
+  useEffect(() => {
+    let vivo = true;
+    const timer = window.setTimeout(() => {
+      if (moneda === "CLP") { setTasaClp(null); return; }
+      sb.from("tipos_cambio").select("a_clp").eq("moneda", moneda).maybeSingle()
+        .then(({ data }) => { if (vivo) setTasaClp(Number(data?.a_clp) || null); });
+    }, 0);
+    return () => { vivo = false; window.clearTimeout(timer); };
+  }, [moneda]);
 
   // Una suscripción viva en Mercado Pago no se puede reescribir desde acá: el
   // monto que se cobra todos los meses lo tiene MP, no nosotros. Cambiarlo en
@@ -160,6 +174,14 @@ export function EditorCobro({ clienteId, monedaCliente, cobro, cerrar, guardado 
               El monto no se puede cambiar: esta suscripción está viva en Mercado
               Pago y es MP quien la cobra. Para cambiarla, cancélala y crea un
               cobro nuevo.
+            </p>
+          )}
+
+          {moneda !== "CLP" && monto > 0 && (
+            <p className="tenue" style={{ marginTop: -6 }}>
+              {tasaClp
+                ? <>Mercado Pago le va a cobrar al cliente el equivalente en pesos: <b>≈ CLP {Math.round(monto * tasaClp).toLocaleString("es-CL")}</b> al tipo de cambio de hoy. La cuenta chilena de Mercado Pago no puede cobrar en {moneda} directo.</>
+                : <>Aún no hay tipo de cambio guardado para {moneda}. Mercado Pago igual va a cobrar en pesos chilenos al convertirlo — esta pantalla no puede mostrar el equivalente todavía.</>}
             </p>
           )}
 

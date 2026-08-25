@@ -29,7 +29,20 @@ export type Asiento = {
   documento: string | null;
   creado_por: string | null;
   creado_en: string | null;
+  /** Si no es null, este asiento salda al pasivo que originó ese otro asiento. */
+  salda_asiento_id: string | null;
   asiento_lineas?: Linea[];
+};
+
+/** Una fila de la vista `pasivos_abiertos`: un pasivo todavía sin saldar. */
+export type PasivoAbierto = {
+  asiento_id: string;
+  fecha: string;
+  glosa: string;
+  cuenta_id: string;
+  cuenta_codigo: string;
+  cuenta_nombre: string;
+  monto: number;
 };
 
 export type SaldoCuenta = {

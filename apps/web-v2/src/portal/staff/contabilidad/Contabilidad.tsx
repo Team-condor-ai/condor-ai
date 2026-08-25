@@ -10,11 +10,13 @@ import { EditorAsiento } from "./EditorAsiento";
 import { DesgloseGastos } from "./DesgloseGastos";
 import { ImportarCartola } from "./ImportarCartola";
 import { TransferirFondos } from "./TransferirFondos";
+import { Pasivos } from "./Pasivos";
 import type { Asiento, Cuenta, GastoMeta, SaldoCuenta } from "./tipos";
 
 const PESTANAS = [
   { id: "resumen", texto: "Resumen" },
   { id: "desglose", texto: "Desglose de egresos" },
+  { id: "pasivos", texto: "Pasivos" },
   { id: "libro", texto: "Libro diario" },
   { id: "fijos", texto: "Gastos fijos" },
   { id: "cuentas", texto: "Plan de cuentas" },
@@ -412,6 +414,10 @@ export function Contabilidad() {
             asientos={asientos}
             gastosMeta={gastosMeta}
           />
+        )}
+
+        {pestana === "pasivos" && (
+          <Pasivos cuentas={cuentas} recargar={cargar} />
         )}
 
         {pestana === "libro" && (
