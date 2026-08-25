@@ -24,7 +24,6 @@ export function BarbaraBiblioteca({ barbaraClienteId }: { barbaraClienteId: stri
 
   useEffect(() => {
     let vivo = true;
-    setCargando(true);
     (async () => {
       const r = await sb.from("barbara_memoria")
         .select("id,fecha,tipo,angulo,contenido,creado_en,barbara_media(id,storage_path,tipo,mime_type,bytes,sha256)")

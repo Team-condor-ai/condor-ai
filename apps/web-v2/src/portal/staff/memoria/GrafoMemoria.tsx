@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { sb, fecha } from "../../lib/supabase";
 import { TIPO_NODO_MEMORIA, type BarbaraMemoriaNodo } from "../../agentes-ia/tipos";
 
@@ -64,7 +64,7 @@ export function GrafoMemoria({ barbaraClienteId, negocio }: { barbaraClienteId: 
   const [resolviendo, setResolviendo] = useState<string | null>(null);
   const [sintetizando, setSintetizando] = useState(false);
 
-  async function cargar() {
+  const cargar = useCallback(async () => {
     setCargando(true);
     const [r1, r2, r3, r4] = await Promise.all([
       sb.from("barbara_reglas").select("id, regla, categoria, veces_reforzada, activa")
@@ -86,12 +86,15 @@ export function GrafoMemoria({ barbaraClienteId, negocio }: { barbaraClienteId: 
       setError("");
     }
     setCargando(false);
-  }
+  }, [barbaraClienteId]);
 
   useEffect(() => {
-    setSeleccionado(null);
-    cargar();
-  }, [barbaraClienteId]);
+    const timer = window.setTimeout(() => {
+      setSeleccionado(null);
+      void cargar();
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [barbaraClienteId, cargar]);
 
   // Las 3 fuentes se funden en una sola lista de nodos por categoría — el
   // grafo no sabe ni le importa de qué tabla vino cada uno.

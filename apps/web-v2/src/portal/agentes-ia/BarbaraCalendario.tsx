@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { sb } from "../lib/supabase";
 import { Ico } from "../disenio/iconos";
 
@@ -82,6 +82,7 @@ export function BarbaraCalendario({ barbaraClienteId, vistaInicial = "mes" }: Pr
   const [guardando, setGuardando] = useState(false);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
+  const [version, setVersion] = useState(0);
 
   const inicioSemana = lunesDeLaSemana(ancla);
   const primerDiaMes = new Date(ancla.getFullYear(), ancla.getMonth(), 1);
@@ -90,37 +91,43 @@ export function BarbaraCalendario({ barbaraClienteId, vistaInicial = "mes" }: Pr
   const baseIso = isoLocal(base);
   const cantidad = vista === "semana" ? 7 : 42;
 
-  async function cargar() {
-    setCargando(true);
-    setError("");
-    const desde = new Date(`${baseIso}T00:00:00`);
-    const hasta = new Date(desde); hasta.setDate(hasta.getDate() + cantidad);
-    const [historial, futuro] = await Promise.all([
-      sb.from("barbara_memoria")
-        .select("id,fecha,tipo,angulo,aprobada_sin_cambios,correcciones_pedidas")
-        .eq("barbara_cliente_id", barbaraClienteId)
-        .gte("fecha", isoLocal(desde)).lt("fecha", isoLocal(hasta)),
-      sb.from("barbara_programaciones")
-        .select("id,tipo,plataforma,programada_para,estado,zona_horaria,motivo_reprogramacion,razon_planificacion,barbara_memoria(angulo)")
-        .eq("barbara_cliente_id", barbaraClienteId)
-        .gte("programada_para", desde.toISOString()).lt("programada_para", hasta.toISOString())
-        .order("programada_para", { ascending: true }),
-    ]);
-    if (historial.error || futuro.error) setError((historial.error || futuro.error)?.message || "No se pudo cargar el calendario");
-    else {
-      setPiezas((historial.data ?? []) as Pieza[]);
-      setProgramaciones((futuro.data ?? []) as unknown as Programacion[]);
-    }
-    setCargando(false);
-  }
+  useEffect(() => {
+    let vivo = true;
+    const timer = window.setTimeout(() => {
+      void (async () => {
+        setCargando(true);
+        setError("");
+        const desde = new Date(`${baseIso}T00:00:00`);
+        const hasta = new Date(desde); hasta.setDate(hasta.getDate() + cantidad);
+        // Se amplía un día a cada lado porque la zona de la programación
+        // puede ser distinta a la del navegador que está mirando el portal.
+        const desdeUTC = new Date(desde); desdeUTC.setDate(desdeUTC.getDate() - 1);
+        const hastaUTC = new Date(hasta); hastaUTC.setDate(hastaUTC.getDate() + 1);
+        const [historial, futuro] = await Promise.all([
+          sb.from("barbara_memoria")
+            .select("id,fecha,tipo,angulo,aprobada_sin_cambios,correcciones_pedidas")
+            .eq("barbara_cliente_id", barbaraClienteId)
+            .gte("fecha", isoLocal(desde)).lt("fecha", isoLocal(hasta)),
+          sb.from("barbara_programaciones")
+            .select("id,tipo,plataforma,programada_para,estado,zona_horaria,motivo_reprogramacion,razon_planificacion,barbara_memoria(angulo)")
+            .eq("barbara_cliente_id", barbaraClienteId)
+            .gte("programada_para", desdeUTC.toISOString()).lt("programada_para", hastaUTC.toISOString())
+            .order("programada_para", { ascending: true }),
+        ]);
+        if (!vivo) return;
+        if (historial.error || futuro.error) setError((historial.error || futuro.error)?.message || "No se pudo cargar el calendario");
+        else {
+          setPiezas((historial.data ?? []) as Pieza[]);
+          setProgramaciones((futuro.data ?? []) as unknown as Programacion[]);
+        }
+        setCargando(false);
+      })();
+    }, 0);
+    return () => { vivo = false; window.clearTimeout(timer); };
+  }, [barbaraClienteId, baseIso, cantidad, version]);
 
-  useEffect(() => { void cargar(); }, [barbaraClienteId, vista, baseIso]);
-
-  const dias = useMemo(() => {
-    const salida: Date[] = [];
-    for (let i = 0; i < cantidad; i++) { const d = new Date(base); d.setDate(d.getDate() + i); salida.push(d); }
-    return salida;
-  }, [baseIso, cantidad]);
+  const dias: Date[] = [];
+  for (let i = 0; i < cantidad; i++) { const d = new Date(base); d.setDate(d.getDate() + i); dias.push(d); }
 
   const abrir = (p: Programacion) => {
     setSeleccionada(p);
@@ -142,7 +149,7 @@ export function BarbaraCalendario({ barbaraClienteId, vistaInicial = "mes" }: Pr
     setGuardando(false);
     if (error) { setError(error.message); return; }
     setSeleccionada(null);
-    await cargar();
+    setVersion((v) => v + 1);
   }
 
   async function cambiarEstado(estado: "programada" | "cancelada") {
@@ -154,7 +161,7 @@ export function BarbaraCalendario({ barbaraClienteId, vistaInicial = "mes" }: Pr
     setGuardando(false);
     if (error) { setError(error.message); return; }
     setSeleccionada(null);
-    await cargar();
+    setVersion((v) => v + 1);
   }
 
   const HOY = isoLocal(new Date());
@@ -164,7 +171,12 @@ export function BarbaraCalendario({ barbaraClienteId, vistaInicial = "mes" }: Pr
     : conMayuscula(ancla.toLocaleDateString("es-CL", { month: "long", year: "numeric" }));
 
   function mover(delta: number) {
-    setAncla((a) => { const n = new Date(a); vista === "semana" ? n.setDate(n.getDate() + delta * 7) : n.setMonth(n.getMonth() + delta); return n; });
+    setAncla((a) => {
+      const n = new Date(a);
+      if (vista === "semana") n.setDate(n.getDate() + delta * 7);
+      else n.setMonth(n.getMonth() + delta);
+      return n;
+    });
   }
 
   return (
