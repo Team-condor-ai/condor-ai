@@ -149,6 +149,14 @@ export const BARBARA_PLAN_INFO: Record<
   plus: { nombre: "Plus", pill: "ok", nota: "responde el chat" },
 };
 
+/** Capacidad mensual visible. El motor usa el mismo contrato en
+ * `services/barbara/planes.mjs`; mantenerlos sincronizados es intencional. */
+export const BARBARA_CUOTAS: Record<string, Record<"carrusel" | "historia" | "ugc", number>> = {
+  barbara: { carrusel: 12, historia: 0, ugc: 0 },
+  go: { carrusel: 12, historia: 20, ugc: 4 },
+  plus: { carrusel: 12, historia: 20, ugc: 4 },
+};
+
 /** `plan` llega como `string` plano desde la base (no hay CHECK constraint).
  * Si algún día aparece un valor que no es de los 3 conocidos, esto evita que
  * la pantalla reviente — se muestra tal cual llegó, sin color asignado. */

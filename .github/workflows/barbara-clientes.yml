@@ -84,7 +84,15 @@ jobs:
             exit 1
           fi
       - name: Generar contenido de clientes activos
-        run: node services/barbara/clientes.mjs
+        # La corrida programada revisa cada formato y el motor deja pasar solo
+        # lo que corresponde por plan/cuota/ritmo. En una corrida manual se
+        # conserva el formato elegido en el formulario de GitHub.
+        run: |
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            for tipo in carrusel historia ugc; do TIPO="$tipo" RITMO=1 node services/barbara/clientes.mjs; done
+          else
+            node services/barbara/clientes.mjs
+          fi
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           # Migración 24-ago-2026: Kie.ai (gpt-image-2 + seedance-2-0), key

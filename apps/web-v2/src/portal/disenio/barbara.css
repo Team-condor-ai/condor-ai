@@ -483,6 +483,17 @@
   padding: 4px;
   overflow: auto;
 }
+.barbara-uso { padding: 15px 17px; border: 1px solid var(--borde); border-radius: var(--barbara-radius); background: var(--panel); }
+.barbara-uso header { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+.barbara-uso header span { color: var(--texto); font-size: 12.5px; font-weight: 600; }
+.barbara-uso header small { color: var(--texto-3); font-size: 10.5px; }
+.barbara-uso > div { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.barbara-uso article { display: grid; gap: 5px; min-width: 0; }
+.barbara-uso article small { color: var(--texto-3); font-size: 10.5px; }
+.barbara-uso article b { font-family: var(--barbara-serif); font-size: 20px; font-weight: 600; }
+.barbara-uso article.no-incluido b { color: var(--texto-3); font-family: var(--barbara-sans); font-size: 12px; font-weight: 500; }
+.barbara-uso article i { display: block; height: 4px; overflow: hidden; border-radius: 999px; background: var(--panel-2); }
+.barbara-uso article i span { display: block; height: 100%; border-radius: inherit; background: var(--azul); transition: width .25s ease; }
 .barbara-chat-mensaje {
   width: min(84%, 680px);
   padding: 10px 12px;
@@ -577,6 +588,7 @@
   .barbara-hero-cuerpo h1 { font-size: 30px; }
   .barbara-chat-caja { padding: 8px 8px 8px 12px; }
   .barbara-chat-mensaje { width: 94%; }
+  .barbara-uso > div { grid-template-columns: 1fr; gap: 12px; }
   .barbara-calendario-nav { align-items: flex-start; flex-direction: column; }
   .barbara-calendario-controles { width: 100%; }
   .barbara-calendario-celda { min-height: 44px; padding: 5px; }

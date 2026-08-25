@@ -21,6 +21,7 @@ import { elegirAngulo } from "./angulos.mjs";
 import { playbooksPara, bloquePrompt } from "./playbooks.mjs";
 import { elegirPilar, bloquePrompt as bloquePilarPrompt, PILARES } from "./pilares.mjs";
 import { revisar, ANCHO_REVISION } from "./revision.mjs";
+import { inicioMesUTC, limitePlan, metaAcumulada } from "./planes.mjs";
 import sharp from "sharp";
 
 const AK = process.env.ANTHROPIC_API_KEY;
@@ -32,6 +33,7 @@ const isRetry = process.env.RETRY === "1";
 const TIPO = (process.env.TIPO || "carrusel").trim().toLowerCase();
 const SOLO_CLIENTE = (process.env.CLIENTE_ID || "").trim();
 const PIEZA_ID = (process.env.PIEZA_ID || "").trim();
+const RESPETAR_RITMO = process.env.RITMO === "1";
 
 if (!AK || !TG_TOKEN || !SB_URL || !SB_KEY) {
   console.error("Faltan variables: ANTHROPIC_API_KEY / TELEGRAM_BOT_TOKEN / SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY");
@@ -124,6 +126,28 @@ async function generarPara(cliente) {
   if (!bb || !form) {
     console.log(`[${negocio}] falta brand book o formulario todavía — se salta hasta que el staff los complete.`);
     return;
+  }
+
+  // El plan es una regla del motor, no solo una etiqueta del portal. Una
+  // pieza nueva cuenta contra el mes; un RETRY corrige la ya entregada y no.
+  if (!isRetry) {
+    const limite = limitePlan(plan, TIPO);
+    if (!limite) {
+      console.log(`[${negocio}] el plan ${plan} no incluye ${TIPO}.`);
+      return;
+    }
+    const usadas = await db.get(
+      `barbara_memoria?barbara_cliente_id=eq.${barbaraId}&tipo=eq.${TIPO}` +
+      `&fecha=gte.${inicioMesUTC()}&corrige_a=is.null&select=id`,
+    ).catch(() => []);
+    if (usadas.length >= limite) {
+      console.log(`[${negocio}] cuota mensual de ${TIPO} completa (${limite}/${limite}).`);
+      return;
+    }
+    if (RESPETAR_RITMO && usadas.length >= metaAcumulada(limite)) {
+      console.log(`[${negocio}] ${TIPO} va al ritmo mensual (${usadas.length}/${metaAcumulada(limite)} para hoy).`);
+      return;
+    }
   }
 
   // Candado: no publicar dos veces el mismo tipo el mismo día para este

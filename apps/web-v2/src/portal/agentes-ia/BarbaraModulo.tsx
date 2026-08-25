@@ -9,6 +9,7 @@ import { BarbaraCalendario } from "./BarbaraCalendario";
 import { BarbaraBiblioteca } from "./BarbaraBiblioteca";
 import { BarbaraAnalisis } from "./BarbaraAnalisis";
 import { BarbaraConfiguracion } from "./BarbaraConfiguracion";
+import { BarbaraUso } from "./BarbaraUso";
 import { GrafoMemoria } from "../staff/memoria/GrafoMemoria";
 import { Mcp } from "../staff/Mcp";
 
@@ -116,6 +117,8 @@ export function BarbaraModulo({
                 <BarbaraChat barbaraClienteId={barbaraClienteId} />
               </div>
             </div>
+
+            <BarbaraUso barbaraClienteId={barbaraClienteId} plan={plan} />
 
             <div className="barbara-tarjeta">
               <h3>{Ico.reuniones({ t: 17 })} Tu semana de contenido ✨</h3>
