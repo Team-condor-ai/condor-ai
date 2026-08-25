@@ -36,8 +36,9 @@ test("sólo finaliza publicada después de respuesta published", async () => {
     notificar: async (x) => avisos.push(x),
   });
   assert.equal(r.ok, true);
-  assert.equal(rpc[0][1].p_publicada, true);
-  assert.equal(rpc[0][1].p_external_id, "post-real");
+  assert.equal(rpc[0][0], "barbara_registrar_submission");
+  assert.equal(rpc[1][1].p_publicada, true);
+  assert.equal(rpc[1][1].p_external_id, "post-real");
   assert.equal(avisos[0].ok, true);
 });
 
@@ -57,9 +58,54 @@ test("failed nunca se transforma en éxito y finaliza el claim con error", async
     notificar: async (x) => avisos.push(x),
   });
   assert.equal(r.ok, false);
-  assert.equal(rpc[0][1].p_publicada, false);
-  assert.match(rpc[0][1].p_error, /failed|rechazado/);
+  assert.equal(rpc[0][0], "barbara_registrar_submission");
+  assert.equal(rpc[1][1].p_publicada, false);
+  assert.equal(rpc[1][1].p_external_id, null);
+  assert.match(rpc[1][1].p_error, /failed|rechazado/);
   assert.equal(avisos[0].ok, false);
+});
+
+test("un timeout conserva el submission y el reintento no vuelve a crear", async () => {
+  const rpc = [];
+  const conSubmission = detalle(); conSubmission[0].external_id = "sub-existente";
+  let creadas = 0, subidas = 0;
+  const db = {
+    async get() { return conSubmission; },
+    async rpc(nombre, body) { rpc.push([nombre, body]); }, async post() {},
+  };
+  const blotato = {
+    async subirMedia() { subidas++; },
+    async crearPublicacion() { creadas++; },
+  };
+  const r = await procesarProgramacion({
+    db, blotato, programacion: { id: "prog-1", claim_token: "claim-1" },
+    esperar: async (_cliente, id) => { assert.equal(id, "sub-existente"); throw new Error("timeout"); },
+  });
+  assert.equal(r.ok, false);
+  assert.equal(creadas, 0);
+  assert.equal(subidas, 0);
+  assert.equal(rpc[0][1].p_external_id, "sub-existente");
+});
+
+test("fallo de Telegram no convierte una publicación confirmada en fallida", async () => {
+  const rpc = [];
+  const db = {
+    async get() { return detalle(); }, async sign() { return "https://firmada"; },
+    async rpc(nombre, body) { rpc.push([nombre, body]); }, async post() {},
+  };
+  const blotato = {
+    async subirMedia() { return { url: "https://media" }; },
+    async crearPublicacion() { return { postSubmissionId: "sub-1" }; },
+  };
+  const r = await procesarProgramacion({
+    db, blotato, programacion: { id: "prog-1", claim_token: "claim-1" },
+    esperar: async () => ({ status: "published", id: "post-1" }),
+    notificar: async () => { throw new Error("telegram caído"); },
+  });
+  assert.equal(r.ok, true);
+  assert.equal(r.notificacionOk, false);
+  assert.equal(rpc.filter((x) => x[0] === "barbara_finalizar_publicacion").length, 1);
+  assert.equal(rpc.find((x) => x[0] === "barbara_finalizar_publicacion")[1].p_publicada, true);
 });
 
 test("una pieza sin media no llama al proveedor", async () => {

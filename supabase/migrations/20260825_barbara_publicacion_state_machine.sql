@@ -152,7 +152,11 @@ begin
   end;
   update public.barbara_programaciones set
     estado = nuevo_estado,
-    external_id = case when p_publicada then nullif(trim(coalesce(p_external_id, '')), '') else external_id end,
+    external_id = case
+      when p_publicada then nullif(trim(coalesce(p_external_id, '')), '')
+      when nullif(trim(coalesce(p_external_id, '')), '') is not null then external_id
+      else null
+    end,
     ultimo_error = case when p_publicada then null else left(coalesce(p_error, 'Error de publicación sin detalle'), 1000) end,
     publicada_en = case when p_publicada then now() else publicada_en end,
     programada_para = case
@@ -171,6 +175,25 @@ begin
     'barbara-worker'
   );
   return fila;
+end;
+$$;
+
+-- Persiste el submission id ANTES de esperar el resultado. Si el polling se
+-- corta o el runner cae, el siguiente intento consulta esa misma publicación
+-- en vez de crear otra y arriesgar un duplicado externo.
+create or replace function public.barbara_registrar_submission(
+  p_programacion_id uuid,
+  p_claim_token uuid,
+  p_external_id text
+) returns void
+language plpgsql security definer set search_path = public
+as $$
+begin
+  if coalesce(auth.jwt() ->> 'role', '') <> 'service_role' then raise exception 'Sólo servicio interno'; end if;
+  if nullif(trim(coalesce(p_external_id, '')), '') is null then raise exception 'ID externo vacío'; end if;
+  update public.barbara_programaciones set external_id = p_external_id, actualizado_en = now()
+  where id = p_programacion_id and estado = 'publicando' and claim_token = p_claim_token;
+  if not found then raise exception 'Claim inválido al registrar submission'; end if;
 end;
 $$;
 
@@ -196,6 +219,8 @@ revoke all on function public.barbara_reclamar_publicaciones(integer) from publi
 grant execute on function public.barbara_reclamar_publicaciones(integer) to service_role;
 revoke all on function public.barbara_finalizar_publicacion(uuid, uuid, boolean, text, text) from public, anon, authenticated;
 grant execute on function public.barbara_finalizar_publicacion(uuid, uuid, boolean, text, text) to service_role;
+revoke all on function public.barbara_registrar_submission(uuid, uuid, text) from public, anon, authenticated;
+grant execute on function public.barbara_registrar_submission(uuid, uuid, text) to service_role;
 revoke all on function public.barbara_recuperar_publicaciones_colgadas() from public, anon, authenticated;
 grant execute on function public.barbara_recuperar_publicaciones_colgadas() to service_role;
 
@@ -222,6 +247,12 @@ begin
     aprobado_en = case when p_auto_publicar then now() else aprobado_en end,
     actualizado_en = now()
   where id = fila.id returning * into fila;
+  if fila.auto_publicar then
+    update public.barbara_programaciones set canal_id = fila.id, actualizado_en = now()
+    where barbara_cliente_id = fila.barbara_cliente_id
+      and plataforma = fila.plataforma and estado = 'programada'
+      and canal_id is null;
+  end if;
   insert into public.barbara_eventos (barbara_cliente_id, tipo, actor, fuente_tipo, fuente_id, payload)
   values (fila.barbara_cliente_id, 'auto_publicar_configurado',
     coalesce(nullif(actor_email, ''), 'staff'), 'canal', fila.id::text,

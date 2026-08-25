@@ -17,7 +17,7 @@ function uno(v) { return Array.isArray(v) ? v[0] : v; }
 export async function cargarDetalle(db, programacionId) {
   const filas = await db.get(
     `barbara_programaciones?id=eq.${programacionId}` +
-    `&select=id,barbara_cliente_id,claim_token,tipo,plataforma,programada_para,estado,` +
+    `&select=id,barbara_cliente_id,claim_token,external_id,tipo,plataforma,programada_para,estado,` +
     `barbara_canales(account_ref,target,activo,auto_publicar),` +
     `barbara_memoria(id,angulo,contenido,barbara_media(storage_path,tipo,mime_type)),` +
     `barbara_clientes(telegram_chat_id,clientes(negocio))`
@@ -38,6 +38,7 @@ export async function procesarProgramacion({
   const id = programacion?.id;
   const claimToken = programacion?.claim_token;
   let detalle;
+  let submissionId = "";
   try {
     if (!id || !claimToken) throw new Error("Programación sin id o claim_token");
     detalle = await cargarDetalle(db, id);
@@ -50,27 +51,35 @@ export async function procesarProgramacion({
     if (!canal.account_ref) throw new Error("Canal sin account_ref");
     if (!memoria || !media.length) throw new Error("Pieza sin media persistida");
 
-    const mediaUrls = [];
-    for (const archivo of media) {
-      const firmada = await db.sign("barbara-media", archivo.storage_path, 3600);
-      const subida = await blotato.subirMedia(firmada);
-      if (!subida?.url) throw new Error(`Blotato no devolvió URL para ${archivo.storage_path}`);
-      mediaUrls.push(subida.url);
+    submissionId = String(detalle.external_id || "").trim();
+    if (!submissionId) {
+      const mediaUrls = [];
+      for (const archivo of media) {
+        const firmada = await db.sign("barbara-media", archivo.storage_path, 3600);
+        const subida = await blotato.subirMedia(firmada);
+        if (!subida?.url) throw new Error(`Blotato no devolvió URL para ${archivo.storage_path}`);
+        mediaUrls.push(subida.url);
+      }
+      const caption = limitarHashtags(String(memoria.contenido?.caption || ""), detalle.plataforma === "instagram" ? 5 : undefined);
+      const payload = construirPayloadPublicacion({
+        accountId: canal.account_ref,
+        platform: detalle.plataforma,
+        text: caption,
+        mediaUrls,
+        target: canal.target || {},
+      });
+      const creada = await blotato.crearPublicacion(payload);
+      submissionId = idPublicacion(creada);
+      if (!submissionId) throw new Error("Blotato no devolvió id de seguimiento");
+      await db.rpc("barbara_registrar_submission", {
+        p_programacion_id: id, p_claim_token: claimToken, p_external_id: submissionId,
+      });
     }
-    const caption = limitarHashtags(String(memoria.contenido?.caption || ""), detalle.plataforma === "instagram" ? 5 : undefined);
-    const payload = construirPayloadPublicacion({
-      accountId: canal.account_ref,
-      platform: detalle.plataforma,
-      text: caption,
-      mediaUrls,
-      target: canal.target || {},
-    });
-    const creada = await blotato.crearPublicacion(payload);
-    const submissionId = idPublicacion(creada);
-    if (!submissionId) throw new Error("Blotato no devolvió id de seguimiento");
     const resultado = await esperar(blotato, submissionId);
     if (resultado?.status !== "published") {
-      throw new Error(`Proveedor terminó en estado ${resultado?.status || "desconocido"}: ${resultado?.message || "sin detalle"}`);
+      const error = new Error(`Proveedor terminó en estado ${resultado?.status || "desconocido"}: ${resultado?.message || "sin detalle"}`);
+      error.terminal = resultado?.status === "failed";
+      throw error;
     }
     const externalId = idPublicacion(resultado) || submissionId;
     await db.rpc("barbara_finalizar_publicacion", {
@@ -88,15 +97,31 @@ export async function procesarProgramacion({
       fuente_id: externalId,
       payload: { programacion_id: id, estado_proveedor: "published" },
     }).catch(() => {});
-    await notificar({
-      ok: true,
-      chatId: cliente?.telegram_chat_id,
-      negocio: uno(cliente?.clientes)?.negocio || "tu marca",
-      plataforma: detalle.plataforma,
-      angulo: memoria.angulo,
-      externalId,
-    });
-    return { ok: true, id, externalId };
+    let notificacionOk = true;
+    try {
+      await notificar({
+        ok: true,
+        chatId: cliente?.telegram_chat_id,
+        negocio: uno(cliente?.clientes)?.negocio || "tu marca",
+        plataforma: detalle.plataforma,
+        angulo: memoria.angulo,
+        externalId,
+      });
+    } catch (e) {
+      // La publicación ya fue confirmada: una falla de Telegram no puede
+      // deshacerla ni convertirla en reintento (eso duplicaría contenido).
+      notificacionOk = false;
+      console.error(`[${id}] publicación confirmada, notificación falló:`, String(e).slice(0, 220));
+      await db.post("barbara_eventos", {
+        barbara_cliente_id: detalle.barbara_cliente_id,
+        tipo: "notificacion_fallida",
+        actor: "barbara-worker",
+        fuente_tipo: "telegram",
+        fuente_id: id,
+        payload: { evento: "publicacion_confirmada", error: String(e).slice(0, 500) },
+      }).catch(() => {});
+    }
+    return { ok: true, id, externalId, notificacionOk };
   } catch (e) {
     const mensaje = String(e?.message || e).slice(0, 1000);
     if (id && claimToken) {
@@ -104,7 +129,9 @@ export async function procesarProgramacion({
         p_programacion_id: id,
         p_claim_token: claimToken,
         p_publicada: false,
-        p_external_id: null,
+        // Un timeout conserva el submission para seguir consultándolo. Un
+        // estado terminal `failed` lo limpia para permitir un nuevo intento.
+        p_external_id: e?.terminal ? null : submissionId || null,
         p_error: mensaje,
       }).catch((finalError) => {
         console.error(`[${id}] no se pudo finalizar el claim:`, String(finalError).slice(0, 240));
