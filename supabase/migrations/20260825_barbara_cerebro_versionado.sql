@@ -289,6 +289,115 @@ $$;
 revoke all on function public.barbara_resolver_propuesta(uuid, boolean) from public;
 grant execute on function public.barbara_resolver_propuesta(uuid, boolean) to authenticated;
 
+-- El grafo es editable por su dueño, pero mediante RPC estrechas: no se le da
+-- UPDATE/INSERT general sobre la tabla ni posibilidad de elegir otro cliente.
+create or replace function public.barbara_guardar_nodo(
+  p_barbara_cliente_id uuid,
+  p_tipo text,
+  p_titulo text,
+  p_contenido text,
+  p_nodo_id uuid default null
+) returns public.barbara_memoria_nodos
+language plpgsql security definer set search_path = public
+as $$
+declare
+  fila public.barbara_memoria_nodos;
+  actor_email text := lower(coalesce(auth.jwt() ->> 'email', ''));
+begin
+  if p_tipo not in ('gusto', 'dato') then raise exception 'Tipo de nota no editable'; end if;
+  if length(trim(coalesce(p_titulo, ''))) not between 1 and 120
+     or length(trim(coalesce(p_contenido, ''))) not between 1 and 1600 then
+    raise exception 'Título o contenido inválido';
+  end if;
+  if not public.es_admin() and not exists (
+    select 1 from public.barbara_clientes bc join public.clientes c on c.id = bc.cliente_id
+    where bc.id = p_barbara_cliente_id and lower(c.email) = actor_email
+  ) then raise exception 'Sin acceso a esta memoria'; end if;
+
+  if p_nodo_id is null then
+    insert into public.barbara_memoria_nodos (
+      barbara_cliente_id, tipo, titulo, contenido, confianza, origen,
+      fuente_tipo, actualizado_por
+    ) values (
+      p_barbara_cliente_id, p_tipo, trim(p_titulo), trim(p_contenido), 1,
+      'Nota creada explícitamente desde el portal', 'portal',
+      coalesce(nullif(actor_email, ''), 'staff')
+    ) returning * into fila;
+  else
+    update public.barbara_memoria_nodos set
+      tipo = p_tipo,
+      titulo = trim(p_titulo),
+      contenido = trim(p_contenido),
+      confianza = 1,
+      origen = 'Nota editada explícitamente desde el portal',
+      fuente_tipo = 'portal',
+      actualizado_por = coalesce(nullif(actor_email, ''), 'staff')
+    where id = p_nodo_id and barbara_cliente_id = p_barbara_cliente_id
+      and tipo in ('gusto', 'dato')
+    returning * into fila;
+    if fila.id is null then raise exception 'Nota no encontrada o no editable'; end if;
+  end if;
+  return fila;
+end;
+$$;
+
+create or replace function public.barbara_establecer_nodo_activo(
+  p_nodo_id uuid,
+  p_activo boolean
+) returns public.barbara_memoria_nodos
+language plpgsql security definer set search_path = public
+as $$
+declare
+  fila public.barbara_memoria_nodos;
+  actor_email text := lower(coalesce(auth.jwt() ->> 'email', ''));
+begin
+  select * into fila from public.barbara_memoria_nodos where id = p_nodo_id for update;
+  if not found then raise exception 'Nota no encontrada'; end if;
+  if not public.es_admin() and not exists (
+    select 1 from public.barbara_clientes bc join public.clientes c on c.id = bc.cliente_id
+    where bc.id = fila.barbara_cliente_id and lower(c.email) = actor_email
+  ) then raise exception 'Sin acceso a esta memoria'; end if;
+  update public.barbara_memoria_nodos set
+    activo = p_activo,
+    actualizado_por = coalesce(nullif(actor_email, ''), 'staff')
+  where id = fila.id returning * into fila;
+  return fila;
+end;
+$$;
+
+create or replace function public.barbara_establecer_regla_activa(
+  p_regla_id uuid,
+  p_activa boolean
+) returns public.barbara_reglas
+language plpgsql security definer set search_path = public
+as $$
+declare
+  fila public.barbara_reglas;
+  actor_email text := lower(coalesce(auth.jwt() ->> 'email', ''));
+begin
+  select * into fila from public.barbara_reglas where id = p_regla_id for update;
+  if not found then raise exception 'Regla no encontrada'; end if;
+  if not public.es_admin() and not exists (
+    select 1 from public.barbara_clientes bc join public.clientes c on c.id = bc.cliente_id
+    where bc.id = fila.barbara_cliente_id and lower(c.email) = actor_email
+  ) then raise exception 'Sin acceso a esta regla'; end if;
+  update public.barbara_reglas set activa = p_activa, actualizado_en = now()
+  where id = fila.id returning * into fila;
+  insert into public.barbara_eventos (barbara_cliente_id, tipo, actor, fuente_tipo, fuente_id, payload)
+  values (fila.barbara_cliente_id, 'regla_estado_cambiado',
+    coalesce(nullif(actor_email, ''), 'staff'), 'regla', fila.id::text,
+    jsonb_build_object('activa', fila.activa));
+  return fila;
+end;
+$$;
+
+revoke all on function public.barbara_guardar_nodo(uuid, text, text, text, uuid) from public;
+grant execute on function public.barbara_guardar_nodo(uuid, text, text, text, uuid) to authenticated;
+revoke all on function public.barbara_establecer_nodo_activo(uuid, boolean) from public;
+grant execute on function public.barbara_establecer_nodo_activo(uuid, boolean) to authenticated;
+revoke all on function public.barbara_establecer_regla_activa(uuid, boolean) from public;
+grant execute on function public.barbara_establecer_regla_activa(uuid, boolean) to authenticated;
+
 comment on table public.barbara_memoria_versiones is
   'Historial inmutable de cada estado de una nota privada de Bárbara.';
 comment on table public.barbara_memoria_propuestas is

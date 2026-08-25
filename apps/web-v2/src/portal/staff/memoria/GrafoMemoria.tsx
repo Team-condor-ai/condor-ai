@@ -24,6 +24,11 @@ import { TIPO_NODO_MEMORIA, type BarbaraMemoriaNodo } from "../../agentes-ia/tip
  */
 type Regla = { id: string; regla: string; categoria: string | null; veces_reforzada: number; activa: boolean };
 type Patron = { id: string; patron: string; tipo: string | null; muestras: number };
+type Propuesta = {
+  id: string; accion: "crear" | "actualizar" | "conflicto"; tipo: "gusto" | "dato" | "perfil";
+  titulo: string; contenido: string; confianza: number; evidencia: string | null;
+  razon: string | null; estado: "pendiente" | "aprobada" | "rechazada" | "expirada"; creado_en: string;
+};
 
 type Nodo = {
   id: string;
@@ -50,26 +55,34 @@ export function GrafoMemoria({ barbaraClienteId, negocio }: { barbaraClienteId: 
   const [reglas, setReglas] = useState<Regla[]>([]);
   const [nodos, setNodos] = useState<BarbaraMemoriaNodo[]>([]);
   const [patrones, setPatrones] = useState<Patron[]>([]);
+  const [propuestas, setPropuestas] = useState<Propuesta[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
   const [seleccionado, setSeleccionado] = useState<Nodo | null>(null);
   const [creando, setCreando] = useState<"gusto" | "dato" | null>(null);
+  const [editando, setEditando] = useState<Nodo | null>(null);
+  const [resolviendo, setResolviendo] = useState<string | null>(null);
   const [sintetizando, setSintetizando] = useState(false);
 
   async function cargar() {
     setCargando(true);
-    const [r1, r2, r3] = await Promise.all([
+    const [r1, r2, r3, r4] = await Promise.all([
       sb.from("barbara_reglas").select("id, regla, categoria, veces_reforzada, activa")
         .eq("barbara_cliente_id", barbaraClienteId),
       sb.from("barbara_memoria_nodos").select("*").eq("barbara_cliente_id", barbaraClienteId),
       sb.from("barbara_patrones").select("id, patron, tipo, muestras").eq("activo", true),
+      sb.from("barbara_memoria_propuestas")
+        .select("id,accion,tipo,titulo,contenido,confianza,evidencia,razon,estado,creado_en")
+        .eq("barbara_cliente_id", barbaraClienteId).eq("estado", "pendiente")
+        .order("creado_en", { ascending: false }),
     ]);
-    const err = r1.error || r2.error || r3.error;
+    const err = r1.error || r2.error || r3.error || r4.error;
     if (err) setError(err.message);
     else {
       setReglas((r1.data ?? []) as Regla[]);
       setNodos((r2.data ?? []) as BarbaraMemoriaNodo[]);
       setPatrones((r3.data ?? []) as Patron[]);
+      setPropuestas((r4.data ?? []) as Propuesta[]);
       setError("");
     }
     setCargando(false);
@@ -110,9 +123,10 @@ export function GrafoMemoria({ barbaraClienteId, negocio }: { barbaraClienteId: 
   const perfilNodo = nodos.find((n) => n.tipo === "perfil");
 
   async function alternarActivo(n: Nodo) {
-    const tabla = n.tipo === "correccion" ? "barbara_reglas" : "barbara_memoria_nodos";
-    const campo = n.tipo === "correccion" ? "activa" : "activo";
-    await sb.from(tabla).update({ [campo]: !n.activo }).eq("id", n.id);
+    const { error } = n.tipo === "correccion"
+      ? await sb.rpc("barbara_establecer_regla_activa", { p_regla_id: n.id, p_activa: !n.activo })
+      : await sb.rpc("barbara_establecer_nodo_activo", { p_nodo_id: n.id, p_activo: !n.activo });
+    if (error) { setError(error.message); return; }
     setSeleccionado(null);
     cargar();
   }
@@ -122,11 +136,30 @@ export function GrafoMemoria({ barbaraClienteId, negocio }: { barbaraClienteId: 
     const form = new FormData(ev.currentTarget);
     const titulo = String(form.get("titulo") || "").trim();
     const contenido = String(form.get("contenido") || "").trim();
-    if (!titulo || !contenido || !creando) return;
-    await sb.from("barbara_memoria_nodos").insert({
-      barbara_cliente_id: barbaraClienteId, tipo: creando, titulo, contenido,
+    const tipo = editando?.tipo === "gusto" || editando?.tipo === "dato" ? editando.tipo : creando;
+    if (!titulo || !contenido || !tipo) return;
+    const { error } = await sb.rpc("barbara_guardar_nodo", {
+      p_barbara_cliente_id: barbaraClienteId,
+      p_tipo: tipo,
+      p_titulo: titulo,
+      p_contenido: contenido,
+      p_nodo_id: editando?.id || null,
     });
+    if (error) { setError(error.message); return; }
     setCreando(null);
+    setEditando(null);
+    setSeleccionado(null);
+    cargar();
+  }
+
+  async function resolverPropuesta(id: string, aprobar: boolean) {
+    setResolviendo(id);
+    setError("");
+    const { error } = await sb.rpc("barbara_resolver_propuesta", {
+      p_propuesta_id: id, p_aprobar: aprobar,
+    });
+    setResolviendo(null);
+    if (error) { setError(error.message); return; }
     cargar();
   }
 
@@ -219,6 +252,28 @@ export function GrafoMemoria({ barbaraClienteId, negocio }: { barbaraClienteId: 
       <aside className="grafo-panel">
         {error && <p className="error">{error}</p>}
 
+        {propuestas.length > 0 && (
+          <div className="grafo-propuestas">
+            <b>{propuestas.length} recuerdo{propuestas.length === 1 ? "" : "s"} por confirmar</b>
+            <p className="tenue">Bárbara los detectó en el chat, pero todavía no influyen en tus piezas.</p>
+            {propuestas.slice(0, 5).map((p) => (
+              <div className="grafo-propuesta" key={p.id}>
+                <small>{TIPO_NODO_MEMORIA[p.tipo].nombre} · {Math.round(p.confianza * 100)}% confianza</small>
+                <strong>{p.titulo}</strong>
+                <span>{p.contenido}</span>
+                {p.evidencia && <em>“{p.evidencia}”</em>}
+                <div>
+                  <button className="btn solido chico" disabled={resolviendo === p.id}
+                    onClick={() => resolverPropuesta(p.id, true)}>Confirmar</button>
+                  <button className="btn chico" disabled={resolviendo === p.id}
+                    onClick={() => resolverPropuesta(p.id, false)}>Descartar</button>
+                </div>
+              </div>
+            ))}
+            <hr className="grafo-sep" />
+          </div>
+        )}
+
         {seleccionado ? (
           <div className="grafo-detalle">
             <span className="pill" style={{
@@ -234,9 +289,16 @@ export function GrafoMemoria({ barbaraClienteId, negocio }: { barbaraClienteId: 
               <p className="tenue">Reforzado {seleccionado.peso} veces.</p>
             )}
             {seleccionado.tipo !== "patron" && (
-              <button className="btn chico" onClick={() => alternarActivo(seleccionado)}>
-                {seleccionado.activo ? "Apagar" : "Encender"}
-              </button>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <button className="btn chico" onClick={() => alternarActivo(seleccionado)}>
+                  {seleccionado.activo ? "Apagar" : "Encender"}
+                </button>
+                {(seleccionado.tipo === "gusto" || seleccionado.tipo === "dato") && (
+                  <button className="btn chico" onClick={() => { setEditando(seleccionado); setCreando(null); }}>
+                    Editar
+                  </button>
+                )}
+              </div>
             )}
             {seleccionado.tipo === "patron" && (
               <p className="tenue">Patrón global — se gobierna desde Agentes IA → Memoria global.</p>
@@ -261,19 +323,20 @@ export function GrafoMemoria({ barbaraClienteId, negocio }: { barbaraClienteId: 
           </p>
         )}
 
-        {creando && (
-          <form className="grafo-form" onSubmit={crearNodo}>
+        {(creando || editando) && (
+          <form className="grafo-form" onSubmit={crearNodo} key={editando?.id || creando || "form"}>
             <label className="campo-lbl">
-              {creando === "gusto" ? "Gusto" : "Dato"}
-              <input className="campo" name="titulo" placeholder="Título corto" required autoFocus />
+              {(editando?.tipo || creando) === "gusto" ? "Gusto" : "Dato"}
+              <input className="campo" name="titulo" placeholder="Título corto" required autoFocus
+                defaultValue={editando?.titulo || ""} />
             </label>
             <label className="campo-lbl">
               Detalle
-              <textarea className="campo" name="contenido" rows={3} required />
+              <textarea className="campo" name="contenido" rows={3} required defaultValue={editando?.contenido || ""} />
             </label>
             <div style={{ display: "flex", gap: 8 }}>
-              <button className="btn solido chico" type="submit">Guardar</button>
-              <button className="btn chico" type="button" onClick={() => setCreando(null)}>Cancelar</button>
+              <button className="btn solido chico" type="submit">{editando ? "Guardar cambios" : "Guardar"}</button>
+              <button className="btn chico" type="button" onClick={() => { setCreando(null); setEditando(null); }}>Cancelar</button>
             </div>
           </form>
         )}

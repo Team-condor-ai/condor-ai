@@ -555,6 +555,16 @@ textarea.campo{resize:vertical;min-height:56px}
 .grafo-acciones{display:flex;gap:6px;flex-wrap:wrap}
 .grafo-form{display:flex;flex-direction:column;gap:10px;
   padding-top:8px;border-top:1px solid var(--borde-suave)}
+.grafo-propuestas{display:flex;flex-direction:column;gap:8px}
+.grafo-propuestas>p{margin:0 0 2px}
+.grafo-propuesta{display:flex;flex-direction:column;gap:5px;padding:11px;
+  border:1px solid color-mix(in srgb,var(--verde) 35%,var(--borde));
+  border-radius:11px;background:color-mix(in srgb,var(--verde) 5%,var(--panel))}
+.grafo-propuesta small{color:var(--verde);font-weight:700}
+.grafo-propuesta strong{font-size:13px;color:var(--texto)}
+.grafo-propuesta span{font-size:13px;line-height:1.45;color:var(--texto)}
+.grafo-propuesta em{font-size:11px;line-height:1.4;color:var(--muted);font-style:normal}
+.grafo-propuesta>div{display:flex;gap:6px;margin-top:3px}
 
 /* ═══════════════════════════════════════════════════════════════════════
    MENÚ EN DOS COLUMNAS + VIDRIO SUTIL

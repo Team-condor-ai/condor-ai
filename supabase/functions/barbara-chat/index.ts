@@ -62,6 +62,26 @@ async function responderChat(sb: any, barbaraClienteId: string, mensaje: string)
   }
 }
 
+function programarAprendizaje(barbaraClienteId: string, mensaje: string, mensajeId: string) {
+  const tarea = fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/barbara-aprender-chat`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+    },
+    body: JSON.stringify({ barbara_cliente_id: barbaraClienteId, mensaje, mensaje_id: mensajeId }),
+  }).then(async (r) => {
+    if (!r.ok) console.error("barbara-aprender-chat:", r.status, (await r.text()).slice(0, 180));
+  }).catch((e) => console.error("barbara-aprender-chat no disponible:", String(e).slice(0, 180)));
+
+  // Supabase mantiene viva la función hasta terminar la destilación, pero la
+  // persona recibe la respuesta del chat sin esperar una segunda llamada de
+  // modelo. En un runtime sin waitUntil se deja la promesa iniciada; nunca se
+  // convierte una falla de aprendizaje en una falla de conversación.
+  const runtime = (globalThis as any).EdgeRuntime;
+  if (runtime?.waitUntil) runtime.waitUntil(tarea);
+}
+
 async function dispararReintento(sb: any, barbaraClienteId: string): Promise<boolean> {
   if (!GH_TOKEN) return false;
   let tipo = "carrusel";
@@ -120,15 +140,19 @@ Deno.serve(async (req) => {
 
   // 1) Registrar el mensaje en el espejo del chat — mismo remitente que usa
   //    Telegram, para que ChatVisor lo muestre igual sin importar el canal.
-  await sb.from("barbara_chats").insert({
+  const { data: chatGuardado, error: errorChat } = await sb.from("barbara_chats").insert({
     barbara_cliente_id: barbaraClienteId, remitente: "cliente", mensaje,
-  });
+  }).select("id").single();
+  if (errorChat || !chatGuardado?.id) {
+    return json({ error: "no se pudo guardar el mensaje; no se ejecutó ninguna acción" }, 500);
+  }
 
   // Conversar no gasta una corrección ni inicia una regeneración. El chat es
   // el lugar para pensar con Bárbara; el flujo de corrección es explícito.
   if (modo === "conversar") {
+    programarAprendizaje(barbaraClienteId, mensaje, chatGuardado.id);
     const respuesta = await responderChat(sb, barbaraClienteId, mensaje);
-    return json({ ok: true, bloqueado: false, disparado: false, respuesta });
+    return json({ ok: true, bloqueado: false, disparado: false, aprendizaje_programado: true, respuesta });
   }
 
   // 2) Destilar la corrección en una regla, sin esperar respuesta.

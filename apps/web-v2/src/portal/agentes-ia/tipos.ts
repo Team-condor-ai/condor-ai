@@ -174,6 +174,12 @@ export type BarbaraMemoriaNodo = {
   origen: string | null;
   creado_en: string;
   actualizado_en: string;
+  confianza?: number;
+  etiquetas?: string[];
+  version?: number;
+  fuente_tipo?: string | null;
+  fuente_id?: string | null;
+  actualizado_por?: string | null;
 };
 
 /** Un tipo de nodo del grafo de memoria, unificando las 3 fuentes reales:
