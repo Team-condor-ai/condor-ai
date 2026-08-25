@@ -61,7 +61,10 @@ function diasDesde(fecha, ahora) {
 function recencia(fecha, ahora) {
   // Una preferencia recién confirmada gana un poco; una regla repetida no se
   // vuelve irrelevante sólo por ser antigua, por eso el piso queda en 0.
-  return Math.max(0, 14 - Math.min(14, diasDesde(fecha, ahora) / 14));
+  // El bonus se extingue en 28 días. Antes se dividían los días por 14 y el
+  // recuerdo conservaba casi todo el premio durante seis meses: una nota de
+  // 196 días todavía competía como si fuera reciente.
+  return Math.max(0, 14 * (1 - Math.min(28, diasDesde(fecha, ahora)) / 28));
 }
 
 function puntajeRegla(r, ahora, consulta) {
@@ -102,6 +105,35 @@ function dentroDePresupuesto(items, maxChars) {
     salida.push(x);
   }
   return salida;
+}
+
+/**
+ * Garantiza diversidad mínima del cerebro sin rebajar la autoridad de una
+ * regla explícita. Una lista larga de correcciones cortas ya no puede expulsar
+ * por completo el perfil o el dato directamente relacionado con la tarea.
+ */
+function dentroDePresupuestoBalanceado(items, maxChars) {
+  const elegidas = [];
+  const claves = new Set();
+  let usados = 0;
+  const agregar = (x) => {
+    const clave = normalizar(x.clave || x.texto);
+    const largo = x.texto.length + 3;
+    if (!clave || claves.has(clave) || usados + largo > maxChars) return false;
+    claves.add(clave);
+    elegidas.push(x);
+    usados += largo;
+    return true;
+  };
+
+  // Anclas: identidad sintetizada, memoria contextual y regla aplicable.
+  const perfil = items.find((x) => x.clase === "perfil");
+  const contextual = items.find((x) => x.clase !== "perfil" && x.clase !== "regla" && x.coincidencias?.length);
+  const reglaContextual = items.find((x) => x.clase === "regla" && x.coincidencias?.length)
+    || items.find((x) => x.clase === "regla");
+  for (const ancla of [perfil, contextual, reglaContextual]) if (ancla) agregar(ancla);
+  for (const item of items) agregar(item);
+  return elegidas.sort((a, b) => b.puntaje - a.puntaje || a.texto.localeCompare(b.texto, "es"));
 }
 
 /** Devuelve contexto privado compacto y explicable, sin tocar datos. */
@@ -149,7 +181,7 @@ export function seleccionarPrivada({
 
   candidatas.sort((a, b) => b.puntaje - a.puntaje || a.texto.localeCompare(b.texto, "es"));
 
-  const seleccionadas = dentroDePresupuesto(sinDuplicados(candidatas), maxChars);
+  const seleccionadas = dentroDePresupuestoBalanceado(sinDuplicados(candidatas), maxChars);
   return {
     seleccionadas,
     descartadas: Math.max(0, candidatas.length - seleccionadas.length),

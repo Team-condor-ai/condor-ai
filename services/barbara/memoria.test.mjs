@@ -27,6 +27,30 @@ test("respeta presupuesto sin cortar notas", () => {
   assert.doesNotMatch(r.texto, /xxxx/);
 });
 
+test("una lista larga de reglas no expulsa el perfil ni el dato pertinente", () => {
+  const reglas = Array.from({ length: 20 }, (_, i) => ({
+    id: `r${i}`, regla: `Regla explícita número ${i} con suficiente texto para ocupar contexto`, veces_reforzada: 10,
+  }));
+  const nodos = [
+    { id: "perfil", tipo: "perfil", titulo: "Perfil", contenido: "Marca cercana y experta", peso: 2 },
+    { id: "dato", tipo: "dato", titulo: "Curso logística", contenido: "El curso de logística es para importadores", peso: 1 },
+  ];
+  const r = seleccionarPrivada({ reglas, nodos, contexto: { consulta: "curso logística importadores" }, maxChars: 260 });
+  assert.ok(r.seleccionadas.some((x) => x.id === "perfil"));
+  assert.ok(r.seleccionadas.some((x) => x.id === "dato"));
+  assert.ok(r.seleccionadas.some((x) => x.clase === "regla"));
+});
+
+test("el premio de recencia se extingue durante el primer mes", () => {
+  const ahora = new Date("2026-08-25T12:00:00Z");
+  const nodos = [
+    { id: "viejo", tipo: "dato", titulo: "Dato", contenido: "vende cursos", peso: 1, actualizado_en: "2026-06-01T12:00:00Z" },
+    { id: "nuevo", tipo: "dato", titulo: "Dato", contenido: "vende talleres", peso: 1, actualizado_en: "2026-08-24T12:00:00Z" },
+  ];
+  const r = seleccionarPrivada({ nodos, ahora, contexto: {}, maxChars: 1000 });
+  assert.ok(r.seleccionadas.find((x) => x.id === "nuevo").puntaje - r.seleccionadas.find((x) => x.id === "viejo").puntaje > 10);
+});
+
 test("un patrón global apagado nunca entra al prompt", () => {
   const r = seleccionarGlobales([{ patron: "patrón privado", muestras: 99, activo: false }]);
   assert.equal(r.texto, "");
