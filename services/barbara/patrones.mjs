@@ -9,10 +9,9 @@
  *
  * DE QUÉ APRENDE
  * ---------------------------------------------------------------------------
- * De la única señal que existe desde el primer cliente y no depende de conectar
- * ninguna cuenta: si la pieza pasó sin correcciones o hubo que rehacerla.
- * Es peor dato que el alcance real de Instagram —que llegará cuando Meta
- * apruebe la app— pero es real, es de hoy, y ya se estaba guardando.
+ * Combina aprobación/correcciones con métricas sociales cuando existen. Para
+ * que una cuenta grande no domine, las métricas se convierten a percentil
+ * contra el historial de la misma marca y formato antes de agregarlas.
  *
  * LA LÍNEA QUE NO SE CRUZA
  * ---------------------------------------------------------------------------
@@ -90,7 +89,7 @@ async function main() {
      generada todavía no dice nada — el cliente aún puede corregirla. */
   const piezas = await db.get(
     "barbara_memoria?aprobada_sin_cambios=not.is.null" +
-    "&select=id,tipo,pilar,contenido,correcciones_pedidas,aprobada_sin_cambios,barbara_cliente_id" +
+    "&select=id,tipo,pilar,contenido,correcciones_pedidas,aprobada_sin_cambios,barbara_cliente_id,metricas" +
     "&order=creado_en.desc&limit=400"
   );
 
@@ -136,7 +135,7 @@ async function main() {
     model: "claude-sonnet-5",
     max_tokens: 2000,
     system:
-      "Redactas recomendaciones de forma y estructura usando EXCLUSIVAMENTE contrastes estadísticos agregados. " +
+      "Redactas recomendaciones de forma y estructura usando EXCLUSIVAMENTE contrastes estadísticos agregados de aprobación y rendimiento social normalizado. " +
       "Cada recomendación debe citar en evidencia_id exactamente uno de los IDs entre corchetes recibidos. " +
       "Si el contraste dice mejor, recomienda ese rasgo; si dice peor, recomienda evitarlo. " +
       "No agregues causas, audiencias, marcas, productos ni tácticas que el contraste no mida. " +

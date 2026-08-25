@@ -36,12 +36,55 @@ export function extraerRasgos(pieza = {}) {
 
 function tasaSuavizada(ok, n) { return (ok + 1) / (n + 2); }
 
+function tasaInteraccion(pieza) {
+  const m = pieza?.metricas;
+  const alcance = Number(m?.alcance);
+  if (!Number.isFinite(alcance) || alcance < 100) return null;
+  const interacciones = Number.isFinite(Number(m?.interacciones))
+    ? Number(m.interacciones)
+    : ["me_gusta", "comentarios", "compartidos", "guardados", "clics"]
+      .reduce((total, clave) => total + Math.max(0, Number(m?.[clave]) || 0), 0);
+  return Math.max(0, interacciones) / alcance;
+}
+
+/**
+ * Las cuentas grandes no deben ganar por tamaño. El rendimiento social se
+ * compara contra el historial de la MISMA marca y formato mediante percentil;
+ * después se mezcla con la aprobación. Sin al menos tres piezas comparables,
+ * no se finge una referencia y manda únicamente la señal de aprobación.
+ */
+export function puntuarResultados(piezas = []) {
+  const grupos = new Map();
+  for (const pieza of piezas) {
+    const tasa = tasaInteraccion(pieza);
+    if (tasa === null) continue;
+    const clave = `${pieza.barbara_cliente_id}:${pieza.tipo || "general"}`;
+    if (!grupos.has(clave)) grupos.set(clave, []);
+    grupos.get(clave).push({ id: pieza.id, tasa });
+  }
+  const percentiles = new Map();
+  for (const grupo of grupos.values()) {
+    if (grupo.length < 3) continue;
+    const ordenado = [...grupo].sort((a, b) => a.tasa - b.tasa || String(a.id).localeCompare(String(b.id)));
+    ordenado.forEach((fila, i) => percentiles.set(fila.id, (i + 0.5) / ordenado.length));
+  }
+  return piezas.map((pieza) => {
+    const aprobacion = pieza.aprobada_sin_cambios === true ? 1 : 0;
+    const percentil = percentiles.get(pieza.id);
+    return {
+      ...pieza,
+      resultado: percentil === undefined ? aprobacion : 0.45 * aprobacion + 0.55 * percentil,
+      evidencia_social: percentil === undefined ? false : true,
+    };
+  });
+}
+
 export function construirContrastes(piezas = [], {
   minGrupo = 4, minMarcas = 3, minDelta = 0.15,
 } = {}) {
-  const cerradas = piezas.filter((p) => typeof p.aprobada_sin_cambios === "boolean").map((p) => ({
-    ...p, rasgos: extraerRasgos(p), ok: p.aprobada_sin_cambios === true,
-  }));
+  const cerradas = puntuarResultados(
+    piezas.filter((p) => typeof p.aprobada_sin_cambios === "boolean"),
+  ).map((p) => ({ ...p, rasgos: extraerRasgos(p), ok: p.resultado >= 0.6 }));
   const claves = ["tipo", "pilar", "slides", "titular", "cuerpo", "cierre_pregunta", "caption", "hashtags"];
   const contrastes = [];
   for (const clave of claves) {
@@ -53,8 +96,10 @@ export function construirContrastes(piezas = [], {
       if (grupo.length < minGrupo || resto.length < minGrupo || marcas < minMarcas) continue;
       const ok = grupo.filter((p) => p.ok).length;
       const okResto = resto.filter((p) => p.ok).length;
-      const tasa = tasaSuavizada(ok, grupo.length);
-      const tasaResto = tasaSuavizada(okResto, resto.length);
+      const puntaje = grupo.reduce((total, p) => total + p.resultado, 0);
+      const puntajeResto = resto.reduce((total, p) => total + p.resultado, 0);
+      const tasa = tasaSuavizada(puntaje, grupo.length);
+      const tasaResto = tasaSuavizada(puntajeResto, resto.length);
       const delta = tasa - tasaResto;
       if (Math.abs(delta) < minDelta) continue;
       contrastes.push({
@@ -65,6 +110,7 @@ export function construirContrastes(piezas = [], {
         muestras: grupo.length,
         marcas,
         aprobadas: ok,
+        con_metricas: grupo.filter((p) => p.evidencia_social).length,
         tasa: Number(tasa.toFixed(3)),
         tasa_resto: Number(tasaResto.toFixed(3)),
         delta: Number(delta.toFixed(3)),
@@ -79,6 +125,7 @@ export function huellaEvidencia(piezas = []) {
     id: p.id,
     ok: p.aprobada_sin_cambios,
     correcciones: p.correcciones_pedidas || 0,
+    metricas: p.metricas || null,
     rasgos: extraerRasgos(p),
   })).sort((a, b) => String(a.id).localeCompare(String(b.id)));
   return createHash("sha256").update(JSON.stringify(canon)).digest("hex");
@@ -86,8 +133,8 @@ export function huellaEvidencia(piezas = []) {
 
 export function materialAnonimo(contrastes = []) {
   return contrastes.map((c) =>
-    `[${c.id}] ${c.direccion}: ${c.aprobadas}/${c.muestras} aprobadas, ` +
-    `${c.marcas} marcas, tasa ajustada ${Math.round(c.tasa * 100)}% vs ` +
+    `[${c.id}] ${c.direccion}: ${c.aprobadas}/${c.muestras} resultados fuertes, ` +
+    `${c.marcas} marcas, ${c.con_metricas || 0} con señal social, resultado ajustado ${Math.round(c.tasa * 100)}% vs ` +
     `${Math.round(c.tasa_resto * 100)}% en el resto (delta ${Math.round(c.delta * 100)} pts).`,
   ).join("\n");
 }

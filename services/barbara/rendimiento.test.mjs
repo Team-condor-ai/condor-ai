@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { construirContrastes, extraerRasgos, huellaEvidencia, materialAnonimo } from "./rendimiento.mjs";
+import { construirContrastes, extraerRasgos, huellaEvidencia, materialAnonimo, puntuarResultados } from "./rendimiento.mjs";
 
 test("extrae sólo rasgos de forma, sin copiar contenido de marca", () => {
   const r = extraerRasgos({
@@ -52,8 +52,31 @@ test("la huella es estable e incluye cambios de veredicto", () => {
   assert.notEqual(huellaEvidencia(a), huellaEvidencia(b));
 });
 
+test("las métricas se normalizan dentro de cada marca y no por tamaño bruto", () => {
+  const piezas = [
+    { ...pieza("a1", "grande", true, true), metricas: { alcance: 100_000, interacciones: 2_000 } },
+    { ...pieza("a2", "grande", true, true), metricas: { alcance: 100_000, interacciones: 5_000 } },
+    { ...pieza("a3", "grande", true, true), metricas: { alcance: 100_000, interacciones: 8_000 } },
+    { ...pieza("b1", "chica", true, true), metricas: { alcance: 1_000, interacciones: 20 } },
+    { ...pieza("b2", "chica", true, true), metricas: { alcance: 1_000, interacciones: 50 } },
+    { ...pieza("b3", "chica", true, true), metricas: { alcance: 1_000, interacciones: 80 } },
+  ];
+  const r = puntuarResultados(piezas);
+  assert.equal(r.find((p) => p.id === "a3").resultado, r.find((p) => p.id === "b3").resultado);
+  assert.ok(r.find((p) => p.id === "a3").resultado > r.find((p) => p.id === "a1").resultado);
+});
+
+test("menos de tres piezas comparables no inventa señal social", () => {
+  const r = puntuarResultados([
+    { ...pieza("1", "a", true, true), metricas: { alcance: 1000, interacciones: 900 } },
+    { ...pieza("2", "a", false, false), metricas: { alcance: 1000, interacciones: 1 } },
+  ]);
+  assert.deepEqual(r.map((p) => p.resultado), [1, 0]);
+  assert.ok(r.every((p) => !p.evidencia_social));
+});
+
 test("el material anónimo sólo contiene agregados y referencias", () => {
-  const texto = materialAnonimo([{ id: "titular:corto", direccion: "mejor", aprobadas: 8, muestras: 10, marcas: 4, tasa: .75, tasa_resto: .45, delta: .3 }]);
+  const texto = materialAnonimo([{ id: "titular:corto", direccion: "mejor", aprobadas: 8, muestras: 10, marcas: 4, con_metricas: 6, tasa: .75, tasa_resto: .45, delta: .3 }]);
   assert.match(texto, /titular:corto/);
   assert.match(texto, /4 marcas/);
   assert.doesNotMatch(texto, /cliente|producto/);
