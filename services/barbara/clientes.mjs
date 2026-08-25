@@ -21,6 +21,7 @@ import { elegirAngulo } from "./angulos.mjs";
 import { playbooksPara, bloquePrompt } from "./playbooks.mjs";
 import { elegirPilar, bloquePrompt as bloquePilarPrompt, PILARES } from "./pilares.mjs";
 import { revisar, ANCHO_REVISION } from "./revision.mjs";
+import { prepararMemoria } from "./memoria.mjs";
 import sharp from "sharp";
 
 const AK = process.env.ANTHROPIC_API_KEY;
@@ -164,9 +165,6 @@ async function generarPara(cliente) {
     `barbara_reglas?barbara_cliente_id=eq.${barbaraId}&activa=eq.true` +
     `&select=regla,veces_reforzada&order=veces_reforzada.desc&limit=25`
   ).catch(() => []);
-  const reglas = reglasRaw.length
-    ? reglasRaw.map(r => `- ${r.regla}${r.veces_reforzada > 1 ? ` (lo pidio ${r.veces_reforzada} veces)` : ""}`).join(String.fromCharCode(10))
-    : "(todavia no corrigio nada)";
 
   // GUSTOS, DATOS Y PERFIL de esta marca (`barbara_memoria_nodos`).
   //
@@ -184,11 +182,6 @@ async function generarPara(cliente) {
     `barbara_memoria_nodos?barbara_cliente_id=eq.${barbaraId}&activo=eq.true` +
     `&select=tipo,titulo,contenido,peso&order=peso.desc&limit=30`
   ).catch(() => []);
-  const perfil = nodosRaw.filter(n => n.tipo === "perfil").map(n => n.contenido).join(" ");
-  const gustosDatos = nodosRaw
-    .filter(n => n.tipo === "gusto" || n.tipo === "dato")
-    .map(n => `- [${n.tipo}] ${n.titulo}: ${n.contenido}`)
-    .join(String.fromCharCode(10));
 
   // MEMORIA GLOBAL: patrones aprendidos entre todos los clientes. Solo entran
   // los marcados `activo`, que hoy son cero a proposito — con pocos clientes
@@ -197,9 +190,14 @@ async function generarPara(cliente) {
   const patronesRaw = await db.get(
     `barbara_patrones?activo=eq.true&select=patron&order=muestras.desc&limit=10`
   ).catch(() => []);
-  const patrones = patronesRaw.length
-    ? patronesRaw.map(p => `- ${p.patron}`).join(String.fromCharCode(10))
-    : "";
+  const memoriaSeleccionada = prepararMemoria({ reglas: reglasRaw, nodos: nodosRaw, patrones: patronesRaw });
+  const reglas = memoriaSeleccionada.privada.texto || "(todavía no hay memoria privada aplicable)";
+  const perfil = memoriaSeleccionada.privada.seleccionadas
+    .filter((m) => m.clase === "perfil").map((m) => m.texto).join(" ");
+  const gustosDatos = memoriaSeleccionada.privada.seleccionadas
+    .filter((m) => m.clase === "gusto" || m.clase === "dato").map((m) => `- ${m.texto}`).join(String.fromCharCode(10));
+  const patrones = memoriaSeleccionada.global.texto;
+  console.log(`[${negocio}] memoria: ${memoriaSeleccionada.diagnostico.privada_usada} privada(s), ${memoriaSeleccionada.diagnostico.global_usada} patrón(es) global(es)`);
 
   // MEMORIA FUNDACIONAL: lo que Cóndor ya sabe, escrito a mano y verificado.
   // Es la capa de MENOS peso de las tres — va última en el prompt y su propio
