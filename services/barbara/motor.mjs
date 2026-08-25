@@ -14,6 +14,7 @@ import { fileURLToPath } from "node:url";
 import sharp from "sharp";
 import { apiDisponible, generarImagen as apiImagen, generarVideo as apiVideo } from "./higgsfield-api.mjs";
 import { apiDisponible as kieDisponible, generarImagen as kieImagen, generarVideo as kieVideo } from "./kie-api.mjs";
+import { registrarClaude, registrarMedia } from "./telemetria.mjs";
 
 const ASSETS = fileURLToPath(new URL("./assets/", import.meta.url));
 
@@ -31,7 +32,9 @@ export async function claude(apiKey, body) {
     body: JSON.stringify(body),
   });
   if (!r.ok) throw new Error("Claude " + r.status + ": " + (await r.text()).slice(0, 200));
-  return r.json();
+  const respuesta = await r.json();
+  registrarClaude(respuesta, body?.model || "desconocido");
+  return respuesta;
 }
 
 export const textOf = (d) => (d.content || []).filter((b) => b.type === "text").map((b) => b.text).join("");
@@ -291,8 +294,16 @@ export async function genImagen(prompt, idx) {
   // estática, no el OAuth de Higgsfield que se rompió cuatro veces. Ver
   // kie-api.mjs. Si no hay KIE_API_KEY, sigue con lo de antes (API oficial de
   // Higgsfield si está, si no el CLI) sin cambiar nada de ese camino.
-  if (kieDisponible()) return kieImagen(safe, { aspectRatio: "4:5", resolucion: "2K" });
-  if (apiDisponible()) return apiImagen(safe, { aspectRatio: "4:5", formato: "png" });
+  if (kieDisponible()) {
+    const url = await kieImagen(safe, { aspectRatio: "4:5", resolucion: "2K" });
+    registrarMedia({ proveedor: "kie", modelo: "gpt-image-2", imagenes: 1 });
+    return url;
+  }
+  if (apiDisponible()) {
+    const url = await apiImagen(safe, { aspectRatio: "4:5", formato: "png" });
+    registrarMedia({ proveedor: "higgsfield-api", modelo: process.env.HIGGSFIELD_MODELO_IMAGEN || "configurado", imagenes: 1 });
+    return url;
+  }
 
   const args = ["generate", "create", "nano_banana_2", "--prompt", safe, "--aspect_ratio", "4:5", "--resolution", "1k", "--wait", "--wait-timeout", "8m"];
   let ultimo = "";
@@ -300,7 +311,10 @@ export async function genImagen(prompt, idx) {
     try {
       const out = execFileSync("higgsfield", args, { encoding: "utf8", timeout: 9 * 60 * 1000, stdio: ["ignore", "pipe", "pipe"] });
       const url = (out.trim().split("\n").pop() || "").trim();
-      if (/^https?:\/\//.test(url)) return url;
+      if (/^https?:\/\//.test(url)) {
+        registrarMedia({ proveedor: "higgsfield-cli", modelo: "nano_banana_2", imagenes: 1 });
+        return url;
+      }
       ultimo = out.slice(-160);
     } catch (e) {
       ultimo = String(e.stderr || e.message || e).slice(-300);
@@ -331,10 +345,14 @@ export async function genVideo(prompt, dur, idx, extraArgs = []) {
   // no se usa) es del CLI; si algún día se usa, hay que mapear a
   // image-to-video en la API que corresponda, así que por ahora se cae al CLI.
   if (kieDisponible() && !extraArgs.length) {
-    return kieVideo(safe, { duracion: dur, aspectRatio: "9:16", resolucion: "720p" });
+    const url = await kieVideo(safe, { duracion: dur, aspectRatio: "9:16", resolucion: "720p" });
+    registrarMedia({ proveedor: "kie", modelo: "seedance-2-0", videoSegundos: dur });
+    return url;
   }
   if (apiDisponible() && !extraArgs.length) {
-    return apiVideo(safe, { duracion: dur, aspectRatio: "9:16", resolucion: "720" });
+    const url = await apiVideo(safe, { duracion: dur, aspectRatio: "9:16", resolucion: "720" });
+    registrarMedia({ proveedor: "higgsfield-api", modelo: process.env.HIGGSFIELD_MODELO_VIDEO || "configurado", videoSegundos: dur });
+    return url;
   }
 
   const args = [
@@ -347,7 +365,10 @@ export async function genVideo(prompt, dur, idx, extraArgs = []) {
     try {
       const out = execFileSync("higgsfield", args, { encoding: "utf8", timeout: 15 * 60 * 1000, stdio: ["ignore", "pipe", "pipe"] });
       const url = (out.trim().split("\n").pop() || "").trim();
-      if (/^https?:\/\//.test(url)) return url;
+      if (/^https?:\/\//.test(url)) {
+        registrarMedia({ proveedor: "higgsfield-cli", modelo: "seedance1_5", videoSegundos: dur });
+        return url;
+      }
       ultimo = out.slice(-160);
     } catch (e) {
       ultimo = String(e.stderr || e.message || e).slice(-300);

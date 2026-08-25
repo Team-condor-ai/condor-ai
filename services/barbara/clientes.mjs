@@ -25,7 +25,8 @@ import { revisar, ANCHO_REVISION } from "./revision.mjs";
 import { prepararMemoria } from "./memoria.mjs";
 import { persistirMedia } from "./persistencia.mjs";
 import { fechaLocalISO, proponerHorario } from "./planificador.mjs";
-import { confirmarGeneracion, fallarGeneracion, reclamarGeneracion } from "./generaciones.mjs";
+import { cancelarGeneracion, confirmarGeneracion, fallarGeneracion, reclamarGeneracion } from "./generaciones.mjs";
+import { finalizarTelemetria, guardarTelemetria, iniciarTelemetria, verificarPresupuesto } from "./telemetria.mjs";
 import sharp from "sharp";
 
 const AK = process.env.ANTHROPIC_API_KEY;
@@ -183,6 +184,28 @@ async function generarPara(cliente) {
     console.log(`[${negocio}] generación "${claveGeneracion}" ya reclamada o completada — no se duplica gasto.`);
     return;
   }
+
+  const presupuesto = await verificarPresupuesto(db, barbaraId).catch((error) => {
+    console.log(`[${negocio}] presupuesto no disponible; sigo en modo compatible:`, String(error).slice(0, 140));
+    return { configurado: false, permitido: true, modo: "observar" };
+  });
+  if (presupuesto.excedido) {
+    console.log(`[${negocio}] presupuesto excedido (${presupuesto.modo}).`);
+  }
+  if (!presupuesto.permitido) {
+    await cancelarGeneracion(db, runGeneracion, "presupuesto configurado agotado").catch(() => {});
+    return;
+  }
+
+  iniciarTelemetria({ generacion_id: runGeneracion.id, intento: runGeneracion.intento });
+  let telemetriaCerrada = false;
+  const cerrarTelemetria = async (estado, error = null) => {
+    if (telemetriaCerrada) return;
+    telemetriaCerrada = true;
+    const resumen = finalizarTelemetria({ estado, error });
+    await guardarTelemetria(db, resumen).catch((e) =>
+      console.log(`[${negocio}] no se pudo registrar consumo:`, String(e).slice(0, 160)));
+  };
 
   try {
 
@@ -654,6 +677,7 @@ Responde SOLO con el JSON.`;
       proveedor_media: process.env.KIE_API_KEY ? "kie" : process.env.HIGGSFIELD_API_KEY_ID ? "higgsfield-api" : "higgsfield-cli",
     },
   });
+  await cerrarTelemetria("completa");
   console.log(`[${negocio}] biblioteca: ${mediaPersistida.length} asset(s) persistidos y verificados`);
 
   // La pieza queda en el calendario como BORRADOR. Programarla no equivale a
@@ -768,6 +792,7 @@ Responde SOLO con el JSON.`;
   }
   console.log(`[${negocio}] OK — ${TIPO} generado, ángulo: ${plan_contenido.angulo}`);
   } catch (error) {
+    await cerrarTelemetria("fallida", error);
     await fallarGeneracion(db, runGeneracion, error).catch(() => {});
     throw error;
   }

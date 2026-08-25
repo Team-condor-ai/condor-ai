@@ -12,6 +12,12 @@ type Metrica = {
   alcance: number; impresiones: number; reproducciones: number; clics: number; interacciones: number;
 };
 
+type Consumo = {
+  id: string; estado: "completa" | "fallida"; fin: string;
+  tokens_entrada: number; tokens_salida: number; tokens_cache_lectura: number;
+  imagenes: number; video_segundos: number;
+};
+
 const ICONO_TIPO: Record<string, string> = { carrusel: "🖼️", historia: "📱", ugc: "🎬" };
 
 /**
@@ -29,6 +35,7 @@ export function BarbaraAnalisis({ barbaraClienteId }: { barbaraClienteId: string
   const [filasPrev, setFilasPrev] = useState<Fila[]>([]);
   const [metricas, setMetricas] = useState<Metrica[]>([]);
   const [metricasDisponibles, setMetricasDisponibles] = useState(true);
+  const [consumos, setConsumos] = useState<Consumo[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
 
@@ -37,6 +44,7 @@ export function BarbaraAnalisis({ barbaraClienteId }: { barbaraClienteId: string
     const hoy = new Date();
     const hace30 = new Date(hoy); hace30.setDate(hace30.getDate() - 30);
     const hace60 = new Date(hoy); hace60.setDate(hace60.getDate() - 60);
+    const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1).toISOString();
     Promise.all([
       sb.from("barbara_memoria")
         .select("id,fecha,tipo,angulo,aprobada_sin_cambios,correcciones_pedidas,creado_en")
@@ -50,7 +58,10 @@ export function BarbaraAnalisis({ barbaraClienteId }: { barbaraClienteId: string
       sb.from("barbara_metricas_actuales")
         .select("programacion_id,barbara_memoria_id,plataforma,capturado_en,me_gusta,comentarios,compartidos,guardados,alcance,impresiones,reproducciones,clics,interacciones")
         .eq("barbara_cliente_id", barbaraClienteId),
-    ]).then(([r1, r2, r3]) => {
+      sb.from("barbara_consumos")
+        .select("id,estado,fin,tokens_entrada,tokens_salida,tokens_cache_lectura,imagenes,video_segundos")
+        .eq("barbara_cliente_id", barbaraClienteId).gte("fin", inicioMes).order("fin", { ascending: false }),
+    ]).then(([r1, r2, r3, r4]) => {
       if (!vivo) return;
       if (r1.error) setError(r1.error.message);
       else {
@@ -58,6 +69,7 @@ export function BarbaraAnalisis({ barbaraClienteId }: { barbaraClienteId: string
         setFilasPrev((r2.data ?? []) as Fila[]);
         setMetricas((r3.data ?? []) as Metrica[]);
         setMetricasDisponibles(!r3.error);
+        setConsumos((r4.data ?? []) as Consumo[]);
         setError("");
       }
       setCargando(false);
@@ -76,6 +88,13 @@ export function BarbaraAnalisis({ barbaraClienteId }: { barbaraClienteId: string
     interacciones: acc.interacciones + Number(m.interacciones || 0),
     reproducciones: acc.reproducciones + Number(m.reproducciones || 0),
   }), { alcance: 0, interacciones: 0, reproducciones: 0 });
+  const consumoMes = consumos.reduce((acc, c) => ({
+    tokens: acc.tokens + Number(c.tokens_entrada || 0) + Number(c.tokens_salida || 0),
+    cache: acc.cache + Number(c.tokens_cache_lectura || 0),
+    imagenes: acc.imagenes + Number(c.imagenes || 0),
+    video: acc.video + Number(c.video_segundos || 0),
+    fallas: acc.fallas + (c.estado === "fallida" ? 1 : 0),
+  }), { tokens: 0, cache: 0, imagenes: 0, video: 0, fallas: 0 });
   const formato = (n: number) => new Intl.NumberFormat("es-CL", { notation: n >= 10_000 ? "compact" : "standard", maximumFractionDigits: 1 }).format(n);
 
   const variacion = (actual: number, previo: number) =>
@@ -157,6 +176,19 @@ export function BarbaraAnalisis({ barbaraClienteId }: { barbaraClienteId: string
               ))}</tbody>
             </table>
           </div>
+        </div>
+      )}
+
+      {consumos.length > 0 && (
+        <div className="barbara-tarjeta-interna">
+          <h3>⚙️ Consumo técnico del mes</h3>
+          <div className="barbara-stats-fila">
+            <div className="barbara-stat-tarjeta"><b>Tokens procesados</b><div className="barbara-stat-numero">{formato(consumoMes.tokens)}</div><small>{formato(consumoMes.cache)} servidos desde caché</small></div>
+            <div className="barbara-stat-tarjeta"><b>Imágenes generadas</b><div className="barbara-stat-numero">{formato(consumoMes.imagenes)}</div></div>
+            <div className="barbara-stat-tarjeta"><b>Video generado</b><div className="barbara-stat-numero">{formato(consumoMes.video)}s</div></div>
+            <div className="barbara-stat-tarjeta"><b>Intentos registrados</b><div className="barbara-stat-numero">{consumos.length}</div><small>{consumoMes.fallas} fallido(s), también contabilizados</small></div>
+          </div>
+          <p className="tenue">Son unidades reales de uso, no una estimación monetaria. Las tarifas pueden cambiar sin alterar este historial.</p>
         </div>
       )}
 

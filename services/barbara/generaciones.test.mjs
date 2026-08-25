@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { confirmarGeneracion, fallarGeneracion, reclamarGeneracion } from "./generaciones.mjs";
+import { cancelarGeneracion, confirmarGeneracion, fallarGeneracion, reclamarGeneracion } from "./generaciones.mjs";
 
 test("un claim vacío significa que otra corrida ya posee la pieza", async () => {
   const db = { async rpc() { return []; } };
@@ -27,3 +27,10 @@ test("fallar acota el error antes de persistirlo", async () => {
   assert.equal(body.p_error.length, 1000);
 });
 
+test("cancelar por presupuesto no queda como una falla reintentable", async () => {
+  let llamada;
+  const db = { async rpc(nombre, body) { llamada = [nombre, body]; return true; } };
+  await cancelarGeneracion(db, { id: "r", claim_token: "t" }, "presupuesto agotado");
+  assert.equal(llamada[0], "barbara_cancelar_generacion");
+  assert.match(llamada[1].p_motivo, /presupuesto/);
+});

@@ -102,10 +102,24 @@ begin
   get diagnostics n = row_count; return n=1;
 end $$;
 
+create or replace function public.barbara_cancelar_generacion(
+  p_generacion_id uuid, p_claim_token uuid, p_motivo text
+) returns boolean language plpgsql security definer set search_path = public as $$
+declare n integer;
+begin
+  if auth.role() <> 'service_role' then raise exception 'sólo service_role'; end if;
+  update public.barbara_generaciones set
+    estado='cancelada',ultimo_error=left(coalesce(p_motivo,'cancelada'),500),actualizado_en=now(),
+    claim_token=null,claimed_at=null
+  where id=p_generacion_id and estado='generando' and claim_token=p_claim_token;
+  get diagnostics n=row_count; return n=1;
+end $$;
+
 revoke all on function public.barbara_reclamar_generacion(uuid,text,text,text),
-  public.barbara_confirmar_generacion(uuid,uuid,uuid,jsonb), public.barbara_fallar_generacion(uuid,uuid,text)
+  public.barbara_confirmar_generacion(uuid,uuid,uuid,jsonb), public.barbara_fallar_generacion(uuid,uuid,text),
+  public.barbara_cancelar_generacion(uuid,uuid,text)
   from public, anon, authenticated;
 grant execute on function public.barbara_reclamar_generacion(uuid,text,text,text),
-  public.barbara_confirmar_generacion(uuid,uuid,uuid,jsonb), public.barbara_fallar_generacion(uuid,uuid,text)
+  public.barbara_confirmar_generacion(uuid,uuid,uuid,jsonb), public.barbara_fallar_generacion(uuid,uuid,text),
+  public.barbara_cancelar_generacion(uuid,uuid,text)
   to service_role;
-

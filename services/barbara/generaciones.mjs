@@ -33,3 +33,11 @@ export async function fallarGeneracion(db, run, error) {
   });
 }
 
+export async function cancelarGeneracion(db, run, motivo) {
+  if (!run?.id || !run?.claim_token) return false;
+  return db.rpc("barbara_cancelar_generacion", {
+    p_generacion_id: run.id,
+    p_claim_token: run.claim_token,
+    p_motivo: String(motivo || "cancelada").slice(0, 500),
+  });
+}
