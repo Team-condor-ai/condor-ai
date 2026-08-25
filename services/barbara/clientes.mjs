@@ -24,7 +24,8 @@ import { elegirPilar, bloquePrompt as bloquePilarPrompt, PILARES } from "./pilar
 import { revisar, ANCHO_REVISION } from "./revision.mjs";
 import { prepararMemoria } from "./memoria.mjs";
 import { persistirMedia } from "./persistencia.mjs";
-import { proponerHorario } from "./planificador.mjs";
+import { fechaLocalISO, proponerHorario } from "./planificador.mjs";
+import { confirmarGeneracion, fallarGeneracion, reclamarGeneracion } from "./generaciones.mjs";
 import sharp from "sharp";
 
 const AK = process.env.ANTHROPIC_API_KEY;
@@ -132,7 +133,7 @@ async function generarPara(cliente) {
   // Candado: no publicar dos veces el mismo tipo el mismo día para este
   // cliente — salvo RETRY=1 (el webhook lo pone cuando el cliente pidió
   // una corrección; ahí SÍ hay que regenerar aunque ya se haya publicado).
-  const hoyISO = new Date().toISOString().slice(0, 10);
+  const hoyISO = fechaLocalISO(new Date(), zonaHoraria);
   if (!isRetry) {
     const memoriaHoy = await db.get(
       `barbara_memoria?barbara_cliente_id=eq.${barbaraId}&fecha=eq.${hoyISO}&tipo=eq.${TIPO}` +
@@ -164,6 +165,26 @@ async function generarPara(cliente) {
   // Cuántas correcciones acumuló la pieza que está por cerrarse. Se lee ANTES
   // de generar la nueva, que es cuando el número todavía es el de la anterior.
   const correccionesPrevias = bloqueo[0]?.intentos_usados ?? 0;
+
+  // Claim ANTES de cualquier llamada pagada. El cron, un dispatch manual y
+  // el webhook pueden coincidir; sólo uno obtiene token para esta pieza
+  // lógica. Un retry se deduplica por pieza corregida + número de intento.
+  const baseRetry = isRetry
+    ? (await db.get(`barbara_memoria?barbara_cliente_id=eq.${barbaraId}&tipo=eq.${TIPO}&select=id&order=creado_en.desc&limit=1`).catch(() => []))[0]?.id
+    : null;
+  const claveGeneracion = isRetry
+    ? `retry:${baseRetry || "sin-pieza"}:${correccionesPrevias}`
+    : `nuevo:${hoyISO}`;
+  const runGeneracion = await reclamarGeneracion(db, {
+    barbaraClienteId: barbaraId, tipo: TIPO, clave: claveGeneracion,
+    actor: process.env.GITHUB_RUN_ID ? `github:${process.env.GITHUB_RUN_ID}` : "barbara-clientes",
+  });
+  if (!runGeneracion) {
+    console.log(`[${negocio}] generación "${claveGeneracion}" ya reclamada o completada — no se duplica gasto.`);
+    return;
+  }
+
+  try {
 
   const recientesRaw = await db.get(
     `barbara_memoria?barbara_cliente_id=eq.${barbaraId}&select=fecha,tipo,angulo&order=creado_en.desc&limit=15`
@@ -624,6 +645,15 @@ Responde SOLO con el JSON.`;
     entrega_proximo_intento: new Date().toISOString(),
     entrega_ultimo_error: null,
   });
+  await confirmarGeneracion(db, runGeneracion, {
+    piezaId,
+    detalles: {
+      tipo: TIPO,
+      pilar: eleccionPilar.pilar,
+      assets: mediaPersistida.length,
+      proveedor_media: process.env.KIE_API_KEY ? "kie" : process.env.HIGGSFIELD_API_KEY_ID ? "higgsfield-api" : "higgsfield-cli",
+    },
+  });
   console.log(`[${negocio}] biblioteca: ${mediaPersistida.length} asset(s) persistidos y verificados`);
 
   // La pieza queda en el calendario como BORRADOR. Programarla no equivale a
@@ -737,6 +767,10 @@ Responde SOLO con el JSON.`;
       verificacion.falta.map(f => f.que).join(", "));
   }
   console.log(`[${negocio}] OK — ${TIPO} generado, ángulo: ${plan_contenido.angulo}`);
+  } catch (error) {
+    await fallarGeneracion(db, runGeneracion, error).catch(() => {});
+    throw error;
+  }
 }
 
 async function main() {

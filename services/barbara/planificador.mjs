@@ -19,6 +19,11 @@ function partesEnZona(fecha, zonaHoraria) {
   return { year: get("year"), month: get("month"), day: get("day"), hour: get("hour"), minute: get("minute"), second: get("second") };
 }
 
+export function fechaLocalISO(fecha = new Date(), zonaHoraria = "America/Santiago") {
+  const p = partesEnZona(fecha, zonaHoraria);
+  return `${String(p.year).padStart(4, "0")}-${String(p.month).padStart(2, "0")}-${String(p.day).padStart(2, "0")}`;
+}
+
 // Convierte una hora de pared de la marca a UTC. Se itera porque el offset
 // cambia con horario de verano; depender del timezone del runner haría que
 // "10:00 Chile" terminara como 06:00 o 14:00 según dónde corra GitHub Actions.

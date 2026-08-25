@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { evaluarReprogramacion, proponerHorario } from "./planificador.mjs";
+import { evaluarReprogramacion, fechaLocalISO, proponerHorario } from "./planificador.mjs";
 
 test("propone un horario futuro laborable", () => {
   const r = proponerHorario({ ahora: new Date("2026-08-21T23:00:00Z") }); // viernes 19:00 en Chile
@@ -19,6 +19,13 @@ test("10:00 Chile conserva la hora humana al cambiar horario de verano", () => {
 test("el resultado no depende del timezone local del runner", () => {
   const r = proponerHorario({ ahora: new Date("2026-08-24T12:00:00Z"), horas: [10], zonaHoraria: "America/Bogota" });
   assert.equal(r.programadaPara, "2026-08-24T15:00:00.000Z");
+});
+
+test("la fecha lógica usa el día del cliente, no UTC", () => {
+  const instante = new Date("2026-08-25T02:30:00Z");
+  assert.equal(fechaLocalISO(instante, "America/Santiago"), "2026-08-24");
+  assert.equal(fechaLocalISO(instante, "America/Bogota"), "2026-08-24");
+  assert.equal(fechaLocalISO(instante, "Europe/Madrid"), "2026-08-25");
 });
 
 test("evita las ventanas cercanas ocupadas", () => {
