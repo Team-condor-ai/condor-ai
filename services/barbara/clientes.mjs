@@ -314,6 +314,7 @@ ${patrones}` : ""}${playbooks}${extraRetry}`;
   // justamente el "rehacer en vez de corregir" que correccion.mjs vino a
   // arreglar.
   let anguloFijado = "";
+  let decisionAngulo = { modo: isRetry ? "correccion_mismo_angulo" : "director_sin_juez" };
   if (!isRetry) {
     try {
       const historialRaw = await db.get(
@@ -325,6 +326,12 @@ ${patrones}` : ""}${playbooks}${extraRetry}`;
           `Tipo de contenido pedido: ${tipos}. Público: ${form.publico_objetivo || "no especificado"}.`,
         historial,
       });
+      decisionAngulo = {
+        modo: "juez_semantico",
+        agotado: eleccion.agotado,
+        elegido: eleccion.angulo || null,
+        descartes: eleccion.descartes || [],
+      };
       for (const d of eleccion.descartes) {
         console.log(`[${negocio}] ángulo descartado: se parecía a "${d.se_parece_a}" (${d.razon})`);
       }
@@ -341,6 +348,7 @@ ${patrones}` : ""}${playbooks}${extraRetry}`;
       // Si el juez falla, se sigue con el comportamiento viejo: el director
       // elige solo. Peor, pero publicable.
       console.log(`[${negocio}] elección de ángulo falló, sigo sin ella:`, String(e).slice(0, 140));
+      decisionAngulo = { modo: "director_sin_juez", error: String(e).slice(0, 240) };
     }
   }
 
@@ -626,8 +634,19 @@ Responde SOLO con el JSON.`;
   // publicarla: el worker de publicación sólo podrá tomar estados programados
   // y la UI mantiene la aprobación separada. En un reintento se reemplaza la
   // referencia de la pieza corregida sin crear un duplicado en el calendario.
+  let programacionId = null;
+  let decisionHorario = null;
   try {
     if (isRetry && previa?.id) {
+      const existente = await db.get(
+        `barbara_programaciones?barbara_cliente_id=eq.${barbaraId}` +
+        `&barbara_memoria_id=eq.${previa.id}&estado=in.(borrador,programada)` +
+        `&select=id,programada_para,zona_horaria&limit=1`
+      ).catch(() => []);
+      programacionId = existente[0]?.id || null;
+      decisionHorario = existente[0]
+        ? { modo: "conservado_en_correccion", programadaPara: existente[0].programada_para, zonaHoraria: existente[0].zona_horaria }
+        : { modo: "sin_programacion_previa" };
       await db.patch(
         `barbara_programaciones?barbara_cliente_id=eq.${barbaraId}` +
         `&barbara_memoria_id=eq.${previa.id}&estado=in.(borrador,programada)`,
@@ -645,8 +664,9 @@ Responde SOLO con el JSON.`;
         ocupadas: ocupadas.map((p) => p.programada_para),
         zonaHoraria,
       });
+      decisionHorario = horario;
       if (horario.programadaPara) {
-        await db.post("barbara_programaciones", {
+        const programacionCreada = await db.post("barbara_programaciones", {
           barbara_cliente_id: barbaraId,
           barbara_memoria_id: piezaId,
           tipo: TIPO,
@@ -656,7 +676,8 @@ Responde SOLO con el JSON.`;
           zona_horaria: zonaHoraria,
           razon_planificacion: horario.razon,
           creado_por: "barbara",
-        });
+        }, { returnMinimal: false });
+        programacionId = Array.isArray(programacionCreada) ? programacionCreada[0]?.id : programacionCreada?.id;
         console.log(`[${negocio}] calendario: borrador propuesto para ${horario.programadaPara} (${zonaHoraria})`);
       } else {
         console.log(`[${negocio}] ⚠️ calendario sin ventana: ${horario.razon}`);
@@ -673,6 +694,33 @@ Responde SOLO con el JSON.`;
       barbara_memoria_id: piezaId,
     }).catch((e) => console.log(`[${negocio}] no se pudo enlazar los prompts a la pieza:`, String(e).slice(0, 120)));
   }
+
+  // Decisión explicable separada del prompt crudo. El cliente puede entender
+  // qué memoria, patrón, pilar, ángulo y horario influyeron sin exponer
+  // instrucciones internas ni información de otra marca.
+  await db.post("barbara_decisiones", {
+    barbara_cliente_id: barbaraId,
+    barbara_memoria_id: piezaId,
+    programacion_id: programacionId,
+    tipo: TIPO,
+    pilar: eleccionPilar.pilar,
+    angulo: plan_contenido.angulo || "",
+    memoria_privada: memoriaSeleccionada.privada.seleccionadas.map((m) => ({
+      id: m.id,
+      clase: m.clase,
+      puntaje: Math.round(m.puntaje * 100) / 100,
+      coincidencias: m.coincidencias || [],
+      detalle: m.detalle,
+    })),
+    patrones_globales: memoriaSeleccionada.global.seleccionadas.map((p) => ({
+      evidencia_clave: p.evidencia_clave || null,
+      puntaje: p.puntaje,
+    })),
+    diagnostico_memoria: memoriaSeleccionada.diagnostico,
+    decision_pilar: eleccionPilar,
+    decision_angulo: decisionAngulo,
+    decision_horario: decisionHorario,
+  });
 
   // AVISARLE A STAFF SI LA CORRECCIÓN NO SE LOGRÓ.
   //

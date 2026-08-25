@@ -5,9 +5,17 @@ type Media = {
   id: string; storage_path: string; tipo: "imagen" | "video" | "portada" | "documento";
   mime_type: string; bytes: number | null; sha256: string | null; url?: string;
 };
+type Decision = {
+  pilar: string | null;
+  memoria_privada: { id?: string; clase?: string }[];
+  patrones_globales: { evidencia_clave?: string }[];
+  decision_angulo: { modo?: string; descartes?: unknown[] };
+  decision_horario: { razon?: string; modo?: string } | null;
+};
 type Fila = {
   id: string; fecha: string; tipo: string; angulo: string | null; creado_en: string;
   contenido: { caption?: string } | null; barbara_media: Media[] | null;
+  barbara_decisiones: Decision | Decision[] | null;
 };
 
 const ETIQUETA_TIPO: Record<string, string> = {
@@ -26,7 +34,7 @@ export function BarbaraBiblioteca({ barbaraClienteId }: { barbaraClienteId: stri
     let vivo = true;
     (async () => {
       const r = await sb.from("barbara_memoria")
-        .select("id,fecha,tipo,angulo,contenido,creado_en,barbara_media(id,storage_path,tipo,mime_type,bytes,sha256)")
+        .select("id,fecha,tipo,angulo,contenido,creado_en,barbara_media(id,storage_path,tipo,mime_type,bytes,sha256),barbara_decisiones(pilar,memoria_privada,patrones_globales,decision_angulo,decision_horario)")
         .eq("barbara_cliente_id", barbaraClienteId)
         .order("creado_en", { ascending: false }).limit(200);
       if (!vivo) return;
@@ -76,6 +84,7 @@ export function BarbaraBiblioteca({ barbaraClienteId }: { barbaraClienteId: stri
           {filtradas.map((f) => {
             const media = f.barbara_media ?? [];
             const portada = media.find((m) => m.tipo === "portada") || media[0];
+            const decision = Array.isArray(f.barbara_decisiones) ? f.barbara_decisiones[0] : f.barbara_decisiones;
             return (
               <article className="barbara-biblioteca-pieza" key={f.id}>
                 <div className="barbara-biblioteca-preview">
@@ -90,6 +99,15 @@ export function BarbaraBiblioteca({ barbaraClienteId }: { barbaraClienteId: stri
                   <strong>{f.angulo || "Pieza sin ángulo registrado"}</strong>
                   {f.contenido?.caption && <p>{f.contenido.caption}</p>}
                   <span>{media.length ? `${media.length} archivo${media.length === 1 ? "" : "s"} privado${media.length === 1 ? "" : "s"}` : "Pieza histórica: archivo sólo en Telegram"}</span>
+                  {decision && (
+                    <details className="barbara-biblioteca-razon">
+                      <summary>Por qué Bárbara eligió esto</summary>
+                      <span>Pilar: {decision.pilar || "sin registrar"}</span>
+                      <span>{decision.memoria_privada?.length || 0} recuerdos privados y {decision.patrones_globales?.length || 0} patrones globales evaluados.</span>
+                      <span>Ángulo: {decision.decision_angulo?.modo || "director creativo"}{decision.decision_angulo?.descartes?.length ? ` · descartó ${decision.decision_angulo.descartes.length} repetición(es)` : ""}.</span>
+                      {decision.decision_horario && <span>Horario: {decision.decision_horario.razon || decision.decision_horario.modo || "propuesto por disponibilidad"}.</span>}
+                    </details>
+                  )}
                 </div>
               </article>
             );

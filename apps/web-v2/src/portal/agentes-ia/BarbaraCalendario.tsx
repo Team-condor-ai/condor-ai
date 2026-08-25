@@ -10,6 +10,7 @@ type Programacion = {
   id: string; tipo: string; plataforma: string; programada_para: string;
   estado: "borrador" | "programada" | "publicando" | "publicada" | "fallida" | "cancelada";
   zona_horaria: string; motivo_reprogramacion: string | null; razon_planificacion: string | null;
+  ultimo_error: string | null; intentos_publicacion: number;
   barbara_memoria: { angulo: string | null } | { angulo: string | null }[] | null;
 };
 
@@ -109,7 +110,7 @@ export function BarbaraCalendario({ barbaraClienteId, vistaInicial = "mes" }: Pr
             .eq("barbara_cliente_id", barbaraClienteId)
             .gte("fecha", isoLocal(desde)).lt("fecha", isoLocal(hasta)),
           sb.from("barbara_programaciones")
-            .select("id,tipo,plataforma,programada_para,estado,zona_horaria,motivo_reprogramacion,razon_planificacion,barbara_memoria(angulo)")
+            .select("id,tipo,plataforma,programada_para,estado,zona_horaria,motivo_reprogramacion,razon_planificacion,ultimo_error,intentos_publicacion,barbara_memoria(angulo)")
             .eq("barbara_cliente_id", barbaraClienteId)
             .gte("programada_para", desdeUTC.toISOString()).lt("programada_para", hastaUTC.toISOString())
             .order("programada_para", { ascending: true }),
@@ -231,6 +232,8 @@ export function BarbaraCalendario({ barbaraClienteId, vistaInicial = "mes" }: Pr
             <small>{ESTADO[seleccionada.estado]} · {seleccionada.plataforma}</small>
             <strong>{anguloDe(seleccionada)}</strong>
             <span>Horario mostrado en {seleccionada.zona_horaria}</span>
+            {seleccionada.ultimo_error && <span className="error">{seleccionada.ultimo_error}</span>}
+            {seleccionada.intentos_publicacion > 0 && <span>{seleccionada.intentos_publicacion} intento{seleccionada.intentos_publicacion === 1 ? "" : "s"} de publicación</span>}
           </div>
           {(seleccionada.estado === "borrador" || seleccionada.estado === "programada") && <>
             <label className="campo-lbl">Fecha y hora

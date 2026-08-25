@@ -396,6 +396,11 @@
   margin: 0; color: var(--texto-2); font-size: 12px; line-height: 1.45;
   display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
 }
+.barbara-biblioteca-razon { border-top:1px solid var(--borde-suave);padding-top:7px; }
+.barbara-biblioteca-razon summary { cursor:pointer;color:var(--texto);font-size:11.5px;font-weight:650; }
+.barbara-biblioteca-razon[open] { display:flex;flex-direction:column;gap:5px; }
+.barbara-biblioteca-razon[open] summary { margin-bottom:3px; }
+.barbara-biblioteca-razon span { line-height:1.4; }
 
 /* Configuración */
 .barbara-config-plan {
