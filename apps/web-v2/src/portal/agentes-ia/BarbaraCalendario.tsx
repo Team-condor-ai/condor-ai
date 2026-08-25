@@ -81,7 +81,6 @@ export function BarbaraCalendario({ barbaraClienteId, vistaInicial = "mes" }: Pr
   const [nuevaHora, setNuevaHora] = useState("");
   const [motivo, setMotivo] = useState("");
   const [guardando, setGuardando] = useState(false);
-  const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
   const [version, setVersion] = useState(0);
 
@@ -96,7 +95,6 @@ export function BarbaraCalendario({ barbaraClienteId, vistaInicial = "mes" }: Pr
     let vivo = true;
     const timer = window.setTimeout(() => {
       void (async () => {
-        setCargando(true);
         setError("");
         const desde = new Date(`${baseIso}T00:00:00`);
         const hasta = new Date(desde); hasta.setDate(hasta.getDate() + cantidad);
@@ -121,7 +119,6 @@ export function BarbaraCalendario({ barbaraClienteId, vistaInicial = "mes" }: Pr
           setPiezas((historial.data ?? []) as Pieza[]);
           setProgramaciones((futuro.data ?? []) as unknown as Programacion[]);
         }
-        setCargando(false);
       })();
     }, 0);
     return () => { vivo = false; window.clearTimeout(timer); };
@@ -219,11 +216,6 @@ export function BarbaraCalendario({ barbaraClienteId, vistaInicial = "mes" }: Pr
             </div>
           );
         })}
-      </div>
-
-      {!cargando && !piezas.length && !programaciones.length && <p className="tenue" style={{ marginTop: 10 }}>Sin piezas en este rango todavía.</p>}
-      <div className="barbara-calendario-leyenda">
-        <span><i className="borrador" /> Por aprobar</span><span><i className="programada" /> Programada</span><span><i className="historica" /> Historial</span>
       </div>
 
       {seleccionada && (

@@ -41,6 +41,26 @@ const NOMBRE_SECCION: Record<Seccion, string> = {
   configuracion: "Configuración",
 };
 
+const POSES_BARBARA = Array.from(
+  { length: 50 },
+  (_, indice) => `/assets/barbara/poses-transparent/barbara-${String(indice + 1).padStart(2, "0")}.png`,
+);
+
+/** (codex) Una pose se conserva mientras el usuario está dentro de Bárbara,
+ * pero al volver a entrar toma la siguiente. `sessionStorage` evita repetir
+ * siempre la primera sin perfilar al usuario ni necesitar una llamada a BD. */
+function siguientePoseBarbara() {
+  try {
+    const clave = "barbara:pose:cursor";
+    const actual = Number(sessionStorage.getItem(clave) || "-1");
+    const indice = (Number.isInteger(actual) ? actual + 1 : 0) % POSES_BARBARA.length;
+    sessionStorage.setItem(clave, String(indice));
+    return POSES_BARBARA[indice];
+  } catch {
+    return POSES_BARBARA[Math.floor(Date.now() / 1000) % POSES_BARBARA.length];
+  }
+}
+
 type Props = {
   barbaraClienteId: string;
   negocio: string;
@@ -74,6 +94,7 @@ export function BarbaraModulo({
   barbaraClienteId, negocio, plan, rubro, brandBook, formulario, onCambio, esStaff, activo, telegramListo, volverA, volverTexto,
 }: Props) {
   const [seccion, setSeccion] = useState<Seccion>("chat");
+  const [poseBarbara] = useState(siguientePoseBarbara);
   const navegar = useNavigate();
   const nombreUsuario = useNombreUsuario();
 
@@ -134,7 +155,16 @@ export function BarbaraModulo({
         {seccion === "chat" && (
           <div className="barbara-inicio">
             <div className="barbara-hero">
-              <img src="/assets/barbara/hero.png" alt="Bárbara" className="barbara-hero-img" />
+              <img
+                key={poseBarbara}
+                src={poseBarbara}
+                alt="Bárbara"
+                className="barbara-hero-img barbara-hero-img-animada"
+                onError={(evento) => {
+                  evento.currentTarget.onerror = null;
+                  evento.currentTarget.src = POSES_BARBARA[0];
+                }}
+              />
               <div className="barbara-hero-cuerpo">
                 <span className="barbara-rotulo">Bárbara · tu agente de contenido</span>
                 <TituloAnimado texto={saludo(nombreUsuario)} className="barbara-titular" />
