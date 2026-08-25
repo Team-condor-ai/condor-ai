@@ -1,0 +1,377 @@
+# Stack técnico — memoria en capas, anti-repetición y video
+
+> Ver [OBJETIVO.md](./OBJETIVO.md) para la visión y [ESTRATEGIA.md](./ESTRATEGIA.md)
+> para el contenido y los planes comerciales. Este documento es el
+> "cómo se construye" — arquitectura, decisiones y fases.
+
+## Decisión de modelo: Sonnet en todo
+
+Sin Haiku en ningún paso — clasificación, embeddings-adyacente y
+generación creativa, todo con Sonnet. Es más caro por llamada de
+clasificación (10-20x vs. Haiku), pero esas llamadas son texto corto,
+así que el impacto real en el costo total del sistema es marginal.
+Decisión de calidad tomada a propósito, no un descuido de costo.
+
+## Capa de datos — lo que REALMENTE existe
+
+Supabase (proyecto `ylsqvmggycfijzfvguzq`), un proyecto compartido con
+aislamiento por `barbara_cliente_id` + RLS. Al 23-ago-2026 las tablas
+en uso son:
+
+| Tabla | Capa | Quién escribe | Quién lee |
+|---|---|---|---|
+| `barbara_reglas` | privada | webhook de Telegram (correcciones) | `clientes.mjs` |
+| `barbara_memoria_nodos` | privada | portal (grafo) + Edge Function del perfil | `clientes.mjs` *(desde 23-ago)* |
+| `barbara_memoria` | privada | `clientes.mjs` al cerrar cada pieza | `clientes.mjs`, `patrones.mjs` |
+| `barbara_patrones` | global | `patrones.mjs` (destila, nace apagado) | `clientes.mjs` |
+| `barbara_playbooks` | fundacional | staff a mano (CLI `playbooks.mjs`) | `clientes.mjs` *(nueva)* |
+
+Prioridad en el prompt, de más a menos peso: perfil y gustos/datos de
+la marca → reglas que la marca corrigió → patrones globales →
+playbooks de la casa. El encabezado de los playbooks se lo dice
+explícito al modelo: *si choca con lo que pidió esta marca, manda la
+marca*.
+
+`pgvector` **no está en uso** — ver la sección de anti-repetición para
+por qué (falta decidir proveedor de embeddings).
+
+## Capa de escritura
+
+Cada vez que Bárbara publica algo, recibe una corrección, o llegan
+métricas de resultado de una pieza:
+
+1. Una llamada a Sonnet escribe la nota de memoria estructurada (qué
+   pasó, por qué importa, cómo aplicarlo — mismo formato que ya usa la
+   memoria de este proyecto).
+2. Otra llamada a Sonnet clasifica si es candidata a memoria global
+   (patrón general) o queda solo privada (gusto personal).
+3. Se genera el embedding del contenido y se guarda.
+
+## Capa de recuperación
+
+Al momento de generar contenido nuevo:
+
+1. Se embeddea el input/tarea actual.
+2. Búsqueda por similitud contra: memorias privadas del cliente (top
+   8), patrones globales (top 4), biblioteca fundacional (top 3).
+3. **Fuerza bruta al principio** — para el volumen de notas de un
+   cliente individual (cientos, no millones), comparar contra todas es
+   instantáneo. **HNSW** (índice nativo de `pgvector`) se activa recién
+   cuando el volumen lo justifique — no antes. Es optimización para
+   escala grande; usarla ahora sería complejidad prematura sin
+   beneficio real.
+4. **Prioridad explícita en el prompt del director**: privada > global
+   > fundacional. Instrucción literal al modelo: si hay conflicto
+   entre un patrón general y la preferencia específica del cliente,
+   siempre gana el cliente.
+
+## Anti-repetición: juez semántico separado
+
+**Construido el 23-ago-2026** (`angulos.mjs`, conectado a `barbara.mjs`
+y a `clientes.mjs`).
+
+El problema con lo que había: la anti-repetición era una línea dentro
+del prompt del director ("acá van las últimas 15, no repitas"). Dos
+fallas concretas — el generador se auto-vigilaba (mismo modelo, misma
+llamada, juzgando lo que acababa de inventar), y la ventana de 15
+piezas se agota en cinco semanas a 3 carruseles semanales.
+
+Cómo quedó, en dos llamadas con roles separados:
+
+1. `proponer()` pide N ángulos candidatos, cortos y baratos — no el
+   carrusel entero. Si hay que descartar, se descarta una línea de
+   texto y no una generación de 8000 tokens.
+2. `juzgar()` es una llamada cuyo **único** trabajo es comparar los
+   candidatos contra el historial largo (80 piezas). Quien juzga no es
+   quien propuso.
+
+Recién con el ángulo elegido se gasta la generación completa. Si el
+juez rechaza todo, se reintenta pasándole explícitamente qué se
+descartó y por qué; si se agotan los intentos se publica igual el mejor
+disponible y **se avisa por Telegram** — quedarse sin publicar es peor
+que publicar algo parecido, pero el equipo tiene que enterarse de que
+esa serie está quedándose sin terreno.
+
+En un reintento de corrección NO se elige ángulo nuevo, a propósito: el
+cliente pidió corregir algo puntual de esa pieza, y cambiarle el ángulo
+sería el "rehacer en vez de corregir" que `correccion.mjs` vino a
+arreglar.
+
+**Por qué un juez y no embeddings** (decisión, no olvido): lo de manual
+sería vectorizar cada ángulo y comparar por coseno. Anthropic no tiene
+endpoint de embeddings, así que hacerlo implica contratar un proveedor
+nuevo (Voyage, OpenAI…), y la orden explícita es que todo el motor sea
+Sonnet. Un juez dedicado alcanza de sobra para cientos de ángulos, que
+es el orden de magnitud real de un cliente. Si alguna marca acumula
+miles, ahí conviene vectorizar — **esa sigue siendo la decisión
+pendiente**, y requiere aprobar un proveedor de embeddings.
+
+**Para que las ideas no se vuelvan genéricas con el tiempo**: extender
+el patrón que ya usa la serie `noticias` (`investiga: true`, búsqueda
+web real) a los demás pilares — antes de generar, una búsqueda rápida
+de tendencias/novedades del rubro del cliente. *Pendiente.*
+
+## Video: revisar Higgsfield antes de construir nada nuevo
+
+Verificado por búsqueda (23-ago-2026): Higgsfield ya incluye, nativo,
+subtítulos quemados en el video y música/efectos "trending"
+sincronizados a imagen, dentro de su editor de video corto. **Primer
+paso antes de escribir código**: confirmar si el CLI/API que Bárbara ya
+usa para generar clips expone esos mismos endpoints — sería activar un
+flag, no construir un pipeline nuevo.
+
+**Si Higgsfield no lo cubre bien vía API/CLI**, la alternativa casera
+es liviana porque `ffmpeg` ya es una dependencia real del proyecto
+(`unirClips` en `motor.mjs` ya lo usa para unir clips con audio):
+
+- **Subtítulos**: no hace falta transcribir el audio con IA — Bárbara
+  ya sabe el guion que le pidió al video generar (el campo
+  `escena`/`texto_en_pantalla` del plan). Se calcula el timing
+  proporcional a la duración de cada clip y se queman los subtítulos
+  con el filtro `drawtext` de `ffmpeg`, sin costo de transcripción.
+- **Música**: biblioteca chica de pistas libres de regalías (5-10
+  pistas por "mood": urgente/cálido/profesional), elegida por el
+  director según el tono del video, mezclada bajo el audio original
+  (volumen reducido para no tapar la voz).
+- **Efectos**: transiciones/whooshes en los cortes entre clips, mismo
+  filtro de audio mezclado con `ffmpeg`.
+
+## Orquestación
+
+Se sigue usando lo que ya existe (GitHub Actions, patrón de
+`barbara.yml`) — la memoria es un paso más del pipeline: antes de
+generar, "traer memorias relevantes"; después de publicar y tener
+métricas, "escribir memoria nueva". No se suma un orquestador nuevo
+tipo n8n.
+
+## Estado y qué falta
+
+### Verificación real del juez de ángulos (23-ago-2026)
+
+Corrida `32621181121`, serie `barbara_producto`, contra el historial real
+de la cuenta. El juez descartó dos ángulos y explicó por qué:
+
+- Contra *"La IA como el primer empleado que trabaja 24/7 sin descanso,
+  errores ni excusas"* → *"Ambos venden la misma idea de que la
+  IA/herramienta nunca falla, no se enferma ni se va, a diferencia de un
+  humano."*
+- Contra *"El costo oculto de NO tener IA: cada día que esperas, tu
+  competencia avanza"* → *"Misma idea central de que la inacción hace que
+  el cliente se vaya con la competencia; sólo cambia el canal
+  (Instagram) pero el mensaje de fondo es idéntico."*
+
+Ninguno de los dos comparte palabras con el original — es exactamente el
+parecido que la lista de 15 en texto plano dejaba pasar. El ángulo
+finalmente elegido fue sobre la fricción con las agencias, sin
+antecedente en el historial.
+
+## Migración a Kie.ai (24-ago-2026) — reemplaza a Higgsfield
+
+**Se abandonó Higgsfield.** La sección de abajo ("Higgsfield: del CLI con
+OAuth a la API con key estática") queda como historial de por qué se
+intentó y por qué no alcanzó — el problema de fondo (OAuth que caduca) se
+repitió una cuarta vez el 24-ago: la cuenta autenticada en CI resultó ser
+una cuenta **free de 0 créditos** distinta a la Plus que se había migrado
+el 22-ago, y encima el mismo día el workflow de `patrones.mjs` falló por
+faltarle un `npm install`.
+
+**Decisión de modelos, pedido explícito de Joaquín**: nunca más Nano
+Banana — el modelo de imagen es **`gpt-image-2`** (OpenAI, lanzado
+21-abr-2026). Ver [[feedback_no_nano_banana_gpt_image_2]] en memoria. Video
+sube de `seedance1_5` a **`seedance-2-0`** (ByteDance) — más calidad, motor
+distinto al lite que usaba Higgsfield.
+
+**Por qué Kie.ai y no ir directo a OpenAI + BytePlus**: investigado a fondo
+— el precio es prácticamente el mismo yendo directo (Kie no tiene margen de
+descuento real sobre ninguno de los dos). La ventaja de Kie es
+**una sola cuenta y una sola key estática** para los dos modelos, en vez de
+mantener dos integraciones separadas — y BytePlus (dueño de Seedance) pide
+verificación regional al registrarse, más fricción que Kie.ai.
+
+**Se descartó Seedance 2.5**: cuesta ~2x más que 2.0 a la misma
+resolución por mejoras incrementales (mejor consistencia de personaje,
+iluminación) que no se notan en un UGC vertical de 5 segundos para redes.
+Tampoco valió la promo de -28% en 1080p de Kie (vigente hasta 17-sep-2026):
+incluso con descuento sale ~4x más caro por segundo que 2.0 a 720p, y 2.5
+genera nativo en 480p/720p — el 1080p ahí es upscale, no más resolución
+real.
+
+**Código**: `services/barbara/kie-api.mjs` — mismo patrón asíncrono que
+`higgsfield-api.mjs` (crear tarea → hacer polling), pero con
+`Authorization: Bearer <key>` fija en vez de OAuth, endpoint
+`POST /api/v1/jobs/createTask` + `GET /api/v1/jobs/recordInfo`. `motor.mjs`
+y `barbara.mjs` prefieren Kie si existe `KIE_API_KEY`; sin esa key siguen
+con el camino de Higgsfield (API oficial o CLI) sin cambios. Los workflows
+(`barbara.yml`, `barbara-clientes.yml`) saltan por completo instalar/
+autenticar el CLI de Higgsfield cuando `KIE_API_KEY` está seteado.
+
+⚠️ **Sin verificar contra una cuenta real todavía** — no existe la cuenta
+de Kie.ai (falta que Joaquín la cree, cargue crédito, y setee el secret).
+Los nombres de campo de `recordInfo` (`resultJson.resultUrls`) están
+documentados por la doc pública de Kie, no confirmados en vivo. Antes de
+confiar en esto en producción: correr `verificarCredenciales` y una
+generación de prueba real, mismo paso que ya se hizo con nano-banana.
+
+## Higgsfield: del CLI con OAuth a la API con key estática (histórico — reemplazado por Kie.ai, ver arriba)
+
+**El problema de raíz.** El CLI (`higgsfield generate create …`) se
+autentica con OAuth: un `access_token` que caduca y un `refresh_token`
+que **rota en cada uso**. Cada vez que la cadena se corta, alguien tiene
+que volver a loguearse por navegador. Pasó el 29-jun, el 22-ago y otra
+vez el 23-ago, dejando a Bárbara muda días enteros. Con decenas de
+clientes eso deja de ser un incidente y pasa a ser el trabajo fijo de
+alguien.
+
+**La solución.** Higgsfield tiene una **API oficial** en
+`https://platform.higgsfield.ai` con credenciales **estáticas** —
+`Authorization: Key {id}:{secret}` — que no caducan ni rotan. Verificado
+el 23-ago-2026 contra su OpenAPI y contra el endpoint en vivo (devuelve
+401 con clave falsa, o sea el formato es el correcto).
+
+Es asíncrona: el POST devuelve un `request_id` y se consulta
+`/requests/{id}/status` hasta `completed`. Hay webhooks, pero no se usan
+— GitHub Actions no tiene dónde recibirlos y el job igual está esperando.
+
+### ⛔ Pero la API NO sirve los modelos que Bárbara usa
+
+Probado con la key real el 23-ago-2026, endpoint por endpoint. Esto
+invalida el supuesto con el que se empezó la migración:
+
+| Uso | Modelo del CLI | Estado en la API |
+|---|---|---|
+| Carruseles | `nano_banana_2` | ❌ 404 `model_not_found` |
+| UGC en video | `seedance1_5` | ❌ 404 `model_not_found` |
+| *(alternativa)* GPT Image 2 | — | ❌ ni siquiera está en el OpenAPI |
+
+Lo que **sí** responde: `higgsfield-ai/soul/*`, `dop/*`, `popcorn`,
+`kling/*`, `minimax/*`, `wan-25`. Todos devuelven 403
+`not_enough_credits`, o sea existen y sólo falta saldo.
+
+**Además, dos correcciones de costo y de datos:**
+
+1. **Los créditos de la API son APARTE del plan mensual.** Los créditos
+   de Plus en higgsfield.ai no se consumen desde `platform.higgsfield.ai`
+   — hay que cargar saldo por separado en `cloud.higgsfield.ai`. (La
+   documentación de terceros decía lo contrario; el 403 en vivo dice que
+   no.)
+2. **El OpenAPI publicado no es confiable para los enums.** Dice que
+   `soul/standard` acepta `4:5` y resolución `2K`; la API real rechaza
+   ambos con 422 — sólo `3:4` y `720p`/`1080p`. Por eso cada modelo
+   declara en `higgsfield-api.mjs` los ratios que de verdad acepta, y hay
+   degradación al vertical más parecido en vez de fallar.
+
+### Qué hacer con esto
+
+El código de la API queda **listo y probado**, con el modelo
+configurable (`HIGGSFIELD_MODELO_IMAGEN` / `HIGGSFIELD_MODELO_VIDEO`),
+pero **no se activó**: con la API configurada y sin los modelos correctos,
+Bárbara fallaría de una forma nueva en vez de la actual.
+
+1. **Ahora**: re-loguear el CLI para que Bárbara vuelva con los modelos
+   de siempre (ver el bloqueo más abajo).
+2. **En paralelo**: escribirle a `support@higgsfield.ai` preguntando si
+   pueden habilitar `nano-banana` y `seedance` por API para esta cuenta.
+   Si dicen que sí, migrar es cargar saldo y poner dos secrets — el
+   código ya está hecho.
+3. **Sólo si dicen que no**: evaluar `soul` como reemplazo, sabiendo que
+   implica re-verificar visualmente los 4 templates de marca (estética
+   distinta y `3:4` en vez de `4:5`).
+
+**Migración segura**: `higgsfield-api.mjs` no reemplaza al CLI por su
+cuenta. `genImagen`/`genVideo` prefieren la API **sólo si existen las
+credenciales**; si no, siguen con el CLI igual que hasta hoy. Se puede
+probar sin arriesgar lo que ya funciona.
+
+### Qué falta para activarla (una sola vez, y nunca más)
+
+> ⚠️ **Esta sección quedó en pausa**: la key ya se creó y funciona, pero
+> la API no sirve `nano-banana` ni `seedance` (ver arriba). Los pasos
+> siguen siendo válidos para cuando soporte los habilite.
+
+**Paso manual, irreducible:** crear la key en
+https://cloud.higgsfield.ai → sección API. No se puede automatizar: la
+API pública no tiene endpoints de gestión de keys (sus 50 rutas son todas
+de modelos) y el dashboard está detrás de Clerk + Cloudflare.
+
+**Todo lo demás, en un comando:**
+
+```
+bash services/barbara/activar-api.sh
+```
+
+Pide las credenciales sin eco (acepta `id:secret` pegado junto), las
+valida contra la API, genera una imagen de prueba real, sube los dos
+secrets por stdin y dispara una corrida de Bárbara para confirmar de
+punta a punta.
+
+El workflow ya salta la instalación del CLI, el descifrado del token y el
+re-cifrado en cuanto `HIGGSFIELD_API_KEY_ID` existe (`USA_API_HF`).
+Mientras no exista, el comportamiento es idéntico al de hoy.
+
+Cuando el carrusel llegue bien por la API se puede borrar el andamiaje
+viejo: `reauth.sh`, `hf-creds.enc`, el secret `HF_CREDS_KEY` y los dos
+pasos de OAuth del workflow. **No se borró todavía a propósito** —
+primero hay que verlo funcionando en una corrida real.
+
+### ⚠️ Bloqueo activo (hasta que se haga lo de arriba): Higgsfield sin autenticación
+
+Desde el 22-ago-2026 por la tarde, **Bárbara no puede generar imágenes**:
+el token de Higgsfield murió ("Not authenticated"). No es un problema de
+código y no se arregla reintentando — requiere un login OAuth por
+navegador, que sólo puede hacer una persona:
+
+```
+higgsfield auth login          # abre el navegador
+bash services/barbara/reauth.sh # re-cifra, rota el secret y pushea
+```
+
+El CLI local tiene que ser **0.2.x** (CI está pineado a 0.2.3); el que
+está instalado hoy en el PC es 1.1.23, que usa otro flujo de auth. El
+aviso de Telegram ya sale con estos pasos adentro.
+
+**Hecho al 23-ago-2026**
+- Memoria privada en tres tablas, todas leídas por el generador.
+- Memoria global con umbral de muestra y anonimización en origen.
+- Memoria fundacional (`barbara_playbooks`) + CLI para administrarla,
+  sembrada con 5 lecciones verificadas en producción.
+- Anti-repetición con juez semántico separado, **verificado en vivo**.
+- Pilares de contenido por cliente, elegidos por deuda, con UI en el
+  portal (cliente edita, staff ve el porcentaje resultante).
+- La cuenta propia de Cóndor también lee los playbooks (opcional: si el
+  workflow no trae los secrets de Supabase, corre igual).
+- 45 tests unitarios; las 8 queries PostgREST nuevas validadas contra
+  la base real; `tsc` y `vite build` limpios.
+
+**Pendiente, en orden de valor**
+1. **Crear la cuenta de Kie.ai, cargar crédito, y setear el secret
+   `KIE_API_KEY`** (ver "Migración a Kie.ai" arriba). Es lo único que
+   bloquea todo lo demás — sin esto Bárbara sigue con Higgsfield roto.
+   Después de eso: correr una generación de prueba real antes de confiar
+   en el código en producción (los campos exactos de la respuesta de Kie
+   no están verificados todavía).
+2. **La cuenta propia de Cóndor sigue sin pilares ni memoria propia.**
+   Ya lee playbooks, pero el reparto de series sigue fijo en código y no
+   tiene `barbara_reglas` ni aprende de las correcciones del equipo.
+3. **Investigación web para los demás pilares**, no sólo para
+   `noticias`.
+4. **Edición de video** con subtítulos/música — primero confirmar si el
+   CLI de Higgsfield ya lo expone (ver sección de video).
+5. **Embeddings/pgvector**, sólo si alguna marca acumula miles de
+   ángulos y sólo tras aprobar un proveedor.
+
+Referencia de diseño para el paso 2 cuando se haga: el split entre
+núcleo fijo (tono de marca, reglas inmutables) y memoria dinámica
+recuperada por relevancia es el mismo que usa la investigación de
+agentes con memoria (Generative Agents, Stanford 2023: relevancia +
+recencia + importancia).
+
+## Referencias de investigación externa usadas para estas decisiones
+
+- HNSW (Hierarchical Navigable Small World) — familia de algoritmos de
+  grafo jerárquico con "greedy routing", mismo linaje conceptual que
+  los algoritmos de ruteo de mapas (Contraction Hierarchies, A*/ALT)
+  aplicado a búsqueda de vectores.
+- Sistemas de memoria de agentes ya existentes en la industria (para
+  no reinventar ni sobreestimar la novedad): Mem0 (capas por scope),
+  Zep/Graphiti (grafo de conocimiento temporal), Letta/MemGPT (memoria
+  tipo sistema operativo, el modelo pagina su propio contexto).

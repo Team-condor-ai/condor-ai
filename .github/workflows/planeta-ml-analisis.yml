@@ -1,0 +1,62 @@
+name: Planeta Shop - radiografia de cuentas
+
+# Solo LEE: qué hay publicado en cada cuenta, qué falta del lote, qué está en
+# riesgo. No publica, no pausa, no cambia precios — se puede correr sin
+# pensarlo dos veces.
+#
+# Descifra config.json igual que el publicador, pero NO vuelve a cifrarlo ni
+# lo commitea: si el token rota durante la lectura, se pierde esa rotación y
+# la próxima corrida del publicador la renueva sola. Meter a este workflow en
+# el juego de persistir credenciales agregaría una vía más para romper la
+# cadena, que ya costó caro una vez.
+
+on:
+  workflow_dispatch:
+    inputs:
+      formato:
+        description: 'texto | json'
+        required: false
+        default: 'texto'
+
+permissions:
+  contents: read
+
+concurrency:
+  # No corre a la vez que el publicador: los dos descifran el mismo
+  # config.json y leerlo mientras el otro lo rota es pedir un lío.
+  group: planeta-ml-publicar
+  cancel-in-progress: false
+
+jobs:
+  analizar:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/planeta-ml
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Descifrar config.json (credenciales ML)
+        env:
+          ML_CREDS_KEY: ${{ secrets.ML_CREDS_KEY }}
+        run: |
+          openssl enc -d -aes-256-cbc -pbkdf2 -salt -in config.enc -out config.json -pass pass:"$ML_CREDS_KEY"
+
+      - name: Analizar
+        env:
+          PLANETA_SUPABASE_URL: ${{ secrets.PLANETA_SUPABASE_URL }}
+          PLANETA_SUPABASE_KEY: ${{ secrets.PLANETA_SUPABASE_KEY }}
+        run: |
+          if [ "${{ inputs.formato }}" = "json" ]; then
+            python analisis.py --json
+          else
+            python analisis.py
+          fi
+
+      - name: Borrar credenciales descifradas
+        if: always()
+        run: rm -f config.json

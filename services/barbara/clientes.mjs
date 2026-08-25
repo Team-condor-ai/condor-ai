@@ -17,6 +17,11 @@
 import { tg, claude, textOf, genImagen, genVideo, unirClips, REGLA_TEXTO, REGLA_VERACIDAD, supabase } from "./motor.mjs";
 import { componerSlide, PLANTILLAS, PLANTILLA_POR_DEFECTO } from "./plantillas.mjs";
 import { piezaAnterior, leerPedido, extraerCambios, instrucciones, verificar, faltantes } from "./correccion.mjs";
+import { elegirAngulo } from "./angulos.mjs";
+import { playbooksPara, bloquePrompt } from "./playbooks.mjs";
+import { elegirPilar, bloquePrompt as bloquePilarPrompt, PILARES } from "./pilares.mjs";
+import { revisar, ANCHO_REVISION } from "./revision.mjs";
+import sharp from "sharp";
 
 const AK = process.env.ANTHROPIC_API_KEY;
 const TG_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
@@ -163,6 +168,28 @@ async function generarPara(cliente) {
     ? reglasRaw.map(r => `- ${r.regla}${r.veces_reforzada > 1 ? ` (lo pidio ${r.veces_reforzada} veces)` : ""}`).join(String.fromCharCode(10))
     : "(todavia no corrigio nada)";
 
+  // GUSTOS, DATOS Y PERFIL de esta marca (`barbara_memoria_nodos`).
+  //
+  // La tabla existía, el portal la escribe desde el grafo de memoria y la
+  // Edge Function `barbara-sintetizar-perfil` le guarda el perfil — pero el
+  // generador NUNCA la leía. Es exactamente el agujero que documentó
+  // patrones.mjs en su encabezado, al revés: allá había un lector sin
+  // escritor, acá un escritor sin lector. Lo que staff anotaba del cliente no
+  // llegaba jamás a la pieza.
+  //
+  // Va junto a las reglas, en la capa de MÁS peso: es lo propio de esta marca.
+  // El "perfil" primero — es la síntesis — y después gustos y datos por
+  // refuerzo.
+  const nodosRaw = await db.get(
+    `barbara_memoria_nodos?barbara_cliente_id=eq.${barbaraId}&activo=eq.true` +
+    `&select=tipo,titulo,contenido,peso&order=peso.desc&limit=30`
+  ).catch(() => []);
+  const perfil = nodosRaw.filter(n => n.tipo === "perfil").map(n => n.contenido).join(" ");
+  const gustosDatos = nodosRaw
+    .filter(n => n.tipo === "gusto" || n.tipo === "dato")
+    .map(n => `- [${n.tipo}] ${n.titulo}: ${n.contenido}`)
+    .join(String.fromCharCode(10));
+
   // MEMORIA GLOBAL: patrones aprendidos entre todos los clientes. Solo entran
   // los marcados `activo`, que hoy son cero a proposito — con pocos clientes
   // un patron cruzado es ruido, y aprender de ruido es peor que no aprender.
@@ -173,6 +200,28 @@ async function generarPara(cliente) {
   const patrones = patronesRaw.length
     ? patronesRaw.map(p => `- ${p.patron}`).join(String.fromCharCode(10))
     : "";
+
+  // MEMORIA FUNDACIONAL: lo que Cóndor ya sabe, escrito a mano y verificado.
+  // Es la capa de MENOS peso de las tres — va última en el prompt y su propio
+  // encabezado le dice al modelo que la marca le gana. Ver playbooks.mjs.
+  const playbooks = bloquePrompt(await playbooksPara(db, { tipo: TIPO, rubro }));
+
+  // PILAR DEL DÍA. Se elige por deuda: qué le debe la cuenta a la mezcla que
+  // pidió la marca. Con eso el reparto converge a lo pedido aunque se salten
+  // días o se generen piezas sueltas fuera de calendario. Ver pilares.mjs.
+  //
+  // En un reintento se mantiene el pilar de la pieza anterior: el cliente
+  // pidió corregir ESA pieza, no recibir otra distinta.
+  const historialPilares = (await db.get(
+    `barbara_memoria?barbara_cliente_id=eq.${barbaraId}&pilar=not.is.null` +
+    `&select=pilar&order=creado_en.desc&limit=20`
+  ).catch(() => [])).map(e => e.pilar);
+  const eleccionPilar = isRetry && historialPilares[0] && PILARES[historialPilares[0]]
+    ? { pilar: historialPilares[0], instruccion: PILARES[historialPilares[0]].instruccion, reparto: {} }
+    : elegirPilar(form.pilares, historialPilares);
+  const bloquePilar = bloquePilarPrompt(eleccionPilar);
+  console.log(`[${negocio}] pilar de hoy: ${eleccionPilar.pilar}` +
+    (eleccionPilar.deuda !== undefined ? ` (deuda ${Math.round(eleccionPilar.deuda)}%)` : ""));
 
 
   // El primer color de la paleta manda como color de marca; el segundo, si
@@ -202,7 +251,9 @@ async function generarPara(cliente) {
   const extraRetry = !isRetry ? ""
     : correccion.cambios.length ? instrucciones(correccion.cambios, previa)
     : "\n\n⚠️ ESTE ES UN REINTENTO: el cliente pidió una corrección pero no se pudo interpretar qué. Genera una versión CLARAMENTE MEJOR del mismo tema.";
-  const contexto = `Marca: ${negocio} (rubro: ${rubro || "no especificado"})
+  const contexto = `${bloquePilar}
+
+Marca: ${negocio} (rubro: ${rubro || "no especificado"})
 Paleta de marca: ${paleta}
 Tipografía de marca: ${bb.tipografia || "a criterio, legible y editorial"}
 Detalles a considerar (restricciones/gustos del dueño): ${bb.detalles || "ninguno registrado"}
@@ -217,11 +268,60 @@ Producto/servicio a destacar hoy: ${form.producto_destacar || "el negocio en gen
 PIEZAS RECIENTES DE ESTE CLIENTE (NO repitas estos ángulos, innova):
 ${recientes}
 
-LO QUE ESTA MARCA YA TE CORRIGIO (respetalo SIEMPRE, es lo que mas pesa):
+${perfil ? `COMO ES ESTA MARCA TRABAJANDO CONTIGO (perfil sintetizado):
+${perfil}
+
+` : ""}${gustosDatos ? `GUSTOS Y DATOS QUE YA SABES DE ESTA MARCA (usalos, dan naturalidad):
+${gustosDatos}
+
+` : ""}LO QUE ESTA MARCA YA TE CORRIGIO (respetalo SIEMPRE, es lo que mas pesa):
 ${reglas}${patrones ? `
 
 LO QUE FUNCIONA EN GENERAL (patrones de rendimiento, no reglas de esta marca):
-${patrones}` : ""}${extraRetry}`;
+${patrones}` : ""}${playbooks}${extraRetry}`;
+
+  // ÁNGULO ELEGIDO ANTES DE GENERAR, con un juez semántico aparte.
+  //
+  // Las 15 piezas recientes que ya van en `contexto` siguen sirviendo de
+  // contexto, pero no alcanzan como única defensa: es el propio generador
+  // auto-vigilándose, sobre una ventana corta. Acá se compara contra el
+  // historial largo del cliente con una llamada cuyo único trabajo es
+  // comparar. Ver el encabezado de angulos.mjs.
+  //
+  // En un REINTENTO no se elige ángulo nuevo a propósito: el cliente pidió
+  // corregir algo puntual de ESA pieza, y cambiarle el ángulo sería
+  // justamente el "rehacer en vez de corregir" que correccion.mjs vino a
+  // arreglar.
+  let anguloFijado = "";
+  if (!isRetry) {
+    try {
+      const historialRaw = await db.get(
+        `barbara_memoria?barbara_cliente_id=eq.${barbaraId}&select=angulo&order=creado_en.desc&limit=80`
+      ).catch(() => []);
+      const historial = historialRaw.map(e => e.angulo).filter(Boolean);
+      const eleccion = await elegirAngulo(claude, AK, {
+        instruccion: `${TIPO} para "${negocio}" (rubro: ${rubro || "no especificado"}). ` +
+          `Tipo de contenido pedido: ${tipos}. Público: ${form.publico_objetivo || "no especificado"}.`,
+        historial,
+      });
+      for (const d of eleccion.descartes) {
+        console.log(`[${negocio}] ángulo descartado: se parecía a "${d.se_parece_a}" (${d.razon})`);
+      }
+      if (eleccion.agotado) {
+        console.log(`[${negocio}] ⚠️ el juez descartó todos los ángulos — se sigue con el mejor disponible.`);
+      }
+      if (eleccion.angulo) {
+        console.log(`[${negocio}] ángulo elegido: ${eleccion.angulo.angulo}`);
+        anguloFijado = `\n\nÁNGULO YA ELEGIDO (no lo cambies, desarróllalo):\n"${eleccion.angulo.angulo}"\n` +
+          `Qué lo hace distinto: ${eleccion.angulo.por_que_es_distinto}\n` +
+          `En el campo "angulo" del JSON devuelve exactamente este ángulo.`;
+      }
+    } catch (e) {
+      // Si el juez falla, se sigue con el comportamiento viejo: el director
+      // elige solo. Peor, pero publicable.
+      console.log(`[${negocio}] elección de ángulo falló, sigo sin ella:`, String(e).slice(0, 140));
+    }
+  }
 
   // VERIFICAR ANTES DE GASTAR. Se comprueba el PLAN (el JSON), no la pieza
   // compuesta, y por dos razones que importan en pesos y en paciencia:
@@ -260,19 +360,47 @@ ${patrones}` : ""}${extraRetry}`;
   }
   let verificacion = { cumplidos: null, falta: [] };
 
+  // ── Log de cada prompt de generación (pedido de Joaquín, 24-ago-2026) ────
+  // Una fila por CADA llamada real a Claude que produce un plan de
+  // contenido — no solo la primera — para poder mirar después, pieza por
+  // pieza, exactamente qué se le pidió al modelo y compararlo contra si esa
+  // pieza terminó corregida o aprobada. No bloqueante: si Supabase falla acá,
+  // la generación sigue igual — es diagnóstico, no algo de lo que dependa
+  // publicar.
+  const promptsRegistrados = [];
+  async function registrarPrompt({ sistema, usuario, respuesta, correccionPedida }) {
+    try {
+      const filas = await db.post("barbara_prompts", {
+        barbara_cliente_id: barbaraId, tipo: TIPO, intento: promptsRegistrados.length,
+        prompt_sistema: sistema, prompt_usuario: usuario,
+        respuesta, correccion_pedida: correccionPedida || null,
+      }, { returnMinimal: false });
+      const id = Array.isArray(filas) ? filas[0]?.id : filas?.id;
+      if (id) promptsRegistrados.push(id);
+    } catch (e) {
+      console.log(`[${negocio}] no se pudo registrar el prompt (no bloqueante):`, String(e).slice(0, 120));
+    }
+  }
+
   let plan_contenido, mediaCaption;
 
   if (TIPO === "ugc") {
-    const pedirPlanUGC = async (extra = "") => JSON.parse(textOf(await claude(AK, {
-      model: "claude-sonnet-5", max_tokens: 2500,
-      system: `Eres Bárbara, directora creativa de "${negocio}" (rubro: ${rubro || "no especificado"}). Diriges un video UGC vertical 9:16 (2-3 tomas de 4-6s): UNA PERSONA mostrando el producto o servicio y HABLÁNDOLE A LA CÁMARA, estilo grabado con su propio celular — casero y genuino, nunca un comercial pulido. La persona puede cambiar entre piezas. Sigues la identidad de marca del cliente. NUNCA repites ángulos de las piezas recientes.
+    const pedirPlanUGC = async (extra = "") => {
+      const sistema = `Eres Bárbara, directora creativa de "${negocio}" (rubro: ${rubro || "no especificado"}). Diriges un video UGC vertical 9:16 (2-3 tomas de 4-6s): UNA PERSONA mostrando el producto o servicio y HABLÁNDOLE A LA CÁMARA, estilo grabado con su propio celular — casero y genuino, nunca un comercial pulido. La persona puede cambiar entre piezas. Sigues la identidad de marca del cliente. NUNCA repites ángulos de las piezas recientes.
 
 ${REGLA_VERACIDAD}
 
-Responde SOLO con el JSON.`,
-      output_config: { format: { type: "json_schema", schema: schemaUGC } },
-      messages: [{ role: "user", content: `${contexto}${extra}\n\nCrea el UGC con un ángulo NUEVO, fiel a la marca.` }],
-    })));
+Responde SOLO con el JSON.`;
+      const usuario = `${contexto}${anguloFijado}${extra}\n\nCrea el UGC con un ángulo NUEVO, fiel a la marca.`;
+      const plan = JSON.parse(textOf(await claude(AK, {
+        model: "claude-sonnet-5", max_tokens: 2500,
+        system: sistema,
+        output_config: { format: { type: "json_schema", schema: schemaUGC } },
+        messages: [{ role: "user", content: usuario }],
+      })));
+      await registrarPrompt({ sistema, usuario, respuesta: plan, correccionPedida: extra || null });
+      return plan;
+    };
     plan_contenido = await pedirPlanUGC("");
     verificacion = await asegurarCorreccion(pedirPlanUGC, plan_contenido);
     plan_contenido = verificacion.plan || plan_contenido;
@@ -280,7 +408,7 @@ Responde SOLO con el JSON.`,
     const urls = [];
     for (let i = 0; i < clips.length; i++) {
       try {
-        urls.push(genVideo(clips[i].escena + "\n\n" + REGLA_TEXTO, Math.min(Math.max(clips[i].duracion || 5, 4), 6), i));
+        urls.push(await genVideo(clips[i].escena + "\n\n" + REGLA_TEXTO, Math.min(Math.max(clips[i].duracion || 5, 4), 6), i));
       } catch (e) {
         if (e.permanent) throw e;
         console.log(`[${negocio}] clip ${i + 1} falló:`, String(e).slice(0, 140));
@@ -298,16 +426,22 @@ Responde SOLO con el JSON.`,
     mediaCaption = plan_contenido.caption;
   } else {
     const nSlides = TIPO === "historia" ? 1 : 6;
-    const pedirPlanSlides = async (extra = "") => JSON.parse(textOf(await claude(AK, {
-      model: "claude-sonnet-5", max_tokens: 4000,
-      system: `Eres Bárbara, directora creativa de "${negocio}" (rubro: ${rubro || "no especificado"}). Diseñas ${TIPO === "historia" ? "una historia de Instagram (1 imagen)" : `un carrusel de Instagram (${nSlides} slides)`} de nivel agencia. Sigues la identidad de marca del cliente al pie de la letra. Escribes la COPY FINAL de cada slide: el titular y el cuerpo tal cual los va a leer la persona. El diseño lo pone una plantilla de marca, así que NO describes imágenes ni composición — solo escribes las palabras, y tienen que sostenerse solas. NUNCA repites ángulos de las piezas recientes.
+    const pedirPlanSlides = async (extra = "") => {
+      const sistema = `Eres Bárbara, directora creativa de "${negocio}" (rubro: ${rubro || "no especificado"}). Diseñas ${TIPO === "historia" ? "una historia de Instagram (1 imagen)" : `un carrusel de Instagram (${nSlides} slides)`} de nivel agencia. Sigues la identidad de marca del cliente al pie de la letra. Escribes la COPY FINAL de cada slide: el titular y el cuerpo tal cual los va a leer la persona. El diseño lo pone una plantilla de marca, así que NO describes imágenes ni composición — solo escribes las palabras, y tienen que sostenerse solas. NUNCA repites ángulos de las piezas recientes.
 
 ${REGLA_VERACIDAD}
 
-Responde SOLO con el JSON.`,
-      output_config: { format: { type: "json_schema", schema } },
-      messages: [{ role: "user", content: `${contexto}${extra}\n\nCrea ${TIPO === "historia" ? "la historia" : `el carrusel de ${nSlides} slides`} con un ángulo NUEVO, fiel a la marca.` }],
-    })));
+Responde SOLO con el JSON.`;
+      const usuario = `${contexto}${anguloFijado}${extra}\n\nCrea ${TIPO === "historia" ? "la historia" : `el carrusel de ${nSlides} slides`} con un ángulo NUEVO, fiel a la marca.`;
+      const plan = JSON.parse(textOf(await claude(AK, {
+        model: "claude-sonnet-5", max_tokens: 4000,
+        system: sistema,
+        output_config: { format: { type: "json_schema", schema } },
+        messages: [{ role: "user", content: usuario }],
+      })));
+      await registrarPrompt({ sistema, usuario, respuesta: plan, correccionPedida: extra || null });
+      return plan;
+    };
     plan_contenido = await pedirPlanSlides("");
     verificacion = await asegurarCorreccion(pedirPlanSlides, plan_contenido);
     plan_contenido = verificacion.plan || plan_contenido;
@@ -340,6 +474,35 @@ Responde SOLO con el JSON.`,
       }
     }
     if (!imgs.length) throw new Error(`[${negocio}] no se generó ninguna imagen`);
+
+    // REVISIÓN VISUAL antes de mandársela al cliente.
+    //
+    // Acá las piezas se componen en HTML (plantillas.mjs), así que no hay
+    // errores de ortografía —el texto se renderiza tal cual— ni formas
+    // fantasma. Lo que sí pasa es DESBORDE: un titular más largo de lo que
+    // entra en su caja se corta o se monta sobre el cuerpo, y eso sólo se ve
+    // mirando el PNG.
+    //
+    // No se rehace automáticamente como en la cuenta propia: acá el reintento
+    // gasta uno de los 3 intentos del cliente. Se avisa a staff y la pieza
+    // sale igual — el cliente la revisa antes de que se publique.
+    try {
+      const veredictos = await revisar(claude, AK, imgs, {
+        reducir: (b) => sharp(b).resize({ width: ANCHO_REVISION }).png().toBuffer(),
+      });
+      const malas = veredictos.filter((v) => !v.aprobada);
+      if (malas.length) {
+        console.log(`[${negocio}] ⚠️ la revisión marcó ${malas.length} slide(s):`);
+        for (const v of malas) {
+          console.log(`   slide ${v.indice + 1}: ` +
+            (v.problemas || []).map((p) => `${p.tipo}: ${p.detalle}`).join(" · "));
+        }
+      } else {
+        console.log(`[${negocio}] revisión: ${imgs.length}/${imgs.length} aprobadas`);
+      }
+    } catch (e) {
+      console.log(`[${negocio}] revisión no disponible, sigo sin ella:`, String(e).slice(0, 140));
+    }
 
     for (let i = 0; i < imgs.length; i++) {
       const fd = new FormData();
@@ -397,12 +560,15 @@ Responde SOLO con el JSON.`,
     }
   }
 
-  await db.post("barbara_memoria", {
+  const piezaCreada = await db.post("barbara_memoria", {
     barbara_cliente_id: barbaraId,
     fecha: hoyISO,
     tipo: TIPO,
     angulo: plan_contenido.angulo || "",
     titulo: negocio,
+    // Sin guardar el pilar, `elegirPilar` no tiene con qué calcular la deuda
+    // y el reparto no converge nunca a la mezcla que pidió la marca.
+    pilar: eleccionPilar.pilar,
     // El plan ES la pieza: los carruseles se componen desde este JSON. Sin
     // guardarlo, el próximo reintento no tiene qué corregir y vuelve a
     // empezar de cero, que es el bug que esto vino a arreglar.
@@ -410,7 +576,17 @@ Responde SOLO con el JSON.`,
     cambios_pedidos: correccion.cambios.length ? correccion.cambios : null,
     cambios_cumplidos: verificacion.cumplidos || null,
     corrige_a: isRetry && previa ? previa.id : null,
-  });
+  }, { returnMinimal: false });
+
+  // Enlaza cada prompt registrado en esta corrida con la pieza que produjo,
+  // para poder ir de "esta pieza se corrigió 3 veces" a "acá están los 3
+  // prompts exactos que la generaron", sin tener que adivinar por fecha.
+  const piezaId = Array.isArray(piezaCreada) ? piezaCreada[0]?.id : piezaCreada?.id;
+  if (piezaId && promptsRegistrados.length) {
+    await db.patch(`barbara_prompts?id=in.(${promptsRegistrados.join(",")})`, {
+      barbara_memoria_id: piezaId,
+    }).catch((e) => console.log(`[${negocio}] no se pudo enlazar los prompts a la pieza:`, String(e).slice(0, 120)));
+  }
 
   // AVISARLE A STAFF SI LA CORRECCIÓN NO SE LOGRÓ.
   //

@@ -1,22 +1,34 @@
-// condor.ai · Empleada IA "Barbara" — 3 carruseles por semana (GitHub Actions)
-// Lun = Noticiero IA (investiga la web) · Mié = IA por industria · Vie = Filosofía IA.
+// condor.ai · Empleada IA "Barbara" — 4 piezas por semana (GitHub Actions)
+// Lun = carrusel de Cóndor · Mar = anuncio de Cóndor (imagen única)
+// Jue = carrusel de Bárbara · Vie = anuncio de Bárbara (imagen única)
+// Cada marca alterna entre sus DOS templates por semana ISO, así los cuatro
+// templates de carrusel se turnan sin repetirse dos semanas seguidas.
 // Imágenes con HIGGSFIELD (nano_banana_2). Memoria anti-repetición en content-log.json:
 // el director lee lo último creado y recibe la orden de NO repetir e INNOVAR.
 // Manda a Telegram para revisar antes de subir.
 //
 // Secrets: ANTHROPIC_API_KEY, HIGGSFIELD_ACCESS_TOKEN, HIGGSFIELD_REFRESH_TOKEN,
 //          TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
-// Variables: DIA (lunes|miercoles|viernes|test) · RETRY=1 (reintento del comando "Denuevo barbara")
+// Variables: DIA (lunes|martes|jueves|viernes|test) · RETRY=1 (reintento del comando "Denuevo barbara")
 
 import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
-import { pegarLogoCondor } from "./motor.mjs";
+import { pegarLogoCondor, pegarPersonajeBarbara, supabase } from "./motor.mjs";
+import { elegirAngulo } from "./angulos.mjs";
+import { apiDisponible, generarImagen as apiImagen } from "./higgsfield-api.mjs";
+import { apiDisponible as kieDisponible, generarImagen as kieImagen } from "./kie-api.mjs";
+import { playbooksPara, bloquePrompt as bloquePlaybooks } from "./playbooks.mjs";
+import { extraerCambios, instrucciones } from "./correccion.mjs";
+import { leerReglas, bloquePrompt as bloqueReglas, aprenderDeCorreccion } from "./reglas.mjs";
+import { ANCHO_REVISION } from "./revision.mjs";
 
 const AK = process.env.ANTHROPIC_API_KEY;
 const TG = process.env.TELEGRAM_BOT_TOKEN;
 const CHAT = process.env.TELEGRAM_CHAT_ID;
 const isTest = (process.env.DIA || "").trim().toLowerCase() === "test" || process.env.TEST === "1";
 const isRetry = process.env.RETRY === "1";
+// Lo que el equipo escribio despues de "Denuevo barbara" en Telegram.
+const CORRECCION = (process.env.CORRECCION || "").trim();
 
 const LOG = "services/barbara/content-log.json";
 const OUTBOX = process.env.BARBARA_OUTBOX_DIR;
@@ -24,9 +36,10 @@ const OUTBOX = process.env.BARBARA_OUTBOX_DIR;
 // Día → tipo
 const rawDia = (process.env.DIA || "").trim().toLowerCase();
 let dia = rawDia;
-if (!["lunes", "miercoles", "viernes"].includes(dia)) {
-  const wd = new Date().getUTCDay(); // 1=Lun 3=Mié 5=Vie
-  dia = wd === 3 ? "miercoles" : wd === 5 ? "viernes" : "lunes";
+if (!["lunes", "martes", "jueves", "viernes"].includes(dia)) {
+  // 1=Lun 2=Mar 4=Jue 5=Vie — los 4 dias del calendario nuevo.
+  const wd = new Date().getUTCDay();
+  dia = { 1: "lunes", 2: "martes", 4: "jueves", 5: "viernes" }[wd] || "lunes";
 }
 
 // ── Piezas de marca compartidas ─────────────────────────────────────────────
@@ -49,8 +62,87 @@ const LIMA = "#BCD530";
 // 22-ago-2026. La instrucción tiene que decir lo contrario: seguir exactamente
 // igual que el resto del fondo, sin ningún borde ni panel que delate dónde
 // va a pegarse el logo.
-const ZONA_LOGO_IZQ = "Top-left corner, about one-tenth of the frame's width and height: this area must look EXACTLY like the rest of the background — same colour, same texture, same gradient, continuous with everything around it. Do NOT draw a box, card, panel, chip or any shape there, and do NOT place any text or icon there either. A real logo file gets placed on top of this untouched background afterward — any visible rectangle or colour shift there is a mistake.";
+const ZONA_LOGO_IZQ = "RESERVED TOP BAND — the entire top 13% of the frame height, across its full width, is off limits: NO headline, NO text, NO icon and NO graphic may enter it, and the headline must START BELOW that band. Within it, the top-left corner (about one third of the frame's width) must look EXACTLY like the rest of the background — same colour, same texture, same gradient, continuous with everything around it. Do NOT draw a box, card, panel, chip or any shape there, and do NOT place any text or icon there either. A real logo file gets placed on top of this untouched background afterward — any visible rectangle or colour shift there is a mistake.";
 const ZONA_LOGO_CENTRO = "Top area, centred, about one-third of the frame's width and one-tenth of its height: this area must look EXACTLY like the rest of the background — same colour, same texture, same gradient, continuous with everything around it. Do NOT draw a box, card, panel, chip or any shape there, and do NOT place any text or icon there either. A real logo file gets placed on top of this untouched background afterward — any visible rectangle or colour shift there is a mistake.";
+
+// El personaje "Bárbara" — la mascota, no el logo. Pedido de Joaquín el
+// 22-ago-2026, a partir de 3 renders que mandó como referencia (mismo trío
+// de color que ya usan estas dos series: negro, crema #F5F1E8, lima
+// ${LIMA}). Va SOLO en las series que son literalmente sobre Bárbara — la
+// referencia aprobada de noticias/servicios nunca la mostró, y meterla ahí
+// contradiría ese diseño ya aprobado.
+//
+// Ya NO se le pide al modelo que dibuje a Bárbara — sólo que deje el espacio
+// limpio. El archivo real se pega encima después (ver pegarPersonajeBarbara en
+// motor.mjs). Es el mismo camino que el logo: describirla es justo lo que hacía
+// que saliera distinta —y con la piel tostada— en cada slide.
+//
+// La redacción evita a propósito la palabra "espacio limpio" a secas: con el
+// logo, "solid-colour safe zone" hizo que el modelo dibujara una CAJA real ahí.
+// Por eso se insiste en continuidad exacta con el fondo y se prohíbe cualquier
+// forma.
+const PERSONAJE_BARBARA = `IMPORTANT — reserved circular area: leave a perfectly EMPTY circular region centred in the middle of the frame, about 30% of the frame's width. That circle must look EXACTLY like the rest of the background — same colour, same texture, same gradient, perfectly continuous with everything around it. Do NOT draw a circle, ring, badge, card, panel or any shape there. Do NOT draw a person, character, mascot, face, avatar or portrait anywhere in this slide. Do NOT place text or icons in that central area. A real character illustration gets composited on top of that untouched background afterward — any visible circle, outline or colour shift there is a mistake. Compose the rest of the slide (headline, stats, footer) so nothing important falls inside that central circle.`;
+
+const SIN_PERSONAJE = "Do NOT include Bárbara, any illustrated character, mascot or human figure anywhere in this slide — icons and typography only.";
+
+// ── QUÉ ES BÁRBARA (y qué NO es) ───────────────────────────────────────────
+//
+// El 23-ago-2026 se publicó un carrusel entero sobre detectar clientes a punto
+// de irse y actuar antes de que cancelen. Nada de eso lo hace Bárbara: es un
+// agente que crea y publica contenido visual, y punto. No sigue leads, no
+// mide churn, no responde comentarios ni mensajes.
+//
+// El problema no fue que el dato estuviera mal — fue vender una capacidad que
+// el producto no tiene, en la cuenta de la propia agencia. Un cliente que
+// llega por ese carrusel llega esperando otra cosa.
+const QUE_ES_BARBARA = `QUÉ ES BÁRBARA (límite duro, no negociable):
+Bárbara es un agente de IA que CREA Y PUBLICA CONTENIDO VISUAL para la marca —
+carruseles, historias y videos— con la identidad del cliente y sin que nadie
+tenga que sentarse a diseñarlos.
+
+Eso es TODO lo que hace hoy. Está PROHIBIDO insinuar, ilustrar o afirmar que
+Bárbara:
+  · hace seguimiento de leads, prospectos o clientes;
+  · detecta o predice quién se va a ir (churn), ni retiene clientes;
+  · responde comentarios, DMs, correos o mensajes de WhatsApp;
+  · atiende clientes, vende, cotiza o agenda;
+  · analiza campañas, mide resultados o gestiona pauta.
+
+Si el ángulo del día necesita alguna de esas capacidades para funcionar, el
+ángulo está mal: cambia de ángulo y quédate en lo que Bárbara sí hace. Esto se
+publica en la cuenta de la propia agencia; prometer lo que el producto no hace
+es el peor lugar donde equivocarse.`;
+
+// ── La portada ─────────────────────────────────────────────────────────────
+//
+// La del 23-ago traía titular de dos líneas, subtítulo, el personaje, un
+// cuadro comparativo VS y DOS cajas de estadísticas. Nadie desliza después de
+// eso: la portada ya contó todo y encima no se lee en el feed.
+//
+// La portada tiene UN trabajo: que la persona deslice. Va dictada, no sugerida.
+const PORTADA = `THIS IS THE COVER (slide 1). Its ONLY job is to make the reader swipe.
+
+Compose it with EXACTLY three things and nothing else:
+  1. ONE headline, very large — it must fill roughly the top third of the frame
+     and be readable on a phone at a glance. Maximum 7 words.
+  2. ONE short supporting line under it. Maximum 10 words.
+  3. The reserved circular area for the Bárbara illustration.
+
+FORBIDDEN on the cover: statistics boxes, percentage figures, comparison or
+"VS" panels, bullet lists, numbered badges, source lines, multiple paragraphs,
+or any second block of body text. If the idea needs a number to land, the
+number goes on slide 2, not here.
+
+Leave generous empty space. A cover that looks empty next to the other slides
+is CORRECT — that contrast is what makes the headline hit.`;
+
+// ── Texto dentro de la imagen ──────────────────────────────────────────────
+//
+// En el carrusel del 23-ago los encabezados de una tabla salieron como "Espar
+// añados" y "Endor cliente": palabras que no existen. El modelo de imagen no
+// escribe, DIBUJA texto — y cuando el prompt no le dicta la cadena exacta,
+// inventa formas que parecen letras. Cuanto más texto y más chico, peor.
+const REGLA_ORTOGRAFIA = `SPELLING (critical): every word rendered in the image must be a correctly spelled, real Spanish word, exactly as given to you. Do NOT invent, abbreviate, split or merge words, and do NOT render placeholder-looking text. If a label, table header or column title appears in the design, its exact wording must come from the copy provided — never improvised. Prefer FEWER words at a LARGER size: small dense text is where misspellings appear.`;
 
 // ── Los 4 templates ─────────────────────────────────────────────────────────
 // Describen SOLO el diseño: retícula, paleta, tipografía y ritmo. El contenido
@@ -67,7 +159,59 @@ const T_BARBARA_PRODUCTO = `Dark editorial slide, 4:5. Background PURE BLACK #00
 
 const T_BARBARA_DATOS = `Data-driven editorial slide, 4:5, same brand family as the dark Barbara series but on alternating grounds: this slide is EITHER pure black #000000 with cream #F5F1E8 text, OR warm cream #F2EFE6 with near-black text and olive accents — pick one and commit to it, never split the frame. Top-left: a SOLID rounded-square badge filled lime ${LIMA} with the number in black inside it. Headline in a high-contrast DISPLAY SERIF with the emphasised half in lime ${LIMA}, or in deeper olive #8FA524 when the ground is cream so it stays readable. Under it a short lime rule. Body copy in a geometric sans. For statistics, stack two or three wide rounded-rectangle OUTLINE cards, each with a thin-line icon at the left, one very large lime percentage, and a two-line label beside it. For comparisons, draw a bordered two-column panel with a circled-cross list on the left and a circled-check list on the right, split by a vertical rule with a small circled "VS" on it. Optionally one simple two-bar chart, grey against lime, labelled underneath. Bottom-left, a small grey source line. Editorial, dense but ordered. NO photos, NO clip-art.`;
 
+// ── Los 2 templates de imagen única (formato anuncio) ──────────────────────
+//
+// Pedido de Joaquín el 23-ago-2026: además de los carruseles, dos piezas
+// semanales de UNA sola imagen, con lógica de anuncio — un titular grande que
+// haga pensar y una invitación al DM. Poco texto, mucho aire.
+//
+// La diferencia con la portada de un carrusel no es cosmética: una portada
+// invita a DESLIZAR y deja la respuesta adentro; un anuncio tiene que cerrar
+// solo, porque no hay slide 2. Por eso acá sí va el CTA en la misma pieza.
+
+const T_AD_CONDOR = `Single bold advertising image, 4:5 — this is a standalone ad, not a carousel cover. Background PURE BLACK #000000, or near-white #F7F7F8 with one soft blue-to-pink gradient bloom bleeding from a corner — pick one and commit. ${ZONA_LOGO_IZQ}
+
+Composition, top to bottom, and NOTHING else:
+· ONE enormous headline filling the upper half of the frame, in very heavy grotesque sans, tight leading, 2 or 3 short lines. On black it is cream #F5F1E8; on the light ground it is near-black #0A0A0A. ONE key phrase inside it is filled with ${GRADIENTE}.
+· A short horizontal rule in that gradient.
+· ONE line of supporting copy in medium grey at much smaller size — the invitation.
+· At the bottom, a wide rounded-rectangle button OUTLINE stroked in the gradient, holding the call to action in bold.
+
+Optionally ONE large thin-line icon or a single floating 3D isometric render in blue-violet tones, off to one side, with lots of empty space around it. NEVER more than one visual element.
+
+FORBIDDEN: statistics, percentages, bullet lists, comparison panels, slide counters, source lines, photos, stock-photo people, clip-art. Enormous breathing room — this has to read from a thumbnail.`;
+
+const T_AD_BARBARA = `Single bold advertising image, 4:5 — this is a standalone ad, not a carousel cover. Background PURE BLACK #000000 edge to edge. ${ZONA_LOGO_IZQ}
+
+Composition, top to bottom, and NOTHING else:
+· ONE enormous headline filling the upper half of the frame, set in a high-contrast DISPLAY SERIF with Scotch or Didone flavour, cream #F5F1E8, tight leading, 2 or 3 short lines, with the emphasised words in lime ${LIMA}.
+· A short lime rule under it.
+· ONE line of supporting copy in white geometric sans at much smaller size — the invitation.
+· At the bottom, a wide rounded-rectangle button OUTLINE stroked in lime holding the call to action in lime bold.
+
+FORBIDDEN: statistics, percentages, bullet lists, comparison panels, numbered badges, slide counters, source lines, photos, clip-art, any colour beyond black, cream and lime. Enormous breathing room — this has to read from a thumbnail.`;
+
 const SERIES = {
+  ad_condor: {
+    titulo: "📣 Cóndor — anuncio",
+    investiga: false, slides: 1, cta: "Escríbenos al DM",
+    instruccion: "UNA sola imagen tipo anuncio de Cóndor AI (agentes de IA, automatización, páginas web, campañas). " +
+      "Un titular corto que interpele al dueño de negocio y lo haga pensar, del estilo de " +
+      "\"La IA ya despegó. ¿Y tú, te quedas en tierra?\", y debajo una invitación clara del tipo " +
+      "\"Escríbenos al DM y te ayudamos a implementar IA en tu empresa\". " +
+      "El titular NO explica: provoca. Nada de cifras ni listas.",
+    template: T_AD_CONDOR, logo: "izquierda",
+  },
+  ad_barbara: {
+    titulo: "📣 Bárbara — anuncio",
+    investiga: false, slides: 1, cta: "Escríbenos al DM",
+    instruccion: "UNA sola imagen tipo anuncio de Bárbara, la agente de IA que crea y publica el contenido " +
+      "de una marca. Un titular corto y concreto que muestre cuánto trabajo se ahorra, del estilo de " +
+      "\"Bárbara hace en un día lo que 3 community managers\", y debajo una invitación del tipo " +
+      "\"Escríbenos al DM y la instalamos para ti\". " +
+      "Habla del trabajo que deja de hacerse, no de la tecnología. Nada de cifras inventadas.",
+    template: T_AD_BARBARA, logo: "izquierda", personaje: true,
+  },
   noticias: {
     titulo: "📰 Noticiero IA — la semana en IA",
     investiga: true, slides: 6, cta: "Síguenos para más",
@@ -84,13 +228,13 @@ const SERIES = {
     titulo: "🎀 Bárbara — tu agente de contenido",
     investiga: false, slides: 6, cta: "Escríbenos al DM",
     instruccion: "Carrusel sobre Bárbara, la agente de IA que crea y publica el contenido de una marca sola. Parte de un dolor concreto y cotidiano del dueño de negocio y muestra cómo Bárbara lo resuelve. Máximo 3 puntos numerados, cada uno con las horas que ahorra.",
-    template: T_BARBARA_PRODUCTO, logo: "izquierda",
+    template: T_BARBARA_PRODUCTO, logo: "izquierda", personaje: true,
   },
   barbara_datos: {
     titulo: "📊 Bárbara — el dato que lo cambia todo",
     investiga: true, slides: 7, cta: "Escríbenos al DM",
     instruccion: "Carrusel sobre el impacto MEDIBLE de usar IA en marketing y ventas, apoyado en estudios REALES encontrados en la búsqueda web (McKinsey, Gartner, HubSpot, Deloitte u otros). Cada cifra tiene que ir con su fuente citada. Incluye una comparación antes/después o con/sin IA.",
-    template: T_BARBARA_DATOS, logo: null, // esta serie, en las piezas que aprobó Joaquín, no lleva el logo en cada slide
+    template: T_BARBARA_DATOS, logo: null, personaje: true, // el logo no va (ver arriba); el personaje sí, es una serie de Bárbara
   },
 };
 
@@ -105,6 +249,28 @@ const SERIES = {
 // saldría nunca.
 const ROTATIVAS = ["servicios", "barbara_producto", "barbara_datos"];
 
+// ── El calendario NUEVO (23-ago-2026) ──────────────────────────────────────
+//
+// Joaquín lo redefinió: 4 piezas por semana, dos de cada marca.
+//
+//   Lunes     · carrusel de CÓNDOR   (noticias ↔ servicios)
+//   Martes    · anuncio de CÓNDOR    (imagen única)
+//   Jueves    · carrusel de BÁRBARA  (barbara_producto ↔ barbara_datos)
+//   Viernes   · anuncio de BÁRBARA   (imagen única)
+//
+// Cada marca alterna entre SUS DOS templates por semana ISO, así los cuatro
+// templates de carrusel se turnan sin que ninguno se repita dos semanas
+// seguidas — que es lo que se pidió.
+const CARRUSELES_CONDOR = ["noticias", "servicios"];
+const CARRUSELES_BARBARA = ["barbara_producto", "barbara_datos"];
+
+const CALENDARIO = {
+  lunes: () => CARRUSELES_CONDOR[semanaISO() % 2],
+  martes: () => "ad_condor",
+  jueves: () => CARRUSELES_BARBARA[semanaISO() % 2],
+  viernes: () => "ad_barbara",
+};
+
 // Semana ISO. El índice avanza por semana REAL y no por corrida: contando
 // corridas, un reintento del mismo día adelantaría la rotación y el viernes
 // saldría con la serie que le tocaba a la semana siguiente.
@@ -115,9 +281,11 @@ function semanaISO(d = new Date()) {
 }
 
 function serieDeHoy() {
-  if (dia === "lunes") return "noticias";
-  const slot = dia === "miercoles" ? 0 : 1;
-  return ROTATIVAS[(semanaISO() * 2 + slot) % ROTATIVAS.length];
+  const elegir = CALENDARIO[dia];
+  if (elegir) return elegir();
+  // Día fuera del calendario (una corrida a mano un miércoles, por ejemplo):
+  // se cae al carrusel de Cóndor que toque, que es la pieza más neutra.
+  return CARRUSELES_CONDOR[semanaISO() % 2];
 }
 
 // SERIE=... fuerza una serie concreta (para probar una sin esperar su semana).
@@ -150,10 +318,34 @@ const textOf = (d) => (d.content || []).filter((b) => b.type === "text").map((b)
 
 // ---- Memoria anti-repetición ----
 function leerLog() { try { return JSON.parse(readFileSync(LOG, "utf8")); } catch { return []; } }
+
+// Cuántas entradas guardan el PLAN completo (los slides, no sólo el ángulo).
+// Sin el plan no se puede corregir: hay que saber qué decía el titular del
+// slide 2 para poder acortarlo. Pero guardarlo en las 100 entradas infla el
+// archivo sin que nadie lo lea — una corrección siempre es sobre la última.
+const CON_CONTENIDO = 3;
+
 function guardarEnLog(entry) {
   const log = leerLog();
   log.push(entry);
-  writeFileSync(LOG, JSON.stringify(log.slice(-100), null, 2) + "\n"); // máximo 100 últimas
+  const recortado = log.slice(-100);
+  // Se despoja el plan de todas menos las últimas, en el momento de escribir.
+  for (let i = 0; i < recortado.length - CON_CONTENIDO; i++) delete recortado[i].contenido;
+  writeFileSync(LOG, JSON.stringify(recortado, null, 2) + "\n");
+}
+
+/** La última pieza del mismo tipo, con su plan, para poder corregirla. */
+function piezaAnteriorLocal(tipoActual) {
+  const log = leerLog();
+  for (let i = log.length - 1; i >= 0; i--) {
+    if (log[i].contenido && log[i].tipo === tipoActual) return log[i];
+  }
+  // Si no hay del mismo tipo, sirve la última con contenido: el equipo pudo
+  // haber forzado otra serie a mano y aun así querer corregir esa.
+  for (let i = log.length - 1; i >= 0; i--) {
+    if (log[i].contenido) return log[i];
+  }
+  return null;
 }
 
 const schema = {
@@ -184,8 +376,18 @@ Objetivo: que se lea fácil en el feed del celular sin tener que abrir "ver más
 };
 
 // ---- Higgsfield: generar imagen y devolver buffer ----
-const MAX_PROMPT = 2600;
-function genImagen(prompt, idx) {
+// Subido de 2600 a 3600 el 22-ago-2026: PERSONAJE_BARBARA agrega ~1000 chars
+// más en las slides que la llevan, y con T_BARBARA_DATOS (el template más
+// largo) el total worst-case pasaba los 2600 — mismo bug que ya se vio una
+// vez con REGLA_TEXTO: lo que se corta es el FINAL del prompt armado, que es
+// justo el contenido específico del slide.
+// 23-ago: subido de 3600 a 4400 al agregar PORTADA y REGLA_ORTOGRAFIA. El
+// peor caso (portada + personaje + T_BARBARA_DATOS) da 3758 y se pasaba por
+// 172 — la TERCERA vez que alargar una constante desborda este tope en
+// silencio. Se dejan ~640 de holgura, y la cuenta se verifica antes de
+// commitear cualquier constante nueva.
+const MAX_PROMPT = 4400;
+async function genImagen(prompt, idx) {
   // execFileSync (sin shell) para que saltos de línea/comillas del prompt no rompan el comando.
   //
   // El tope subió de 1500 a 2600 el 22-ago-2026, al instalar los templates
@@ -199,6 +401,15 @@ function genImagen(prompt, idx) {
     console.log(`⚠️ slide ${idx + 1}: prompt de ${armado.length} chars, se corta en ${MAX_PROMPT}. Revisa el template.`);
   }
   const safe = armado.slice(0, MAX_PROMPT);
+
+  // Migración 24-ago-2026: Kie.ai (gpt-image-2) primero — key estática, sin
+  // el OAuth de Higgsfield que dejó a Bárbara muda el 29-jun, 22/23/24-ago
+  // (esta última vez por créditos agotados en la cuenta equivocada). Ver
+  // kie-api.mjs. Sin KIE_API_KEY, sigue el camino de siempre (API oficial de
+  // Higgsfield si está, si no el CLI) sin tocar nada de eso.
+  if (kieDisponible()) return kieImagen(safe, { aspectRatio: "4:5", resolucion: "2K" });
+  if (apiDisponible()) return apiImagen(safe, { aspectRatio: "4:5", formato: "png" });
+
   const args = ["generate", "create", "nano_banana_2", "--prompt", safe, "--aspect_ratio", "4:5", "--resolution", "1k", "--wait", "--wait-timeout", "8m"];
   // Reintentos ante fallos transitorios de Higgsfield (respuesta vacía).
   let ultimo = "";
@@ -273,17 +484,141 @@ async function main() {
   const log = leerLog();
   const recientes = log.slice(-15).map(e => `- [${e.fecha} ${e.serie || e.tipo}] ${e.angulo}`).join("\n") || "(sin historial)";
 
+  // 2b) ÁNGULO: se elige ANTES de generar, con un juez semántico aparte.
+  //
+  // La línea "no repitas, acá van las últimas 15" que ya iba en el prompt del
+  // director se queda (sirve de contexto), pero no puede ser la única defensa:
+  // es el propio generador auto-vigilándose, y la ventana de 15 piezas se
+  // agota en cinco semanas a 3 carruseles por semana. Acá se compara contra
+  // el historial LARGO y con una llamada cuyo único trabajo es comparar.
+  // Ver el encabezado de angulos.mjs.
+  //
+  // `claude` acá es (body) => …, y angulos.mjs espera (apiKey, body) porque
+  // motor.mjs lo expone así. El adaptador evita tocar ninguna de las dos.
+  // En una CORRECCION dirigida no se elige angulo nuevo: el equipo pidio
+  // arreglar algo puntual de ESA pieza, y cambiarle el angulo seria
+  // exactamente el "rehacer en vez de corregir" que esto vino a resolver.
+  const esCorreccionDirigida = isRetry && Boolean(CORRECCION);
+  const historial = log.map(e => e.angulo).filter(Boolean).slice(-80);
+  let anguloElegido = null, avisoAngulo = "";
+
+  if (esCorreccionDirigida) {
+    console.log("corrección dirigida: se mantiene el ángulo de la pieza anterior");
+  } else {
+    try {
+      const eleccion = await elegirAngulo((_k, body) => claude(body), AK, {
+        instruccion: tema.instruccion, research, historial,
+      });
+      anguloElegido = eleccion.angulo;
+      for (const d of eleccion.descartes) console.log(`ángulo descartado: se parecía a "${d.se_parece_a}" (${d.razon})`);
+      if (eleccion.agotado) {
+        // No se aborta: quedarse sin publicar es peor que publicar algo parecido.
+        // Pero el equipo tiene que enterarse, porque agotarse dos veces seguidas
+        // significa que la serie ya dio lo que tenía para dar.
+        avisoAngulo = "\n\n⚠️ *Ojo*: el juez de repetición descartó todos los ángulos propuestos. Se publicó el mejor disponible, pero esta serie está quedándose sin terreno nuevo.";
+        console.log("⚠️ ángulos agotados tras los reintentos — se sigue con el mejor disponible");
+      }
+      if (anguloElegido) console.log("ángulo elegido:", anguloElegido.angulo);
+    } catch (e) {
+      // Si el juez falla (red, JSON raro), se sigue con el comportamiento viejo:
+      // el director elige el ángulo solo. Peor, pero publicable.
+      console.log("elección de ángulo falló, sigo sin ella:", String(e).slice(0, 140));
+    }
+  }
+
+  // 2c) MEMORIA FUNDACIONAL. Hasta acá la cuenta propia de Cóndor era el caso
+  // "en casa de herrero, cuchillo de palo": los clientes tenían tres capas de
+  // memoria y Cóndor sólo un content-log.json local.
+  //
+  // Es OPCIONAL a propósito: si el workflow no trae los secrets de Supabase,
+  // barbara.mjs sigue corriendo igual que siempre. Este script publica en la
+  // cuenta real tres veces por semana y no puede caerse por una tabla.
+  let playbooks = "";
+  if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    try {
+      const db = supabase(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+      playbooks = bloquePlaybooks(await playbooksPara(db, { tipo: "carrusel" }));
+    } catch (e) {
+      console.log("playbooks no disponibles, sigo sin ellos:", String(e).slice(0, 120));
+    }
+  }
+
+  // 2d) CORRECCIÓN DIRIGIDA. Si el equipo escribió "Denuevo barbara, <qué
+  // arreglar>", se corrige ESO y se deja el resto igual — en vez de rehacer la
+  // pieza entera y esperar que salga mejor de casualidad. Es el mismo salto
+  // que correccion.mjs ya había dado para los clientes; la cuenta propia de
+  // Cóndor se había quedado atrás.
+  let previaLocal = null, cambios = [];
+  if (isRetry && CORRECCION) {
+    try {
+      previaLocal = piezaAnteriorLocal(dia);
+      const r = await extraerCambios(AK, [CORRECCION], previaLocal);
+      cambios = r.cambios || [];
+      console.log(`corrección pedida: ${cambios.length} cambio(s)` +
+        (cambios.length ? " — " + cambios.map(c => c.que).join(", ") : " (no se entendió ninguno concreto)"));
+    } catch (e) {
+      console.log("no se pudo interpretar la corrección, sigo sin ella:", String(e).slice(0, 140));
+    }
+  }
+
+  // LO QUE EL EQUIPO YA CORRIGIO. Es la capa de MAS peso: son las
+  // preferencias de la propia marca, destiladas de correcciones reales.
+  // Ver reglas.mjs.
+  const reglasEquipo = bloqueReglas(leerReglas());
+
   // 3) Director (lee memoria, innova)
-  const extra = isRetry ? "\n\n⚠️ ESTE ES UN REINTENTO: el contenido anterior fue rechazado por el equipo. Genera una versión CLARAMENTE MEJOR y distinta (mejor diseño, mejor texto, otro enfoque del mismo tema)." : "";
+  //
+  // Tres modos, de más preciso a menos: corrección dirigida con la lista de
+  // cambios; reintento a secas (rehacer, el comportamiento viejo); o pieza
+  // nueva.
+  const extra = cambios.length
+    ? instrucciones(cambios, previaLocal)
+    : isRetry
+      ? "\n\n⚠️ ESTE ES UN REINTENTO: el contenido anterior fue rechazado por el equipo." +
+        (CORRECCION ? ` Pidieron esto: "${CORRECCION}". Aplícalo.` : "") +
+        " Genera una versión CLARAMENTE MEJOR y distinta (mejor diseño, mejor texto, otro enfoque del mismo tema)."
+      : "";
+  // El ángulo se FIJA en los dos casos, y por razones opuestas:
+  //   · pieza nueva → el que eligió el juez, para no repetir el historial;
+  //   · corrección  → el de la pieza anterior, para no derivar a otro tema.
+  //
+  // Sin la segunda mitad, saltarse al juez sólo evitaba elegir uno nuevo pero
+  // dejaba al director inventando el suyo: se pedía "acorta los titulares" y
+  // volvía un carrusel de otro tema con titulares cortos. Visto en la primera
+  // corrida real de esta función (23-ago-2026).
+  // Para fijar el ángulo alcanza con el `angulo` de la última entrada — no
+  // hace falta que tenga el plan completo. Importa en la transición: las
+  // entradas anteriores al 23-ago-2026 no guardaban `contenido`, y sin este
+  // respaldo la primera corrección sobre una de ellas volvía a derivar.
+  const anguloPrevio = esCorreccionDirigida
+    ? (previaLocal?.angulo || [...log].reverse().find((e) => e.angulo)?.angulo || "")
+    : "";
+  const anguloFijado = anguloElegido
+    ? `\n\nÁNGULO YA ELEGIDO (no lo cambies, desarróllalo):\n"${anguloElegido.angulo}"\nQué lo hace distinto: ${anguloElegido.por_que_es_distinto}\nEn el campo "angulo" del JSON devuelve exactamente este ángulo.`
+    : anguloPrevio
+      ? `\n\nÁNGULO A MANTENER (es una corrección, NO cambies de tema):\n"${anguloPrevio}"\nEn el campo "angulo" del JSON devuelve exactamente este ángulo.`
+      : "";
   const dir = await claude({
     model: "claude-sonnet-5", max_tokens: 8000,
     system: `Eres Barbara, directora creativa de condor.ai. Diseñas carruseles de Instagram (${N_SLIDES} slides) de nivel agencia, educativos y que hacen seguir la cuenta. Sigues EXACTAMENTE el template del día. Incluyes el texto exacto a renderizar en cada slide COMO COPY FINAL: en la imagen SOLO aparece lo que lee la persona, JAMÁS palabras estructurales como "titular", "subtítulo", "título", "dato", "texto", "slide" o "CTA", ni rótulos con dos puntos. NUNCA repites ángulos, protagonistas ni textos de las piezas recientes (te las paso). Innova siempre.
 
 REGLA DE VERACIDAD (no negociable): cada cifra, fecha, medio y hecho que pongas en un slide tiene que salir TAL CUAL de la investigación que te paso. Está PROHIBIDO inventar o estimar una estadística, atribuirle algo a un medio real (Bloomberg, Microsoft, Meta, Google, McKinsey…) que no venga en la investigación, o ponerle a una noticia una fecha que no sea la de su publicación real. Esto se publica en la cuenta real de una empresa: un dato inventado con el logo encima es un problema de verdad. Si la investigación no alcanza, haz un carrusel más corto o de ángulo más general — nunca lo rellenes.
 
+${QUE_ES_BARBARA}
+
+LA PORTADA (slide 1) es la que decide si alguien lee el resto. Su titular tiene
+que ser corto y con filo: máximo 7 palabras, más una línea de apoyo de máximo
+10. NO pongas cifras, comparaciones ni listas en la portada — esos van del
+slide 2 en adelante. Si tu portada necesita explicar, no es una portada.
+
+FUENTES: sólo cita una fuente si viene textual de la investigación que te paso,
+con su nombre real. Está PROHIBIDA una línea de fuente genérica inventada del
+tipo "Análisis de Retención de Clientes 2024" o "Estudio Interno": si no
+tienes la fuente real, la pieza va SIN línea de fuente y SIN cifras.
+
 Responde SOLO con el JSON.`,
     output_config: { format: { type: "json_schema", schema } },
-    messages: [{ role: "user", content: `Tipo de hoy (${dia}): ${tema.instruccion}\n\nTEMPLATE OBLIGATORIO:\n${tema.template}\n\nPIEZAS RECIENTES (NO repitas estos ángulos, innova):\n${recientes}\n${research ? "\nInvestigación web:\n" + research : ""}${extra}\n\nCrea el carrusel de ${N_SLIDES} slides con un ángulo NUEVO.` }],
+    messages: [{ role: "user", content: `Tipo de hoy (${dia}): ${tema.instruccion}\n\nTEMPLATE OBLIGATORIO:\n${tema.template}\n\nPIEZAS RECIENTES (NO repitas estos ángulos, innova):\n${recientes}\n${research ? "\nInvestigación web:\n" + research : ""}${reglasEquipo}${playbooks}${anguloFijado}${extra}\n\nCrea el carrusel de ${N_SLIDES} slides con un ángulo NUEVO.` }],
   });
   // Si el modelo se queda sin tokens, el JSON llega cortado y JSON.parse tira
   // un "Unterminated string in JSON at position N" que no dice nada de la
@@ -300,29 +635,128 @@ Responde SOLO con el JSON.`,
       `(${crudo.length} chars, stop_reason=${dir.stop_reason}): ` + String(e).slice(0, 120)
     );
   }
-  const slides = (plan.slides || []).slice(0, N_SLIDES);
+  // SOLO_PORTADA=1 genera únicamente la primera imagen. Es para revisar un
+  // diseño nuevo sin pagar el carrusel entero: 1 crédito en vez de 6 o 7. El
+  // director igual escribe el plan completo, así que la portada es la misma
+  // que saldría en la pieza real — no una portada "de prueba".
+  const soloPortada = process.env.SOLO_PORTADA === "1";
+  const slides = (plan.slides || []).slice(0, soloPortada ? 1 : N_SLIDES);
+  if (soloPortada) console.log("SOLO_PORTADA=1 — se genera sólo la primera imagen");
 
   // 4) Imágenes con Higgsfield
+  //
+  // Se genera y compone en una función aparte para poder REHACER un slide
+  // suelto después de la revisión, sin repetir el carrusel entero.
+  async function componerSlide(i, contador, esUnica) {
+    const llevaPersonaje = Boolean(tema.personaje) && i % 2 === 0;
+    const personaje = tema.personaje ? (llevaPersonaje ? PERSONAJE_BARBARA : SIN_PERSONAJE) : "";
+    // La portada lleva su propia regla de composición: es la única slide
+    // cuyo trabajo es que la persona deslice, no informar.
+    const esPortada = i === 0 && !esUnica;
+    const url = await genImagen(
+      REGLA_TEXTO + "\n\n" + REGLA_ORTOGRAFIA + "\n\n" + tema.template + contador +
+      (esPortada ? "\n\n" + PORTADA : "") +
+      (personaje ? "\n\n" + personaje : "") + "\n\n" + slides[i].prompt, i);
+    let buf = Buffer.from(await (await fetch(url)).arrayBuffer());
+    // El logo REAL se pega acá, no se le pide al modelo que lo dibuje (ver
+    // el comentario junto a ZONA_LOGO_IZQ). tema.logo es null en las series
+    // cuya referencia aprobada no lleva logo en cada slide.
+    if (tema.logo) buf = await pegarLogoCondor(buf, tema.logo);
+    // Y el personaje igual: archivo real encima del hueco que dejó el modelo.
+    // `i / 2` para que las poses roten de a una entre slides CON personaje
+    // (0, 2, 4 → retrato, brazos, carpeta) y no se repita dos veces seguidas.
+    // En un anuncio el personaje va abajo: el titular ocupa la mitad de
+    // arriba y el subtítulo va justo debajo del centro.
+    if (llevaPersonaje) buf = await pegarPersonajeBarbara(buf, Math.floor(i / 2), esUnica ? "bajo" : "centro");
+    return buf;
+  }
+
+  const contadorDe = (i, esUnica) => esUnica
+    ? "\n\nDo NOT render any slide counter, page number or \"1/1\" anywhere in the frame."
+    : `\n\nSLIDE COUNTER: render exactly the text "${i + 1}/${N_SLIDES}" in the top-right corner, nothing else there. Do not invent a different number or format.`;
+
   const imgs = [];
   for (let i = 0; i < slides.length; i++) {
     try {
       // El contador va DICTADO, no insinuado. Dejándoselo al modelo salieron
       // "01", "01 / 05", "3/5", "05" y "04/10" en un mismo carrusel de 6: un
       // modelo de imagen no sabe en qué slide va ni cuántos hay.
-      const contador = `\n\nSLIDE COUNTER: render exactly the text "${i + 1}/${slides.length}" in the top-right corner, nothing else there. Do not invent a different number or format.`;
-      const url = genImagen(REGLA_TEXTO + "\n\n" + tema.template + contador + "\n\n" + slides[i].prompt, i);
-      let buf = Buffer.from(await (await fetch(url)).arrayBuffer());
-      // El logo REAL se pega acá, no se le pide al modelo que lo dibuje (ver
-      // el comentario junto a ZONA_LOGO_IZQ). tema.logo es null en las series
-      // cuya referencia aprobada no lleva logo en cada slide.
-      if (tema.logo) buf = await pegarLogoCondor(buf, tema.logo);
-      imgs.push(buf);
+      // Una pieza de UNA sola imagen no lleva contador: "1/1" en la esquina
+      // delata que es una plantilla de carrusel y rompe la ilusión de anuncio.
+      // Se mira N_SLIDES (lo que la SERIE define) y no slides.length: con
+      // SOLO_PORTADA=1 un carrusel de 7 renderiza 1 sola imagen, y confundir
+      // eso con un anuncio le sacaría el contador y la regla de portada — o
+      // sea, la prueba mostraría un diseño distinto al real.
+      const esUnica = N_SLIDES === 1;
+      const contador = esUnica
+        ? "\n\nDo NOT render any slide counter, page number or \"1/1\" anywhere in the frame."
+        // El total es N_SLIDES, no slides.length: con SOLO_PORTADA la prueba
+        // tiene que mostrar "1/7" como saldría de verdad, no "1/1".
+        : `\n\nSLIDE COUNTER: render exactly the text "${i + 1}/${N_SLIDES}" in the top-right corner, nothing else there. Do not invent a different number or format.`;
+      // Portada siempre, alternado, nunca dos seguidas, ≥50% del carrusel:
+      // se calcula acá (par/impar, 0-indexado) en vez de dejárselo al
+      // criterio del director. Pedido de Joaquín el 22-ago-2026 — con 6 o 7
+      // slides, "un slide sí / uno no, empezando en la portada" YA cumple
+      // las cuatro condiciones a la vez sin necesidad de negociarlas.
+      imgs.push(await componerSlide(i, contador, esUnica));
     } catch (e) {
       if (e.permanent) throw e; // config/auth: no tiene sentido seguir con los demás slides
       console.log("slide", i + 1, "falló:", String(e).slice(0, 140));
     }
   }
   if (!imgs.length) throw new Error("No se generó ninguna imagen");
+
+  // 4b) REVISIÓN VISUAL antes de entregar.
+  //
+  // Nadie miraba las imágenes: el prompt pedía las cosas bien y se asumía que
+  // salían bien. El 23-ago-2026 llegaron a Telegram piezas con palabras
+  // inventadas ("Espar añados"), titulares cortados y el personaje encima del
+  // subtítulo. Ninguno de esos errores se ve en el JSON del plan: pasan al
+  // DIBUJAR, y la única forma de cazarlos es mirar el PNG.
+  //
+  // Un solo reintento por slide. Si a la segunda sigue mal, se entrega igual y
+  // se dice qué se encontró: quedarse sin publicar es peor, y el equipo revisa
+  // en Telegram antes de aprobar.
+  let avisoRevision = "";
+  try {
+    const { revisar, rechazadas, resumen } = await import("./revision.mjs");
+    const sharp = (await import("sharp")).default;
+    const reducir = (b) => sharp(b).resize({ width: ANCHO_REVISION }).png().toBuffer();
+
+    const esUnica = N_SLIDES === 1;
+    let veredictos = await revisar((_k, body) => claude(body), AK, imgs, { reducir });
+    let malas = rechazadas(veredictos);
+    console.log(`revisión: ${imgs.length - malas.length}/${imgs.length} aprobadas`);
+
+    for (const i of malas) {
+      const detalle = (veredictos[i].problemas || []).map((p) => `${p.tipo}: ${p.detalle}`).join(" · ");
+      console.log(`  slide ${i + 1} rechazada — ${detalle}`);
+      try {
+        imgs[i] = await componerSlide(i, contadorDe(i, esUnica), esUnica);
+        console.log(`  slide ${i + 1} rehecha`);
+      } catch (e) {
+        console.log(`  slide ${i + 1}: no se pudo rehacer (${String(e).slice(0, 80)}) — va la original`);
+      }
+    }
+
+    if (malas.length) {
+      // Se vuelve a revisar SOLO lo rehecho, para no pagar la vista completa
+      // de nuevo ni arriesgar que el revisor cambie de opinión sobre lo que ya
+      // había aprobado.
+      const rehechas = malas.map((i) => imgs[i]);
+      const segunda = await revisar((_k, body) => claude(body), AK, rehechas, { reducir });
+      const siguenMal = segunda
+        .map((v, k) => ({ ...v, indice: malas[k] }))
+        .filter((v) => !v.aprobada);
+      avisoRevision = resumen(siguenMal);
+      console.log(siguenMal.length
+        ? `revisión: ${siguenMal.length} sigue(n) con problemas tras rehacer`
+        : "revisión: todo quedó limpio tras rehacer");
+    }
+  } catch (e) {
+    // La revisión NUNCA bloquea la entrega: si falla, se entrega como antes.
+    console.log("revisión no disponible, sigo sin ella:", String(e).slice(0, 160));
+  }
 
   // 5) Guardar exactamente la pieza revisada como artefacto privado de GitHub.
   // La publicación posterior usa estas mismas imágenes; nunca regenera contenido al aprobar.
@@ -362,13 +796,15 @@ Responde SOLO con el JSON.`,
   // obligaba a pedírselo a alguien que supiera dónde tocar.
   const comoCorregir = [
     "🔁 *Para rehacerlo o corregir*",
-    "• Rehacer entero: escribe *Denuevo barbara*",
+    "• Corregir algo puntual: *Denuevo barbara, <qué arreglar>*",
+    "   ej: _Denuevo barbara, el titular del slide 2 muy largo_ → cambia solo eso",
+    "• Rehacer entero: escribe *Denuevo barbara* (sin explicación)",
     "• Aprobar y publicar: escribe *Aprobar barbara*",
     "",
     "Para algo puntual, corre el workflow _Barbara_ a mano con:",
     "• `SERIE=" + claveSerie + "` — repite esta misma serie",
-    "• `SERIE=noticias|servicios|barbara_producto|barbara_datos` — cambia de serie",
-    "• `DIA=lunes|miercoles|viernes` — fuerza el día",
+    "• `SERIE=noticias|servicios|barbara_producto|barbara_datos|ad_condor|ad_barbara` — cambia de serie",
+    "• `DIA=lunes|martes|jueves|viernes` — fuerza el día",
     "• `RETRY=1` — salta el candado de 1 pieza por día",
     "",
     "El diseño de cada serie vive en `services/barbara/barbara.mjs`, en la constante `T_" + claveSerie.toUpperCase() + "`. Ahí se cambian colores, tipografía y retícula — el contenido no se toca, lo escribe Bárbara cada vez.",
@@ -379,17 +815,62 @@ Responde SOLO con el JSON.`,
     text: `🤖 *Barbara* — ${tema.titulo}\n` +
           `Serie: \`${claveSerie}\` · ${imgs.length} slides · ID: \`${runId}\`\n` +
           `🎯 Ángulo: _${plan.angulo || "—"}_\n\n` +
-          `📝 *Caption:*\n\n${plan.caption || ""}\n\n${comoCorregir}`,
+          `📝 *Caption:*\n\n${plan.caption || ""}${avisoAngulo}${avisoRevision}\n\n${comoCorregir}`,
     parse_mode: "Markdown",
   });
 
+  // 6b) APRENDER de la corrección, si la hubo.
+  //
+  // Va DESPUÉS de mandar la pieza a Telegram a propósito: destilar la regla es
+  // valioso pero nunca puede demorar ni tumbar la entrega. `aprenderDeCorreccion`
+  // no lanza — si falla, la pieza de hoy ya salió igual.
+  if (CORRECCION) {
+    const r = await aprenderDeCorreccion((_k, body) => claude(body), AK, CORRECCION);
+    if (r.guardada) {
+      console.log(`regla ${r.reforzada ? "reforzada" : "nueva"}: ${r.regla}`);
+      await tg("sendMessage", {
+        chat_id: CHAT,
+        text: r.reforzada
+          ? `🧠 Anotado (ya lo habían pedido antes): _${r.regla}_`
+          : `🧠 Aprendido para las próximas: _${r.regla}_`,
+        parse_mode: "Markdown",
+      });
+    } else {
+      console.log("no se guardó regla:", r.motivo);
+    }
+  }
+
   // 7) Registrar en memoria (anti-repetición + artefacto aprobable)
-  guardarEnLog({ fecha: new Date().toISOString().slice(0, 10), tipo: dia, serie: claveSerie, angulo: plan.angulo || slides[0]?.titulo || "", titulo: tema.titulo, runId });
+  guardarEnLog({
+    fecha: new Date().toISOString().slice(0, 10), tipo: dia, serie: claveSerie,
+    angulo: plan.angulo || slides[0]?.titulo || "", titulo: tema.titulo, runId,
+    // El plan completo, para que la proxima correccion tenga QUE corregir.
+    // Solo sobrevive en las ultimas entradas (ver CON_CONTENIDO).
+    contenido: { slides, caption: plan.caption || "" },
+  });
   console.log("OK", dia, "|", claveSerie, "| ángulo:", plan.angulo);
 }
 
 main().catch(async (e) => {
   console.error(e);
-  try { await tg("sendMessage", { chat_id: CHAT, text: "⚠️ Barbara falló (" + dia + "): " + String(e).slice(0, 300) }); } catch {}
+  // Un fallo de auth de Higgsfield no se arregla reintentando ni mirando el
+  // código: hay que volver a loguearse a mano. Ya pasó el 22-ago-2026 (y
+  // antes), y las dos veces el mensaje decía sólo "Not authenticated", que
+  // obliga a que alguien vaya a buscar el procedimiento. Va con el remedio
+  // adentro.
+  const esAuth = /Not authenticated|auth login|session expired|unauthor|forbidden|\b(401|403)\b/i.test(String(e));
+  const remedio = esAuth
+    ? "\n\n🔑 *Es el token de Higgsfield, no el código.* Hay que re-loguearse a mano:\n" +
+      "1. `higgsfield auth login` (abre el navegador)\n" +
+      "2. `bash services/barbara/reauth.sh` — re-cifra, rota el secret y pushea\n" +
+      "Ojo: el CLI local tiene que ser 0.2.x, que es el que usa CI."
+    : "";
+  try {
+    await tg("sendMessage", {
+      chat_id: CHAT,
+      text: "⚠️ Barbara falló (" + dia + "): " + String(e).slice(0, 300) + remedio,
+      parse_mode: "Markdown",
+    });
+  } catch {}
   process.exit(1);
 });

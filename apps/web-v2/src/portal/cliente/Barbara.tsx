@@ -1,14 +1,13 @@
 import { useEffect, useState } from "react";
 import { sb } from "../lib/supabase";
-import { ChatVisor } from "../agentes-ia/ChatVisor";
-import { FormularioBarbara } from "./FormularioBarbara";
-import { ReglasAprendidas } from "../agentes-ia/ReglasAprendidas";
-import { infoPlan, TIPOS_CONTENIDO, type BarbaraCliente, type BarbaraFormulario } from "../agentes-ia/tipos";
+import { useSesion } from "../auth/sesion";
+import { BarbaraModulo } from "../agentes-ia/BarbaraModulo";
+import type { BarbaraBrandBook, BarbaraCliente, BarbaraFormulario } from "../agentes-ia/tipos";
 
 type Cargado = {
-  id: string;
-  plan: string;
-  rubro: string | null;
+  cliente: BarbaraCliente;
+  negocio: string;
+  brandBook: BarbaraBrandBook | null;
   formulario: BarbaraFormulario | null;
 };
 
@@ -16,31 +15,54 @@ function uno<T>(v: T | T[] | null | undefined): T | null {
   return Array.isArray(v) ? (v[0] ?? null) : (v ?? null);
 }
 
+const SELECT = "*, clientes(negocio), barbara_brand_book(*), barbara_formulario(*)";
+// Con !inner para que el filtro sobre la tabla embebida realmente aplique
+// (sin el hint, PostgREST no garantiza que .eq() sobre una relación filtre
+// las filas del lado izquierdo).
+const SELECT_STAFF = "*, clientes!inner(negocio), barbara_brand_book(*), barbara_formulario(*)";
+
 /**
- * Lo que ve el cliente de su agente Bárbara. Igual que `MiPlan.tsx`, la
- * consulta NO filtra por email: la policy `cliente_ve_su_barbara` ya limita
- * la tabla a su propia fila.
+ * "/acceso/barbara" — EL portal de Bárbara, para las dos audiencias.
+ *
+ * Pedido explícito de Joaquín (24-ago-2026): clic en "Bárbara" del menú de
+ * staff tiene que abrir el portal DIRECTO, sin pasar por una lista de
+ * clientes ni apretar un botón "Ver portal" — Cóndor es cliente de su
+ * propio producto, así que su Bárbara se abre igual que la de cualquier
+ * cliente externo.
+ *
+ * Por eso esta ruta vive ANTES de la bifurcación staff/cliente en
+ * `Portal.tsx` y este componente decide QUÉ fila mostrar según el rol:
+ *   · cliente → su propia fila (RLS ya la limita, sin filtro).
+ *   · staff   → la fila de Cóndor.AI, identificada por el negocio — no por
+ *     un UUID hardcodeado, para no romper si algún día se recrea la fila.
+ *
+ * La lista completa de TODOS los clientes de Bárbara (administrar planes,
+ * dar de alta) sigue en `/acceso/agentes-ia` — accesible desde acá con el
+ * link "Administrar clientes" en Ajustes, no se perdió, solo dejó de ser
+ * la puerta de entrada por defecto.
  */
 export function Barbara() {
+  const sesion = useSesion();
   const [d, setD] = useState<Cargado | null>(null);
   const [cargando, setCargando] = useState(true);
-  const [editando, setEditando] = useState(false);
 
   async function cargar() {
     setCargando(true);
-    const { data } = await sb
-      .from("barbara_clientes")
-      .select("id,plan,rubro,barbara_formulario(*)")
-      .limit(1)
-      .maybeSingle();
+    const esStaff = sesion.rol === "staff";
+    const query = esStaff
+      ? sb.from("barbara_clientes").select(SELECT_STAFF).eq("clientes.negocio", "Cóndor.AI")
+      : sb.from("barbara_clientes").select(SELECT).limit(1);
+    const { data } = await query.maybeSingle();
     if (data) {
       const fila = data as unknown as BarbaraCliente & {
+        clientes: { negocio: string | null } | null;
+        barbara_brand_book: BarbaraBrandBook | BarbaraBrandBook[] | null;
         barbara_formulario: BarbaraFormulario | BarbaraFormulario[] | null;
       };
       setD({
-        id: fila.id,
-        plan: fila.plan,
-        rubro: fila.rubro,
+        cliente: fila,
+        negocio: fila.clientes?.negocio || (esStaff ? "Cóndor.AI" : "tu marca"),
+        brandBook: uno(fila.barbara_brand_book),
         formulario: uno(fila.barbara_formulario),
       });
     } else {
@@ -50,114 +72,39 @@ export function Barbara() {
   }
 
   useEffect(() => {
+    if (sesion.cargando) return;
     cargar();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sesion.cargando, sesion.rol]);
 
-  if (cargando) return <div className="cuerpo"><p className="vacio">Cargando…</p></div>;
+  if (sesion.cargando || cargando)
+    return <div style={{ minHeight: "100vh", background: "#0A0A0B" }} />;
+
+  const esStaff = sesion.rol === "staff";
 
   if (!d)
     return (
-      <div className="cuerpo">
-        <p className="vacio">
-          Todavía no tienes Bárbara activada. Escríbenos y la activamos.
+      <div style={{ minHeight: "100vh", background: "#0A0A0B", color: "#F4F5EF", padding: 40 }}>
+        <p>
+          {esStaff
+            ? "No existe todavía la fila de Cóndor.AI en Bárbara Clientes."
+            : "Todavía no tienes Bárbara activada. Escríbenos y la activamos."}
         </p>
       </div>
     );
 
-  const tipos = (d.formulario?.tipo_contenido ?? [])
-    .map((id) => TIPOS_CONTENIDO.find((t) => t.id === id)?.texto ?? id)
-    .join(", ");
-
   return (
-    <>
-      <div className="barra">
-        <h1>Bárbara</h1>
-      </div>
-
-      <div className="cuerpo">
-        <section className="bloque">
-          <div className="rejilla-datos">
-            <div className="dato">
-              <small>Plan</small>
-              <b>
-                <span className={"pill " + infoPlan(d.plan).pill}>{infoPlan(d.plan).nombre}</span>
-                {infoPlan(d.plan).nota ? (
-                  <span style={{ color: "var(--texto-3)", fontWeight: 400, marginLeft: 7, fontSize: 12.5 }}>
-                    {infoPlan(d.plan).nota}
-                  </span>
-                ) : null}
-              </b>
-            </div>
-            <div className="dato">
-              <small>Rubro</small>
-              <b>{d.rubro || "—"}</b>
-            </div>
-          </div>
-        </section>
-
-        <section className="bloque">
-          <h3>Formulario de entrada</h3>
-          <p className="parrafo" style={{ color: "var(--texto-2)" }}>
-            Esto es lo que Bárbara usa para crear tu contenido: qué tipo de
-            piezas quieres, a quién le hablas, tu tono y qué evitar.
-          </p>
-          {d.formulario ? (
-            <div className="rejilla-datos" style={{ marginBottom: 14 }}>
-              <div className="dato">
-                <small>Tipo de contenido</small>
-                <b>{tipos || "—"}</b>
-              </div>
-              <div className="dato">
-                <small>Público objetivo</small>
-                <b>{d.formulario.publico_objetivo || "—"}</b>
-              </div>
-              <div className="dato">
-                <small>Tono</small>
-                <b>{d.formulario.tono || "—"}</b>
-              </div>
-              <div className="dato">
-                <small>Restricciones</small>
-                <b>{d.formulario.restricciones || "—"}</b>
-              </div>
-            </div>
-          ) : (
-            <p className="vacio">Todavía no llenas tu formulario.</p>
-          )}
-          <button className="btn solido" onClick={() => setEditando(true)}>
-            Editar formulario de entrada
-          </button>
-        </section>
-
-        {/* Que el cliente vea lo que Bárbara aprendió de SU marca es parte de
-            por qué el producto se siente propio: comprueba que lo escucharon.
-            No puede apagarlas — eso lo revisa el equipo. */}
-        <section className="bloque">
-          <h3>Lo que Bárbara aprendió de tu marca</h3>
-          <p className="parrafo" style={{ color: "var(--texto-2)" }}>
-            Cada vez que pides un cambio por Telegram, Bárbara guarda la
-            preferencia detrás de ese cambio para no repetir el error. Esto es
-            solo tuyo: nunca se comparte con otras marcas.
-          </p>
-          <ReglasAprendidas barbaraClienteId={d.id} />
-        </section>
-
-        <section className="bloque">
-          <h3>Conversación</h3>
-          <ChatVisor barbaraClienteId={d.id} />
-        </section>
-      </div>
-
-      {editando && (
-        <FormularioBarbara
-          barbaraClienteId={d.id}
-          inicial={d.formulario}
-          cerrar={() => setEditando(false)}
-          guardado={() => {
-            setEditando(false);
-            cargar();
-          }}
-        />
-      )}
-    </>
+    <BarbaraModulo
+      barbaraClienteId={d.cliente.id}
+      negocio={d.negocio}
+      plan={d.cliente.plan}
+      rubro={d.cliente.rubro}
+      brandBook={d.brandBook}
+      formulario={d.formulario}
+      onCambio={cargar}
+      esStaff={esStaff}
+      volverA={esStaff ? "/acceso/dashboard" : "/acceso/plan"}
+      volverTexto="Volver a Cóndor"
+    />
   );
 }

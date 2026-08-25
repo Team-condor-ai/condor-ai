@@ -43,9 +43,22 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Instalar dependencias (sharp)
+        # Faltaba: este workflow solo instalaba el CLI de Higgsfield. Desde que
+        # motor.mjs importa sharp (22-ago 21:20 UTC), la corrida diaria moria con
+        # ERR_MODULE_NOT_FOUND antes de generar nada. barbara.yml ya tenia este paso.
+        working-directory: services/barbara
+        run: npm install
       - name: Instalar CLI de Higgsfield
-        run: npm install -g @higgsfield/cli@0.2.3
+        # Solo si NO hay KIE_API_KEY — con Kie.ai configurado este paso (y el
+        # de abajo) sobran, y encima la cuenta de Higgsfield está rota hoy
+        # (24-ago-2026: sesión en una cuenta free de 0 créditos), así que
+        # dejarlo corriendo solo agrega una forma más de que el job falle
+        # antes de llegar a la generación real.
+        if: ${{ !secrets.KIE_API_KEY }}
+        run: npm install -g @higgsfield/cli@1.1.23
       - name: Autenticar Higgsfield (descifrar credenciales rotadas)
+        if: ${{ !secrets.KIE_API_KEY }}
         env:
           HF_CREDS_KEY: ${{ secrets.HF_CREDS_KEY }}
           HF_ACCESS: ${{ secrets.HIGGSFIELD_ACCESS_TOKEN }}
@@ -59,12 +72,24 @@ jobs:
             printf '{"access_token":"%s","refresh_token":"%s"}' "$HF_ACCESS" "$HF_REFRESH" > ~/.config/higgsfield/credentials.json
           fi
           sha256sum ~/.config/higgsfield/credentials.json | awk '{print $1}' > /tmp/hf_before.sha
-          WS_ID="${HF_WORKSPACE_ID:-a2878df7-43e1-4685-acca-5be527026fc2}"
-          higgsfield workspace set "$WS_ID" >/dev/null 2>&1 || echo "Aviso: no se seleccionó workspace (ok en CLI 0.2.x)."
+          WS_ID="${HF_WORKSPACE_ID:-a269a272-1e58-4b90-b117-0419c44b475c}"
+          # Obligatorio desde que CI usa la serie 1.x del CLI: sin workspace,
+          # cada generación muere con workspace_membership_required.
+          if ! higgsfield workspace set "$WS_ID" >/dev/null 2>&1; then
+            echo "::error::No se pudo seleccionar workspace en Higgsfield. Revisá el secret HIGGSFIELD_WORKSPACE_ID contra: higgsfield workspace list"
+            exit 1
+          fi
       - name: Generar contenido de clientes activos
         run: node services/barbara/clientes.mjs
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Migración 24-ago-2026: Kie.ai (gpt-image-2 + seedance-2-0), key
+          # estática. genImagen/genVideo la prefieren si existe. Ver kie-api.mjs.
+          KIE_API_KEY: ${{ secrets.KIE_API_KEY }}
+          # API oficial de Higgsfield: credenciales ESTATICAS, no caducan.
+          # Fallback si no hay KIE_API_KEY.
+          HIGGSFIELD_API_KEY_ID: ${{ secrets.HIGGSFIELD_API_KEY_ID }}
+          HIGGSFIELD_API_KEY_SECRET: ${{ secrets.HIGGSFIELD_API_KEY_SECRET }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
@@ -87,7 +112,20 @@ jobs:
               git add services/barbara/hf-creds.enc
               if git diff --staged --quiet; then echo "sin cambios"; else
                 git commit -m "barbara-clientes: token rotado $(date +%Y-%m-%d)"
-                for n in 1 2 3; do git pull --rebase origin main && git push && break || sleep 5; done
+                OK=0
+            for n in 1 2 3; do
+              if git pull --rebase origin main && git push; then OK=1; break; fi
+              sleep 5
+            done
+            # EL BUG QUE ROMPIO A BARBARA EL 22-AGO: antes esto era un bucle que
+            # al agotar los 3 intentos terminaba con exit 0. El job quedaba en
+            # verde mientras el token recien rotado se perdia — y como el
+            # refresh_token de Higgsfield ROTA EN CADA USO, el viejo ya estaba
+            # muerto. La cadena se cortaba para siempre, en silencio.
+            if [ "$OK" != "1" ]; then
+              echo "::error::No se pudo guardar el estado tras 3 intentos. Si el token de Higgsfield roto en esta corrida, la cadena quedo ROTA: hay que re-loguear (higgsfield auth login + bash services/barbara/reauth.sh)."
+              exit 1
+            fi
               fi
             fi
           fi

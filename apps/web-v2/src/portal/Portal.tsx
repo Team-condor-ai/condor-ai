@@ -1,5 +1,5 @@
 import { Suspense, lazy, useState } from "react";
-import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 
 // El CSS del ERP de Planeta, copiado sin tocar. Se importa SOLO acá y no en
 // main.tsx a propósito: define variables globales (--fondo, --texto…) y un
@@ -11,6 +11,7 @@ import "./disenio/estilo.css";
 import "./disenio/piezas.css";
 import "./disenio/portal.css";
 import "./disenio/acceso.css";
+import "./disenio/barbara.css";
 
 import { useSesion, salir } from "./auth/sesion";
 import { Login } from "./auth/Login";
@@ -30,6 +31,7 @@ import { Mapa } from "./staff/Mapa";
 import { AgentesIA } from "./staff/agentes-ia/AgentesIA";
 import { Memoria } from "./staff/memoria/Memoria";
 import { FichaBarbaraCliente } from "./staff/agentes-ia/FichaBarbaraCliente";
+import { BarbaraClientePortal } from "./staff/agentes-ia/BarbaraClientePortal";
 
 import { MiPlan } from "./cliente/MiPlan";
 import { ResultadoPago } from "./cliente/ResultadoPago";
@@ -100,10 +102,12 @@ const MENU_STAFF: Grupo[] = [
     titulo: "Agentes IA",
     icono: "barbara",
     entradas: [
-      // "Agentes IA > Barbara > Barbara Clientes" es la jerarquia del encargo;
-      // el menu no anida un tercer nivel, asi que "Barbara" vive DENTRO de la
-      // pagina como chip, pensado para cuando haya un segundo agente.
-      { a: "/acceso/agentes-ia", texto: "Bárbara", icono: "barbara" },
+      // "Bárbara" abre EL portal directo (Cóndor.AI, como cualquier cliente
+      // usando su propio producto) — pedido explícito de Joaquín (24-ago):
+      // sin pasos intermedios, sin lista, sin botón "Ver portal". La lista
+      // completa de clientes de Bárbara (administrar, dar de alta) sigue en
+      // /acceso/agentes-ia, alcanzable desde dentro del portal en Ajustes.
+      { a: "/acceso/barbara", texto: "Bárbara", icono: "barbara", transicion: true },
       { a: "/acceso/memoria", texto: "Memoria", icono: "memoria" },
     ],
   },
@@ -133,7 +137,7 @@ const MENU_CLIENTE_BASE: Entrada[] = [
 ];
 
 const ITEM_CUENTA: Entrada = { a: "/acceso/cuenta", texto: "Mi cuenta", icono: "ajustes" };
-const ITEM_BARBARA: Entrada = { a: "/acceso/barbara", texto: "Bárbara", icono: "agentesia" };
+const ITEM_BARBARA: Entrada = { a: "/acceso/barbara", texto: "Bárbara", icono: "agentesia", transicion: true };
 
 function Marco({
   menu,
@@ -190,6 +194,7 @@ export default function Portal() {
   // Se consulta siempre (staff incluido) porque los hooks no pueden ser
   // condicionales — para staff simplemente no se usa el resultado.
   const { tiene: tieneBarbara } = useTieneBarbara();
+  const ubicacion = useLocation();
 
   // `.portal-app` no es decorativo: es el scope del CSS del ERP. Sin este
   // div, las reglas de fondo, tipografía e iconos no se aplican — ver el
@@ -209,6 +214,23 @@ export default function Portal() {
 
   const correo = s.email;
   const nombre = correo.split("@")[0];
+
+  // BÁRBARA ES SU PROPIA APP DENTRO DEL PORTAL, NO UNA PÁGINA MÁS.
+  // ---------------------------------------------------------------------------
+  // Pedido explícito de Joaquín (24-ago-2026): al entrar a Bárbara, el menú y
+  // el chrome de Cóndor desaparecen del todo — se siente como entrar a otra
+  // app, con su propio riel de navegación oscuro y un botón propio para
+  // volver. Por eso estas dos rutas se resuelven ACÁ, antes que `Marco`, en
+  // vez de vivir anidadas dentro de él como el resto de las páginas de staff
+  // o de cliente. `BarbaraModulo` trae su propio botón de "Volver a Cóndor".
+  const enBarbara = /^\/acceso\/(barbara|agentes-ia\/[^/]+\/portal)(\/|$)/.test(ubicacion.pathname);
+  if (enBarbara)
+    return envolver(
+      <Routes>
+        <Route path="barbara" element={<Barbara />} />
+        <Route path="agentes-ia/:id/portal" element={<BarbaraClientePortal />} />
+      </Routes>,
+    );
 
   if (s.rol === "staff")
     return envolver(
@@ -231,6 +253,7 @@ export default function Portal() {
           <Route path="agentes-ia" element={<AgentesIA />} />
           <Route path="memoria" element={<Memoria />} />
           <Route path="agentes-ia/:id" element={<FichaBarbaraCliente />} />
+          {/* agentes-ia/:id/portal se resuelve más arriba, fuera de Marco */}
           <Route path="*" element={<Navigate to="/acceso/dashboard" replace />} />
         </Routes>
       </Marco>,
@@ -256,7 +279,7 @@ export default function Portal() {
         <Route path="plan" element={<MiPlan />} />
         <Route path="pago/resultado" element={<ResultadoPago />} />
         <Route path="boletas" element={dif(<MisBoletas />)} />
-        <Route path="barbara" element={<Barbara />} />
+        {/* barbara se resuelve más arriba, fuera de Marco */}
         <Route path="cuenta" element={<MiCuenta />} />
         <Route path="*" element={<Navigate to="/acceso/plan" replace />} />
       </Routes>

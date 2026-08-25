@@ -1,0 +1,126 @@
+{
+  "vieja:nail_fungus_7days": {
+    "item_id": "MLC2185629557",
+    "precio": 24990,
+    "stock_inicial": 8,
+    "titulo": "Tónico Uñas Jengibre 7 Days Gotero Pies Y Manos",
+    "fecha": "2026-08-22"
+  },
+  "agustin:nail_fungus_7days": {
+    "item_id": "MLC2185629569",
+    "precio": 26990,
+    "stock_inicial": 8,
+    "titulo": "Tónico Uñas Jengibre 7 Days Gotero Pies Y Manos",
+    "fecha": "2026-08-22"
+  },
+  "vieja:inositol": {
+    "item_id": "MLC2185629577",
+    "precio": 23490,
+    "stock_inicial": 3,
+    "titulo": "Mio Inositol Ácido Fólico Vitamina D3 60 Cápsulas",
+    "fecha": "2026-08-22"
+  },
+  "agustin:inositol": {
+    "item_id": "MLC2185629589",
+    "precio": 25490,
+    "stock_inicial": 3,
+    "titulo": "Mio Inositol Ácido Fólico Vitamina D3 60 Cápsulas",
+    "fecha": "2026-08-22"
+  },
+  "agustin:rosetimes": {
+    "item_id": "MLC2187457693",
+    "fecha": "2026-08-23",
+    "titulo": "Rosetimes Bálsamo Facial Hidratante En Barra 8g",
+    "precio": 23490,
+    "stock_inicial": 3,
+    "descripcion_http": 201
+  },
+  "agustin:memorix": {
+    "item_id": "MLC4391528712",
+    "fecha": "2026-08-23",
+    "titulo": "Memorix 60 Cápsulas Suplemento Alimentario Sin Sabor",
+    "precio": 25490,
+    "stock_inicial": 6,
+    "descripcion_http": 201
+  },
+  "vieja:oil_of_oregano": {
+    "item_id": "MLC2187509467",
+    "fecha": "2026-08-23",
+    "titulo": "Carlyle Organic Oil Of Oregano 59ml Gotero",
+    "precio": 23490,
+    "stock_inicial": 3,
+    "descripcion_http": 201
+  },
+  "vieja:rosetimes": {
+    "item_id": "MLC2187457877",
+    "fecha": "2026-08-23",
+    "titulo": "Rosetimes Bálsamo Facial Hidratante En Barra 8g",
+    "precio": 21490,
+    "stock_inicial": 3,
+    "descripcion_http": 201
+  },
+  "vieja:dr_melaxin": {
+    "item_id": "MLC2187509675",
+    "fecha": "2026-08-23",
+    "titulo": "Dr Melaxin Peel Shot Spray Exfoliante Ácido Kójico",
+    "precio": 24990,
+    "stock_inicial": 4,
+    "descripcion_http": 201
+  },
+  "vieja:magnesio_12en1": {
+    "item_id": "MLC2187626097",
+    "fecha": "2026-08-23",
+    "titulo": "Magnesio 12 En 1 Complex 720mg 60 Cápsulas Sin Sabor",
+    "precio": 23490,
+    "stock_inicial": 2,
+    "descripcion_http": 201
+  },
+  "agustin:magnesio_complex": {
+    "item_id": "MLC2187626227",
+    "fecha": "2026-08-23",
+    "titulo": "Bioforce Magnesium Complex 1000mg 90 Cápsulas",
+    "precio": 27490,
+    "stock_inicial": 3,
+    "descripcion_http": 201
+  },
+  "nueva:blood_sugar": {
+    "item_id": "MLC4394301172",
+    "fecha": "2026-08-24",
+    "titulo": "Blood Sugar Complex Toplux 60 Cápsulas Sin Sabor",
+    "precio": 25490,
+    "stock_inicial": 3,
+    "descripcion_http": 201
+  },
+  "vieja:rejuvia": {
+    "item_id": "MLC4394159476",
+    "fecha": "2026-08-24",
+    "titulo": "Rejuvia 30 Cápsulas Suplemento Alimentario Sin Sabor",
+    "precio": 23490,
+    "stock_inicial": 14,
+    "descripcion_http": 201
+  },
+  "vieja:nad_pro_max": {
+    "item_id": "MLC4394303564",
+    "fecha": "2026-08-24",
+    "titulo": "Nad Pro Max Coq10 Resveratrol 600mg 60 Cápsulas",
+    "precio": 23490,
+    "stock_inicial": 2,
+    "descripcion_http": 201
+  },
+  "nueva:zooone": {
+    "item_id": "MLC4394162532",
+    "fecha": "2026-08-24",
+    "titulo": "Zooone Luteína Zinc Vitaminas C E 60 Cápsulas",
+    "precio": 25490,
+    "stock_inicial": 3,
+    "descripcion_http": 201
+  },
+  "nueva:magnesio_complex": {
+    "item_id": "MLC4394305700",
+    "fecha": "2026-08-24",
+    "titulo": "Bioforce Magnesium Complex 1000mg 90 Cápsulas",
+    "precio": 25490,
+    "stock_inicial": 3,
+    "descripcion_http": 201
+  }
+}

@@ -14,6 +14,10 @@ on:
         description: 'forzar industria del trailer (opcional, ej: restaurante)'
         required: false
         default: ''
+      correccion:
+        description: 'qué corregir de la pieza anterior (lo llena el bot de Telegram)'
+        required: false
+        default: ''
       retry:
         description: 'poner 1 para reintento'
         required: false
@@ -45,7 +49,7 @@ jobs:
         # PIN de versión a propósito: instalar @latest hacía que un release rompiente
         # (1.0.0, 27-jun-2026: workspace obligatorio + nuevo auth flow) tumbara a Barbara
         # sola. Subir de versión debe ser un cambio deliberado, no automático.
-        run: npm install -g @higgsfield/cli@0.2.3
+        run: npm install -g @higgsfield/cli@1.1.23
       - name: Autenticar Higgsfield (descifrar credenciales rotadas)
         env:
           HF_CREDS_KEY: ${{ secrets.HF_CREDS_KEY }}
@@ -67,9 +71,13 @@ jobs:
           # el 2026-06-29 con "No workspace selected". Lo seleccionamos de forma
           # auto-reparable: ID conocido y, si no, el primero de la cuenta del bot.
           # Al cambiar credentials.json, el paso de persistencia lo re-cifra en hf-creds.enc.
-          # Best-effort (nunca falla el job): 0.2.x NO exige workspace; sólo lo necesita
-          # la serie 1.x. Si el día de mañana se sube de versión, esto ya lo deja listo.
-          WS_ID="${HF_WORKSPACE_ID:-a2878df7-43e1-4685-acca-5be527026fc2}"
+          # YA NO es best-effort: desde que CI usa la serie 1.x, el workspace es
+          # OBLIGATORIO. El 23-ago-2026 la corrida fallo slide por slide con
+          # workspace_membership_required porque el ID hardcodeado era el de la
+          # cuenta VIEJA de Higgsfield (migrada el 22-ago) y este paso se lo
+          # tragaba en silencio con un "Aviso:". Si no se puede seleccionar, el
+          # job tiene que morir aca y no 15 minutos despues quemando reintentos.
+          WS_ID="${HF_WORKSPACE_ID:-a269a272-1e58-4b90-b117-0419c44b475c}"
           if higgsfield workspace set "$WS_ID" >/dev/null 2>&1; then
             echo "Workspace seleccionado: $WS_ID"
           else
@@ -77,17 +85,23 @@ jobs:
             if [ -n "$WS_ID" ] && higgsfield workspace set "$WS_ID" >/dev/null 2>&1; then
               echo "Workspace auto-seleccionado: $WS_ID"
             else
-              echo "Aviso: no se seleccionó workspace (ok en CLI 0.2.x, que no lo requiere)."
+              echo "::error::No se pudo seleccionar workspace en Higgsfield. Con el CLI 1.x es obligatorio: sin esto toda generación falla con workspace_membership_required. Revisá el secret HIGGSFIELD_WORKSPACE_ID contra: higgsfield workspace list"
+              exit 1
             fi
           fi
       - name: Generar reel y enviar a Telegram
         run: node services/barbara/reels.mjs
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # API oficial de Higgsfield: credenciales ESTATICAS, no caducan.
+          # Si estan, genImagen/genVideo las prefieren sobre el CLI (OAuth).
+          HIGGSFIELD_API_KEY_ID: ${{ secrets.HIGGSFIELD_API_KEY_ID }}
+          HIGGSFIELD_API_KEY_SECRET: ${{ secrets.HIGGSFIELD_API_KEY_SECRET }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           TIPO: ${{ github.event.inputs.tipo }}
           RETRY: ${{ github.event.inputs.retry }}
+          CORRECCION: ${{ github.event.inputs.correccion }}
           INDUSTRIA: ${{ github.event.inputs.industria }}
       - name: Persistir credenciales rotadas + memoria
         if: always()
@@ -109,5 +123,18 @@ jobs:
           git add services/barbara/content-log.json
           if git diff --staged --quiet; then echo "sin cambios"; else
             git commit -m "barbara reels: registro + token $(date +%Y-%m-%d)"
-            for n in 1 2 3; do git pull --rebase origin main && git push && break || sleep 5; done
+            OK=0
+            for n in 1 2 3; do
+              if git pull --rebase origin main && git push; then OK=1; break; fi
+              sleep 5
+            done
+            # EL BUG QUE ROMPIO A BARBARA EL 22-AGO: antes esto era un bucle que
+            # al agotar los 3 intentos terminaba con exit 0. El job quedaba en
+            # verde mientras el token recien rotado se perdia — y como el
+            # refresh_token de Higgsfield ROTA EN CADA USO, el viejo ya estaba
+            # muerto. La cadena se cortaba para siempre, en silencio.
+            if [ "$OK" != "1" ]; then
+              echo "::error::No se pudo guardar el estado tras 3 intentos. Si el token de Higgsfield roto en esta corrida, la cadena quedo ROTA: hay que re-loguear (higgsfield auth login + bash services/barbara/reauth.sh)."
+              exit 1
+            fi
           fi

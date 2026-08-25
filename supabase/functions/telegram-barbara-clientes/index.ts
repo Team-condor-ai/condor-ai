@@ -90,47 +90,81 @@ async function dispararWorkflowContenido(workflow: string, inputs: Record<string
   return r.ok;
 }
 
+/**
+ * Separa el comando de lo que el equipo escribió DESPUÉS.
+ *
+ * Antes esto era `texto === "denuevo barbara"`, coincidencia exacta. O sea que
+ * escribir "Denuevo barbara, el titular del slide 2 está muy largo" no hacía
+ * absolutamente nada: ni regeneraba ni contestaba. El equipo tenía que mandar
+ * el comando pelado y perder la explicación, que era justo la parte útil.
+ *
+ * Ahora lo que va después del comando viaja como instrucción de corrección, y
+ * Bárbara corrige ESO en vez de rehacer a ciegas — el mismo salto que
+ * `correccion.mjs` ya había dado para los clientes.
+ */
+function parseComando(texto: string): { comando: string; resto: string } | null {
+  const limpio = texto.trim().replace(/\s+/g, " ");
+  const bajo = limpio.toLowerCase();
+  for (const alias of ["denuevo barbara", "de nuevo barbara", "aprobar barbara"]) {
+    // Tiene que EMPEZAR con el comando y seguir con un separador (o terminar
+    // ahi). Exigir separador evita que "denuevo barbarita" se cuele; aceptar
+    // cualquier puntuacion evita el hueco que encontro el test: escribir
+    // "Denuevo barbara: mas corto" no matcheaba con solo espacio y coma.
+    if (!bajo.startsWith(alias)) continue;
+    const siguiente = bajo[alias.length];
+    if (siguiente === undefined || /[\s,.:;!?¡¿()\[\]-]/.test(siguiente)) {
+      const comando = alias === "aprobar barbara" ? "aprobar" : "denuevo";
+      // Se corta sobre el texto ORIGINAL para no perder mayúsculas ni tildes:
+      // el resto se le pasa a un modelo, y "más corto" no es "mas corto".
+      const resto = limpio.slice(alias.length).replace(/^[\s,.:;-]+/, "").trim();
+      return { comando, resto };
+    }
+  }
+  return null;
+}
+
 /** true si ya se manejó el mensaje acá (chat interno) y no hay que seguir. */
 async function manejarChatInterno(chatId: number | string, textoOriginal: string): Promise<boolean> {
   if (!CHAT_INTERNO || String(chatId) !== String(CHAT_INTERNO)) return false;
 
-  const texto = textoOriginal.trim().toLowerCase();
+  const parsed = parseComando(textoOriginal);
+  if (!parsed) return true; // chat interno, pero no es un comando conocido
 
-  if (texto === "denuevo barbara" || texto === "de nuevo barbara") {
+  if (parsed.comando === "denuevo") {
     const ultimo = await ultimoContenido();
     if (!ultimo) {
       await tgSend(chatId, "🤔 No encuentro el último contenido para reintentar. Genera uno primero.");
       return true;
     }
-    const ok = await dispararWorkflowContenido(ultimo.workflowReintento, ultimo.inputsReintento);
+    const inputs = { ...ultimo.inputsReintento };
+    if (parsed.resto) inputs.correccion = parsed.resto.slice(0, 900);
+
+    const ok = await dispararWorkflowContenido(ultimo.workflowReintento, inputs);
     await tgSend(chatId, ok
-      ? "🔄 Bárbara está rehaciendo el último contenido. En unos minutos llegará la nueva versión."
+      ? (parsed.resto
+        ? `🔧 Corrigiendo: _${parsed.resto}_\n\nBárbara va a cambiar eso y dejar el resto igual. En unos minutos llega.`
+        : "🔄 Bárbara está rehaciendo el último contenido. En unos minutos llegará la nueva versión.\n\n💡 Tip: puedes decirle qué corregir — *Denuevo barbara, el titular del slide 2 muy largo* — y cambia solo eso.")
       : "⚠️ No pude disparar el reintento. Revisa GH_TOKEN y sus permisos.");
     return true;
   }
 
-  if (texto === "aprobar barbara") {
-    const ultimo = await ultimoContenido();
-    if (!ultimo?.runId) {
-      await tgSend(chatId, "⚠️ La última pieza no tiene un artefacto publicable. Genera una nueva con el flujo actualizado.");
-      return true;
-    }
-    if (ultimo.tipo.startsWith("reel-")) {
-      await tgSend(chatId, "⚠️ La aprobación automática de reels aún no está habilitada. Esta primera versión publica carruseles.");
-      return true;
-    }
-    const ok = await dispararWorkflowContenido("barbara-publicar-blotato.yml", {
-      run_id: ultimo.runId,
-      confirmacion: "PUBLICAR",
-    });
-    await tgSend(chatId, ok
-      ? `✅ Pieza ${ultimo.runId} aprobada. Blotato está procesando la publicación.`
-      : "⚠️ No pude iniciar la publicación. Revisa la cuenta de Blotato y GH_TOKEN.");
+  // parsed.comando === "aprobar"
+  const ultimo = await ultimoContenido();
+  if (!ultimo?.runId) {
+    await tgSend(chatId, "⚠️ La última pieza no tiene un artefacto publicable. Genera una nueva con el flujo actualizado.");
     return true;
   }
-
-  // Es el chat interno pero no coincide con ningún comando conocido: se
-  // ignora (no es un cliente, así que no entra a la lógica de corrección).
+  if (ultimo.tipo.startsWith("reel-")) {
+    await tgSend(chatId, "⚠️ La aprobación automática de reels aún no está habilitada. Esta primera versión publica carruseles.");
+    return true;
+  }
+  const ok = await dispararWorkflowContenido("barbara-publicar-blotato.yml", {
+    run_id: ultimo.runId,
+    confirmacion: "PUBLICAR",
+  });
+  await tgSend(chatId, ok
+    ? `✅ Pieza ${ultimo.runId} aprobada. Blotato está procesando la publicación.`
+    : "⚠️ No pude iniciar la publicación. Revisa la cuenta de Blotato y GH_TOKEN.");
   return true;
 }
 

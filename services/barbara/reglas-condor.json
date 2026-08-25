@@ -1,0 +1,47 @@
+[
+  {
+    "regla": "cierra siempre el carrusel con una pregunta al lector, nunca con una afirmación",
+    "categoria": "copy",
+    "origen": "siempre cierra el carrusel con una pregunta al lector, nunca con una afirmación",
+    "veces_reforzada": 1,
+    "creada": "2026-08-23",
+    "actualizada": "2026-08-23",
+    "activa": true
+  },
+  {
+    "regla": "El personaje de Bárbara va SIEMPRE con tez blanca y el mismo estilo de animación: mismo corte de pelo (bob negro con flequillo), misma paleta y mismo trazo. Varía la pose, nunca el personaje.",
+    "categoria": "diseno",
+    "origen": "Joaquín, 23-ago: la hace color piel tostado y la Bárbara real es de tez blanca. Mandó los 3 assets de referencia.",
+    "veces_reforzada": 1,
+    "creada": "2026-08-23",
+    "actualizada": "2026-08-23",
+    "activa": true
+  },
+  {
+    "regla": "La portada de un carrusel lleva SOLO un titular impactante y grande (máximo 7 palabras), un subtítulo corto y la imagen de Bárbara. Nada de cifras, comparaciones ni listas: su único trabajo es que la persona deslice.",
+    "categoria": "diseno",
+    "origen": "Joaquín, 23-ago: la portada muy mala, mucho texto, la gente no se queda al carrusel ni aumenta la retención.",
+    "veces_reforzada": 1,
+    "creada": "2026-08-23",
+    "actualizada": "2026-08-23",
+    "activa": true
+  },
+  {
+    "regla": "Nunca atribuyas a Bárbara capacidades que no tiene: no sigue leads, no detecta clientes que se van, no responde comentarios ni mensajes. Bárbara solo crea y publica contenido visual.",
+    "categoria": "producto",
+    "origen": "Joaquín, 23-ago: subió info de seguimiento de leads y Bárbara solo publica contenido visual, nada más.",
+    "veces_reforzada": 1,
+    "creada": "2026-08-23",
+    "actualizada": "2026-08-23",
+    "activa": true
+  },
+  {
+    "regla": "Los titulares deben ser grandes e impactantes y siempre empujar al espectador a deslizar, educarse o interesarse en el servicio.",
+    "categoria": "copy",
+    "origen": "Joaquín, 23-ago: la idea es que las letras sean grandes y siempre lleven al espectador a ver más.",
+    "veces_reforzada": 1,
+    "creada": "2026-08-23",
+    "actualizada": "2026-08-23",
+    "activa": true
+  }
+]

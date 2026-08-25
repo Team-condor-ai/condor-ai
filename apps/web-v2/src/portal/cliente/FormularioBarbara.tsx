@@ -1,6 +1,11 @@
 import { useState } from "react";
 import { sb } from "../lib/supabase";
-import { TIPOS_CONTENIDO, type BarbaraFormulario } from "../agentes-ia/tipos";
+import {
+  TIPOS_CONTENIDO,
+  PILARES_CONTENIDO,
+  MEZCLA_PILARES_DEFECTO,
+  type BarbaraFormulario,
+} from "../agentes-ia/tipos";
 
 type Props = {
   barbaraClienteId: string;
@@ -23,6 +28,9 @@ export function FormularioBarbara({ barbaraClienteId, inicial, cerrar, guardado 
   const [restricciones, setRestricciones] = useState(inicial?.restricciones ?? "");
   const [ejemplosReferencia, setEjemplosReferencia] = useState(inicial?.ejemplos_referencia ?? "");
   const [productoDestacar, setProductoDestacar] = useState(inicial?.producto_destacar ?? "");
+  const [pilares, setPilares] = useState<Record<string, number>>(
+    inicial?.pilares ?? MEZCLA_PILARES_DEFECTO,
+  );
 
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState("");
@@ -30,6 +38,17 @@ export function FormularioBarbara({ barbaraClienteId, inicial, cerrar, guardado 
   function alternar(id: string) {
     setTipoContenido((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
   }
+
+  /**
+   * Se guardan los pesos crudos, no porcentajes normalizados: si el cliente
+   * vuelve a abrir el formulario tiene que ver los mismos números que puso.
+   * El porcentaje que se muestra al lado es sólo informativo — el motor
+   * normaliza igual (ver `normalizar` en pilares.mjs), así que no hace falta
+   * obligar a que sumen 100 exactos y pelear con el redondeo.
+   */
+  const totalPilares = PILARES_CONTENIDO.reduce((s, p) => s + (pilares[p.id] || 0), 0);
+  const porcentaje = (id: string) =>
+    totalPilares > 0 ? Math.round(((pilares[id] || 0) / totalPilares) * 100) : 0;
 
   async function enviar(ev: React.FormEvent) {
     ev.preventDefault();
@@ -45,6 +64,9 @@ export function FormularioBarbara({ barbaraClienteId, inicial, cerrar, guardado 
         restricciones: restricciones || null,
         ejemplos_referencia: ejemplosReferencia || null,
         producto_destacar: productoDestacar || null,
+        // Si quedó todo en 0 se guarda null: el motor cae a su mezcla por
+        // defecto, que es mejor que una mezcla vacía que no elige nada.
+        pilares: totalPilares > 0 ? pilares : null,
         actualizado_en: new Date().toISOString(),
       })
       .eq("barbara_cliente_id", barbaraClienteId)
@@ -86,6 +108,42 @@ export function FormularioBarbara({ barbaraClienteId, inicial, cerrar, guardado 
                 </button>
               ))}
             </div>
+          </div>
+
+          <div className="campo-lbl">
+            Mezcla de contenido
+            <p style={{ margin: "4px 0 10px", fontSize: 13, opacity: 0.7 }}>
+              Cuánto de cada cosa quieres publicar. No tiene que sumar 100: lo
+              que importa es el peso relativo entre ellos.
+            </p>
+            {PILARES_CONTENIDO.map((p) => (
+              <div key={p.id} style={{ marginBottom: 12 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
+                  <strong style={{ fontSize: 14 }}>{p.nombre}</strong>
+                  <span style={{ fontSize: 14, opacity: 0.75, fontVariantNumeric: "tabular-nums" }}>
+                    {porcentaje(p.id)}%
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  step={5}
+                  value={pilares[p.id] ?? 0}
+                  onChange={(e) =>
+                    setPilares((prev) => ({ ...prev, [p.id]: Number(e.target.value) }))
+                  }
+                  style={{ width: "100%" }}
+                  aria-label={p.nombre}
+                />
+                <p style={{ margin: 0, fontSize: 12, opacity: 0.6 }}>{p.ayuda}</p>
+              </div>
+            ))}
+            {totalPilares === 0 && (
+              <p style={{ fontSize: 13, opacity: 0.7 }}>
+                Todo en cero: usaremos nuestra mezcla recomendada.
+              </p>
+            )}
           </div>
 
           <label className="campo-lbl">

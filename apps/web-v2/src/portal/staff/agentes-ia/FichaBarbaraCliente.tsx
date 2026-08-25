@@ -11,6 +11,7 @@ import {
   BARBARA_PLAN_INFO,
   infoPlan,
   TIPOS_CONTENIDO,
+  PILARES_CONTENIDO,
   type BarbaraBrandBook,
   type BarbaraCliente,
   type BarbaraCorrecciones,
@@ -164,6 +165,9 @@ export function FichaBarbaraCliente() {
         <span className={"pill " + (d.cliente.activo ? "ok" : "gris")}>
           {d.cliente.activo ? "Activo" : "Inactivo"}
         </span>
+        <Link to={`/acceso/agentes-ia/${d.cliente.id}/portal`} className="btn" style={{ marginLeft: "auto" }}>
+          Ver portal de Bárbara
+        </Link>
       </div>
 
       <div className="cuerpo">
@@ -305,11 +309,29 @@ function FormularioSoloLectura({ formulario }: { formulario: BarbaraFormulario |
     .map((id) => TIPOS_CONTENIDO.find((t) => t.id === id)?.texto ?? id)
     .join(", ");
 
+  // La mezcla se guarda como pesos crudos, no normalizada (para que el cliente
+  // vea los mismos números que puso). Acá se muestra el porcentaje real, que
+  // es lo que de verdad va a respetar el motor.
+  const pesos = formulario.pilares ?? null;
+  const totalPilares = pesos
+    ? PILARES_CONTENIDO.reduce((s, p) => s + (pesos[p.id] || 0), 0)
+    : 0;
+  const mezcla = totalPilares
+    ? PILARES_CONTENIDO
+        .filter((p) => (pesos?.[p.id] || 0) > 0)
+        .map((p) => `${p.nombre} ${Math.round(((pesos![p.id] || 0) / totalPilares) * 100)}%`)
+        .join(" · ")
+    : "";
+
   return (
     <div className="rejilla-datos">
       <div className="dato">
         <small>Tipo de contenido</small>
         <b>{tipos || "—"}</b>
+      </div>
+      <div className="dato">
+        <small>Mezcla de contenido</small>
+        <b>{mezcla || "— (usa la mezcla por defecto)"}</b>
       </div>
       <div className="dato">
         <small>Público objetivo</small>

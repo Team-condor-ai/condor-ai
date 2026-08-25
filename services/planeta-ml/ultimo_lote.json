@@ -1,0 +1,79 @@
+{
+  "fecha": "2026-08-24",
+  "modo": "ejecutar",
+  "publicados_hoy_antes": 0,
+  "max_diario": 8,
+  "pendientes_totales": 36,
+  "seleccionados": [
+    {
+      "cuenta": "nueva",
+      "producto": "blood_sugar",
+      "titulo": "Blood Sugar Complex Toplux 60 Cápsulas Sin Sabor",
+      "stock": 3,
+      "costo": 7000.0,
+      "precio": 25490,
+      "utilidad": 5814,
+      "publicado": true,
+      "item_id": "MLC4394301172",
+      "permalink": "http://articulo.mercadolibre.cl/MLC-4394301172-blood-sugar-complex-toplux-60-capsulas-sin-sabor-sin-sabor-_JM"
+    },
+    {
+      "cuenta": "vieja",
+      "producto": "rejuvia",
+      "titulo": "Rejuvia 30 Cápsulas Suplemento Alimentario Sin Sabor",
+      "stock": 14,
+      "costo": 6000.0,
+      "precio": 23490,
+      "utilidad": 5534,
+      "publicado": true,
+      "item_id": "MLC4394159476",
+      "permalink": "http://articulo.mercadolibre.cl/MLC-4394159476-rejuvia-30-capsulas-suplemento-alimentario-sin-sabor-sin-sabor-_JM"
+    },
+    {
+      "cuenta": "vieja",
+      "producto": "nad_pro_max",
+      "titulo": "Nad Pro Max Coq10 Resveratrol 600mg 60 Cápsulas",
+      "stock": 2,
+      "costo": 6000.0,
+      "precio": 23490,
+      "utilidad": 5534,
+      "publicado": true,
+      "item_id": "MLC4394303564",
+      "permalink": "http://articulo.mercadolibre.cl/MLC-4394303564-nad-pro-max-coq10-resveratrol-600mg-60-capsulas-sin-sabor-_JM"
+    },
+    {
+      "cuenta": "nueva",
+      "producto": "zooone",
+      "titulo": "Zooone Luteína Zinc Vitaminas C E 60 Cápsulas",
+      "stock": 3,
+      "costo": 7000.0,
+      "precio": 25490,
+      "utilidad": 5814,
+      "publicado": true,
+      "item_id": "MLC4394162532",
+      "permalink": "http://articulo.mercadolibre.cl/MLC-4394162532-zooone-luteina-zinc-vitaminas-c-e-60-capsulas-60-capsulas-_JM"
+    },
+    {
+      "cuenta": "nueva",
+      "producto": "magnesio_complex",
+      "titulo": "Bioforce Magnesium Complex 1000mg 90 Cápsulas",
+      "stock": 3,
+      "costo": 7000.0,
+      "precio": 25490,
+      "utilidad": 5814,
+      "publicado": true,
+      "item_id": "MLC4394305700",
+      "permalink": "http://articulo.mercadolibre.cl/MLC-4394305700-bioforce-magnesium-complex-1000mg-90-capsulas-sin-sabor-_JM"
+    }
+  ],
+  "exclusiones": {
+    "lingo_leap": "zeolita / antecedente de sanción",
+    "melatonina": "medicamento / antecedente de sanción",
+    "nad_selerb": "ashwagandha KSM-66 / antecedente de sanción",
+    "sweet_dreams": "la etiqueta declara CBD y melatonina",
+    "thyroid": "la etiqueta declara ashwagandha",
+    "candida_cleanse": "nombre asociado a tratamiento de infección; revisión manual",
+    "dental": "la pieza declara reparación de esmalte y acción anticaries",
+    "terbifin": "nombre y claims antifúngicos de carácter medicinal"
+  }
+}

@@ -64,7 +64,38 @@ export type BarbaraFormulario = {
   restricciones: string | null;
   ejemplos_referencia: string | null;
   producto_destacar: string | null;
+  /**
+   * Mezcla de pilares de contenido, p.ej. {"educar":40,"mostrar":25}.
+   * `null` = la marca no la definió y el motor usa MEZCLA_POR_DEFECTO.
+   * Acepta pesos crudos o porcentajes: `services/barbara/pilares.mjs` los
+   * normaliza igual, así que la UI puede pedir lo que le sea más natural.
+   */
+  pilares: Record<string, number> | null;
   actualizado_en: string | null;
+};
+
+/**
+ * Los pilares de contenido. Tienen que coincidir EXACTO con las claves de
+ * `PILARES` en `services/barbara/pilares.mjs`: una clave que no exista allá
+ * la descarta el motor en silencio y el reparto queda distinto al que el
+ * cliente vio en pantalla.
+ */
+export const PILARES_CONTENIDO = [
+  { id: "educar", nombre: "Educar",
+    ayuda: "Enseña algo útil del rubro sin vender. Es lo que hace que te sigan." },
+  { id: "mostrar", nombre: "Mostrar / Vender",
+    ayuda: "Producto, servicio u oferta concreta." },
+  { id: "autoridad", nombre: "Autoridad / Prueba",
+    ayuda: "Datos y resultados medibles que respalden lo que dice la marca." },
+  { id: "comunidad", nombre: "Comunidad",
+    ayuda: "Detrás de cámara, equipo, proceso. Hace que la marca se sienta humana." },
+  { id: "prueba_social", nombre: "Prueba social",
+    ayuda: "Testimonios y casos reales. Déjalo en 0 si aún no nos entregaste material: inventar un testimonio no es una opción." },
+] as const;
+
+/** Espejo de MEZCLA_POR_DEFECTO en pilares.mjs. */
+export const MEZCLA_PILARES_DEFECTO: Record<string, number> = {
+  educar: 40, mostrar: 25, autoridad: 20, comunidad: 15, prueba_social: 0,
 };
 
 export type BarbaraChat = {

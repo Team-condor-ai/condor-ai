@@ -1,0 +1,131 @@
+name: Planeta Shop - publicar faltantes en ML
+
+# Corre en la nube, no depende de que el PC de Joaquín esté prendido.
+# Reemplaza al Programador de tareas de Windows (PlanetaShop_*), que se
+# puede borrar una vez que este workflow quede probado.
+#
+# 5 horarios para el lote de 36 productos ya auditado el 22-ago-2026 (hora
+# de Chile, UTC-4 en invierno — convertido a UTC abajo):
+#   Dom 23-ago 16:10 CLT -> 20:10 UTC · límite 6
+#   Lun 24-ago 10:40 CLT -> 14:40 UTC · límite 8
+#   Mar 25-ago 13:15 CLT -> 17:15 UTC · límite 8
+#   Mié 26-ago 11:50 CLT -> 15:50 UTC · límite 8
+#   Jue 27-ago 17:05 CLT -> 21:05 UTC · límite 6
+#
+# El cron de GitHub Actions recurre cada año en esa fecha — una vez
+# publicados los 36 (o si ya no calza ninguna fecha útil), borrar este
+# workflow o los triggers de schedule para que no quede corriendo en vano
+# el próximo agosto.
+
+on:
+  workflow_dispatch:
+    inputs:
+      limite:
+        description: 'Cuántos publicar en esta corrida manual'
+        required: false
+        default: '1'
+      ejecutar:
+        description: 'true = publica de verdad; false = solo valida (dry-run)'
+        required: false
+        default: 'false'
+      max_diario:
+        description: 'Tope de publicaciones en el dia (el reparto en 5 dias quedo sin efecto)'
+        required: false
+        default: '8'
+      min_espera:
+        description: 'Segundos minimos entre publicaciones'
+        required: false
+        default: '480'
+      max_espera:
+        description: 'Segundos maximos entre publicaciones'
+        required: false
+        default: '1080'
+
+# Los  se BORRARON el 23-ago-2026: Joaquin pidio subir todo el mismo
+# dia, asi que el reparto en cinco fechas dejo de tener sentido. Ademas eran
+# crons con fecha fija (23 a 27 de agosto) que iban a volver a dispararse el
+# ano siguiente sobre un lote ya publicado. Ahora la corrida es manual.
+
+permissions:
+  contents: write
+
+concurrency:
+  group: planeta-ml-publicar
+  cancel-in-progress: false
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/planeta-ml
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Descifrar config.json (credenciales ML)
+        env:
+          ML_CREDS_KEY: ${{ secrets.ML_CREDS_KEY }}
+        run: |
+          openssl enc -d -aes-256-cbc -pbkdf2 -salt -in config.enc -out config.json -pass pass:"$ML_CREDS_KEY"
+          sha256sum config.json | awk '{print $1}' > /tmp/config_before.sha
+
+      - name: Decidir el límite del día
+        id: limite
+        run: |
+          echo "n=${{ inputs.limite || '1' }}" >> "$GITHUB_OUTPUT"
+
+      - name: Publicar (o validar, según el trigger)
+        env:
+          PLANETA_SUPABASE_URL: ${{ secrets.PLANETA_SUPABASE_URL }}
+          PLANETA_SUPABASE_KEY: ${{ secrets.PLANETA_SUPABASE_KEY }}
+        run: |
+          if [ "${{ inputs.ejecutar }}" = "true" ]; then
+            python publicar_lote.py --ejecutar --limite ${{ steps.limite.outputs.n }} \
+              --max-diario ${{ inputs.max_diario || '8' }} \
+              --min-espera ${{ inputs.min_espera || '480' }} \
+              --max-espera ${{ inputs.max_espera || '1080' }}
+          else
+            python publicar_lote.py --dry-run --limite ${{ steps.limite.outputs.n }}
+          fi
+
+      - name: Guardar estado y credenciales rotadas
+        if: always()
+        env:
+          ML_CREDS_KEY: ${{ secrets.ML_CREDS_KEY }}
+        run: |
+          git config user.name "planeta-ml-bot"
+          git config user.email "bot@condorai.cl"
+
+          AFTER=$(sha256sum config.json | awk '{print $1}')
+          BEFORE=$(cat /tmp/config_before.sha 2>/dev/null || echo "")
+          if [ "$AFTER" != "$BEFORE" ]; then
+            echo "Token(s) rotado(s): actualizando config.enc"
+            openssl enc -aes-256-cbc -pbkdf2 -salt -in config.json -out config.enc -pass pass:"$ML_CREDS_KEY"
+            git add config.enc
+          fi
+          rm -f config.json
+
+          git add publicaciones_programadas.json historial_lotes.jsonl ultimo_lote.json 2>/dev/null || true
+          if git diff --staged --quiet; then
+            echo "sin cambios"
+          else
+            git commit -m "planeta-ml: lote $(date -u +%Y-%m-%d_%H%M) UTC"
+            OK=0
+            for n in 1 2 3; do
+              if git pull --rebase origin main && git push; then OK=1; break; fi
+              sleep 5
+            done
+            # EL BUG QUE ROMPIO A BARBARA EL 22-AGO: antes esto era un bucle que
+            # al agotar los 3 intentos terminaba con exit 0. El job quedaba en
+            # verde mientras el token recien rotado se perdia — y como el
+            # refresh_token de Higgsfield ROTA EN CADA USO, el viejo ya estaba
+            # muerto. La cadena se cortaba para siempre, en silencio.
+            if [ "$OK" != "1" ]; then
+              echo "::error::No se pudo guardar el estado tras 3 intentos. Si el token de Higgsfield roto en esta corrida, la cadena quedo ROTA: hay que re-loguear (higgsfield auth login + bash services/barbara/reauth.sh)."
+              exit 1
+            fi
+          fi

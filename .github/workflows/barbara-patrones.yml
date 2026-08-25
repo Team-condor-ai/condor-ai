@@ -33,6 +33,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Instalar dependencias
+        working-directory: services/barbara
+        run: npm install
       - name: Destilar patrones globales
         # En el cron guarda; a mano, solo si se pide. Así el disparo manual
         # sirve para mirar sin comprometerse.

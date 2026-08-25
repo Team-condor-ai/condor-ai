@@ -34,30 +34,60 @@ Las credenciales están caídas o por vencer. Si no se renuevan, Barbara no podr
 
 Eso re-cifra y sube las credenciales solo ✅. (Este aviso se repite hasta que quede al día.)`;
 
-// true = autenticación viva; false = caída/incompatible → hay que re-loguear.
-function authViva() {
+const NO_HAY_CLI = /ENOENT|not found|no such file|command not found|spawnSync/i;
+
+/**
+ * Tres resultados, no dos: "viva", "muerta" y "no_se_pudo_probar".
+ *
+ * El tercero existía como bug: si el CLI ni se podía ejecutar (ENOENT porque
+ * no quedó instalado), la función caía al `catch`, el mensaje no matcheaba
+ * AUTH_MUERTA y devolvía `true` — o sea reportaba "autenticación OK ✅" sin
+ * haber probado nada. Visto en vivo el 23-ago-2026 corriéndolo a mano.
+ *
+ * Un chequeo que no pudo chequear NO es una luz verde. Que sea un estado
+ * aparte permite avisar distinto: "hay que re-loguear" y "el chequeo está
+ * roto" se arreglan de formas distintas.
+ */
+function estadoAuth() {
   try {
     const out = execFileSync("higgsfield", ["workspace", "list", "--json"], {
       encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], timeout: 60_000,
     });
-    if (AUTH_MUERTA.test(out)) return false;
-    return true;
+    return AUTH_MUERTA.test(out) ? "muerta" : "viva";
   } catch (e) {
     const msg = String(e.stderr || e.message || e);
-    if (AUTH_MUERTA.test(msg)) return false;
-    // Error no relacionado con auth (red, rate limit, etc.): no disparamos falsa alarma.
+    if (AUTH_MUERTA.test(msg)) return "muerta";
+    if (NO_HAY_CLI.test(msg)) {
+      console.log("no se pudo ejecutar el CLI:", msg.slice(0, 180));
+      return "no_se_pudo_probar";
+    }
+    // Error ajeno a la auth (red, rate limit): no se dispara falsa alarma,
+    // pero tampoco se afirma que esté todo bien.
     console.log("probe no-auth (se ignora):", msg.slice(0, 180));
-    return true;
+    return "viva";
   }
 }
 
+const CHEQUEO_ROTO = `⚠️ *Barbara: el chequeo de Higgsfield no pudo correr*
+
+No se pudo ejecutar el CLI de Higgsfield, así que **no sabemos** si las credenciales están vivas. Esto NO es lo mismo que "está todo bien".
+
+Revisar el paso "Instalar CLI de Higgsfield" del workflow \`barbara-authcheck\`.`;
+
 async function main() {
   console.log("Barbara authcheck | TG:", !!TG);
-  if (authViva()) { console.log("Higgsfield: autenticación OK ✅"); return; }
-  console.log("Higgsfield: autenticación CAÍDA → avisando a Telegram");
-  const j = await (await tg(PASOS)).json();
+  const estado = estadoAuth();
+
+  if (estado === "viva") { console.log("Higgsfield: autenticación OK ✅"); return; }
+
+  const aviso = estado === "muerta" ? PASOS : CHEQUEO_ROTO;
+  console.log(`Higgsfield: ${estado} → avisando a Telegram`);
+  const j = await (await tg(aviso)).json();
   if (!j.ok) throw new Error("Telegram: " + (j.description || ""));
   console.log("Aviso enviado.");
+  // Sale distinto de 0 para que la corrida quede en rojo y no pase inadvertida
+  // entre las verdes del historial.
+  process.exitCode = 1;
 }
 
 main().catch((e) => { console.error(e); process.exit(1); });
