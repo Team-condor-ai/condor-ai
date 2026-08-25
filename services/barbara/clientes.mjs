@@ -6,15 +6,16 @@
 // Genera carruseles, historias (imagen, nano_banana_2) y video UGC de
 // UGC con persona a camara, sin vocera FIJA (seedance1_5, ver motor.mjs).
 //
-// Secrets: ANTHROPIC_API_KEY, TELEGRAM_BOT_TOKEN, SUPABASE_URL,
-//          SUPABASE_SERVICE_ROLE_KEY
+// Secrets: ANTHROPIC_API_KEY, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY.
+// Telegram lo maneja el outbox `entregador-pendientes.mjs` DESPUÉS de que la
+// pieza y sus assets estén persistidos; una caída del canal no regenera media.
 // Variables: TIPO (carrusel|historia|ugc, default carrusel) · CLIENTE_ID
 //            (forzar un solo cliente, para probar) · TEST=1 (solo valida
 //            conexión) · RETRY=1 (el webhook de Telegram lo dispara cuando
 //            el cliente pide una corrección — salta el candado de "ya se
 //            publicó hoy" y le pide a Bárbara una versión claramente mejor)
 
-import { tg, claude, textOf, genImagen, genVideo, unirClips, REGLA_TEXTO, REGLA_VERACIDAD, supabase } from "./motor.mjs";
+import { claude, textOf, genImagen, genVideo, unirClips, REGLA_TEXTO, REGLA_VERACIDAD, supabase } from "./motor.mjs";
 import { componerSlide, PLANTILLAS, PLANTILLA_POR_DEFECTO } from "./plantillas.mjs";
 import { piezaAnterior, leerPedido, extraerCambios, instrucciones, verificar, faltantes } from "./correccion.mjs";
 import { elegirAngulo } from "./angulos.mjs";
@@ -27,7 +28,6 @@ import { proponerHorario } from "./planificador.mjs";
 import sharp from "sharp";
 
 const AK = process.env.ANTHROPIC_API_KEY;
-const TG_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const SB_URL = process.env.SUPABASE_URL;
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const isTest = process.env.TEST === "1";
@@ -35,8 +35,8 @@ const isRetry = process.env.RETRY === "1";
 const TIPO = (process.env.TIPO || "carrusel").trim().toLowerCase();
 const SOLO_CLIENTE = (process.env.CLIENTE_ID || "").trim();
 
-if (!AK || !TG_TOKEN || !SB_URL || !SB_KEY) {
-  console.error("Faltan variables: ANTHROPIC_API_KEY / TELEGRAM_BOT_TOKEN / SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY");
+if (!AK || !SB_URL || !SB_KEY) {
+  console.error("Faltan variables: ANTHROPIC_API_KEY / SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY");
   process.exit(1);
 }
 const db = supabase(SB_URL, SB_KEY);
@@ -135,10 +135,20 @@ async function generarPara(cliente) {
   const hoyISO = new Date().toISOString().slice(0, 10);
   if (!isRetry) {
     const memoriaHoy = await db.get(
-      `barbara_memoria?barbara_cliente_id=eq.${barbaraId}&fecha=eq.${hoyISO}&tipo=eq.${TIPO}&select=id`
+      `barbara_memoria?barbara_cliente_id=eq.${barbaraId}&fecha=eq.${hoyISO}&tipo=eq.${TIPO}` +
+      `&select=id,entrega_estado,barbara_media(id)&order=creado_en.desc`
     );
-    if (memoriaHoy.length) {
+    const completa = memoriaHoy.find((m) => m.entrega_estado !== "incompleta");
+    if (completa) {
       console.log(`[${negocio}] ya se publicó "${TIPO}" hoy. Nada que hacer.`);
+      return;
+    }
+    const recuperable = memoriaHoy.find((m) => m.entrega_estado === "incompleta" && (m.barbara_media || []).length > 0);
+    if (recuperable) {
+      await db.patch(`barbara_memoria?id=eq.${recuperable.id}`, {
+        entrega_estado: "pendiente", entrega_ultimo_error: null,
+      });
+      console.log(`[${negocio}] pieza persistida recuperada; el outbox reanudará Telegram sin regenerar.`);
       return;
     }
   }
@@ -411,7 +421,7 @@ ${patrones}` : ""}${playbooks}${extraRetry}`;
     }
   }
 
-  let plan_contenido, mediaCaption;
+  let plan_contenido;
   let mediaEntregables = [];
 
   if (TIPO === "ugc") {
@@ -448,13 +458,6 @@ Responde SOLO con el JSON.`;
     const videoBuf = await unirClips(urls);
     mediaEntregables = [{ buffer: videoBuf, tipo: "video", mimeType: "video/mp4" }];
 
-    const fd = new FormData();
-    fd.append("chat_id", telegram_chat_id);
-    fd.append("caption", `🎬 UGC · ${negocio}\n\n💬 Texto en pantalla: ${plan_contenido.texto_en_pantalla || ""}`);
-    fd.append("video", new Blob([videoBuf], { type: "video/mp4" }), "ugc.mp4");
-    const j = await (await tg(TG_TOKEN, "sendVideo", fd, true)).json();
-    if (!j.ok) throw new Error(`[${negocio}] Telegram sendVideo: ` + (j.description || ""));
-    mediaCaption = plan_contenido.caption;
   } else {
     const nSlides = TIPO === "historia" ? 1 : 6;
     const pedirPlanSlides = async (extra = "") => {
@@ -540,22 +543,7 @@ Responde SOLO con el JSON.`;
       console.log(`[${negocio}] revisión no disponible, sigo sin ella:`, String(e).slice(0, 140));
     }
 
-    for (let i = 0; i < imgs.length; i++) {
-      const fd = new FormData();
-      fd.append("chat_id", telegram_chat_id);
-      fd.append("caption", `${TIPO === "historia" ? "📱 Historia" : "🖼️ Carrusel"} · ${negocio}${imgs.length > 1 ? ` · ${i + 1}/${imgs.length}` : ""}`);
-      fd.append("photo", new Blob([imgs[i]], { type: "image/png" }), `slide_${i + 1}.png`);
-      const j = await (await tg(TG_TOKEN, "sendPhoto", fd, true)).json();
-      if (!j.ok) throw new Error(`[${negocio}] Telegram sendPhoto: ` + (j.description || ""));
-    }
-    mediaCaption = plan_contenido.caption;
   }
-
-  await tg(TG_TOKEN, "sendMessage", {
-    chat_id: telegram_chat_id,
-    text: `🤖 *Bárbara* — contenido listo para revisar y aprobar.\n\n📝 *Caption:*\n\n${mediaCaption || ""}\n\n_Si quieres cambios, responde a este mensaje describiéndolos (máximo 3 correcciones antes de derivar a soporte)._`,
-    parse_mode: "Markdown",
-  });
 
   // CIERRE DE LA PIEZA ANTERIOR. Se hace acá, al empezar una nueva, porque el
   // cliente nunca dice "me gustó": solo escribe cuando quiere cambios. El
@@ -612,6 +600,9 @@ Responde SOLO con el JSON.`;
     cambios_pedidos: correccion.cambios.length ? correccion.cambios : null,
     cambios_cumplidos: verificacion.cumplidos || null,
     corrige_a: isRetry && previa ? previa.id : null,
+    // El worker de outbox sólo reclama después de que `barbara_media` exista.
+    // Nunca se envía Telegram antes de tener una copia persistente.
+    entrega_estado: "incompleta",
   }, { returnMinimal: false });
 
   // Enlaza cada prompt registrado en esta corrida con la pieza que produjo,
@@ -620,13 +611,18 @@ Responde SOLO con el JSON.`;
   const piezaId = Array.isArray(piezaCreada) ? piezaCreada[0]?.id : piezaCreada?.id;
   if (!piezaId) throw new Error(`[${negocio}] Supabase no devolvió id de la pieza; no se puede catalogar su media`);
 
-  // Telegram recibió la copia de revisión, pero la biblioteca propia es la
-  // fuente persistente. Un fallo acá marca el run en rojo: perder assets no
-  // puede pasar como éxito silencioso. Cada archivo queda con SHA-256.
+  // La biblioteca propia se escribe ANTES de cualquier entrega. Un fallo acá
+  // marca el run en rojo y Telegram no ve una pieza que el sistema perdió.
+  // Cada archivo queda con SHA-256 y el outbox verificará el hash al bajarlo.
   const mediaPersistida = await persistirMedia(db, {
     barbaraClienteId: barbaraId,
     piezaId,
     assets: mediaEntregables,
+  });
+  await db.patch(`barbara_memoria?id=eq.${piezaId}`, {
+    entrega_estado: "pendiente",
+    entrega_proximo_intento: new Date().toISOString(),
+    entrega_ultimo_error: null,
   });
   console.log(`[${negocio}] biblioteca: ${mediaPersistida.length} asset(s) persistidos y verificados`);
 

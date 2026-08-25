@@ -35,18 +35,21 @@ export async function persistirMedia(db, {
   barbaraClienteId, piezaId, assets = [], bucket = "barbara-media",
 } = {}) {
   const guardados = [];
-  for (let indice = 0; indice < assets.length; indice++) {
-    const asset = assets[indice];
-    const buffer = Buffer.isBuffer(asset.buffer) ? asset.buffer : Buffer.from(asset.buffer || []);
-    if (!buffer.length) throw new Error(`asset ${indice + 1} vacío`);
-    if (buffer.length > 100 * 1024 * 1024) throw new Error(`asset ${indice + 1} supera 100 MB`);
-    if (!["imagen", "video", "portada", "documento"].includes(asset.tipo)) {
-      throw new Error(`tipo de asset no permitido: ${asset.tipo}`);
-    }
-    const storagePath = rutaMedia({ barbaraClienteId, piezaId, indice, mimeType: asset.mimeType });
-    const hash = sha256(buffer);
-    await db.upload(bucket, storagePath, buffer, { contentType: asset.mimeType, upsert: false });
-    try {
+  try {
+    for (let indice = 0; indice < assets.length; indice++) {
+      const asset = assets[indice];
+      const buffer = Buffer.isBuffer(asset.buffer) ? asset.buffer : Buffer.from(asset.buffer || []);
+      if (!buffer.length) throw new Error(`asset ${indice + 1} vacío`);
+      if (buffer.length > 100 * 1024 * 1024) throw new Error(`asset ${indice + 1} supera 100 MB`);
+      if (!["imagen", "video", "portada", "documento"].includes(asset.tipo)) {
+        throw new Error(`tipo de asset no permitido: ${asset.tipo}`);
+      }
+      const storagePath = rutaMedia({ barbaraClienteId, piezaId, indice, mimeType: asset.mimeType });
+      const hash = sha256(buffer);
+      await db.upload(bucket, storagePath, buffer, { contentType: asset.mimeType, upsert: false });
+      // Se anota provisionalmente antes del POST para que una falla de metadata
+      // también retire el objeto recién subido durante la compensación.
+      guardados.push({ storage_path: storagePath, bytes: buffer.length, sha256: hash });
       await db.post("barbara_media", {
         barbara_memoria_id: piezaId,
         storage_path: storagePath,
@@ -55,12 +58,17 @@ export async function persistirMedia(db, {
         bytes: buffer.length,
         sha256: hash,
       });
-    } catch (e) {
-      // No dejar un objeto huérfano si el catálogo de media no pudo anotarlo.
-      await db.remove(bucket, [storagePath]).catch(() => {});
-      throw e;
     }
-    guardados.push({ storage_path: storagePath, bytes: buffer.length, sha256: hash });
+    return guardados;
+  } catch (error) {
+    // Compensación del lote completo. Antes sólo se retiraba el archivo cuyo
+    // INSERT falló: si el cuarto slide fallaba, los tres primeros quedaban
+    // catalogados y el outbox podía entregar un carrusel mutilado.
+    const paths = guardados.map((x) => x.storage_path);
+    if (paths.length) await db.remove(bucket, paths).catch(() => {});
+    if (piezaId && typeof db.del === "function") {
+      await db.del(`barbara_media?barbara_memoria_id=eq.${encodeURIComponent(piezaId)}`).catch(() => {});
+    }
+    throw error;
   }
-  return guardados;
 }

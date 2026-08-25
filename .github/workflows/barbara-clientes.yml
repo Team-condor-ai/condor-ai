@@ -90,7 +90,6 @@ jobs:
           # Fallback si no hay KIE_API_KEY.
           HIGGSFIELD_API_KEY_ID: ${{ secrets.HIGGSFIELD_API_KEY_ID }}
           HIGGSFIELD_API_KEY_SECRET: ${{ secrets.HIGGSFIELD_API_KEY_SECRET }}
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           TIPO: ${{ github.event.inputs.tipo }}

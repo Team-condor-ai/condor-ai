@@ -41,6 +41,27 @@ test("si falla la metadata elimina el objeto huérfano", async () => {
   assert.deepEqual(eliminados, [{ bucket: "barbara-media", paths: ["cliente-123/pieza-456/01.png"] }]);
 });
 
+test("si falla un slide posterior revierte el lote completo", async () => {
+  const eliminados = [];
+  const catalogoBorrado = [];
+  let posts = 0;
+  const db = {
+    async upload() {},
+    async post() { posts++; if (posts === 2) throw new Error("segundo insert cayó"); },
+    async remove(_bucket, paths) { eliminados.push(...paths); },
+    async del(path) { catalogoBorrado.push(path); },
+  };
+  await assert.rejects(() => persistirMedia(db, {
+    barbaraClienteId: "cliente-123", piezaId: "pieza-456",
+    assets: [
+      { buffer: Buffer.from("uno"), tipo: "portada", mimeType: "image/png" },
+      { buffer: Buffer.from("dos"), tipo: "imagen", mimeType: "image/png" },
+    ],
+  }), /segundo insert cayó/);
+  assert.deepEqual(eliminados, ["cliente-123/pieza-456/01.png", "cliente-123/pieza-456/02.png"]);
+  assert.deepEqual(catalogoBorrado, ["barbara_media?barbara_memoria_id=eq.pieza-456"]);
+});
+
 test("rechaza archivos vacíos y tipos desconocidos antes de subir", async () => {
   let subidas = 0;
   const db = { async upload() { subidas++; } };

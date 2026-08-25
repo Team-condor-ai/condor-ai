@@ -411,6 +411,13 @@ export function supabase(url, serviceKey) {
       });
       if (!r.ok) throw new Error("Supabase PATCH " + path + ": " + r.status + " " + (await r.text()).slice(0, 200));
     },
+    async del(path) {
+      const r = await fetch(`${url}/rest/v1/${path}`, {
+        method: "DELETE",
+        headers: { ...H, Prefer: "return=minimal" },
+      });
+      if (!r.ok) throw new Error("Supabase DELETE " + path + ": " + r.status + " " + (await r.text()).slice(0, 200));
+    },
     async rpc(nombre, body = {}) {
       const r = await fetch(`${url}/rest/v1/rpc/${encodeURIComponent(nombre)}`, {
         method: "POST", headers: H, body: JSON.stringify(body),
