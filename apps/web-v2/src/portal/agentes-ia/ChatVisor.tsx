@@ -42,13 +42,10 @@ export function ChatVisor({ barbaraClienteId }: { barbaraClienteId: string }) {
 
   if (cargando) return <p className="vacio">Cargando conversación…</p>;
   if (error) return <p className="error">{error}</p>;
-  if (mensajes.length === 0)
-    return (
-      <p className="vacio">
-        Todavía no hay mensajes. Acá va a aparecer la conversación de
-        Telegram apenas empiece.
-      </p>
-    );
+  // Sin mensajes no se muestra nada: el chat de arriba ya invita a escribir,
+  // así que un cartel explicando el vacío sólo agregaba ruido (pedido de
+  // Joaquín, 25-ago-2026).
+  if (mensajes.length === 0) return null;
 
   return (
     <div className="barbara-chat-historial" aria-label="Conversación con Bárbara">

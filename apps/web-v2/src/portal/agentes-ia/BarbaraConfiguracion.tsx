@@ -3,6 +3,7 @@ import { BrandBookEditor } from "../staff/agentes-ia/BrandBookEditor";
 import { FormularioBarbara } from "../cliente/FormularioBarbara";
 import type { BarbaraBrandBook, BarbaraFormulario } from "./tipos";
 import { sb } from "../lib/supabase";
+import { BarbaraUso } from "./BarbaraUso";
 
 type Props = {
   barbaraClienteId: string;
@@ -10,6 +11,8 @@ type Props = {
   rubro: string | null;
   brandBook: BarbaraBrandBook | null;
   formulario: BarbaraFormulario | null;
+  /** Para el bloque de uso del mes: los límites dependen del plan. */
+  plan: string;
   onCambio: () => void;
   esStaff?: boolean;
   activo?: boolean | null;
@@ -33,7 +36,7 @@ async function consultarOperacion(barbaraClienteId: string) {
 /** Reutiliza el editor de marca (staff) + el formulario de entrada (cliente):
  * los dos son igual de válidos para cualquiera que esté configurando SU
  * Bárbara, sea un cliente externo o Cóndor viendo la suya. */
-export function BarbaraConfiguracion({ barbaraClienteId, negocio, rubro, brandBook, formulario, onCambio, esStaff = false, activo = true, telegramListo = false }: Props) {
+export function BarbaraConfiguracion({ barbaraClienteId, negocio, rubro, brandBook, formulario, plan, onCambio, esStaff = false, activo = true, telegramListo = false }: Props) {
   const [editandoFormulario, setEditandoFormulario] = useState(false);
   const [canales, setCanales] = useState<{ id: string; plataforma: string; activo: boolean; auto_publicar: boolean }[]>([]);
   const [zonaHoraria, setZonaHoraria] = useState("America/Santiago");
@@ -83,6 +86,15 @@ export function BarbaraConfiguracion({ barbaraClienteId, negocio, rubro, brandBo
   return (
     <div className="barbara-configuracion">
       <EstadoOperacion activo={activo} telegramListo={telegramListo} brandBook={brandBook} formulario={formulario} />
+
+      {/* El uso del mes se muestra SOLO acá. Estaba también en el inicio, y
+          ahí competía con el saludo y el calendario por la atención sin que
+          nadie fuera a buscarlo (pedido de Joaquín, 25-ago-2026). */}
+      <section className="barbara-config-seccion">
+        <h3>Uso del plan</h3>
+        <BarbaraUso barbaraClienteId={barbaraClienteId} plan={plan} />
+      </section>
+
       <section className="barbara-config-seccion">
         <h3>Identidad de marca</h3>
         {esStaff ? <BrandBookEditor

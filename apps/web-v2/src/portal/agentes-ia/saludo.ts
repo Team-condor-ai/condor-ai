@@ -2,7 +2,7 @@
  * El saludo de entrada de Bárbara: la hora del día y el nombre de quien entra.
  *
  * Pedido de Joaquín (25-ago-2026): que sea como el de Claude —
- * "hola Matías, ¿cómo está tu tarde?"— en vez del "¡Hola! Soy Bárbara ✨"
+ * "hola Matías, ¿cómo está tu tarde?"— en vez del "¡Hola! Soy Bárbara"
  * fijo que había, que es el mismo texto para todo el mundo a toda hora.
  *
  * POR QUÉ ESTO NO SE RESUELVE CON UN random()

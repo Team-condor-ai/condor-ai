@@ -38,7 +38,6 @@ export function BarbaraChat({ barbaraClienteId }: { barbaraClienteId: string }) 
         {enviando ? "…" : Ico.mas({ t: 16 })}
       </button>
     </div>
-    <p className="barbara-chat-ayuda">Para pedir cambios a una pieza, entra a Entregas y selecciónala allí.</p>
     {aviso && <p className={aviso.tipo === "error" ? "error" : "ok-msg"}>{aviso.texto}</p>}
     <div style={{ marginTop: 14 }}><ChatVisor key={version} barbaraClienteId={barbaraClienteId} /></div>
   </div>;

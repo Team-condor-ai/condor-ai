@@ -4,14 +4,13 @@ import { Ico } from "../disenio/iconos";
 import { navegarConTransicion } from "../disenio/vistaTransicion";
 import { useNombreUsuario } from "../auth/nombreUsuario";
 import { saludo, subtituloSaludo } from "./saludo";
+import { TituloAnimado } from "./TituloAnimado";
 import { infoPlan, type BarbaraBrandBook, type BarbaraFormulario } from "./tipos";
-import { ReglasAprendidas } from "./ReglasAprendidas";
 import { BarbaraChat } from "./BarbaraChat";
 import { BarbaraCalendario } from "./BarbaraCalendario";
 import { BarbaraBiblioteca } from "./BarbaraBiblioteca";
 import { BarbaraAnalisis } from "./BarbaraAnalisis";
 import { BarbaraConfiguracion } from "./BarbaraConfiguracion";
-import { BarbaraUso } from "./BarbaraUso";
 import { GrafoMemoria } from "../staff/memoria/GrafoMemoria";
 import { Mcp } from "../staff/Mcp";
 
@@ -25,7 +24,6 @@ const NAV: { grupo: string; icono: keyof typeof Ico; items: { id: Seccion; texto
   { grupo: "Contenido", icono: "reuniones", items: [
     { id: "calendario", texto: "Calendario", icono: "reuniones" },
     { id: "biblioteca", texto: "Entregas", icono: "biblioteca" },
-    { id: "memoria", texto: "Memoria", icono: "memoria" },
   ] },
   { grupo: "Ajustes", icono: "ajustes", items: [
     { id: "mcp", texto: "MCP", icono: "mcp" },
@@ -41,7 +39,8 @@ type Props = {
   brandBook: BarbaraBrandBook | null;
   formulario: BarbaraFormulario | null;
   onCambio: () => void;
-  /** Staff ve además "Lo que Bárbara aprendió" con permiso de apagar reglas. */
+  /** Staff ve secciones extra. Las reglas aprendidas se revisan desde la
+   *  ficha del cliente (`FichaBarbaraCliente`), ya no desde el inicio. */
   esStaff?: boolean;
   activo?: boolean | null;
   telegramListo?: boolean;
@@ -118,53 +117,44 @@ export function BarbaraModulo({
               <img src="/assets/barbara/hero.png" alt="Bárbara" className="barbara-hero-img" />
               <div className="barbara-hero-cuerpo">
                 <span className="barbara-rotulo">Bárbara · tu agente de contenido</span>
-                <h1>{saludo(nombreUsuario)}</h1>
+                <TituloAnimado texto={saludo(nombreUsuario)} className="barbara-titular" />
                 <p>{subtituloSaludo(negocio)}</p>
                 <BarbaraChat barbaraClienteId={barbaraClienteId} />
               </div>
             </div>
 
-            <BarbaraUso barbaraClienteId={barbaraClienteId} plan={plan} />
-
             <div className="barbara-tarjeta">
-              <h3>{Ico.reuniones({ t: 17 })} Tu semana de contenido ✨</h3>
+              <h3>{Ico.reuniones({ t: 17 })} Tu semana de contenido</h3>
               <BarbaraCalendario barbaraClienteId={barbaraClienteId} vistaInicial="semana" />
             </div>
-
-            {esStaff && (
-              <div className="barbara-tarjeta">
-                <h3>Lo que Bárbara aprendió</h3>
-                <ReglasAprendidas barbaraClienteId={barbaraClienteId} puedeApagar />
-              </div>
-            )}
           </div>
         )}
 
         {seccion === "analisis" && (
           <div className="barbara-tarjeta">
-            <h1>{Ico.grafo({ t: 22 })} Análisis y reportes ✨</h1>
-            <p className="barbara-subtitulo">Resumen de lo que Bárbara generó y cómo respondiste.</p>
+            <h1>{Ico.grafo({ t: 22 })} Análisis y reportes</h1>
+            <p className="barbara-subtitulo">Cómo le está yendo a tu cuenta en cada red.</p>
             <BarbaraAnalisis barbaraClienteId={barbaraClienteId} />
           </div>
         )}
 
         {seccion === "calendario" && (
           <div className="barbara-tarjeta">
-            <h1>{Ico.reuniones({ t: 22 })} Calendario ✨</h1>
+            <h1>{Ico.reuniones({ t: 22 })} Calendario</h1>
             <BarbaraCalendario barbaraClienteId={barbaraClienteId} vistaInicial="mes" />
           </div>
         )}
 
         {seccion === "biblioteca" && (
           <div className="barbara-tarjeta">
-            <h1>{Ico.biblioteca({ t: 22 })} Entregas y revisión ✨</h1>
+            <h1>{Ico.biblioteca({ t: 22 })} Entregas y revisión</h1>
             <BarbaraBiblioteca barbaraClienteId={barbaraClienteId} esStaff={Boolean(esStaff)} />
           </div>
         )}
 
         {seccion === "memoria" && (
           <div className="barbara-tarjeta barbara-tarjeta-memoria">
-            <h1>{Ico.memoria({ t: 22 })} Memoria ✨</h1>
+            <h1>{Ico.memoria({ t: 22 })} Memoria</h1>
             <p className="barbara-subtitulo">La memoria de Bárbara. Conecta ideas, contenidos e insights.</p>
             <GrafoMemoria barbaraClienteId={barbaraClienteId} negocio={negocio} puedeEditar={Boolean(esStaff)} />
           </div>
@@ -178,13 +168,14 @@ export function BarbaraModulo({
 
         {seccion === "configuracion" && (
           <div className="barbara-tarjeta">
-            <h1>{Ico.ajustes({ t: 22 })} Configuración ✨</h1>
+            <h1>{Ico.ajustes({ t: 22 })} Configuración</h1>
             <BarbaraConfiguracion
               barbaraClienteId={barbaraClienteId}
               negocio={negocio}
               rubro={rubro}
               brandBook={brandBook}
               formulario={formulario}
+              plan={plan}
               onCambio={onCambio}
               esStaff={esStaff}
               activo={activo}

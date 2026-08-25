@@ -1,241 +1,205 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { sb, fecha } from "../lib/supabase";
 
-type Fila = {
-  id: string; fecha: string; tipo: string; angulo: string | null;
-  aprobada_sin_cambios: boolean | null; correcciones_pedidas: number | null; estado: "en_revision" | "requiere_ajuste" | "aprobada" | "publicada" | "historica" | null; creado_en: string;
-};
-
 type Metrica = {
-  programacion_id: string; barbara_memoria_id: string; plataforma: string; capturado_en: string;
-  me_gusta: number; comentarios: number; compartidos: number; guardados: number;
-  alcance: number; impresiones: number; reproducciones: number; clics: number; interacciones: number;
+  barbara_memoria_id: string; programacion_id: string; plataforma: Plataforma;
+  capturado_en: string; me_gusta: number; comentarios: number; compartidos: number;
+  guardados: number; alcance: number; impresiones: number; reproducciones: number;
+  clics: number; seguidores: number | null; interacciones: number;
 };
+type Canal = { plataforma: Plataforma; activo: boolean; account_ref: string | null };
 
-type Consumo = {
-  id: string; estado: "completa" | "fallida"; fin: string;
-  tokens_entrada: number; tokens_salida: number; tokens_cache_lectura: number;
-  imagenes: number; video_segundos: number;
-};
+/** Las cuatro que acepta `barbara_canales` (CHECK en la base). */
+type Plataforma = "instagram" | "facebook" | "tiktok" | "linkedin";
 
-const ICONO_TIPO: Record<string, string> = { carrusel: "🖼️", historia: "📱", ugc: "🎬" };
+const REDES: { id: Plataforma; nombre: string; cuenta: string }[] = [
+  { id: "instagram", nombre: "Instagram", cuenta: "Instagram Business" },
+  { id: "facebook", nombre: "Facebook", cuenta: "Página de Facebook" },
+  { id: "tiktok", nombre: "TikTok", cuenta: "TikTok Business" },
+  { id: "linkedin", nombre: "LinkedIn", cuenta: "Página de LinkedIn" },
+];
 
 /**
- * "Análisis y reportes" con datos REALES, no una maqueta de interacciones
- * de Instagram/TikTok — Bárbara no tiene ninguna integración de métricas de
- * redes sociales conectada todavía (eso requeriría la API de cada
- * plataforma). Se mantiene la MISMA estructura visual de tarjetas de
- * estadística que la referencia (icono + número grande + variación), pero
- * con lo que sí es real: cuántas piezas salieron, tasa de aprobación, y
- * el mix por tipo — la misma señal que ya usa la memoria global de Bárbara
- * para aprender.
+ * "Análisis y reportes" — el rendimiento de la CUENTA en cada red.
+ *
+ * QUÉ CAMBIÓ Y POR QUÉ (25-ago-2026)
+ * ---------------------------------------------------------------------------
+ * Antes esto medía la PRODUCCIÓN de Bárbara: cuántas piezas salieron, cuántas
+ * se aprobaron a la primera, el mix por tipo. Es información real y útil para
+ * el equipo, pero no es lo que un cliente entra a mirar acá: él quiere saber
+ * cómo le está yendo a su cuenta. Pedido explícito de Joaquín.
+ *
+ * Ahora la pantalla se organiza por RED —Instagram, Facebook, TikTok,
+ * LinkedIn, las cuatro que acepta `barbara_canales`— y cada una muestra el
+ * estado real de esa cuenta.
+ *
+ * DE DÓNDE SALEN LOS NÚMEROS, Y POR QUÉ NO HAY NINGUNO INVENTADO
+ * ---------------------------------------------------------------------------
+ * `barbara_metricas_actuales` es la vista de las métricas confirmadas por
+ * publicación, con `plataforma` y `seguidores`. La alimenta un recolector
+ * externo autorizado (Meta Insights, TikTok Analytics, Metricool…) contra la
+ * función `barbara-metricas`, con firma HMAC — ver `services/barbara/METRICAS.md`.
+ *
+ * Ese recolector TODAVÍA NO ESTÁ CONECTADO. Por eso cada red tiene tres
+ * estados posibles y ninguno es un número de relleno:
+ *
+ *   · sin canal          → la red no está dada de alta para este cliente.
+ *   · canal sin métricas → publica, pero nadie está enviando la analítica.
+ *   · con métricas       → los agregados reales de esa cuenta.
+ *
+ * Rellenar los huecos con datos de ejemplo sería lo peor posible acá: un
+ * reporte que miente es más caro que un reporte vacío, porque se toman
+ * decisiones con él.
  */
 export function BarbaraAnalisis({ barbaraClienteId }: { barbaraClienteId: string }) {
-  const [filas, setFilas] = useState<Fila[]>([]);
-  const [filasPrev, setFilasPrev] = useState<Fila[]>([]);
   const [metricas, setMetricas] = useState<Metrica[]>([]);
-  const [metricasDisponibles, setMetricasDisponibles] = useState(true);
-  const [consumos, setConsumos] = useState<Consumo[]>([]);
+  const [canales, setCanales] = useState<Canal[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
     let vivo = true;
-    const hoy = new Date();
-    const hace30 = new Date(hoy); hace30.setDate(hace30.getDate() - 30);
-    const hace60 = new Date(hoy); hace60.setDate(hace60.getDate() - 60);
-    const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1).toISOString();
-    Promise.all([
-      sb.from("barbara_memoria")
-        .select("id,fecha,tipo,angulo,aprobada_sin_cambios,correcciones_pedidas,estado,creado_en")
-        .eq("barbara_cliente_id", barbaraClienteId)
-        .gte("fecha", hace30.toISOString().slice(0, 10))
-        .order("fecha", { ascending: false }),
-      sb.from("barbara_memoria")
-        .select("id,fecha,tipo,angulo,aprobada_sin_cambios,correcciones_pedidas,estado,creado_en")
-        .eq("barbara_cliente_id", barbaraClienteId)
-        .gte("fecha", hace60.toISOString().slice(0, 10)).lt("fecha", hace30.toISOString().slice(0, 10)),
+    // El `setCargando(true)` va DENTRO de la función asíncrona, no suelto en
+    // el cuerpo del efecto: ahí dispararía un render extra sincrónico antes
+    // de que el efecto termine (react-hooks/set-state-in-effect).
+    void (async () => {
+      setCargando(true);
+      await Promise.all([
       sb.from("barbara_metricas_actuales")
-        .select("programacion_id,barbara_memoria_id,plataforma,capturado_en,me_gusta,comentarios,compartidos,guardados,alcance,impresiones,reproducciones,clics,interacciones")
+        .select("barbara_memoria_id,programacion_id,plataforma,capturado_en,me_gusta,comentarios,compartidos,guardados,alcance,impresiones,reproducciones,clics,seguidores,interacciones")
         .eq("barbara_cliente_id", barbaraClienteId),
-      sb.from("barbara_consumos")
-        .select("id,estado,fin,tokens_entrada,tokens_salida,tokens_cache_lectura,imagenes,video_segundos")
-        .eq("barbara_cliente_id", barbaraClienteId).gte("fin", inicioMes).order("fin", { ascending: false }),
-    ]).then(([r1, r2, r3, r4]) => {
-      if (!vivo) return;
-      if (r1.error) setError(r1.error.message);
-      else {
-        setFilas((r1.data ?? []) as Fila[]);
-        setFilasPrev((r2.data ?? []) as Fila[]);
-        setMetricas((r3.data ?? []) as Metrica[]);
-        setMetricasDisponibles(!r3.error);
-        setConsumos((r4.data ?? []) as Consumo[]);
-        setError("");
-      }
-      setCargando(false);
-    });
+      sb.from("barbara_canales")
+        .select("plataforma,activo,account_ref")
+        .eq("barbara_cliente_id", barbaraClienteId),
+      ]).then(([rm, rc]) => {
+        if (!vivo) return;
+        // Que falte la analítica no puede tumbar la pantalla: los canales
+        // solos ya dicen algo útil ("está conectada, falta el recolector").
+        setMetricas(rm.error ? [] : ((rm.data ?? []) as Metrica[]));
+        setCanales(rc.error ? [] : ((rc.data ?? []) as Canal[]));
+        setError(rc.error?.message || "");
+        setCargando(false);
+      });
+    })();
     return () => { vivo = false; };
   }, [barbaraClienteId]);
 
-  const total = filas.length;
-  const totalPrev = filasPrev.length;
-  const aprobadas = filas.filter((f) => f.estado === "aprobada" || f.estado === "publicada" || f.aprobada_sin_cambios === true).length;
-  const tasaAprobacion = total ? Math.round((aprobadas / total) * 100) : 0;
-  const tasaAprobacionPrev = totalPrev ? Math.round((filasPrev.filter((f) => f.estado === "aprobada" || f.estado === "publicada" || f.aprobada_sin_cambios === true).length / totalPrev) * 100) : 0;
-  const porTipo = filas.reduce<Record<string, number>>((acc, f) => { acc[f.tipo] = (acc[f.tipo] ?? 0) + 1; return acc; }, {});
-  const totalesRed = metricas.reduce((acc, m) => ({
-    alcance: acc.alcance + Number(m.alcance || 0),
-    interacciones: acc.interacciones + Number(m.interacciones || 0),
-    reproducciones: acc.reproducciones + Number(m.reproducciones || 0),
-  }), { alcance: 0, interacciones: 0, reproducciones: 0 });
-  const consumoMes = consumos.reduce((acc, c) => ({
-    tokens: acc.tokens + Number(c.tokens_entrada || 0) + Number(c.tokens_salida || 0),
-    cache: acc.cache + Number(c.tokens_cache_lectura || 0),
-    imagenes: acc.imagenes + Number(c.imagenes || 0),
-    video: acc.video + Number(c.video_segundos || 0),
-    fallas: acc.fallas + (c.estado === "fallida" ? 1 : 0),
-  }), { tokens: 0, cache: 0, imagenes: 0, video: 0, fallas: 0 });
-  const formato = (n: number) => new Intl.NumberFormat("es-CL", { notation: n >= 10_000 ? "compact" : "standard", maximumFractionDigits: 1 }).format(n);
+  const porRed = useMemo(() => {
+    const mapa = new Map<Plataforma, Metrica[]>();
+    for (const m of metricas) {
+      if (!mapa.has(m.plataforma)) mapa.set(m.plataforma, []);
+      mapa.get(m.plataforma)!.push(m);
+    }
+    return mapa;
+  }, [metricas]);
 
-  const variacion = (actual: number, previo: number) =>
-    previo === 0 ? null : Math.round(((actual - previo) / previo) * 100);
-
-  const varPiezas = variacion(total, totalPrev);
-  const varAprobacion = tasaAprobacion - tasaAprobacionPrev;
-  const porRevisar = filas.filter((f) => f.estado === "en_revision" || f.estado === "requiere_ajuste").length;
+  const canalDe = (p: Plataforma) => canales.find((c) => c.plataforma === p);
 
   if (cargando) return <p className="vacio">Cargando…</p>;
   if (error) return <p className="error">{error}</p>;
 
+  const algunaConDatos = REDES.some((r) => (porRed.get(r.id)?.length ?? 0) > 0);
+
   return (
-    <div>
-      <div className="barbara-stats-fila">
-        {metricasDisponibles && metricas.length > 0 && (
-          <>
-            <div className="barbara-stat-tarjeta">
-              <span className="barbara-stat-icono">👀</span>
-              <b>Alcance confirmado</b>
-              <div className="barbara-stat-numero">{formato(totalesRed.alcance)}</div>
-              <small>{metricas.length} publicación(es) medidas</small>
-            </div>
-            <div className="barbara-stat-tarjeta">
-              <span className="barbara-stat-icono">💬</span>
-              <b>Interacciones reales</b>
-              <div className="barbara-stat-numero">{formato(totalesRed.interacciones)}</div>
-              <small>Me gusta, comentarios, compartidos, guardados y clics</small>
-            </div>
-            {totalesRed.reproducciones > 0 && (
-              <div className="barbara-stat-tarjeta">
-                <span className="barbara-stat-icono">▶️</span>
-                <b>Reproducciones</b>
-                <div className="barbara-stat-numero">{formato(totalesRed.reproducciones)}</div>
-              </div>
-            )}
-          </>
-        )}
-        <div className="barbara-stat-tarjeta">
-          <span className="barbara-stat-icono">✅</span>
-          <b>Piezas · 30 días</b>
-          <div className="barbara-stat-numero">{total}</div>
-          {varPiezas !== null && (
-            <small className={varPiezas >= 0 ? "arriba" : "abajo"}>
-              {varPiezas >= 0 ? "↑" : "↓"} {Math.abs(varPiezas)}% vs. periodo anterior
-            </small>
-          )}
-        </div>
-        <div className="barbara-stat-tarjeta">
-          <span className="barbara-stat-icono">🎯</span>
-          <b>Aprobadas a la primera</b>
-          <div className="barbara-stat-numero">{tasaAprobacion}%</div>
-          <small className={varAprobacion >= 0 ? "arriba" : "abajo"}>
-            {varAprobacion >= 0 ? "↑" : "↓"} {Math.abs(varAprobacion)} pts vs. periodo anterior
-          </small>
-        </div>
-        <div className="barbara-stat-tarjeta">
-          <span className="barbara-stat-icono">Revisión</span>
-          <b>En revisión</b>
-          <div className="barbara-stat-numero">{porRevisar}</div>
-          <small>Esperando una decisión</small>
-        </div>
-        {Object.entries(porTipo).map(([tipo, n]) => (
-          <div className="barbara-stat-tarjeta" key={tipo}>
-            <span className="barbara-stat-icono">{ICONO_TIPO[tipo] || "📄"}</span>
-            <b style={{ textTransform: "capitalize" }}>{tipo}</b>
-            <div className="barbara-stat-numero">{n}</div>
-          </div>
+    <div className="barbara-analisis">
+      {!algunaConDatos && (
+        <p className="tenue" style={{ marginBottom: 16 }}>
+          Todavía no llegan estadísticas de ninguna cuenta. Se activan cuando se
+          conecta un recolector de analítica a la red — mientras tanto, Bárbara
+          publica igual, pero no puede medir el resultado.
+        </p>
+      )}
+
+      <div className="barbara-redes">
+        {REDES.map((red) => (
+          <PanelRed
+            key={red.id}
+            nombre={red.nombre}
+            cuenta={red.cuenta}
+            canal={canalDe(red.id)}
+            filas={porRed.get(red.id) ?? []}
+          />
         ))}
       </div>
-
-      {metricas.length > 0 && (
-        <div className="barbara-tarjeta-interna">
-          <h3>📈 Rendimiento por publicación</h3>
-          <div className="tabla-caja">
-            <table>
-              <thead><tr><th>Red</th><th>Actualizado</th><th>Alcance</th><th>Interacciones</th><th>Guardados</th></tr></thead>
-              <tbody>{[...metricas].sort((a, b) => b.alcance - a.alcance).map((m) => (
-                <tr key={m.programacion_id}>
-                  <td style={{ textTransform: "capitalize" }}>{m.plataforma}</td>
-                  <td>{fecha(m.capturado_en)}</td>
-                  <td>{formato(m.alcance)}</td>
-                  <td>{formato(m.interacciones)}</td>
-                  <td>{formato(m.guardados)}</td>
-                </tr>
-              ))}</tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {consumos.length > 0 && (
-        <div className="barbara-tarjeta-interna">
-          <h3>⚙️ Consumo técnico del mes</h3>
-          <div className="barbara-stats-fila">
-            <div className="barbara-stat-tarjeta"><b>Tokens procesados</b><div className="barbara-stat-numero">{formato(consumoMes.tokens)}</div><small>{formato(consumoMes.cache)} servidos desde caché</small></div>
-            <div className="barbara-stat-tarjeta"><b>Imágenes generadas</b><div className="barbara-stat-numero">{formato(consumoMes.imagenes)}</div></div>
-            <div className="barbara-stat-tarjeta"><b>Video generado</b><div className="barbara-stat-numero">{formato(consumoMes.video)}s</div></div>
-            <div className="barbara-stat-tarjeta"><b>Intentos registrados</b><div className="barbara-stat-numero">{consumos.length}</div><small>{consumoMes.fallas} fallido(s), también contabilizados</small></div>
-          </div>
-          <p className="tenue">Son unidades reales de uso, no una estimación monetaria. Las tarifas pueden cambiar sin alterar este historial.</p>
-        </div>
-      )}
-
-      <div className="barbara-tarjeta-interna">
-        <h3>{ICONO_TIPO.carrusel} Piezas de los últimos 30 días</h3>
-        {total === 0 ? (
-          <p className="vacio">Sin piezas todavía.</p>
-        ) : (
-          <div className="tabla-caja">
-            <table>
-              <thead><tr><th>Fecha</th><th>Contenido</th><th>Tipo</th><th>Estado</th></tr></thead>
-              <tbody>
-                {filas.map((f) => (
-                  <tr key={f.id}>
-                    <td>{fecha(f.creado_en)}</td>
-                    <td>{f.angulo || "—"}</td>
-                    <td>{ICONO_TIPO[f.tipo] || ""} {f.tipo}</td>
-                    <td>
-                      <span className={"pill " + (
-                        f.estado === "publicada" || f.estado === "aprobada" || f.aprobada_sin_cambios === true ? "ok"
-                          : (f.correcciones_pedidas ?? 0) > 0 ? "gris" : "azul"
-                      )}>
-                        {f.estado === "publicada" ? "Publicada"
-                          : f.estado === "aprobada" || f.aprobada_sin_cambios === true ? "Aprobada"
-                          : (f.correcciones_pedidas ?? 0) > 0 ? `${f.correcciones_pedidas} corrección(es)`
-                          : "Esperando"}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      {!metricasDisponibles && <p className="tenue" style={{ marginTop: 14 }}>
-        Las métricas externas todavía no están habilitadas en este entorno. Las cifras visibles arriba
-        corresponden sólo a producción y aprobaciones verificadas por Bárbara.
-      </p>}
     </div>
+  );
+}
+
+const formato = (n: number) =>
+  new Intl.NumberFormat("es-CL", {
+    notation: n >= 10_000 ? "compact" : "standard",
+    maximumFractionDigits: 1,
+  }).format(n);
+
+function PanelRed({ nombre, cuenta, canal, filas }: {
+  nombre: string; cuenta: string; canal: Canal | undefined; filas: Metrica[];
+}) {
+  const totales = filas.reduce(
+    (acc, m) => ({
+      alcance: acc.alcance + Number(m.alcance || 0),
+      impresiones: acc.impresiones + Number(m.impresiones || 0),
+      interacciones: acc.interacciones + Number(m.interacciones || 0),
+      reproducciones: acc.reproducciones + Number(m.reproducciones || 0),
+    }),
+    { alcance: 0, impresiones: 0, interacciones: 0, reproducciones: 0 },
+  );
+
+  // Los seguidores son un valor de CUENTA, no una suma: se toma la lectura
+  // más reciente. Sumarlos daría "12 publicaciones × 4.000 seguidores".
+  const ultima = filas.reduce<Metrica | null>(
+    (mejor, m) => (!mejor || m.capturado_en > mejor.capturado_en ? m : mejor), null);
+  const seguidores = ultima?.seguidores ?? null;
+
+  // Tasa de interacción sobre ALCANCE (personas únicas), no sobre
+  // impresiones: es la definición que usan las propias plataformas, y sobre
+  // impresiones el número sale sistemáticamente más bajo y no se puede
+  // comparar con nada de lo que el cliente lea afuera.
+  const tasa = totales.alcance > 0
+    ? (totales.interacciones / totales.alcance) * 100 : null;
+
+  const conectada = Boolean(canal?.activo);
+
+  return (
+    <section className="barbara-red">
+      <header>
+        <div>
+          <b>{nombre}</b>
+          {canal?.account_ref && <small>{canal.account_ref}</small>}
+        </div>
+        <span className={"pill " + (conectada ? "ok" : "gris")}>
+          {conectada ? "Conectada" : "Sin conectar"}
+        </span>
+      </header>
+
+      {filas.length === 0 ? (
+        <p className="tenue">
+          {conectada
+            ? "Conectada para publicar, pero todavía no llegan estadísticas de esta cuenta."
+            : `Falta dar de alta la cuenta de ${cuenta} para publicar y medir.`}
+        </p>
+      ) : (
+        <>
+          <div className="barbara-red-cifras">
+            {seguidores !== null && (
+              <div><small>Seguidores</small><b>{formato(seguidores)}</b></div>
+            )}
+            <div><small>Alcance</small><b>{formato(totales.alcance)}</b></div>
+            <div><small>Interacciones</small><b>{formato(totales.interacciones)}</b></div>
+            {tasa !== null && (
+              <div><small>Tasa de interacción</small><b>{tasa.toFixed(1)}%</b></div>
+            )}
+            {totales.reproducciones > 0 && (
+              <div><small>Reproducciones</small><b>{formato(totales.reproducciones)}</b></div>
+            )}
+            <div><small>Publicaciones medidas</small><b>{filas.length}</b></div>
+          </div>
+          {ultima && (
+            <p className="tenue barbara-red-pie">
+              Última medición: {fecha(ultima.capturado_en)}
+            </p>
+          )}
+        </>
+      )}
+    </section>
   );
 }
