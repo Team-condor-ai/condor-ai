@@ -23,6 +23,7 @@ import { elegirPilar, bloquePrompt as bloquePilarPrompt, PILARES } from "./pilar
 import { revisar, ANCHO_REVISION } from "./revision.mjs";
 import { prepararMemoria } from "./memoria.mjs";
 import { persistirMedia } from "./persistencia.mjs";
+import { proponerHorario } from "./planificador.mjs";
 import sharp from "sharp";
 
 const AK = process.env.ANTHROPIC_API_KEY;
@@ -114,6 +115,7 @@ async function logoDataUri(url) {
 
 async function generarPara(cliente) {
   const { id: barbaraId, plan, rubro, telegram_chat_id, cliente_id } = cliente;
+  const zonaHoraria = cliente.zona_horaria || "America/Santiago";
   const negocio = cliente.clientes?.negocio || cliente.clientes?.[0]?.negocio || "el negocio";
   const bb = Array.isArray(cliente.barbara_brand_book) ? cliente.barbara_brand_book[0] : cliente.barbara_brand_book;
   const form = Array.isArray(cliente.barbara_formulario) ? cliente.barbara_formulario[0] : cliente.barbara_formulario;
@@ -620,6 +622,52 @@ Responde SOLO con el JSON.`;
   });
   console.log(`[${negocio}] biblioteca: ${mediaPersistida.length} asset(s) persistidos y verificados`);
 
+  // La pieza queda en el calendario como BORRADOR. Programarla no equivale a
+  // publicarla: el worker de publicación sólo podrá tomar estados programados
+  // y la UI mantiene la aprobación separada. En un reintento se reemplaza la
+  // referencia de la pieza corregida sin crear un duplicado en el calendario.
+  try {
+    if (isRetry && previa?.id) {
+      await db.patch(
+        `barbara_programaciones?barbara_cliente_id=eq.${barbaraId}` +
+        `&barbara_memoria_id=eq.${previa.id}&estado=in.(borrador,programada)`,
+        { barbara_memoria_id: piezaId, actualizado_en: new Date().toISOString() },
+      );
+    } else if (!isRetry) {
+      const desde = new Date().toISOString();
+      const ocupadas = await db.get(
+        `barbara_programaciones?barbara_cliente_id=eq.${barbaraId}` +
+        `&programada_para=gte.${encodeURIComponent(desde)}` +
+        `&estado=in.(borrador,programada,publicando)&select=programada_para`
+      ).catch(() => []);
+      const horario = proponerHorario({
+        ahora: new Date(),
+        ocupadas: ocupadas.map((p) => p.programada_para),
+        zonaHoraria,
+      });
+      if (horario.programadaPara) {
+        await db.post("barbara_programaciones", {
+          barbara_cliente_id: barbaraId,
+          barbara_memoria_id: piezaId,
+          tipo: TIPO,
+          plataforma: TIPO === "ugc" ? "tiktok" : "instagram",
+          programada_para: horario.programadaPara,
+          estado: "borrador",
+          zona_horaria: zonaHoraria,
+          razon_planificacion: horario.razon,
+          creado_por: "barbara",
+        });
+        console.log(`[${negocio}] calendario: borrador propuesto para ${horario.programadaPara} (${zonaHoraria})`);
+      } else {
+        console.log(`[${negocio}] ⚠️ calendario sin ventana: ${horario.razon}`);
+      }
+    }
+  } catch (e) {
+    // La pieza y sus assets ya están a salvo. Se marca explícitamente en el
+    // run para que staff repare el calendario, sin fingir que quedó agendada.
+    console.error(`[${negocio}] ⚠️ no se pudo registrar la programación:`, String(e).slice(0, 220));
+  }
+
   if (piezaId && promptsRegistrados.length) {
     await db.patch(`barbara_prompts?id=in.(${promptsRegistrados.join(",")})`, {
       barbara_memoria_id: piezaId,
@@ -657,7 +705,7 @@ async function main() {
 
   const filtroId = SOLO_CLIENTE ? `&id=eq.${SOLO_CLIENTE}` : "";
   const clientes = await db.get(
-    `barbara_clientes?activo=eq.true${filtroId}&select=id,plan,rubro,telegram_chat_id,cliente_id,clientes(negocio),barbara_brand_book(paleta_colores,tipografia,detalles,logo_url),barbara_formulario(tipo_contenido,publico_objetivo,tono,restricciones,ejemplos_referencia,producto_destacar)`
+    `barbara_clientes?activo=eq.true${filtroId}&select=id,plan,rubro,telegram_chat_id,cliente_id,zona_horaria,clientes(negocio),barbara_brand_book(paleta_colores,tipografia,detalles,logo_url),barbara_formulario(tipo_contenido,publico_objetivo,tono,restricciones,ejemplos_referencia,producto_destacar)`
   );
 
   if (!clientes.length) {

@@ -317,8 +317,34 @@
   margin-bottom: 3px;
   font-size: 10.5px;
   overflow: hidden;
+  width: 100%;
+  color: inherit;
+  text-align: left;
 }
 .barbara-calendario-chip small { color: var(--texto-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.barbara-calendario-chip.futura { border-top: 0; border-right: 0; border-bottom: 0; cursor: pointer; }
+.barbara-calendario-chip.futura:hover { filter: brightness(.97); }
+.barbara-calendario-chip.borrador { border-left-color: #d59617; background: color-mix(in srgb,#d59617 9%,var(--panel)); }
+.barbara-calendario-chip.programada { border-left-color: #3fa45e; background: color-mix(in srgb,#3fa45e 9%,var(--panel)); }
+.barbara-calendario-chip.publicando { border-left-color: #7b61d1; }
+.barbara-calendario-chip.publicada { border-left-color: #3fa45e; opacity: .72; }
+.barbara-calendario-chip.fallida { border-left-color: #d64a4a; }
+.barbara-calendario-chip.cancelada { border-left-color: var(--texto-3); opacity: .45; text-decoration: line-through; }
+.barbara-calendario-chip.historica { border-left-color: var(--azul); opacity: .72; }
+.barbara-calendario-leyenda { display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;color:var(--texto-2);font-size:11px; }
+.barbara-calendario-leyenda span { display:flex;align-items:center;gap:5px; }
+.barbara-calendario-leyenda i { width:7px;height:7px;border-radius:99px;background:var(--azul); }
+.barbara-calendario-leyenda i.borrador { background:#d59617; }
+.barbara-calendario-leyenda i.programada { background:#3fa45e; }
+.barbara-programacion-editor {
+  display:grid;grid-template-columns:minmax(180px,1fr) minmax(210px,1fr) minmax(210px,1fr);
+  gap:12px;align-items:end;margin-top:14px;padding:14px;border:1px solid var(--borde-suave);
+  border-radius:14px;background:var(--panel-2);
+}
+.barbara-programacion-editor>div:first-child { display:flex;flex-direction:column;gap:5px;align-self:center; }
+.barbara-programacion-editor small,.barbara-programacion-editor span { color:var(--texto-2);font-size:11px; }
+.barbara-programacion-editor strong { color:var(--texto);font-size:13px;line-height:1.35; }
+.barbara-programacion-acciones { grid-column:1/-1;display:flex;gap:7px;flex-wrap:wrap; }
 
 /* Análisis */
 .barbara-stats-fila {
@@ -385,4 +411,6 @@
   .barbara-modulo { flex-direction: column; margin: -16px; padding: 16px; }
   .barbara-modulo-rail { width: 100%; margin-top: 40px; }
   .barbara-hero { flex-direction: column; text-align: center; }
+  .barbara-programacion-editor { grid-template-columns:1fr; }
+  .barbara-programacion-acciones { grid-column:1; }
 }
