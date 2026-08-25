@@ -312,22 +312,24 @@ export function Organizacion() {
                           <h3>{t.titulo}</h3>
                           {t.descripcion && <p>{t.descripcion}</p>}
                           <div className="tarea-pie">
-                            <span>
+                            <span className="tarea-cliente">
                               {t.cliente_id
                                 ? cliente.get(t.cliente_id)?.negocio ||
                                   "Cliente"
                                 : "Cóndor"}
                             </span>
-                            {t.asignados?.slice(0, 2).map((nombre) => (
+                            {(t.asignados?.length ?? 0) > 0 && <div className="tarea-asignados" aria-label={`Asignados: ${t.asignados.join(", ")}`}>
+                            {t.asignados.slice(0, 4).map((nombre) => (
                               <span className="persona-mini" key={nombre} title={nombre}>
                                 {nombre.slice(0, 2).toUpperCase()}
                               </span>
                             ))}
-                            {(t.asignados?.length ?? 0) > 2 && (
-                              <span className="persona-mini" title={t.asignados.slice(2).join(", ")}>
-                                +{t.asignados.length - 2}
+                            {(t.asignados?.length ?? 0) > 4 && (
+                              <span className="persona-mini mas" title={t.asignados.slice(4).join(", ")}>
+                                +{t.asignados.length - 4}
                               </span>
                             )}
+                            </div>}
                           </div>
                           {t.etiquetas?.length > 0 && (
                             <div className="etiquetas">

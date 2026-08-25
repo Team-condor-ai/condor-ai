@@ -142,18 +142,26 @@ export type DatosCuentaInterna = {
   url?: string;
 };
 
+export type ArchivoInterno = {
+  url: string;
+  nombre: string;
+  peso_bytes?: number | null;
+  tipo?: string | null;
+};
+
 /** Datos sensibles y contexto operativo — Organización > Información interna. */
 export type NotaInterna = {
   id: string;
   titulo: string;
   contenido: string | null;
   categoria: string;
-  tipo: "nota" | "cuenta";
+  tipo: "nota" | "cuenta" | "archivo";
   cliente_id: string | null;
   datos_cuenta: DatosCuentaInterna | null;
   archivo_url: string | null;
   archivo_nombre: string | null;
   archivo_peso_bytes: number | null;
+  archivos?: ArchivoInterno[] | null;
   creado_por: string | null;
   creado_en: string;
   actualizado_en: string;
