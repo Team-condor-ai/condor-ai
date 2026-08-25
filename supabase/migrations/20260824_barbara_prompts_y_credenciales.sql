@@ -41,17 +41,13 @@ create policy "admin_all_barbara_prompts" on public.barbara_prompts
   for all using ( public.es_admin() ) with check ( public.es_admin() );
 
 -- ═══════════════════════════════════════════════════════════════════════
--- 2) CREDENCIALES DE API REVELABLES
+-- 2) METADATOS DE CREDENCIALES DE API
 --
--- Las keys de verdad viven en GitHub Actions secrets (write-only: no se
--- pueden leer de vuelta desde ahí). Para que el portal las pueda "revelar
--- para copiar", necesitan una copia de lectura acá — SOLO accesible vía la
--- Edge Function `revelar-credencial` (nunca por un select directo del
--- cliente: no hay policy de SELECT para authenticated, a propósito).
+-- Las keys de verdad viven exclusivamente en secretos de GitHub Actions y
+-- Supabase. El portal muestra estado y saldo; nunca debe recibir una clave.
 --
--- Mantener las dos copias (GitHub secret que usan los workflows, esta fila
--- que lee el portal) sincronizadas es responsabilidad manual: si se rota
--- una key, hay que actualizar las dos.
+-- No sembrar una key en una migración: una migración es código versionado y
+-- por definición no es un almacén de secretos.
 -- ═══════════════════════════════════════════════════════════════════════
 create table if not exists public.api_credenciales (
   proveedor      text primary key,
@@ -67,10 +63,6 @@ alter table public.api_credenciales enable row level security;
 -- service_role, dentro de la Edge Function que ya verificó `es_admin()`.
 revoke all on public.api_credenciales from anon, authenticated;
 grant all on public.api_credenciales to service_role;
-
-insert into public.api_credenciales (proveedor, valor, nota, actualizado_por)
-values ('kie', '2428ea9704c5eb9e58136b586dc7c80f', 'Kie.ai — gpt-image-2 + seedance-2-0, migración desde Higgsfield', 'claude')
-on conflict (proveedor) do update set valor = excluded.valor, actualizado_en = now();
 
 -- Fila inicial en api_creditos para que aparezca en la pantalla antes de
 -- que corra la primera sincronización (mismo patrón que las otras filas

@@ -1,5 +1,10 @@
 # Objetivo — Bárbara con memoria real
 
+> La visión de producto completa, experiencia de portal, algoritmo de
+> aprendizaje, integración MCP/CLI e hitos vive en
+> [`VISION-OBJETIVO-FINAL.md`](./VISION-OBJETIVO-FINAL.md). Este documento
+> mantiene el fundamento de la memoria en capas.
+
 > Nace como un bebé (memoria semilla del formulario de onboarding) y con
 > cada interacción aprende más de su cliente, hasta adaptarse a sus
 > patrones sin que nadie tenga que repetírselo. Documento de visión —

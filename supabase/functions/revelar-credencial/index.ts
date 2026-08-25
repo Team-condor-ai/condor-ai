@@ -1,5 +1,6 @@
-// Revela el valor real de una credencial de API para copiar desde el
-// portal (Sistema > Créditos API > Revelar). Solo el equipo puede.
+// El portal no revela secretos. Las claves viven únicamente en secretos de
+// GitHub/Supabase y esta función conserva el endpoint sólo para responder de
+// forma explícita si una versión antigua del frontend intenta usarlo.
 //
 // POR QUÉ ESTO ES SU PROPIA FUNCIÓN Y NO UN SELECT DIRECTO
 // ---------------------------------------------------------------------------
@@ -43,19 +44,7 @@ Deno.serve(async (req) => {
   const { data: admin } = await sb.from("admins").select("email").eq("email", user.email).maybeSingle();
   if (!admin) return json({ error: "solo el equipo puede revelar credenciales" }, 403);
 
-  let proveedor = "";
-  try {
-    proveedor = String((await req.json())?.proveedor || "").trim();
-  } catch { /* validación abajo */ }
-  if (!proveedor) return json({ error: "falta el proveedor" }, 400);
-
-  const { data: fila, error } = await sb
-    .from("api_credenciales")
-    .select("valor, nota, actualizado_en")
-    .eq("proveedor", proveedor)
-    .maybeSingle();
-  if (error) return json({ error: error.message }, 500);
-  if (!fila) return json({ error: `no hay una credencial guardada para "${proveedor}"` }, 404);
-
-  return json({ valor: fila.valor, nota: fila.nota, actualizado_en: fila.actualizado_en });
+  return json({
+    error: "Las credenciales no se revelan desde el portal. Gestiona la clave en los secretos del proveedor o de GitHub.",
+  }, 410);
 });

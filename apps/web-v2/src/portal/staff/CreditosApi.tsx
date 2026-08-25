@@ -53,10 +53,9 @@ const BASE: CreditoApi[] = [
   },
 ];
 
-// Proveedores con una copia de su key guardada en `api_credenciales` para
-// poder revelarla desde acá — ver la Edge Function `revelar-credencial` y
-// su migración para por qué esto NO es un select directo a esa tabla.
-const PROVEEDORES_REVELABLES = new Set(["kie"]);
+// El portal nunca revela claves: los secretos viven en GitHub/Supabase, no
+// en una base que pueda terminar enviándolos a un navegador.
+const PROVEEDORES_REVELABLES = new Set<string>();
 
 const etiquetas: Record<EstadoCredito, string> = {
   ok: "Conectado",
