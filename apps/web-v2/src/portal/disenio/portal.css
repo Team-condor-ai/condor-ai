@@ -654,6 +654,17 @@ textarea.campo{resize:vertical;min-height:56px}
 .portal-app .panel-lat,
 .portal-app .panel-modal{box-shadow:inset 0 1px 0 var(--vidrio-luz), var(--sombra)}
 
+/* Confirmar una acción es una decisión, no una capa decorativa: este panel
+   usa el color sólido del tema para que su texto siga siendo legible sobre el
+   velo, tanto en claro como en oscuro. */
+.portal-app .confirmacion-app{
+  width:min(460px,100%);color:var(--texto);background:var(--panel);
+  border-color:var(--borde);box-shadow:var(--sombra-alta);backdrop-filter:none;
+  -webkit-backdrop-filter:none;
+}
+.portal-app .confirmacion-app .contenido{color:var(--texto-2);line-height:1.55}
+.portal-app .confirmacion-app>footer{background:var(--panel-2)}
+
 @media (max-width:860px){
   .portal-app aside{width:100%}
   .portal-app .col-tabs{width:70px}

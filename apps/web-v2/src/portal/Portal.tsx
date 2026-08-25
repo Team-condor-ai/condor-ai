@@ -192,7 +192,9 @@ function Marco({
  * ver el comentario en `auth/sesion.ts`.
  */
 export default function Portal() {
-  return <ConfirmacionProvider><PortalContenido /></ConfirmacionProvider>;
+  // El confirmador debe vivir DENTRO de `.portal-app`: sus variables de tema y
+  // el scope del CSS del portal son los que garantizan contraste en oscuro.
+  return <div className="portal-app"><ConfirmacionProvider><PortalContenido /></ConfirmacionProvider></div>;
 }
 
 function PortalContenido() {
