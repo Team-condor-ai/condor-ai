@@ -431,7 +431,11 @@ async function genImagen(prompt, idx) {
   // (esta última vez por créditos agotados en la cuenta equivocada). Ver
   // kie-api.mjs. Sin KIE_API_KEY, sigue el camino de siempre (API oficial de
   // Higgsfield si está, si no el CLI) sin tocar nada de eso.
-  if (kieDisponible()) return kieImagen(safe, { aspectRatio: "4:5", resolucion: "2K" });
+  // 26-ago-2026: "4:5" explícito le hace 422 a createTask ("temporarily
+  // unavailable") -- "auto" + "1K" da el mismo 4:5 exacto (1122×1402), sin
+  // pasar por esa ruta rota. Confirmado en vivo: ESTA es la llamada real por
+  // slide del carrusel (la de motor.mjs:324 es la de las piezas de 1 imagen).
+  if (kieDisponible()) return kieImagen(safe, { aspectRatio: "auto", resolucion: "1K" });
   if (apiDisponible()) return apiImagen(safe, { aspectRatio: "4:5", formato: "png" });
 
   const args = ["generate", "create", "nano_banana_2", "--prompt", safe, "--aspect_ratio", "4:5", "--resolution", "1k", "--wait", "--wait-timeout", "8m"];
