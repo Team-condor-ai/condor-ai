@@ -173,11 +173,22 @@ html[data-barbara-sentido="vuelve"]::view-transition-old(root) {
 
 .barbara-modulo {
   --fondo: #0A0A0B;
-  --panel: #141416;
-  --panel-2: #1B1C1F;
-  --lateral: #101012;
-  --borde: rgba(255,255,255,.09);
-  --borde-suave: rgba(255,255,255,.05);
+  /* Vidrio, no panel opaco: el fondo cósmico (BarbaraFondoCosmico) vive
+     detrás de todo el módulo y estos tokens son translúcidos a propósito
+     para que se vea A TRAVÉS de cada superficie, difuminado. Antes eran
+     colores sólidos (#141416 / #1B1C1F) — coherente con la referencia vieja
+     de "tarjetas planas", pero la referencia nueva (25-ago, las 5 capas de
+     fondo + la composición completa) pide glassmorphism real: el planeta
+     grande tiene que asomar detrás del riel y de las tarjetas. */
+  --panel: rgba(21,22,25,.56);
+  --panel-2: rgba(15,16,18,.6);
+  --lateral: rgba(10,10,12,.5);
+  --borde: rgba(255,255,255,.11);
+  --borde-suave: rgba(255,255,255,.065);
+  /* `saturate` compensa que un blur fuerte sobre un fondo casi negro con
+     poco color se ve lavado/gris; sin esto el lima del fondo se apaga
+     detrás del vidrio en vez de leerse como luz filtrada. */
+  --barbara-blur: blur(22px) saturate(150%);
   --texto: #F4F5EF;
   --texto-2: #A5A69D;
   --texto-3: #6E6F67;
@@ -474,15 +485,19 @@ html[data-barbara-sentido="vuelve"]::view-transition-old(root) {
   58%  { opacity: 1; }
   to   { opacity: 1; transform: scale(1); filter: blur(0); }
 }
+/* Terminan en 0, no en .34. Se quedaban encendidas para siempre y sobre el
+   fondo cósmico se leían como dos esquinas lima flotando en el aire, sin
+   nada que enmarcar. Son el acento de la transición al entrar a una
+   sección: cumplen su trabajo y se apagan. */
 @keyframes barbara-arista-aparece {
   0%   { opacity: 0; transform: scale(.35); }
-  38%  { opacity: 1; }
-  100% { opacity: .34; transform: scale(1); }
+  34%  { opacity: .9; }
+  100% { opacity: 0; transform: scale(1); }
 }
 @media (prefers-reduced-motion: reduce) {
   .barbara-seccion-crecer { animation: none; }
   .barbara-seccion-crecer::before,
-  .barbara-seccion-crecer::after { animation: none; opacity: .22; transform: none; }
+  .barbara-seccion-crecer::after { animation: none; opacity: 0; }
 }
 .barbara-modulo-contenido h1 {
   font-family: var(--barbara-serif);
@@ -733,13 +748,21 @@ html[data-barbara-sentido="vuelve"]::view-transition-old(root) {
   --barbara-radio-interno: 15px;
   --barbara-radius: var(--barbara-radio);
   --barbara-radius-interno: var(--barbara-radio-interno);
+  --barbara-pad: 20px;
   display: grid;
   grid-template-columns: 246px minmax(0, 1fr);
   gap: 20px;
   align-items: start;
   margin: 0;
-  padding: 20px;
+  padding: var(--barbara-pad);
   min-height: 100dvh;
+  /* Aísla el apilamiento propio: el fondo cósmico (z-index 0, position
+     absolute) y el riel/contenido (z-index 1) se comparan SOLO entre ellos
+     acá adentro. Sin esto, un z-index negativo o bajo en un hijo puede
+     terminar apilándose contra el documento entero en vez de contra sus
+     hermanos, y el fondo queda invisible detrás del propio fondo opaco
+     del módulo — así se detectó, renderizando, no leyendo el CSS. */
+  isolation: isolate;
   background:
     radial-gradient(circle at 72% -12%, rgba(212,255,61,.065), transparent 30rem),
     var(--fondo);
@@ -747,6 +770,7 @@ html[data-barbara-sentido="vuelve"]::view-transition-old(root) {
 
 .barbara-modulo .barbara-modulo-rail {
   position: sticky;
+  z-index: 1;
   top: 20px;
   display: flex;
   flex-direction: column;
@@ -758,8 +782,13 @@ html[data-barbara-sentido="vuelve"]::view-transition-old(root) {
   overflow: auto;
   border: 1px solid var(--borde);
   border-radius: var(--barbara-radio);
-  background: #111214;
-  box-shadow: 0 18px 50px rgba(0,0,0,.18);
+  background: var(--lateral);
+  backdrop-filter: var(--barbara-blur);
+  -webkit-backdrop-filter: var(--barbara-blur);
+  /* Filo superior de luz: el borde de 1px solo no alcanza a leerse como
+     vidrio, un highlight interno sutil en el canto de arriba es lo que
+     vende "superficie con espesor" en vez de "rectángulo con borde". */
+  box-shadow: 0 18px 50px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.05);
 }
 .barbara-modulo-rail-cabecera { display: grid; gap: 18px; padding: 2px 2px 16px; }
 .barbara-modulo-volver {
@@ -799,14 +828,30 @@ html[data-barbara-sentido="vuelve"]::view-transition-old(root) {
 .barbara-modulo-volver:focus-visible,
 .barbara-modulo .chip-toggle:focus-visible { outline: 2px solid var(--azul); outline-offset: 2px; }
 
-.barbara-modulo-contenido { margin-top: 0; gap: 16px; min-width: 0; }
+/* `background: none` NO es decorativo: `estilo.css` trae
+   `main { background: var(--fondo) }` con un selector de elemento, y como
+   `.barbara-modulo` redefine `--fondo` a #0A0A0B, este `<main>` se pintaba
+   NEGRO OPACO —1534×940— justo por encima del fondo cósmico. Se veía como
+   un recuadro negro que tapaba toda la escena y sólo dejaba asomar el
+   planeta por los bordes. Se detectó midiendo el `backgroundColor`
+   computado de cada capa, no leyendo el CSS. */
+.barbara-modulo-contenido {
+  position: relative;
+  z-index: 1;
+  margin-top: 0;
+  gap: 16px;
+  min-width: 0;
+  background: none;
+}
 .barbara-modulo-contenido h1 { font-size: clamp(23px, 2.2vw, 30px); line-height: 1.15; letter-spacing: -.025em; }
 .barbara-modulo-contenido h3 { margin-bottom: 14px; }
 .barbara-tarjeta {
   border-color: var(--borde);
   border-radius: var(--barbara-radius);
   padding: clamp(18px, 2.5vw, 28px);
-  box-shadow: 0 18px 44px rgba(0,0,0,.14);
+  backdrop-filter: var(--barbara-blur);
+  -webkit-backdrop-filter: var(--barbara-blur);
+  box-shadow: 0 18px 44px rgba(0,0,0,.24), inset 0 1px 0 rgba(255,255,255,.045);
 }
 .barbara-tarjeta-interna,
 .barbara-modulo .bloque,
@@ -814,6 +859,8 @@ html[data-barbara-sentido="vuelve"]::view-transition-old(root) {
   border-color: var(--borde);
   border-radius: var(--barbara-radius-interno);
   background: var(--panel-2);
+  backdrop-filter: var(--barbara-blur);
+  -webkit-backdrop-filter: var(--barbara-blur);
   box-shadow: none;
 }
 .barbara-configuracion { display: grid; gap: 14px; }
@@ -843,16 +890,20 @@ html[data-barbara-sentido="vuelve"]::view-transition-old(root) {
 .barbara-modulo .btn.solido:hover { background: var(--azul-fuerte); border-color: var(--azul-fuerte); }
 
 .barbara-hero {
+  position: relative;
   min-height: 274px;
   gap: clamp(20px, 3vw, 42px);
   padding: clamp(22px, 3vw, 34px);
   border-color: var(--borde);
   border-radius: var(--barbara-radius);
-  background: linear-gradient(135deg, rgba(212,255,61,.085), transparent 42%), var(--panel);
+  background: linear-gradient(135deg, rgba(212,255,61,.1), transparent 42%), var(--panel);
+  backdrop-filter: var(--barbara-blur);
+  -webkit-backdrop-filter: var(--barbara-blur);
+  box-shadow: 0 22px 60px rgba(0,0,0,.26), inset 0 1px 0 rgba(255,255,255,.05);
 }
 .barbara-hero-img { width: clamp(155px, 20vw, 230px); height: clamp(155px, 20vw, 230px); }
 .barbara-hero-cuerpo h1 { font-size: clamp(29px, 3.4vw, 42px); }
-.barbara-chat-caja { border-radius: var(--barbara-radius-interno); border-color: var(--borde); background: #101113; }
+.barbara-chat-caja { border-radius: var(--barbara-radius-interno); border-color: var(--borde); background: var(--panel-2); backdrop-filter: var(--barbara-blur); -webkit-backdrop-filter: var(--barbara-blur); }
 .barbara-chat-enviar { width: 42px; height: 42px; }
 .barbara-chat-historial {
   display: flex;
@@ -891,7 +942,7 @@ html[data-barbara-sentido="vuelve"]::view-transition-old(root) {
 .barbara-calendario-controles { flex-wrap: wrap; }
 .chip-toggle { min-height: 34px; border-radius: 9px; }
 .barbara-calendario-grilla { gap: 4px; }
-.barbara-calendario-celda { border: 1px solid transparent; border-radius: 12px; background: #101113; padding: 8px; }
+.barbara-calendario-celda { border: 1px solid var(--borde-suave); border-radius: 12px; background: var(--panel-2); padding: 8px; }
 .barbara-calendario-celda.hoy { outline: 0; border-color: var(--azul-borde); background: rgba(212,255,61,.06); }
 .barbara-calendario-chip { border-radius: 9px; background: var(--panel-2); }
 
@@ -933,11 +984,14 @@ html[data-barbara-sentido="vuelve"]::view-transition-old(root) {
 
 @media (max-width: 900px) {
   .barbara-modulo {
+    /* El token, no el literal: la escena cósmica se sangra contra él para
+       llegar al filo de la pantalla y tiene que seguir el valor real. */
+    --barbara-pad: 12px;
     display: flex;
     flex-direction: column;
     gap: 14px;
     margin: 0;
-    padding: 12px;
+    padding: var(--barbara-pad);
   }
   .barbara-modulo .barbara-modulo-rail {
     position: static;
@@ -959,16 +1013,18 @@ html[data-barbara-sentido="vuelve"]::view-transition-old(root) {
   .barbara-modulo-item-dot { display: none; }
   .barbara-tarjeta { padding: 18px; }
   .barbara-hero { align-items: stretch; min-height: 0; text-align: left; }
-  .barbara-hero-img { align-self: center; width: 150px; height: 150px; }
+  /* Se baja el TOKEN, no el ancho de la imagen: así el anillo, que se mide
+     contra el mismo token, encoge con el retrato en vez de quedarse grande
+     y desbordar la página. */
+  .barbara-modulo { --barbara-retrato: 150px; }
 }
 
 @media (max-width: 560px) {
-  .barbara-modulo { padding: 8px; }
+  .barbara-modulo { --barbara-pad: 8px; padding: var(--barbara-pad); }
   .barbara-modulo .barbara-modulo-rail { border-radius: 14px; }
   .barbara-modulo-rail-cabecera { align-items: flex-start; flex-direction: column-reverse; }
   .barbara-hero { padding: 18px; border-radius: 16px; }
   .barbara-hero-cuerpo h1 { font-size: 30px; }
-  .barbara-chat-caja { padding: 8px 8px 8px 12px; }
   .barbara-chat-mensaje { width: 94%; }
   .barbara-uso > div { grid-template-columns: 1fr; gap: 12px; }
   .barbara-calendario-nav { align-items: flex-start; flex-direction: column; }
@@ -1019,3 +1075,1380 @@ html[data-barbara-sentido="vuelve"]::view-transition-old(root) {
   font-size: 21px; font-weight: 600; line-height: 1.15;
 }
 .barbara-red-pie { margin: 12px 0 0 0; font-size: 10.5px; }
+
+/* ── FONDO CÓSMICO ────────────────────────────────────────────────────────
+   5 capas recortadas de un único render (BarbaraFondoCosmico.tsx), puro
+   glow sobre negro reprocesado con alfa real (antes no tenían canal alfa,
+   solo brillo aditivo). Viven en su propia capa detrás de TODO
+   `.barbara-modulo` (z-index -1) para que el vidrio de las superficies de
+   arriba (backdrop-filter) las muestre difuminadas a través, no como una
+   imagen de fondo detrás de paneles opacos.
+
+   Cada elemento respira con dos animaciones independientes que comparten
+   la misma curva de aliento (--barbara-respirar, simétrica: acelera y
+   frena igual en ambos sentidos, se lee como respiración, no como
+   mecanismo). Las duraciones son distintas y no múltiplos exactos entre
+   sí a propósito, para que las capas nunca pulsen sincronizadas — eso se
+   leería como una sola luz parpadeando, no como una escena con profundidad.
+
+   Levitación: el planeta grande (más "cerca") se desplaza más que el chico
+   (más "lejos") — es la misma señal de profundidad que un parallax real:
+   lo cercano se mueve más que lo lejano. */
+.barbara-modulo { --barbara-respirar: cubic-bezier(.45, 0, .55, 1); }
+
+/* LA CAJA QUE RECORTA. Altura propia, no `inset:0`, y esto importa: el
+   módulo crece con su contenido (Entregas con una lista larga lo estira a
+   3000 px). Si la escena midiera el 100% de eso, se re-escalaría según la
+   sección abierta. Acá se ancla al viewport de entrada —donde vive el
+   hero— y el resto del contenido simplemente pasa por delante. */
+.barbara-fondo-cosmico {
+  position: absolute;
+  /* Sangra POR FUERA del padding del módulo. Un elemento absoluto se ancla
+     a la caja de padding, así que con `left:0` la escena arrancaba 20 px
+     adentro y quedaba un canal negro contra el borde de la ventana —
+     visible sobre todo a la derecha, donde está el planeta. La referencia
+     sangra hasta el filo de la pantalla. */
+  top: calc(-1 * var(--barbara-pad));
+  left: calc(-1 * var(--barbara-pad));
+  right: calc(-1 * var(--barbara-pad));
+  height: min(100dvh, 62vw);
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  /* Se disuelve hacia el negro del módulo en vez de cortar en seco: sin
+     esto se vería un borde recto donde termina la escena al hacer scroll. */
+  -webkit-mask-image: linear-gradient(to bottom, #000 70%, transparent 99%);
+  mask-image: linear-gradient(to bottom, #000 70%, transparent 99%);
+}
+
+/* EL LIENZO: conserva la proporción del render original (1750×899) para que
+   los porcentajes de cada capa —que salieron medidos contra ESE lienzo—
+   valgan en los dos ejes. Se ancla a la derecha y se ensancha lo necesario
+   para cubrir siempre el alto de la caja: la izquierda del lienzo es negro
+   y partículas, así que es el lado que puede sobrar fuera de cuadro; la
+   derecha lleva el planeta y la cinta y no puede faltar nunca. */
+.barbara-fondo-lienzo {
+  position: absolute;
+  top: 0; right: 0;
+  width: max(100%, calc(100dvh * 1750 / 899));
+  aspect-ratio: 1750 / 899;
+}
+.barbara-fondo-lienzo img { position: absolute; height: auto; }
+
+/* Posiciones EXACTAS del recorte de cada capa dentro del lienzo original,
+   emitidas por el script de procesado. No son valores a ojo: reconstruyen
+   la composición de referencia 1:1. Si se regeneran los assets, se vuelven
+   a copiar de la salida del script. */
+.barbara-fondo-particulas     { left: 0;       top: 0;      width: 99.2%; }
+.barbara-fondo-planeta-chico  { left: 46.4%;   top: 6.34%;  width: 10.229%; }
+.barbara-fondo-planeta-grande { left: 57.2%;   top: 2.1%;   width: 42.8%; }
+.barbara-fondo-cinta          { left: 0;       top: 0;      width: 100%; }
+
+/* MOVIMIENTO EN GPU, SIN REPINTAR
+   La versión anterior animaba `filter: brightness()` sobre imágenes de
+   ~1000×800: cada fotograma obligaba al navegador a re-filtrar el mapa de
+   píxeles completo en CPU. Eso es lo que se veía como movimiento "duro" o
+   escalonado, sobre todo en pantallas grandes.
+
+   Ahora el bloom se hace con una SEGUNDA copia de la misma capa a la que
+   sólo se le anima `opacity`, que junto con `transform` son las dos
+   propiedades que el compositor resuelve sin volver a pintar nada. El
+   resultado en pantalla es el mismo brillo pulsante, a 60 fps constantes.
+
+   `will-change` promueve cada capa a la suya antes de arrancar, para que el
+   primer ciclo no llegue tarde. */
+.barbara-fondo-lienzo img {
+  will-change: transform, opacity;
+  /* Sin esto el navegador puede elegir un escalado rápido y de baja calidad
+     al reducir imágenes grandes; en degradados suaves se nota como bordes
+     duros dentro del halo. */
+  image-rendering: auto;
+}
+
+.barbara-fondo-planeta-grande { animation: barbara-levitar-cerca 17s var(--barbara-respirar) infinite; }
+.barbara-fondo-planeta-chico  { animation: barbara-levitar-lejos 23s var(--barbara-respirar) infinite; }
+.barbara-fondo-cinta          { animation: barbara-cinta-flota 14s var(--barbara-respirar) infinite; }
+
+/* Las copias de bloom: mismas coordenadas que su capa base (heredadas de la
+   regla de posición de arriba), en modo `screen` para que sumen luz en vez
+   de taparla, y con la opacidad respirando. */
+.barbara-fondo-bloom {
+  mix-blend-mode: screen;
+  opacity: 0;
+  pointer-events: none;
+}
+.barbara-fondo-bloom.barbara-fondo-planeta-grande {
+  animation:
+    barbara-respira-luz 9s var(--barbara-respirar) infinite,
+    barbara-levitar-cerca 17s var(--barbara-respirar) infinite;
+}
+.barbara-fondo-bloom.barbara-fondo-planeta-chico {
+  animation:
+    barbara-respira-luz 7.5s var(--barbara-respirar) infinite,
+    barbara-levitar-lejos 23s var(--barbara-respirar) infinite;
+}
+.barbara-fondo-bloom.barbara-fondo-cinta {
+  animation:
+    barbara-respira-luz 11s var(--barbara-respirar) infinite,
+    barbara-cinta-flota 14s var(--barbara-respirar) infinite;
+}
+@keyframes barbara-respira-luz {
+  0%, 100% { opacity: .04; }
+  50%      { opacity: .24; }
+}
+
+/* GRANO: lo que mata el bandeado.
+   Un degradado suave de lima sobre negro en 8 bits por canal no tiene
+   pasos suficientes y se corta en franjas — es exactamente el efecto que
+   se lee como "pixelado" o "baja calidad", y no se arregla subiendo la
+   calidad del archivo porque el límite está en el color de 8 bits de la
+   pantalla, no en el JPEG. Una capa de ruido muy tenue rompe las franjas
+   en dithering y el ojo lee un degradado continuo.
+   El SVG va embebido para no pedir un archivo más. */
+.barbara-fondo-cosmico::before {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  content: "";
+  pointer-events: none;
+  opacity: .05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* VELO DE LEGIBILIDAD — no es decoración, es lo que hace usable el hero.
+   El filo del planeta es lo más brillante de la escena y su halo llega
+   hasta la columna de texto: sobre ese brillo, el titular blanco pierde
+   contraste y el rótulo lima casi desaparece. Se detectó renderizando la
+   pantalla, no leyendo el CSS.
+
+   Un degradado horizontal apaga la izquierda —donde va el texto— y deja
+   intacta la derecha, donde el planeta tiene que verse. Va DENTRO de la
+   escena y no como fondo del hero, para que el riel y las tarjetas sigan
+   recibiendo el cosmos por detrás de su vidrio. */
+.barbara-fondo-cosmico::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  /* Dos velos superpuestos, y hacen falta los dos:
+     · el horizontal apaga la columna del titular, a la izquierda;
+     · el vertical apaga la mitad inferior, donde viven el historial de
+       chat y el calendario. Sin este segundo, el planeta —que es lo más
+       brillante de la escena— quedaba justo detrás del texto de las
+       burbujas y del chip activo, y ninguno de los dos se leía. */
+  background:
+    linear-gradient(
+      180deg,
+      rgba(10,10,11,0) 0%,
+      rgba(10,10,11,.28) 42%,
+      rgba(10,10,11,.6) 78%,
+      rgba(10,10,11,.78) 100%
+    ),
+    linear-gradient(
+      100deg,
+      rgba(10,10,11,.95) 0%,
+      rgba(10,10,11,.88) 34%,
+      rgba(10,10,11,.6) 52%,
+      rgba(10,10,11,.16) 72%,
+      rgba(10,10,11,0) 86%
+    );
+}
+
+@keyframes barbara-bloom {
+  0%, 100% { filter: brightness(1) saturate(1); }
+  50%      { filter: brightness(1.34) saturate(1.12); }
+}
+@keyframes barbara-levitar-cerca {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50%      { transform: translate3d(0, -16px, 0); }
+}
+@keyframes barbara-levitar-lejos {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50%      { transform: translate3d(0, -5px, 0); }
+}
+@keyframes barbara-cinta-flota {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50%      { transform: translate3d(0, -10px, 0); }
+}
+
+/* El anillo detrás del retrato: mismo lenguaje de aliento que el resto del
+   fondo, pero un poco más rápido — está en primer plano del hero, más
+   cerca del ojo, así que su respiración se nota más.
+
+   `--barbara-retrato` existe para que el anillo NO se dimensione contra su
+   contenedor: en móvil el hero pasa a columna con `align-items: stretch` y
+   el contenedor del avatar se estiraba a todo el ancho, con lo que un
+   anillo al 140% medía 512 px en una pantalla de 390 y desbordaba la
+   página en horizontal. Atado al tamaño del retrato, el anillo mide
+   siempre lo mismo que lo que rodea. */
+.barbara-modulo { --barbara-retrato: clamp(155px, 20vw, 230px); }
+.barbara-hero-avatar {
+  position: relative;
+  flex: 0 0 auto;
+  align-self: center;
+  display: grid;
+  place-items: center;
+  width: var(--barbara-retrato);
+  height: var(--barbara-retrato);
+}
+.barbara-hero-anillo {
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 152%; height: 152%;
+  transform: translate(-50%, -50%);
+  object-fit: contain;
+  z-index: 0;
+  pointer-events: none;
+  /* Único sitio donde se conserva la animación por `filter`: es una sola
+     imagen chica en primer plano, no las capas grandes del fondo, así que
+     el costo de repintarla es despreciable y el aro late más vivo. */
+  animation: barbara-bloom 6s var(--barbara-respirar) infinite;
+}
+.barbara-modulo .barbara-hero-img {
+  position: relative;
+  z-index: 1;
+  width: var(--barbara-retrato);
+  height: var(--barbara-retrato);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .barbara-fondo-planeta-grande,
+  .barbara-fondo-planeta-chico,
+  .barbara-fondo-cinta,
+  .barbara-fondo-bloom,
+  .barbara-hero-anillo { animation: none; }
+  /* Las copias de bloom nacen en opacity:0; sin animación quedarían
+     invisibles y la escena perdería la mitad de su luz. Se fijan en el
+     punto medio de su respiración. */
+  .barbara-fondo-bloom { opacity: .24; }
+}
+
+/* ── EL HERO YA NO ES UNA TARJETA ─────────────────────────────────────────
+   En la referencia del 25-ago el saludo NO vive dentro de un panel: el
+   retrato, el rótulo y el titular se apoyan directamente sobre el cosmos, y
+   la única superficie con cuerpo es la píldora del chat.
+
+   Es la decisión que hace que la escena se lea como una sola profundidad.
+   Una tarjeta alrededor del titular vuelve a partir la pantalla en "fondo
+   decorativo" + "caja de contenido encima", que es justo el look de portal
+   genérico del que se está saliendo. El vidrio se reserva para lo que
+   RECIBE INTERACCIÓN (chat, tarjetas de datos, riel); lo que sólo se lee va
+   sin caja. */
+.barbara-modulo .barbara-hero {
+  min-height: clamp(300px, 34vw, 420px);
+  padding: clamp(10px, 2vw, 26px) clamp(4px, 1vw, 12px);
+  border: 0;
+  border-radius: 0;
+  background: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: none;
+}
+
+/* El titular pesa más que en la versión anterior: sin la tarjeta que lo
+   contenía necesita sostener la mitad derecha de la pantalla él solo. */
+.barbara-modulo .barbara-hero-cuerpo .barbara-titular {
+  font-size: clamp(32px, 4.4vw, 58px);
+  margin-bottom: 14px;
+  /* Sobre un cosmos con brillos, el texto blanco puro necesita separarse
+     del fondo o "flota" sin peso: una sombra amplia y muy tenue lo asienta
+     sin que se lea como sombra. */
+  text-shadow: 0 2px 30px rgba(0,0,0,.55);
+}
+.barbara-modulo .barbara-hero-cuerpo > p {
+  font-size: clamp(14px, 1.15vw, 16px);
+  margin-bottom: 22px;
+  text-shadow: 0 1px 18px rgba(0,0,0,.5);
+}
+
+/* La píldora del chat: la superficie protagonista del inicio.
+   Radio muy alto (no el radio interno del sistema) porque en la referencia
+   es una cápsula, y es lo que la distingue de las tarjetas rectas de datos
+   que vienen más abajo. */
+.barbara-modulo .barbara-chat-caja {
+  align-items: center;
+  gap: 14px;
+  min-height: 74px;
+  padding: 12px 12px 12px 26px;
+  border-radius: 999px;
+  border-color: rgba(255,255,255,.16);
+  /* Cruza la pantalla entera y su mitad derecha cae sobre el planeta, que
+     es lo más luminoso de la escena: con una base tenue el placeholder se
+     desteñía justo en esa mitad. Base oscura y blur alto — sigue siendo
+     vidrio, se sigue viendo el brillo detrás, pero atenuado. */
+  background: rgba(11,12,15,.66);
+  backdrop-filter: blur(26px) saturate(150%);
+  -webkit-backdrop-filter: blur(26px) saturate(150%);
+  box-shadow: 0 22px 54px rgba(0,0,0,.46), inset 0 1px 0 rgba(255,255,255,.07);
+}
+.barbara-modulo .barbara-chat-caja:focus-within {
+  border-color: var(--azul-borde);
+  box-shadow: 0 20px 46px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.06), 0 0 0 3px rgba(205,251,62,.1);
+}
+.barbara-modulo .barbara-chat-caja textarea { font-size: 15px; }
+.barbara-modulo .barbara-chat-enviar {
+  width: 50px; height: 50px;
+  /* El único elemento lima sólido del inicio. Su halo lo ata al lenguaje de
+     luz del fondo en vez de dejarlo como un botón plano pegado encima. */
+  box-shadow: 0 0 26px rgba(205,251,62,.42);
+}
+.barbara-modulo .barbara-chat-enviar:hover { background: var(--azul-fuerte); }
+
+/* El punto lima sobre la píldora (referencia): marca que la conversación
+   está viva sin ocupar una línea de texto. */
+.barbara-modulo .barbara-hero-cuerpo .barbara-chat::before {
+  display: block;
+  width: 6px; height: 6px;
+  margin-bottom: 12px;
+  border-radius: 999px;
+  background: var(--azul);
+  box-shadow: 0 0 12px rgba(205,251,62,.8);
+  content: "";
+}
+
+/* ── AJUSTES ANGOSTOS DEL REWORK ──────────────────────────────────────────
+   Van al FINAL del archivo a propósito. Los bloques `@media` anteriores
+   están más arriba que las reglas base del rework, así que allí un
+   override de la misma especificidad perdía por orden de cascada — el
+   primer intento de arreglar la píldora en móvil no tuvo ningún efecto y
+   se detectó midiendo la pantalla, no leyendo el CSS. */
+/* El textarea del chat lleva `class="campo"`, y `.barbara-modulo .campo`
+   (0,2,0) le gana a `.barbara-chat-caja textarea` (0,1,1): quedaba con su
+   propio fondo y borde DENTRO de la píldora — una caja dentro de otra caja.
+   Con la píldora discreta de antes casi no se notaba; convertida en la
+   superficie protagonista del inicio, salta a la vista. */
+.barbara-modulo .barbara-chat-caja .campo,
+.barbara-modulo .barbara-chat-caja textarea {
+  padding: 6px 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.barbara-modulo .barbara-chat-caja .campo:focus { box-shadow: none; background: transparent; }
+
+/* ══ PASE PREMIUM: vidrio real y filo de luz ══════════════════════════════
+   Tres cosas hacen que una superficie se lea como vidrio y no como un
+   rectángulo gris translúcido, y hacen falta las tres:
+
+   1. BLUR + SATURACIÓN. Un blur solo sobre un fondo casi negro deja un gris
+      lavado; `saturate` recupera el color del lima que hay detrás y es lo
+      que hace que la superficie parezca filtrar LUZ.
+   2. FILO SUPERIOR. Un `inset 0 1px 0` claro en el canto de arriba simula
+      el bisel donde el vidrio corta la luz. Sin él la tarjeta no tiene
+      espesor.
+   3. HALO INFERIOR. Una sombra amplia y muy suave despega la superficie del
+      fondo; sin ella flota pegada y se ve plana.
+
+   El borde lima aparece SOLO al enfocar o pasar por encima. Un contorno
+   lima permanente en cada tarjeta sería lo que la referencia justamente no
+   hace: ahí el acento está reservado para lo que pide atención. */
+.barbara-modulo {
+  --barbara-filo: inset 0 1px 0 rgba(255,255,255,.07);
+  --barbara-halo: 0 24px 60px rgba(0,0,0,.4);
+  --barbara-bloom-lima: 0 0 0 1px rgba(205,251,62,.32), 0 0 26px rgba(205,251,62,.16);
+}
+
+.barbara-modulo .barbara-tarjeta,
+.barbara-modulo .barbara-modulo-rail {
+  box-shadow: var(--barbara-halo), var(--barbara-filo);
+}
+
+/* Las tarjetas reaccionan: al pasar por encima suben un punto de luz y el
+   canto se tiñe de lima. Es lo que separa "una caja" de "una superficie". */
+.barbara-modulo .barbara-tarjeta { transition: box-shadow .28s ease, border-color .28s ease; }
+.barbara-modulo .barbara-tarjeta:hover {
+  border-color: rgba(205,251,62,.2);
+  box-shadow: var(--barbara-halo), var(--barbara-filo), 0 0 34px rgba(205,251,62,.09);
+}
+
+/* El ítem activo del riel deja de ser un rectángulo lima plano: pasa a ser
+   una pastilla de vidrio con su propio filo encendido. */
+.barbara-modulo .barbara-modulo-item.on {
+  background: linear-gradient(180deg, rgba(205,251,62,.16), rgba(205,251,62,.07));
+  border-color: rgba(205,251,62,.28);
+  box-shadow: 0 0 20px rgba(205,251,62,.12), inset 0 1px 0 rgba(255,255,255,.08);
+}
+.barbara-modulo .barbara-modulo-item.on .barbara-modulo-item-dot {
+  box-shadow: 0 0 10px rgba(205,251,62,.9);
+}
+
+/* VIDRIO OSCURO = BASE OSCURA + BLUR. No velo blanco.
+   Un `rgba(255,255,255,.03)` encima de un fondo brillante no oscurece
+   nada: sólo lo lava. Sobre el planeta —que es lo más luminoso de la
+   escena— el texto de las burbujas y de las celdas quedaba ilegible. El
+   vidrio oscuro se hace al revés: una base NEGRA translúcida que apaga lo
+   que hay detrás, más el blur que lo difumina. El brillo del fondo se
+   sigue viendo, pero atenuado y fuera de foco, que es justo lo que hace
+   legible el texto encima. */
+.barbara-modulo .barbara-calendario-celda {
+  background: rgba(12,13,16,.5);
+  border-color: rgba(255,255,255,.07);
+  backdrop-filter: blur(10px) saturate(130%);
+  -webkit-backdrop-filter: blur(10px) saturate(130%);
+  transition: background .2s ease, border-color .2s ease;
+}
+.barbara-modulo .barbara-calendario-celda:hover { background: rgba(20,22,26,.62); }
+.barbara-modulo .barbara-calendario-celda.hoy {
+  border-color: rgba(205,251,62,.45);
+  background: linear-gradient(180deg, rgba(205,251,62,.1), rgba(12,13,16,.6));
+  box-shadow: 0 0 22px rgba(205,251,62,.1), inset 0 1px 0 rgba(255,255,255,.06);
+}
+
+/* Burbujas del chat. Las del cliente llevan el acento; las de Bárbara
+   quedan neutras para que la conversación se lea como un diálogo y no como
+   dos colores compitiendo. */
+.barbara-modulo .barbara-chat-mensaje {
+  background: rgba(13,14,17,.62);
+  border-color: rgba(255,255,255,.09);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  box-shadow: 0 10px 30px rgba(0,0,0,.34), var(--barbara-filo);
+}
+.barbara-modulo .barbara-chat-mensaje.cliente {
+  /* El lima va SOBRE la base oscura, no en lugar de ella: se tiñe sin
+     perder la capacidad de tapar el fondo. */
+  background: linear-gradient(180deg, rgba(205,251,62,.13), rgba(13,14,17,.62) 70%);
+  border-color: rgba(205,251,62,.24);
+  box-shadow: 0 10px 30px rgba(0,0,0,.34), 0 0 24px rgba(205,251,62,.07), var(--barbara-filo);
+}
+
+/* El botón de enviar: el único lima sólido de la pantalla, así que su halo
+   lo ata al lenguaje de luz del fondo en vez de dejarlo pegado encima. */
+.barbara-modulo .barbara-chat-enviar {
+  transition: box-shadow .25s ease, transform .25s ease;
+}
+.barbara-modulo .barbara-chat-enviar:hover:not(:disabled) {
+  transform: scale(1.05);
+  box-shadow: 0 0 34px rgba(205,251,62,.6);
+}
+.barbara-modulo .barbara-chat-enviar:disabled { opacity: .45; box-shadow: none; }
+
+/* Los chips de vista (Semana/Mes/Hoy) y el resto de píldoras. Misma regla:
+   base oscura. El chip activo es lima SÓLIDO —no translúcido— porque su
+   trabajo es decir "estás acá" y sobre el planeta un lima transparente se
+   desteñía hasta desaparecer. */
+.barbara-modulo .chip-toggle {
+  background: rgba(13,14,17,.6);
+  border-color: rgba(255,255,255,.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: background .2s ease, border-color .2s ease, box-shadow .2s ease;
+}
+.barbara-modulo .chip-toggle:hover { background: rgba(24,26,30,.72); border-color: rgba(205,251,62,.24); }
+.barbara-modulo .chip-toggle.on {
+  background: var(--azul);
+  border-color: var(--azul);
+  color: var(--sobre-oscuro);
+  box-shadow: 0 0 22px rgba(205,251,62,.34);
+}
+
+@media (max-width: 560px) {
+  /* La cápsula deja de serlo acá: con el botón redondo ocupando 50 px de un
+     ancho de 390, un radio de 999 px se come el sitio del texto y el
+     placeholder se partía en dos líneas cortadas. Radio grande pero
+     finito, y la caja crece con su contenido en vez de recortarlo. */
+  .barbara-modulo .barbara-chat-caja {
+    align-items: flex-end;
+    min-height: 0;
+    padding: 10px 10px 10px 16px;
+    border-radius: 20px;
+  }
+  .barbara-modulo .barbara-chat-caja textarea { font-size: 14px; line-height: 1.4; }
+  .barbara-modulo .barbara-chat-enviar { width: 40px; height: 40px; }
+  /* Sin el riel al lado, el hero recupera el ancho completo y el velo de
+     legibilidad ya no tiene que reservar la columna izquierda. */
+  .barbara-fondo-cosmico::after {
+    background: linear-gradient(
+      170deg,
+      rgba(10,10,11,.5) 0%,
+      rgba(10,10,11,.82) 46%,
+      rgba(10,10,11,.94) 78%
+    );
+  }
+}
+
+/* Pase final de movimiento y calendario. Las capas grandes se mantienen en
+   compositor; nada de animar filtros o posiciones que disparen repintados. */
+.barbara-fondo-lienzo,
+.barbara-fondo-lienzo img {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Halo de primer plano: mayor, con un pulso de opacidad/escala que el
+   compositor puede interpolar suavemente. El brillo se separa del PNG para
+   no recalcular filter sobre el asset en cada frame. */
+.barbara-hero-avatar::before {
+  position: absolute;
+  width: 178%;
+  height: 178%;
+  border-radius: 50%;
+  z-index: 0;
+  pointer-events: none;
+  content: "";
+  background: radial-gradient(circle, rgba(205,251,62,.17) 0%, rgba(205,251,62,.075) 34%, transparent 70%);
+  filter: blur(10px);
+  will-change: opacity, transform;
+  animation: barbara-halo-respira 4.8s cubic-bezier(.45,0,.55,1) infinite;
+}
+.barbara-hero-anillo {
+  width: 170%;
+  height: 170%;
+  z-index: 1;
+  will-change: opacity, transform;
+  animation: barbara-anillo-respira 4.8s cubic-bezier(.45,0,.55,1) infinite;
+}
+.barbara-modulo .barbara-hero-img {
+  position: absolute;
+  z-index: 2;
+  will-change: opacity, transform;
+  backface-visibility: hidden;
+}
+.barbara-hero-img-animada { animation: none; }
+.barbara-hero-img-animada.entrando { animation: barbara-pose-entra .9s cubic-bezier(.16,1,.3,1) both; }
+.barbara-hero-img-animada.saliendo { animation: barbara-pose-sale .9s cubic-bezier(.4,0,.2,1) both; }
+@keyframes barbara-pose-entra {
+  from { opacity: 0; transform: translate3d(0,8px,0) scale(.982); }
+  to { opacity: 1; transform: translate3d(0,0,0) scale(1); }
+}
+@keyframes barbara-pose-sale {
+  from { opacity: 1; transform: translate3d(0,0,0) scale(1); }
+  to { opacity: 0; transform: translate3d(0,-5px,0) scale(1.014); }
+}
+@keyframes barbara-halo-respira {
+  0%, 100% { opacity: .54; transform: scale(.94) translateZ(0); }
+  46% { opacity: 1; transform: scale(1.055) translateZ(0); }
+  54% { opacity: .82; transform: scale(1.02) translateZ(0); }
+}
+@keyframes barbara-anillo-respira {
+  0%, 100% { opacity: .68; transform: translate(-50%,-50%) scale(.975) translateZ(0); }
+  46% { opacity: 1; transform: translate(-50%,-50%) scale(1.035) translateZ(0); }
+  54% { opacity: .84; transform: translate(-50%,-50%) scale(1.012) translateZ(0); }
+}
+
+/* El aviso de cada día ya no es una fila de texto: es una mini ficha con
+   contexto, horario y asunto. Así sobrevive a títulos largos sin perder el
+   nombre del cliente ni el estado de la programación. */
+.barbara-calendario-contexto { display: grid; gap: 2px; }
+.barbara-calendario-contexto > span {
+  color: var(--azul);
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: .025em;
+}
+.barbara-modulo .barbara-calendario-chip {
+  align-items: flex-start;
+  gap: 6px;
+  min-height: 36px;
+  padding: 5px 6px;
+  border: 1px solid rgba(255,255,255,.07);
+  border-left: 2px solid var(--azul);
+  background: rgba(12,14,17,.64);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.035);
+  transition: transform .2s ease, background .2s ease, border-color .2s ease, box-shadow .2s ease;
+}
+.barbara-modulo .barbara-calendario-chip.futura:hover {
+  filter: none;
+  transform: translateY(-1px);
+  background: rgba(25,29,33,.76);
+  box-shadow: 0 8px 20px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.06);
+}
+.barbara-calendario-chip-icono { flex: 0 0 auto; line-height: 1.4; }
+.barbara-calendario-chip-copia { display: grid; min-width: 0; gap: 1px; }
+.barbara-calendario-chip-copia small,
+.barbara-calendario-chip-copia strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.barbara-calendario-chip-copia small { font-size: 9px; color: var(--texto-3); }
+.barbara-calendario-chip-copia strong { font-size: 10px; font-weight: 580; color: var(--texto-2); }
+.barbara-modulo .barbara-calendario-chip.borrador { border-left-color: #d59617; }
+.barbara-modulo .barbara-calendario-chip.programada { border-left-color: #51bd73; }
+.barbara-modulo .barbara-calendario-chip.historica { border-left-color: var(--azul); }
+
+@media (prefers-reduced-motion: reduce) {
+  .barbara-hero-avatar::before,
+  .barbara-hero-anillo,
+  .barbara-hero-img-animada.entrando,
+  .barbara-hero-img-animada.saliendo { animation: none; }
+  .barbara-hero-img-animada.saliendo { display: none; }
+  .barbara-hero-avatar::before { opacity: .7; }
+}
+
+@media (max-width: 560px) {
+  .barbara-modulo .barbara-calendario-chip { min-height: 28px; padding: 3px 4px; }
+  .barbara-calendario-chip-icono { display: none; }
+  .barbara-calendario-chip span.barbara-calendario-chip-copia { display: grid; }
+  .barbara-calendario-chip-copia strong { font-size: 9px; }
+  .barbara-calendario-chip-copia small { display: none; }
+}
+
+/* ── MOVIMIENTO ÓPTICO, NO DESPLAZAMIENTO DE RASTER ─────────────────────
+   Un planeta PNG que viaja unos píxeles sobre una textura se percibe como
+   "saltos", aunque el navegador interpole el transform. La escena ahora no
+   mueve sus contornos: respira con luz y una variación de escala ínfima. El
+   resultado conserva profundidad, pero el ojo nunca sigue un borde pixelado
+   atravesando la pantalla. */
+@keyframes barbara-levitar-cerca {
+  0%, 100% { transform: scale(.996); opacity: .94; }
+  50% { transform: scale(1.008); opacity: 1; }
+}
+@keyframes barbara-levitar-lejos {
+  0%, 100% { transform: scale(.998); opacity: .92; }
+  50% { transform: scale(1.003); opacity: .98; }
+}
+@keyframes barbara-cinta-flota {
+  0%, 100% { transform: scale(.998); opacity: .82; }
+  50% { transform: scale(1.004); opacity: 1; }
+}
+/* La luz de las copias bloom se anima sola. Si comparte la animación de
+   escala del PNG, dos animaciones compiten por opacity y se vuelve a sentir
+   mecánica; así queda una respiración continua y estable. */
+.barbara-fondo-bloom.barbara-fondo-planeta-grande { animation: barbara-respira-luz 9s cubic-bezier(.45,0,.55,1) infinite; }
+.barbara-fondo-bloom.barbara-fondo-planeta-chico { animation: barbara-respira-luz 7.5s cubic-bezier(.45,0,.55,1) infinite; }
+.barbara-fondo-bloom.barbara-fondo-cinta { animation: barbara-respira-luz 11s cubic-bezier(.45,0,.55,1) infinite; }
+
+/* Más escena visible a través del UI: el contraste se protege con blur y
+   filo, no con una capa negra opaca. */
+.barbara-modulo {
+  --panel: rgba(15,16,19,.38);
+  --panel-2: rgba(12,13,16,.40);
+  --lateral: rgba(9,10,12,.34);
+  --barbara-blur: blur(28px) saturate(155%);
+}
+.barbara-modulo .barbara-chat-caja { background: rgba(8,10,13,.48); }
+.barbara-modulo .barbara-calendario-celda { background: rgba(10,12,15,.28); }
+
+/* Halo: ocupa más que el retrato y late por luz, no por un filtro animado. */
+.barbara-hero-avatar::before { width: 228%; height: 228%; opacity: .9; }
+.barbara-hero-anillo { width: 198%; height: 198%; }
+
+/* Avisos del calendario: tickets de vidrio, no mini barras de estado.
+   El icono pasa a ser un pequeño sello luminoso; la jerarquía queda en
+   cliente/hora primero y el tema de la pieza debajo. */
+.barbara-modulo .barbara-calendario-chip {
+  --chip-acento: var(--azul);
+  align-items: center;
+  gap: 7px;
+  min-height: 32px;
+  padding: 4px 6px;
+  border: 1px solid color-mix(in srgb, var(--chip-acento) 27%, rgba(255,255,255,.1));
+  border-left: 1px solid color-mix(in srgb, var(--chip-acento) 27%, rgba(255,255,255,.1));
+  border-radius: 9px;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--chip-acento) 10%, transparent), rgba(7,10,12,.28));
+  backdrop-filter: blur(16px) saturate(150%);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.085), 0 6px 16px rgba(0,0,0,.12);
+}
+.barbara-modulo .barbara-calendario-chip.borrador { --chip-acento: #e2a82a; }
+.barbara-modulo .barbara-calendario-chip.programada,
+.barbara-modulo .barbara-calendario-chip.publicada { --chip-acento: #61ca83; }
+.barbara-modulo .barbara-calendario-chip.publicando { --chip-acento: #9f89e9; }
+.barbara-modulo .barbara-calendario-chip.fallida { --chip-acento: #e27676; }
+.barbara-modulo .barbara-calendario-chip.cancelada { --chip-acento: var(--texto-3); }
+.barbara-calendario-chip-icono {
+  display: grid;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--chip-acento) 38%, transparent);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--chip-acento) 15%, transparent);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--chip-acento) 16%, transparent);
+  font-size: 10px;
+}
+.barbara-calendario-chip-copia { gap: 0; }
+.barbara-calendario-chip-copia small { color: color-mix(in srgb, var(--chip-acento) 52%, var(--texto-2)); font-size: 8.5px; }
+.barbara-calendario-chip-copia strong { color: var(--texto); font-size: 9.5px; font-weight: 560; }
+.barbara-modulo .barbara-calendario-chip.futura:hover {
+  border-color: color-mix(in srgb, var(--chip-acento) 54%, rgba(255,255,255,.15));
+  background: linear-gradient(135deg, color-mix(in srgb, var(--chip-acento) 16%, transparent), rgba(9,12,14,.36));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.1), 0 9px 22px rgba(0,0,0,.22), 0 0 18px color-mix(in srgb, var(--chip-acento) 11%, transparent);
+}
+
+@media (max-width: 560px) {
+  .barbara-hero-avatar::before { width: 210%; height: 210%; }
+  .barbara-hero-anillo { width: 184%; height: 184%; }
+  .barbara-calendario-chip-icono { display: none; }
+}
+
+/* ══ DEFINITIVO · ALPHA MOTION + CRYSTAL UI ══════════════════════════════
+   Los assets raster no cambian de coordenada ni de escala. Todos sus bordes
+   permanecen fijos y únicamente varía el alpha; por lo tanto no existe un
+   borde que pueda avanzar de píxel en píxel. */
+.barbara-fondo-lienzo .barbara-fondo-planeta-grande,
+.barbara-fondo-lienzo .barbara-fondo-planeta-chico,
+.barbara-fondo-lienzo .barbara-fondo-cinta,
+.barbara-fondo-lienzo .barbara-fondo-bloom {
+  transform: none;
+  backface-visibility: visible;
+  will-change: opacity;
+}
+.barbara-fondo-lienzo .barbara-fondo-planeta-grande {
+  animation: barbara-alpha-materia-cerca 12s cubic-bezier(.37,0,.63,1) infinite;
+}
+.barbara-fondo-lienzo .barbara-fondo-planeta-chico {
+  animation: barbara-alpha-materia-lejos 15s cubic-bezier(.37,0,.63,1) infinite;
+}
+.barbara-fondo-lienzo .barbara-fondo-cinta {
+  animation: barbara-alpha-materia-cinta 10s cubic-bezier(.37,0,.63,1) infinite;
+}
+.barbara-fondo-lienzo .barbara-fondo-bloom.barbara-fondo-planeta-grande {
+  animation: barbara-alpha-bloom 8s cubic-bezier(.37,0,.63,1) infinite;
+}
+.barbara-fondo-lienzo .barbara-fondo-bloom.barbara-fondo-planeta-chico {
+  animation: barbara-alpha-bloom 10s cubic-bezier(.37,0,.63,1) -2.5s infinite;
+}
+.barbara-fondo-lienzo .barbara-fondo-bloom.barbara-fondo-cinta {
+  animation: barbara-alpha-bloom 12s cubic-bezier(.37,0,.63,1) -4s infinite;
+}
+@keyframes barbara-alpha-materia-cerca { 0%,100% { opacity: .86; } 50% { opacity: 1; } }
+@keyframes barbara-alpha-materia-lejos { 0%,100% { opacity: .76; } 50% { opacity: .94; } }
+@keyframes barbara-alpha-materia-cinta { 0%,100% { opacity: .72; } 50% { opacity: .96; } }
+@keyframes barbara-alpha-bloom { 0%,100% { opacity: .025; } 50% { opacity: .28; } }
+
+/* Las poses de Bárbara también funden solo por alpha. No hay traslación de
+   entrada/salida capaz de delatar el borde del PNG. */
+.barbara-hero-img-animada.entrando { animation: barbara-pose-alpha-entra 1.35s cubic-bezier(.22,.61,.36,1) both; }
+.barbara-hero-img-animada.saliendo { animation: barbara-pose-alpha-sale 1.35s cubic-bezier(.22,.61,.36,1) both; }
+@keyframes barbara-pose-alpha-entra { from { opacity: 0; } to { opacity: 1; } }
+@keyframes barbara-pose-alpha-sale { from { opacity: 1; } to { opacity: 0; } }
+
+/* Halo deliberadamente grande: una luz vectorial amplia y el anillo de marca
+   respirando únicamente por opacidad. */
+.barbara-hero-avatar { isolation: isolate; }
+.barbara-hero-avatar::before {
+  width: 330%;
+  height: 330%;
+  opacity: .82;
+  background: radial-gradient(circle, rgba(205,251,62,.28) 0%, rgba(205,251,62,.13) 25%, rgba(205,251,62,.045) 48%, transparent 70%);
+  filter: blur(16px);
+  animation: barbara-halo-alpha 4.6s cubic-bezier(.37,0,.63,1) infinite;
+}
+.barbara-hero-anillo {
+  width: 250%;
+  height: 250%;
+  animation: barbara-anillo-alpha 4.6s cubic-bezier(.37,0,.63,1) infinite;
+}
+@keyframes barbara-halo-alpha { 0%,100% { opacity: .58; } 48% { opacity: 1; } 56% { opacity: .82; } }
+@keyframes barbara-anillo-alpha { 0%,100% { opacity: .52; } 48% { opacity: .92; } 56% { opacity: .72; } }
+
+/* Transparencia efectiva: se cubren también los selectores específicos que
+   antes sobrevivían al cambio de tokens. */
+.barbara-modulo {
+  --panel: rgba(10,12,15,.14);
+  --panel-2: rgba(9,11,14,.12);
+  --lateral: rgba(8,10,12,.16);
+  --borde: rgba(255,255,255,.115);
+  --borde-suave: rgba(255,255,255,.075);
+  --barbara-blur: blur(24px) saturate(165%);
+}
+.barbara-modulo .barbara-modulo-rail,
+.barbara-modulo .barbara-tarjeta,
+.barbara-modulo .barbara-modulo-grupo,
+.barbara-modulo .barbara-tarjeta-interna,
+.barbara-modulo .bloque,
+.barbara-modulo .barbara-config-seccion,
+.barbara-modulo .barbara-uso,
+.barbara-modulo .barbara-red {
+  background: rgba(8,10,13,.14);
+  backdrop-filter: blur(24px) saturate(165%);
+  -webkit-backdrop-filter: blur(24px) saturate(165%);
+}
+.barbara-modulo .barbara-chat-caja {
+  background: rgba(6,8,11,.22);
+  backdrop-filter: blur(30px) saturate(170%);
+  -webkit-backdrop-filter: blur(30px) saturate(170%);
+}
+.barbara-modulo .barbara-chat-mensaje,
+.barbara-modulo .barbara-chat-mensaje.cliente {
+  background: rgba(8,10,13,.2);
+}
+.barbara-modulo .barbara-chat-mensaje.cliente {
+  background: linear-gradient(145deg, rgba(205,251,62,.075), rgba(8,10,13,.18));
+}
+.barbara-modulo .barbara-calendario-celda,
+.barbara-modulo .barbara-calendario-celda:hover {
+  background: rgba(7,9,12,.10);
+  backdrop-filter: blur(14px) saturate(160%);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+}
+.barbara-modulo .barbara-calendario-celda.hoy,
+.barbara-modulo .barbara-calendario-celda.hoy:hover {
+  border-color: rgba(205,251,62,.26);
+  background: linear-gradient(145deg, rgba(205,251,62,.055), rgba(7,9,12,.11));
+  box-shadow: inset 0 1px 0 rgba(205,251,62,.16), 0 0 22px rgba(205,251,62,.045);
+}
+
+/* Nueva pieza editorial del calendario. Se elimina por completo la cápsula
+   horizontal y el emoji: ahora es una tarjeta editorial de cristal con
+   monograma, metadata, título a dos líneas y destinatario. */
+.barbara-modulo .barbara-calendario-chip {
+  --chip-acento: var(--azul);
+  position: relative;
+  display: grid;
+  grid-template-columns: 26px minmax(0,1fr);
+  align-items: start;
+  gap: 8px;
+  min-height: 58px;
+  margin: 0 0 5px;
+  padding: 8px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--chip-acento) 20%, rgba(255,255,255,.08));
+  border-left: 1px solid color-mix(in srgb, var(--chip-acento) 20%, rgba(255,255,255,.08));
+  border-radius: 12px;
+  background:
+    radial-gradient(circle at 0 0, color-mix(in srgb, var(--chip-acento) 13%, transparent), transparent 55%),
+    rgba(6,9,11,.16);
+  backdrop-filter: blur(18px) saturate(170%);
+  -webkit-backdrop-filter: blur(18px) saturate(170%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 9px 24px rgba(0,0,0,.10);
+}
+.barbara-modulo .barbara-calendario-chip::after {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--chip-acento);
+  box-shadow: 0 0 9px var(--chip-acento);
+  content: "";
+}
+.barbara-modulo .barbara-calendario-chip.borrador { --chip-acento: #e5b84b; }
+.barbara-modulo .barbara-calendario-chip.programada,
+.barbara-modulo .barbara-calendario-chip.publicada { --chip-acento: #78d393; opacity: 1; }
+.barbara-modulo .barbara-calendario-chip.publicando { --chip-acento: #a99aef; }
+.barbara-modulo .barbara-calendario-chip.fallida { --chip-acento: #eb8585; }
+.barbara-modulo .barbara-calendario-chip.cancelada { --chip-acento: #777d78; }
+.barbara-modulo .barbara-calendario-chip.historica { --chip-acento: var(--azul); opacity: 1; }
+.barbara-modulo .barbara-calendario-chip .barbara-calendario-chip-icono {
+  display: grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--chip-acento) 42%, transparent);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--chip-acento) 11%, transparent);
+  color: color-mix(in srgb, var(--chip-acento) 82%, white);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--chip-acento) 12%, transparent);
+  font-family: var(--barbara-serif);
+  font-size: 12px;
+  font-weight: 700;
+}
+.barbara-modulo .barbara-calendario-chip span.barbara-calendario-chip-copia {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+.barbara-modulo .barbara-calendario-chip span.barbara-calendario-chip-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding-right: 9px;
+}
+.barbara-calendario-chip-meta small,
+.barbara-calendario-chip-meta time,
+.barbara-calendario-chip-copia em {
+  overflow: hidden;
+  color: color-mix(in srgb, var(--chip-acento) 55%, var(--texto-2));
+  font-size: 7.5px;
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: .075em;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.barbara-calendario-chip-meta time { color: var(--texto-3); }
+.barbara-calendario-chip-copia strong {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--texto);
+  font-size: 10px;
+  font-weight: 590;
+  line-height: 1.22;
+  white-space: normal;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.barbara-calendario-chip-copia em {
+  color: var(--texto-3);
+  font-size: 7px;
+  font-weight: 560;
+  letter-spacing: .035em;
+  text-transform: none;
+}
+.barbara-modulo .barbara-calendario-chip.futura:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--chip-acento) 44%, rgba(255,255,255,.12));
+  background:
+    radial-gradient(circle at 0 0, color-mix(in srgb, var(--chip-acento) 19%, transparent), transparent 58%),
+    rgba(8,11,14,.22);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.1), 0 13px 28px rgba(0,0,0,.16);
+}
+
+@media (max-width: 760px) {
+  .barbara-hero-avatar::before { width: 280%; height: 280%; }
+  .barbara-hero-anillo { width: 220%; height: 220%; }
+  .barbara-modulo .barbara-calendario-chip {
+    grid-template-columns: 1fr;
+    min-height: 42px;
+    padding: 6px;
+  }
+  .barbara-modulo .barbara-calendario-chip .barbara-calendario-chip-icono,
+  .barbara-calendario-chip-copia em { display: none; }
+  .barbara-calendario-chip-copia strong { font-size: 8.5px; -webkit-line-clamp: 2; }
+  .barbara-calendario-chip-meta small,
+  .barbara-calendario-chip-meta time { font-size: 6.5px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .barbara-fondo-lienzo .barbara-fondo-planeta-grande,
+  .barbara-fondo-lienzo .barbara-fondo-planeta-chico,
+  .barbara-fondo-lienzo .barbara-fondo-cinta,
+  .barbara-fondo-lienzo .barbara-fondo-bloom,
+  .barbara-hero-avatar::before,
+  .barbara-hero-anillo,
+  .barbara-hero-img-animada.entrando,
+  .barbara-hero-img-animada.saliendo { animation: none; }
+}
+
+/* ══ CRISTAL ULTRALIVIANO ════════════════════════════════════════════════
+   La escena aporta el color; las superficies solo separan planos mediante
+   blur, un filo de luz y una película oscura mínima. */
+.barbara-modulo {
+  --panel: rgba(7,9,12,.075);
+  --panel-2: rgba(6,8,11,.06);
+  --lateral: rgba(6,8,10,.08);
+  --barbara-blur: blur(30px) saturate(175%);
+}
+.barbara-modulo .barbara-modulo-rail,
+.barbara-modulo .barbara-tarjeta,
+.barbara-modulo .barbara-modulo-grupo,
+.barbara-modulo .barbara-tarjeta-interna,
+.barbara-modulo .bloque,
+.barbara-modulo .barbara-config-seccion,
+.barbara-modulo .barbara-uso,
+.barbara-modulo .barbara-red {
+  background: rgba(6,8,11,.075);
+  backdrop-filter: blur(30px) saturate(175%);
+  -webkit-backdrop-filter: blur(30px) saturate(175%);
+}
+.barbara-modulo .barbara-chat-caja {
+  background: rgba(5,7,10,.115);
+  backdrop-filter: blur(34px) saturate(180%);
+  -webkit-backdrop-filter: blur(34px) saturate(180%);
+}
+.barbara-modulo .barbara-chat-mensaje,
+.barbara-modulo .barbara-chat-mensaje.cliente {
+  background: rgba(5,7,10,.09);
+}
+.barbara-modulo .barbara-chat-mensaje.cliente {
+  background: linear-gradient(145deg, rgba(205,251,62,.048), rgba(5,7,10,.075));
+}
+.barbara-modulo .barbara-calendario-celda,
+.barbara-modulo .barbara-calendario-celda:hover {
+  background: rgba(5,7,10,.035);
+}
+.barbara-modulo .barbara-calendario-celda.hoy,
+.barbara-modulo .barbara-calendario-celda.hoy:hover {
+  background: linear-gradient(145deg, rgba(205,251,62,.038), rgba(5,7,10,.04));
+}
+.barbara-modulo .barbara-calendario-chip {
+  background:
+    radial-gradient(circle at 0 0, color-mix(in srgb, var(--chip-acento) 8%, transparent), transparent 57%),
+    rgba(4,7,9,.055);
+  backdrop-filter: blur(22px) saturate(180%);
+  -webkit-backdrop-filter: blur(22px) saturate(180%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.065), 0 8px 22px rgba(0,0,0,.07);
+}
+.barbara-modulo .barbara-calendario-chip.futura:hover {
+  background:
+    radial-gradient(circle at 0 0, color-mix(in srgb, var(--chip-acento) 12%, transparent), transparent 60%),
+    rgba(5,8,10,.085);
+}
+.barbara-modulo .barbara-modulo-item.on {
+  background: linear-gradient(180deg, rgba(205,251,62,.075), rgba(205,251,62,.025));
+}
+.barbara-modulo .chip-toggle {
+  background: rgba(5,7,10,.08);
+  backdrop-filter: blur(18px) saturate(170%);
+  -webkit-backdrop-filter: blur(18px) saturate(170%);
+}
+.barbara-modulo .chip-toggle:hover { background: rgba(205,251,62,.055); }
+.barbara-modulo .chip-toggle.on {
+  border-color: rgba(205,251,62,.42);
+  background: rgba(205,251,62,.14);
+  color: var(--azul);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 0 18px rgba(205,251,62,.10);
+}
+.barbara-modulo .campo,
+.barbara-modulo .campo:focus,
+.barbara-estado-operacion,
+.barbara-programacion-editor,
+.barbara-modulo .barbara-stat-tarjeta,
+.barbara-modulo .tabla-caja,
+.barbara-modulo .mcp-copiable,
+.barbara-modulo .barbara-entrega,
+.barbara-modulo .barbara-slides li,
+.barbara-modulo .barbara-entrega-hook,
+.barbara-modulo .barbara-entrega-comentario {
+  background: rgba(5,7,10,.07);
+  backdrop-filter: blur(22px) saturate(170%);
+  -webkit-backdrop-filter: blur(22px) saturate(170%);
+}
+.barbara-modulo .tabla-caja thead th { background: rgba(5,7,10,.095); }
+
+/* Renderer WebGL: el raster DOM permanece visible hasta que las cuatro
+   texturas completan su primer frame. Así nunca hay un flash negro y WebGL
+   puede fallar sin perder la composición. */
+.barbara-fondo-lienzo { isolation: isolate; }
+.barbara-fondo-webgl,
+.barbara-fondo-raster {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.barbara-fondo-webgl {
+  z-index: 1;
+  display: block;
+  opacity: 0;
+  transition: opacity .42s ease;
+}
+.barbara-fondo-raster {
+  z-index: 0;
+  opacity: 1;
+  transition: opacity .42s ease;
+}
+.barbara-webgl-listo .barbara-fondo-webgl { opacity: 1; }
+.barbara-webgl-listo .barbara-fondo-raster { opacity: 0; }
+
+/* La cinta es parte de la escena, no una textura que deba quedar escondida
+   bajo un velo negro. Este velo conserva contraste junto al titular, pero
+   deja pasar mucha más luz en el centro y la mitad inferior. */
+.barbara-fondo-cosmico::after {
+  background:
+    linear-gradient(180deg, rgba(10,10,11,0) 0%, rgba(10,10,11,.06) 44%, rgba(10,10,11,.14) 78%, rgba(10,10,11,.24) 100%),
+    linear-gradient(100deg, rgba(10,10,11,.68) 0%, rgba(10,10,11,.48) 34%, rgba(10,10,11,.20) 54%, rgba(10,10,11,.04) 76%, rgba(10,10,11,0) 88%);
+}
+
+/* Último nivel de transparencia: casi todo el cuerpo visual proviene del
+   blur del fondo y del filo de 1px, no de rellenos oscuros. */
+.barbara-modulo {
+  --panel: rgba(5,7,9,.035);
+  --panel-2: rgba(5,7,9,.025);
+  --lateral: rgba(5,7,9,.04);
+  --barbara-blur: blur(32px) saturate(180%);
+}
+.barbara-modulo .barbara-modulo-rail,
+.barbara-modulo .barbara-tarjeta,
+.barbara-modulo .barbara-modulo-grupo,
+.barbara-modulo .barbara-tarjeta-interna,
+.barbara-modulo .bloque,
+.barbara-modulo .barbara-config-seccion,
+.barbara-modulo .barbara-uso,
+.barbara-modulo .barbara-red {
+  background: rgba(4,6,9,.035);
+}
+.barbara-modulo .barbara-chat-caja { background: rgba(4,6,9,.065); }
+.barbara-modulo .barbara-chat-mensaje,
+.barbara-modulo .barbara-chat-mensaje.cliente { background: rgba(4,6,9,.045); }
+.barbara-modulo .barbara-chat-mensaje.cliente {
+  background: linear-gradient(145deg, rgba(205,251,62,.034), rgba(4,6,9,.04));
+}
+.barbara-modulo .barbara-calendario-celda,
+.barbara-modulo .barbara-calendario-celda:hover { background: rgba(4,6,9,.018); }
+.barbara-modulo .barbara-calendario-celda.hoy,
+.barbara-modulo .barbara-calendario-celda.hoy:hover {
+  background: linear-gradient(145deg, rgba(205,251,62,.026), rgba(4,6,9,.02));
+}
+.barbara-modulo .barbara-calendario-chip {
+  background:
+    radial-gradient(circle at 0 0, color-mix(in srgb, var(--chip-acento) 6%, transparent), transparent 60%),
+    rgba(4,6,9,.025);
+}
+.barbara-modulo .chip-toggle { background: rgba(4,6,9,.035); }
+.barbara-modulo .campo,
+.barbara-modulo .campo:focus,
+.barbara-estado-operacion,
+.barbara-programacion-editor,
+.barbara-modulo .barbara-stat-tarjeta,
+.barbara-modulo .tabla-caja,
+.barbara-modulo .mcp-copiable,
+.barbara-modulo .barbara-entrega,
+.barbara-modulo .barbara-slides li,
+.barbara-modulo .barbara-entrega-hook,
+.barbara-modulo .barbara-entrega-comentario { background: rgba(4,6,9,.035); }
+
+/* Halo más amplio y respiración pequeña: la luz vectorial expande apenas;
+   el anillo raster solo cambia de alpha para conservar nitidez. */
+.barbara-hero-avatar::before {
+  width: 400%;
+  height: 400%;
+  animation: barbara-halo-alpha 5.8s cubic-bezier(.37,0,.63,1) infinite;
+}
+.barbara-hero-anillo {
+  width: 280%;
+  height: 280%;
+  animation: barbara-anillo-alpha 5.8s cubic-bezier(.37,0,.63,1) infinite;
+}
+@keyframes barbara-halo-alpha {
+  0%,100% { opacity: .62; transform: scale(.985); }
+  50% { opacity: .84; transform: scale(1.022); }
+}
+@keyframes barbara-anillo-alpha {
+  0%,100% { opacity: .54; }
+  50% { opacity: .76; }
+}
+
+@media (max-width: 560px) {
+  .barbara-fondo-cosmico::after {
+    background: linear-gradient(170deg, rgba(10,10,11,.24) 0%, rgba(10,10,11,.40) 52%, rgba(10,10,11,.56) 100%);
+  }
+  .barbara-hero-avatar::before { width: 330%; height: 330%; }
+  .barbara-hero-anillo { width: 240%; height: 240%; }
+}
+
+/* Cristal casi desnudo: la cinta debe seguir siendo reconocible al pasar
+   detrás del UI. Un blur más corto refracta la escena sin borrarla y el
+   relleno solo aporta el contraste mínimo necesario para leer. */
+.barbara-modulo {
+  --panel: rgba(4,6,8,.016);
+  --panel-2: rgba(4,6,8,.010);
+  --lateral: rgba(4,6,8,.018);
+  --barbara-blur: blur(18px) saturate(168%);
+}
+.barbara-modulo .barbara-modulo-rail,
+.barbara-modulo .barbara-tarjeta,
+.barbara-modulo .barbara-modulo-grupo,
+.barbara-modulo .barbara-tarjeta-interna,
+.barbara-modulo .bloque,
+.barbara-modulo .barbara-config-seccion,
+.barbara-modulo .barbara-uso,
+.barbara-modulo .barbara-red {
+  background: rgba(3,5,8,.014);
+  backdrop-filter: blur(18px) saturate(168%);
+  -webkit-backdrop-filter: blur(18px) saturate(168%);
+}
+.barbara-modulo .barbara-chat-caja { background: rgba(3,5,8,.026); }
+.barbara-modulo .barbara-chat-mensaje,
+.barbara-modulo .barbara-chat-mensaje.cliente { background: rgba(3,5,8,.018); }
+.barbara-modulo .barbara-chat-mensaje.cliente {
+  background: linear-gradient(145deg, rgba(205,251,62,.022), rgba(3,5,8,.012));
+}
+.barbara-modulo .barbara-calendario-celda,
+.barbara-modulo .barbara-calendario-celda:hover { background: rgba(3,5,8,.006); }
+.barbara-modulo .barbara-calendario-celda.hoy,
+.barbara-modulo .barbara-calendario-celda.hoy:hover {
+  background: linear-gradient(145deg, rgba(205,251,62,.018), rgba(3,5,8,.008));
+}
+.barbara-modulo .barbara-calendario-chip {
+  background:
+    radial-gradient(circle at 0 0, color-mix(in srgb, var(--chip-acento) 4%, transparent), transparent 62%),
+    rgba(3,5,8,.012);
+}
+.barbara-modulo .chip-toggle { background: rgba(3,5,8,.018); }
+.barbara-modulo .campo,
+.barbara-modulo .campo:focus,
+.barbara-estado-operacion,
+.barbara-programacion-editor,
+.barbara-modulo .barbara-stat-tarjeta,
+.barbara-modulo .tabla-caja,
+.barbara-modulo .mcp-copiable,
+.barbara-modulo .barbara-entrega,
+.barbara-modulo .barbara-slides li,
+.barbara-modulo .barbara-entrega-hook,
+.barbara-modulo .barbara-entrega-comentario { background: rgba(3,5,8,.016); }
+.barbara-modulo .tabla-caja thead th { background: rgba(3,5,8,.024); }
+
+.barbara-fondo-cosmico::after {
+  background:
+    linear-gradient(180deg, rgba(10,10,11,0) 0%, rgba(10,10,11,.018) 48%, rgba(10,10,11,.055) 80%, rgba(10,10,11,.11) 100%),
+    linear-gradient(100deg, rgba(10,10,11,.46) 0%, rgba(10,10,11,.27) 31%, rgba(10,10,11,.075) 52%, rgba(10,10,11,.012) 72%, rgba(10,10,11,0) 86%);
+}
+
+@media (max-width: 560px) {
+  .barbara-fondo-cosmico::after {
+    background: linear-gradient(170deg, rgba(10,10,11,.12) 0%, rgba(10,10,11,.19) 52%, rgba(10,10,11,.30) 100%);
+  }
+}
+
+/* Planos flotantes de Bárbara. Algunos viven fuera de `.barbara-modulo`
+   porque el provider de confirmación está en la raíz del portal; la clase
+   temporal de body evita que caigan visualmente al diseño genérico. */
+body.barbara-activa .velo,
+body.barbara-activa .popup,
+body.barbara-activa .panel-lat,
+body.barbara-activa .brindis {
+  --panel: rgba(4,7,9,.46);
+  --panel-2: rgba(3,5,8,.22);
+  --texto: #F4F5EF;
+  --texto-2: #B7BAAE;
+  --texto-3: #85897D;
+  --borde: rgba(255,255,255,.11);
+  --borde-suave: rgba(255,255,255,.07);
+  --azul: #CDFB3E;
+  --azul-suave: rgba(205,251,62,.11);
+  --azul-borde: rgba(205,251,62,.34);
+  --mal-bg: rgba(240,137,124,.11);
+  --mal-tx: #F2AAA1;
+  --mal-bd: rgba(240,137,124,.28);
+  --barbara-serif: 'Fraunces', Georgia, serif;
+  --barbara-sans: 'Inter', -apple-system, 'Segoe UI', system-ui, sans-serif;
+  color: var(--texto);
+  font-family: var(--barbara-sans);
+}
+body.barbara-activa .velo {
+  z-index: 120;
+  padding: clamp(12px, 3vw, 28px);
+  background:
+    radial-gradient(circle at 50% 42%, rgba(205,251,62,.035), transparent 38%),
+    rgba(1,3,5,.34);
+  backdrop-filter: blur(12px) saturate(135%);
+  -webkit-backdrop-filter: blur(12px) saturate(135%);
+  animation: barbara-velo-entra .22s ease-out both;
+}
+body.barbara-activa .popup {
+  background:
+    radial-gradient(circle at 50% 42%, rgba(205,251,62,.035), transparent 38%),
+    rgba(1,3,5,.38);
+  backdrop-filter: blur(12px) saturate(135%);
+  -webkit-backdrop-filter: blur(12px) saturate(135%);
+  animation: barbara-velo-entra .22s ease-out both;
+}
+
+body.barbara-activa .panel-modal,
+body.barbara-activa .popup-caja,
+body.barbara-activa .panel-lat {
+  color: var(--texto);
+  border: 1px solid rgba(224,255,143,.16);
+  background:
+    linear-gradient(145deg, rgba(255,255,255,.055), transparent 34%),
+    rgba(4,7,9,.46);
+  backdrop-filter: blur(30px) saturate(175%);
+  -webkit-backdrop-filter: blur(30px) saturate(175%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.13),
+    0 32px 90px rgba(0,0,0,.42),
+    0 0 0 1px rgba(0,0,0,.20);
+}
+
+body.barbara-activa .panel-modal {
+  overflow: hidden;
+  border-radius: 22px;
+  animation: barbara-popup-entra .32s cubic-bezier(.16,1,.3,1) both;
+}
+body.barbara-activa .popup-caja {
+  border-radius: 22px;
+  animation: barbara-popup-entra .32s cubic-bezier(.16,1,.3,1) both;
+}
+body.barbara-activa .panel-modal > header {
+  padding: 19px 21px 16px;
+  border-bottom-color: rgba(255,255,255,.075);
+  background: linear-gradient(90deg, rgba(205,251,62,.055), transparent 50%);
+}
+body.barbara-activa .panel-modal > header h2 {
+  font-family: var(--barbara-serif);
+  font-size: 19px;
+  font-weight: 560;
+  letter-spacing: -.018em;
+}
+body.barbara-activa .panel-modal .contenido {
+  padding: 18px 21px;
+  scrollbar-color: rgba(205,251,62,.26) transparent;
+}
+body.barbara-activa .panel-modal > footer {
+  padding: 14px 21px 17px;
+  border-top-color: rgba(255,255,255,.075);
+  background: rgba(2,4,6,.10);
+}
+body.barbara-activa .confirmacion-app,
+body.barbara-activa .confirmacion-app > footer {
+  background-color: rgba(4,7,9,.46);
+  backdrop-filter: blur(30px) saturate(175%);
+  -webkit-backdrop-filter: blur(30px) saturate(175%);
+}
+
+/* Dropdowns y avisos breves también flotan sobre el cosmos. */
+.barbara-modulo .sel-menu,
+body.barbara-activa .brindis {
+  border: 1px solid rgba(224,255,143,.15);
+  background:
+    linear-gradient(145deg, rgba(255,255,255,.06), transparent 42%),
+    rgba(4,7,9,.50);
+  backdrop-filter: blur(24px) saturate(175%);
+  -webkit-backdrop-filter: blur(24px) saturate(175%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.12), 0 20px 50px rgba(0,0,0,.34);
+}
+.barbara-modulo .sel-menu {
+  overflow: hidden;
+  padding: 7px;
+  border-radius: 15px;
+  animation: barbara-menu-entra .2s cubic-bezier(.16,1,.3,1) both;
+}
+.barbara-modulo .sel-menu .op { min-height: 38px; border-radius: 10px; }
+.barbara-modulo .sel-menu .op:hover { background: rgba(205,251,62,.075); }
+.barbara-modulo .sel-menu .sep { background: rgba(255,255,255,.075); }
+
+.barbara-modulo .error,
+.barbara-modulo .ok-msg,
+.barbara-modulo .aviso {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  background: rgba(4,7,9,.20);
+  backdrop-filter: blur(18px) saturate(165%);
+  -webkit-backdrop-filter: blur(18px) saturate(165%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.065);
+  animation: barbara-aviso-entra .28s cubic-bezier(.16,1,.3,1) both;
+}
+.barbara-modulo .ok-msg {
+  border-color: rgba(205,251,62,.25);
+  color: color-mix(in srgb, var(--azul) 72%, white);
+}
+.barbara-modulo .error {
+  border-color: rgba(235,133,133,.28);
+  color: #f2b0b0;
+}
+
+@keyframes barbara-velo-entra {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes barbara-popup-entra {
+  from { opacity: 0; transform: translateY(12px) scale(.975); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes barbara-menu-entra {
+  from { opacity: 0; transform: translateY(-4px) scale(.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes barbara-aviso-entra {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 560px) {
+  body.barbara-activa .panel-modal {
+    max-height: calc(100dvh - 24px);
+    border-radius: 18px;
+  }
+  body.barbara-activa .panel-modal .contenido { padding: 16px; }
+  body.barbara-activa .panel-modal > header,
+  body.barbara-activa .panel-modal > footer { padding-inline: 16px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.barbara-activa .velo,
+  body.barbara-activa .panel-modal,
+  .barbara-modulo .sel-menu,
+  .barbara-modulo .error,
+  .barbara-modulo .ok-msg,
+  .barbara-modulo .aviso { animation: none; }
+}

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { sb } from "../lib/supabase";
 import {
   TIPOS_CONTENIDO,
@@ -34,6 +34,14 @@ export function FormularioBarbara({ barbaraClienteId, inicial, cerrar, guardado 
 
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    const alPresionar = (evento: KeyboardEvent) => {
+      if (evento.key === "Escape" && !guardando) cerrar();
+    };
+    window.addEventListener("keydown", alPresionar);
+    return () => window.removeEventListener("keydown", alPresionar);
+  }, [cerrar, guardando]);
 
   function alternar(id: string) {
     setTipoContenido((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
@@ -87,10 +95,17 @@ export function FormularioBarbara({ barbaraClienteId, inicial, cerrar, guardado 
   }
 
   return (
-    <div className="velo" onClick={cerrar}>
-      <form className="panel-modal" onClick={(e) => e.stopPropagation()} onSubmit={enviar}>
+    <div className="velo" onClick={() => { if (!guardando) cerrar(); }}>
+      <form
+        className="panel-modal barbara-popup-formulario"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="barbara-formulario-titulo"
+        onClick={(e) => e.stopPropagation()}
+        onSubmit={enviar}
+      >
         <header>
-          <h2>Editar formulario de entrada</h2>
+          <h2 id="barbara-formulario-titulo">Editar formulario de entrada</h2>
         </header>
 
         <div className="contenido">

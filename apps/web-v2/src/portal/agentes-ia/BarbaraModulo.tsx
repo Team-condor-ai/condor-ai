@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Ico } from "../disenio/iconos";
 import { navegarConTransicion } from "../disenio/vistaTransicion";
@@ -11,6 +11,7 @@ import { BarbaraCalendario } from "./BarbaraCalendario";
 import { BarbaraBiblioteca } from "./BarbaraBiblioteca";
 import { BarbaraAnalisis } from "./BarbaraAnalisis";
 import { BarbaraConfiguracion } from "./BarbaraConfiguracion";
+import { BarbaraFondoCosmico } from "./BarbaraFondoCosmico";
 import { GrafoMemoria } from "../staff/memoria/GrafoMemoria";
 import { Mcp } from "../staff/Mcp";
 
@@ -46,18 +47,20 @@ const POSES_BARBARA = Array.from(
   (_, indice) => `/assets/barbara/personaje/barbara-${String(indice + 1).padStart(2, "0")}.png`,
 );
 
+const INTERVALO_POSE_BARBARA_MS = 4200;
+
 /** (codex) Una pose se conserva mientras el usuario está dentro de Bárbara,
  * pero al volver a entrar toma la siguiente. `sessionStorage` evita repetir
  * siempre la primera sin perfilar al usuario ni necesitar una llamada a BD. */
-function siguientePoseBarbara() {
+function siguienteIndiceBarbara() {
   try {
     const clave = "barbara:pose:cursor";
     const actual = Number(sessionStorage.getItem(clave) || "-1");
     const indice = (Number.isInteger(actual) ? actual + 1 : 0) % POSES_BARBARA.length;
     sessionStorage.setItem(clave, String(indice));
-    return POSES_BARBARA[indice];
+    return indice;
   } catch {
-    return POSES_BARBARA[Math.floor(Date.now() / 1000) % POSES_BARBARA.length];
+    return Math.floor(Date.now() / 1000) % POSES_BARBARA.length;
   }
 }
 
@@ -94,12 +97,49 @@ export function BarbaraModulo({
   barbaraClienteId, negocio, plan, rubro, brandBook, formulario, onCambio, esStaff, activo, telegramListo, volverA, volverTexto,
 }: Props) {
   const [seccion, setSeccion] = useState<Seccion>("chat");
-  const [poseBarbara] = useState(siguientePoseBarbara);
+  const [poseBarbara, setPoseBarbara] = useState(siguienteIndiceBarbara);
+  const [poseBarbaraAnterior, setPoseBarbaraAnterior] = useState<number | null>(null);
+  const poseActual = useRef(poseBarbara);
   const navegar = useNavigate();
   const nombreUsuario = useNombreUsuario();
 
+  /* Confirmaciones y formularios pueden montarse junto a la app, fuera de
+     `.barbara-modulo`. La marca en body permite que esos planos flotantes
+     conserven el lenguaje visual de Bárbara mientras esta vista está activa. */
+  useEffect(() => {
+    document.body.classList.add("barbara-activa");
+    return () => document.body.classList.remove("barbara-activa");
+  }, []);
+
+  /* Las poses no son un sprite sheet: cambiar un src de golpe se leia como
+     un salto. Conservamos la pose anterior mientras entra la siguiente. */
+  useEffect(() => {
+    const intervalo = window.setInterval(() => {
+      const anterior = poseActual.current;
+      const siguiente = (anterior + 1) % POSES_BARBARA.length;
+      poseActual.current = siguiente;
+      setPoseBarbaraAnterior(anterior);
+      setPoseBarbara(siguiente);
+    }, INTERVALO_POSE_BARBARA_MS);
+    return () => window.clearInterval(intervalo);
+  }, []);
+
+  useEffect(() => {
+    // Precarga una sola pose por adelantado: evita destellos sin descargar
+    // los 50 assets apenas se abre el portal.
+    const imagen = new Image();
+    imagen.src = POSES_BARBARA[(poseBarbara + 1) % POSES_BARBARA.length];
+  }, [poseBarbara]);
+
+  useEffect(() => {
+    if (poseBarbaraAnterior === null) return;
+    const fin = window.setTimeout(() => setPoseBarbaraAnterior(null), 1400);
+    return () => window.clearTimeout(fin);
+  }, [poseBarbaraAnterior]);
+
   return (
     <div className="barbara-modulo">
+      <BarbaraFondoCosmico />
       <aside className="barbara-modulo-rail" aria-label="Navegación de Bárbara">
         <div className="barbara-modulo-rail-cabecera">
           <button
@@ -155,16 +195,28 @@ export function BarbaraModulo({
         {seccion === "chat" && (
           <div className="barbara-inicio">
             <div className="barbara-hero">
-              <img
-                key={poseBarbara}
-                src={poseBarbara}
-                alt="Bárbara"
-                className="barbara-hero-img barbara-hero-img-animada"
-                onError={(evento) => {
-                  evento.currentTarget.onerror = null;
-                  evento.currentTarget.src = POSES_BARBARA[0];
-                }}
-              />
+              <div className="barbara-hero-avatar">
+                <img className="barbara-hero-anillo" src="/assets/barbara/fondo/anillo.webp" alt="" aria-hidden="true" />
+                {poseBarbaraAnterior !== null && (
+                  <img
+                    key={poseBarbaraAnterior}
+                    src={POSES_BARBARA[poseBarbaraAnterior]}
+                    alt=""
+                    aria-hidden="true"
+                    className="barbara-hero-img barbara-hero-img-animada saliendo"
+                  />
+                )}
+                <img
+                  key={poseBarbara}
+                  src={POSES_BARBARA[poseBarbara]}
+                  alt="Bárbara"
+                  className="barbara-hero-img barbara-hero-img-animada entrando"
+                  onError={(evento) => {
+                    evento.currentTarget.onerror = null;
+                    evento.currentTarget.src = POSES_BARBARA[0];
+                  }}
+                />
+              </div>
               <div className="barbara-hero-cuerpo">
                 <span className="barbara-rotulo">Bárbara · tu agente de contenido</span>
                 <TituloAnimado texto={saludo(nombreUsuario)} className="barbara-titular" />
@@ -175,7 +227,7 @@ export function BarbaraModulo({
 
             <div className="barbara-tarjeta">
               <h3>{Ico.reuniones({ t: 17 })} Tu semana de contenido</h3>
-              <BarbaraCalendario barbaraClienteId={barbaraClienteId} vistaInicial="semana" />
+              <BarbaraCalendario barbaraClienteId={barbaraClienteId} vistaInicial="semana" nombreCliente={nombreUsuario || negocio} />
             </div>
           </div>
         )}
@@ -191,7 +243,7 @@ export function BarbaraModulo({
         {seccion === "calendario" && (
           <div className="barbara-tarjeta">
             <h1>{Ico.reuniones({ t: 22 })} Calendario</h1>
-            <BarbaraCalendario barbaraClienteId={barbaraClienteId} vistaInicial="mes" />
+            <BarbaraCalendario barbaraClienteId={barbaraClienteId} vistaInicial="mes" nombreCliente={nombreUsuario || negocio} />
           </div>
         )}
 

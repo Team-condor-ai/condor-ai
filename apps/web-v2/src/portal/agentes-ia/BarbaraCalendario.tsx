@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { sb } from "../lib/supabase";
 import { Ico } from "../disenio/iconos";
+import { franjaDe, nombreDePila } from "./saludo";
 
 type Pieza = {
   id: string; fecha: string; tipo: string; angulo: string | null;
@@ -14,7 +15,12 @@ type Programacion = {
   barbara_memoria: { angulo: string | null } | { angulo: string | null }[] | null;
 };
 
-const ICONO_TIPO: Record<string, string> = { carrusel: "🖼️", historia: "📱", ugc: "🎬" };
+const TIPO_VISUAL: Record<string, { sigla: string; nombre: string }> = {
+  carrusel: { sigla: "C", nombre: "Carrusel" },
+  historia: { sigla: "H", nombre: "Historia" },
+  ugc: { sigla: "U", nombre: "UGC" },
+};
+const visualDe = (tipo: string) => TIPO_VISUAL[tipo] || { sigla: "P", nombre: "Pieza" };
 const DIAS = ["lun", "mar", "mié", "jue", "vie", "sáb", "dom"];
 const ESTADO: Record<Programacion["estado"], string> = {
   borrador: "Por aprobar", programada: "Programada", publicando: "Publicando",
@@ -67,12 +73,23 @@ const anguloDe = (p: Programacion) => {
   return memoria?.angulo || p.tipo;
 };
 
-type Props = { barbaraClienteId: string; vistaInicial?: "semana" | "mes" };
+type Props = { barbaraClienteId: string; vistaInicial?: "semana" | "mes"; nombreCliente: string };
+
+function saludoCalendario(nombre: string) {
+  const destinatario = nombreDePila(nombre) || nombre || "tu equipo";
+  const franja = franjaDe(new Date().getHours());
+  const encabezado = franja === "mañana"
+    ? "Buenos días"
+    : franja === "tarde"
+      ? "Buenas tardes"
+      : "Buenas noches";
+  return `${encabezado}, ${destinatario}`;
+}
 
 /** Calendario unificado: historial real + borradores/programaciones futuras.
  * Mover y aprobar se hace mediante RPC estrechas; la UI nunca puede marcar
  * una pieza como publicada por su cuenta. */
-export function BarbaraCalendario({ barbaraClienteId, vistaInicial = "mes" }: Props) {
+export function BarbaraCalendario({ barbaraClienteId, vistaInicial = "mes", nombreCliente }: Props) {
   const [vista, setVista] = useState<"semana" | "mes">(vistaInicial);
   const [ancla, setAncla] = useState(() => new Date());
   const [piezas, setPiezas] = useState<Pieza[]>([]);
@@ -180,7 +197,10 @@ export function BarbaraCalendario({ barbaraClienteId, vistaInicial = "mes" }: Pr
   return (
     <div className="barbara-calendario">
       <div className="barbara-calendario-nav">
-        <b className="barbara-calendario-rango">{etiquetaRango}</b>
+        <div className="barbara-calendario-contexto">
+          <span>{saludoCalendario(nombreCliente)}</span>
+          <b className="barbara-calendario-rango">{etiquetaRango}</b>
+        </div>
         <div className="barbara-calendario-controles">
           <button className={"chip-toggle" + (vista === "semana" ? " on" : "")} onClick={() => setVista("semana")}>Semana</button>
           <button className={"chip-toggle" + (vista === "mes" ? " on" : "")} onClick={() => setVista("mes")}>Mes</button>
@@ -202,15 +222,35 @@ export function BarbaraCalendario({ barbaraClienteId, vistaInicial = "mes" }: Pr
             <div key={diaIso} className={"barbara-calendario-celda" + (diaIso === HOY ? " hoy" : "") + (enMes ? "" : " fuera")}>
               <div className="barbara-calendario-num">{diaIso === HOY && <i />}{d.getDate()}</div>
               {futuras.map((p) => (
-                <button key={p.id} className={`barbara-calendario-chip futura ${p.estado}`} onClick={() => abrir(p)}>
-                  <span>{ICONO_TIPO[p.tipo] || "📄"}</span>
-                  <small>{inputEnZona(p.programada_para, p.zona_horaria).slice(11)} · {anguloDe(p).slice(0, 24)}</small>
+                <button
+                  key={p.id}
+                  className={`barbara-calendario-chip futura ${p.estado}`}
+                  onClick={() => abrir(p)}
+                  title={`Para ${nombreCliente}: ${anguloDe(p)}`}
+                  aria-label={`Para ${nombreCliente}. ${ESTADO[p.estado]}: ${anguloDe(p)}`}
+                >
+                  <span className="barbara-calendario-chip-icono" aria-hidden="true">{visualDe(p.tipo).sigla}</span>
+                  <span className="barbara-calendario-chip-copia">
+                    <span className="barbara-calendario-chip-meta">
+                      <small>{visualDe(p.tipo).nombre}</small>
+                      <time>{inputEnZona(p.programada_para, p.zona_horaria).slice(11)}</time>
+                    </span>
+                    <strong>{anguloDe(p)}</strong>
+                    <em>Para {nombreCliente}</em>
+                  </span>
                 </button>
               ))}
               {historicas.map((p) => (
-                <div key={p.id} className="barbara-calendario-chip historica">
-                  <span>{ICONO_TIPO[p.tipo] || "📄"}</span>
-                  <small>{p.angulo ? (p.angulo.length > 28 ? p.angulo.slice(0, 26) + "…" : p.angulo) : p.tipo}</small>
+                <div key={p.id} className="barbara-calendario-chip historica" title={`Para ${nombreCliente}: ${p.angulo || p.tipo}`}>
+                  <span className="barbara-calendario-chip-icono" aria-hidden="true">{visualDe(p.tipo).sigla}</span>
+                  <span className="barbara-calendario-chip-copia">
+                    <span className="barbara-calendario-chip-meta">
+                      <small>{visualDe(p.tipo).nombre}</small>
+                      <time>Publicado</time>
+                    </span>
+                    <strong>{p.angulo || p.tipo}</strong>
+                    <em>Para {nombreCliente}</em>
+                  </span>
                 </div>
               ))}
             </div>
