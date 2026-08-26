@@ -881,8 +881,13 @@ Responde SOLO con el JSON.`,
   }
 
   // 7) Registrar en memoria (anti-repetición + artefacto aprobable)
+  // Fecha en Chile, no UTC: `publicar-automatico.mjs` busca la pieza de
+  // "hoy" por esta fecha, y un reintento tarde en la noche (23:xx Chile =
+  // 03:xx UTC del día siguiente) con fecha UTC habría quedado invisible
+  // para la publicación de las 16:00 de ese mismo día.
   guardarEnLog({
-    fecha: new Date().toISOString().slice(0, 10), tipo: dia, serie: claveSerie,
+    fecha: new Intl.DateTimeFormat("en-CA", { timeZone: "America/Santiago" }).format(new Date()),
+    tipo: dia, serie: claveSerie,
     angulo: plan.angulo || slides[0]?.titulo || "", titulo: tema.titulo, runId,
     // El plan completo, para que la proxima correccion tenga QUE corregir.
     // Solo sobrevive en las ultimas entradas (ver CON_CONTENIDO).
