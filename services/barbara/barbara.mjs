@@ -1,11 +1,12 @@
-// condor.ai · Empleada IA "Barbara" — 1 pieza por día (GitHub Actions)
-// Calendario vigente (26-ago-2026 tarde, fijado por Joaquín), 13:00 Chile:
-// TODOS los días, rotando los 4 tipos en orden fijo — 2 son de Cóndor, 2 de
-// Bárbara, así ninguna marca queda sin turno en 4 días corridos:
-//   día%4=0 carrusel Cóndor · día%4=1 anuncio Cóndor
-//   día%4=2 carrusel Bárbara · día%4=3 anuncio Bárbara
-// (antes era Lun/Mié/Jue/Sáb, 4 piezas/semana; reemplazado por publicación
-// diaria — ver docs/BITACORA-2026-08-26.md)
+// condor.ai · Empleada IA "Barbara" — 3 piezas por semana (GitHub Actions)
+// Calendario vigente (26-ago-2026, tarde-noche, fijado por Joaquín): Lun/Mié/
+// Vie, 13:00 Chile. Los 4 tipos rotan en orden fijo, pero por CONTADOR de
+// piezas generadas, no por día de la semana — así la rotación no se pisa ni
+// se salta pase lo que pase el calendario (ver `serieDeHoy` más abajo):
+//   turno%4=0 carrusel Cóndor · turno%4=1 anuncio Cóndor
+//   turno%4=2 carrusel Bárbara · turno%4=3 anuncio Bárbara
+// (probó publicación diaria unas horas esa misma tarde; se revirtió a 3x/
+// semana — ver docs/BITACORA-2026-08-26.md)
 // Cada marca alterna entre sus DOS templates por semana ISO, así los cuatro
 // templates de carrusel se turnan sin repetirse dos semanas seguidas.
 // Se genera y manda a Telegram 3h antes de publicar (13:00 Chile) y se
@@ -47,9 +48,10 @@ const NOMBRES_DIA = ["domingo", "lunes", "martes", "miercoles", "jueves", "viern
 const rawDia = (process.env.DIA || "").trim().toLowerCase();
 let dia = rawDia;
 if (!NOMBRES_DIA.includes(dia)) {
-  // Publicación diaria desde el 26-ago-2026 tarde (antes era 4 piezas/semana,
-  // Lun/Mié/Jue/Sáb). getUTCDay() ya cubre los 7 días -- CALENDARIO más abajo
-  // rota los 4 tipos de pieza en orden fijo sobre esos 7 nombres.
+  // `dia` ya no elige la serie (eso lo hace `serieDeHoy` por contador) --
+  // sólo etiqueta la pieza en el log y en los reintentos ("Denuevo barbara"
+  // pasa `dia: tipo` de vuelta). getUTCDay() cubre los 7 días aunque el cron
+  // sólo dispare 3.
   const wd = new Date().getUTCDay();
   dia = NOMBRES_DIA[wd];
 }
@@ -239,13 +241,21 @@ const SERIES = {
   barbara_producto: {
     titulo: "🎀 Bárbara — tu agente de contenido",
     investiga: false, slides: 6, cta: "Escríbenos al DM",
-    instruccion: "Carrusel sobre Bárbara, la agente de IA que crea y publica el contenido de una marca sola. Parte de un dolor concreto y cotidiano del dueño de negocio y muestra cómo Bárbara lo resuelve. Máximo 3 puntos numerados, cada uno con las horas que ahorra.",
+    // 26-ago-2026, pedido explícito de Joaquín tras ver un carrusel que
+    // hablaba de "agentes de IA" en general: las series de Bárbara tienen
+    // que hablar SOLO del dolor que ella resuelve -- tener/pagar un community
+    // manager -- nunca de automatización o agentes de IA en general (eso es
+    // el terreno de las series de Cóndor).
+    instruccion: "Carrusel sobre Bárbara, la agente de IA que REEMPLAZA al community manager. Parte SIEMPRE del dolor concreto y cotidiano de tener (o necesitar) un community manager: el tiempo que le quita al dueño de negocio revisarlo/coordinarlo, el sueldo o el costo de la agencia, la espera para tener contenido nuevo, la calidad pareja. Muestra cómo Bárbara resuelve exactamente ESO: piezas de más calidad, generadas más rápido, a un costo menor que un community manager humano o una agencia. Máximo 3 puntos numerados, cada uno con un beneficio concreto (horas ahorradas, plata ahorrada, velocidad). PROHIBIDO hablar de agentes de IA en general, automatización de otros procesos, o cualquier cosa que no sea específicamente el reemplazo del trabajo de community management.",
     template: T_BARBARA_PRODUCTO, logo: "izquierda", personaje: true,
   },
   barbara_datos: {
     titulo: "📊 Bárbara — el dato que lo cambia todo",
     investiga: true, slides: 7, cta: "Escríbenos al DM",
-    instruccion: "Carrusel sobre el impacto MEDIBLE de usar IA en marketing y ventas, apoyado en estudios REALES encontrados en la búsqueda web (McKinsey, Gartner, HubSpot, Deloitte u otros). Cada cifra tiene que ir con su fuente citada. Incluye una comparación antes/después o con/sin IA.",
+    // Mismo pedido del 26-ago: cifras sobre el COSTO de un community manager
+    // (sueldo, tiempo de producción, precio de agencia) vs. Bárbara -- nunca
+    // estudios genéricos de adopción de IA/agentes en la empresa.
+    instruccion: "Carrusel con datos MEDIBLES sobre el costo de tener un community manager (sueldo promedio en Chile/LatAm, tiempo que toma producir contenido, costo de una agencia de marketing) comparado contra Bárbara: más rápido, mejor calidad, precio más bajo. Usa cifras REALES de la búsqueda web sobre sueldos de community manager, tiempos de producción de contenido o costos de agencias -- NUNCA estudios genéricos de \"adopción de IA\" o \"agentes de IA en la empresa\" (McKinsey/Gartner sobre agentic AI, por ejemplo, está PROHIBIDO acá). Cada cifra con su fuente. La comparación siempre es \"con community manager\" vs \"con Bárbara\", nunca \"sin IA\" vs \"con IA\" en general.",
     template: T_BARBARA_DATOS, logo: null, personaje: true, // el logo no va (ver arriba); el personaje sí, es una serie de Bárbara
   },
 };
@@ -254,24 +264,18 @@ const SERIES = {
 // Lunes es SIEMPRE el noticiero: es la pieza que exige investigación real y
 // conviene que salga el mismo día para que la audiencia la espere.
 //
-// Miércoles y viernes rotan entre las otras TRES series. Son 3 series en 2
-// espacios, así que el ciclo se cierra recién a las 3 semanas: ninguna serie
-// cae dos veces en la misma semana y ningún par miércoles-viernes se repite
-// hasta dar la vuelta entera. Con una serie fija por día, la tercera no
-// saldría nunca.
-const ROTATIVAS = ["servicios", "barbara_producto", "barbara_datos"];
-
-// ── El calendario NUEVO (26-ago-2026 tarde) ─────────────────────────────────
+// ── El calendario NUEVO (26-ago-2026, tarde-noche) ──────────────────────────
 //
-// Joaquín pasó a publicación DIARIA (antes: 4 piezas/semana, Lun/Mié/Jue/Sáb
-// -- ver el commit del 26-ago temprano, revertido acá mismo horas después).
-// Los 4 tipos de pieza rotan en orden fijo sobre los 7 días, así ninguna
-// marca queda 4 días seguidos sin turno:
+// Lun/Mié/Vie, 13:00 Chile (bajó de diario, que duró unas horas -- ver el
+// commit de esa misma tarde). Los 4 tipos rotan en orden fijo, PERO ya no
+// por día de la semana: el índice avanza con cada pieza generada de verdad
+// (cuenta las entradas del log), así la rotación sigue firme sin importar en
+// qué día cae cada corrida -- "se va rotando siempre uno", pedido textual.
 //
-//   lunes/viernes     · carrusel de CÓNDOR   (noticias ↔ servicios)
-//   martes/sábado     · anuncio de CÓNDOR    (imagen única)
-//   miércoles/domingo · carrusel de BÁRBARA  (barbara_producto ↔ barbara_datos)
-//   jueves            · anuncio de BÁRBARA   (imagen única)
+//   turno 0 · carrusel de CÓNDOR   (noticias ↔ servicios)
+//   turno 1 · anuncio de CÓNDOR
+//   turno 2 · carrusel de BÁRBARA  (barbara_producto ↔ barbara_datos)
+//   turno 3 · anuncio de BÁRBARA
 //
 // Cada marca alterna entre SUS DOS templates por semana ISO, así los cuatro
 // templates de carrusel se turnan sin que ninguno se repita dos semanas
@@ -279,42 +283,33 @@ const ROTATIVAS = ["servicios", "barbara_producto", "barbara_datos"];
 const CARRUSELES_CONDOR = ["noticias", "servicios"];
 const CARRUSELES_BARBARA = ["barbara_producto", "barbara_datos"];
 
-// El orden fijo de los 4 tipos. Retomar el mismo día de otra semana siempre
-// elige el mismo TIPO -- lo que varía con `semanaISO()` es solo cuál de los
-// dos templates de esa marca. Semana empieza en lunes a propósito (no en
-// domingo como NOMBRES_DIA, que sigue a getUTCDay()): es el orden en que
-// cualquiera lee un calendario.
 const SERIES_ROTACION = [
   () => CARRUSELES_CONDOR[semanaISO() % 2],   // carrusel Cóndor
   () => "ad_condor",                          // anuncio Cóndor
   () => CARRUSELES_BARBARA[semanaISO() % 2],  // carrusel Bárbara
   () => "ad_barbara",                         // anuncio Bárbara
 ];
-const ORDEN_SEMANA = ["lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"];
-const CALENDARIO = Object.fromEntries(
-  ORDEN_SEMANA.map((nombre, i) => [nombre, SERIES_ROTACION[i % 4]])
-);
 
-// Semana ISO. El índice avanza por semana REAL y no por corrida: contando
-// corridas, un reintento del mismo día adelantaría la rotación y el viernes
-// saldría con la serie que le tocaba a la semana siguiente.
+// Semana ISO -- sólo decide cuál de los DOS templates de una marca toca hoy,
+// no el turno de la rotación (eso lo decide `serieDeHoy` con el contador).
 function semanaISO(d = new Date()) {
   const j = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
   j.setUTCDate(j.getUTCDate() + 4 - (j.getUTCDay() || 7));
   return Math.ceil(((j - Date.UTC(j.getUTCFullYear(), 0, 1)) / 86400000 + 1) / 7);
 }
 
-function serieDeHoy() {
-  const elegir = CALENDARIO[dia];
-  if (elegir) return elegir();
-  // Día fuera del calendario (una corrida a mano un miércoles, por ejemplo):
-  // se cae al carrusel de Cóndor que toque, que es la pieza más neutra.
-  return CARRUSELES_CONDOR[semanaISO() % 2];
+function serieDeHoy(log) {
+  // Cuenta las piezas REALES ya generadas (sin reels, que tienen su propio
+  // calendario aparte) para saber a quién le toca el turno. Un RETRY no
+  // agrega una entrada nueva al log hasta que se guarda al final -- así que
+  // reintentar el mismo día no adelanta la rotación.
+  const previas = log.filter((e) => !String(e.tipo || "").startsWith("reel-")).length;
+  return SERIES_ROTACION[previas % 4]();
 }
 
 // SERIE=... fuerza una serie concreta (para probar una sin esperar su semana).
 const serieForzada = (process.env.SERIE || "").trim().toLowerCase();
-const claveSerie = SERIES[serieForzada] ? serieForzada : serieDeHoy();
+const claveSerie = SERIES[serieForzada] ? serieForzada : serieDeHoy(leerLog());
 const tema = SERIES[claveSerie];
 const N_SLIDES = tema.slides;
 
@@ -639,6 +634,16 @@ LA PORTADA (slide 1) es la que decide si alguien lee el resto. Su titular tiene
 que ser corto y con filo: máximo 7 palabras, más una línea de apoyo de máximo
 10. NO pongas cifras, comparaciones ni listas en la portada — esos van del
 slide 2 en adelante. Si tu portada necesita explicar, no es una portada.
+${tema.personaje ? `
+EL PERSONAJE DE BÁRBARA (26-ago-2026, bug real que se detectó publicado): en
+las slides 1, 3, 5 y 7 (índice impar en el conteo de 1 a N) se pega ENCIMA un
+círculo con la ilustración de Bárbara, centrado horizontalmente, ocupando
+aprox. el tercio central vertical del slide. En ESAS slides está PROHIBIDO
+usar el panel de comparación de dos columnas (el de "VS" al medio): esas
+necesitan todo el ancho central y chocan con el círculo, tapando su propio
+texto. En las slides 1, 3, 5, 7 usa tarjetas de estadísticas apiladas o un
+titular con apoyo, dejando el tercio central vacío. El panel de comparación de
+dos columnas úsalo SOLO en las slides pares (2, 4, 6), que no llevan círculo.` : ""}
 
 FUENTES: sólo cita una fuente si viene textual de la investigación que te paso,
 con su nombre real. Está PROHIBIDA una línea de fuente genérica inventada del

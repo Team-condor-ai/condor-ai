@@ -2,13 +2,13 @@ name: Barbara - carruseles RRSS
 
 on:
   schedule:
-    # Publicación DIARIA desde el 26-ago-2026 tarde (pedido explícito de
-    # Joaquín, reemplaza las 4 piezas/semana de esa misma mañana).
+    # 3 piezas por semana, Lun/Mié/Vie (pedido de Joaquín 26-ago tarde-noche
+    # -- probó diario unas horas esa misma tarde y bajó la cadencia).
     # 13:00 Chile = 17:00 UTC (Chile es UTC-4 todo el año, sin horario de
     # verano) -- 3 HORAS antes de la publicación automática de las 16:00
     # Chile (ver barbara-publicar-automatico.yml), para dejar tiempo de
     # revisar en Telegram y escribir "bloquear barbara" si algo no sirve.
-      - cron: '0 17 * * *'
+      - cron: '0 17 * * 1,3,5'
   workflow_dispatch:
     inputs:
       dia:

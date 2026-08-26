@@ -2,57 +2,51 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { readFileSync } from "node:fs";
 
-/* El calendario de publicación de Cóndor (26-ago-2026 TARDE, fijado por
-   Joaquín): TODOS los días, rotando 4 tipos de pieza en orden fijo --
-   lunes carrusel Cóndor, martes anuncio Cóndor, miércoles carrusel Bárbara,
-   jueves anuncio Bárbara, y se repite (viernes=carrusel Cóndor, ...).
+/* El calendario de publicación de Cóndor (26-ago-2026, tarde-noche, fijado
+   por Joaquín): Lun/Mié/Vie, 13:00 Chile. Los 4 tipos de pieza rotan en
+   orden fijo, pero por CONTADOR de piezas ya generadas -- no por día de la
+   semana -- para que "se vaya rotando siempre uno" sin importar en qué día
+   cae cada corrida (probó diario unas horas esa misma tarde, se revirtió a
+   3x/semana).
 
    Se genera y manda a Telegram a las 13:00 Chile (barbara.yml) y se publica
-   sola a las 16:00 Chile (barbara-publicar-automatico.yml) salvo que alguien
-   la bloquee en Telegram en el medio.
+   sola a las 16:00 Chile (barbara-publicar-automatico.yml), el mismo día,
+   salvo que alguien la bloquee en Telegram en el medio.
 
    Se prueba leyendo los archivos y no importando barbara.mjs: ese módulo
-   arranca haciendo trabajo (lee env, resuelve el día, arma clientes), así que
+   arranca haciendo trabajo (lee env, lee el log, resuelve la serie), así que
    importarlo en una prueba dispararía esa cadena.
 
    Lo que se protege es la CONSISTENCIA entre las piezas que tienen que decir
-   lo mismo: los dos cron, la lista de días válidos, el CALENDARIO de series y
-   el orden fijo de rotación. Si alguien toca una y se olvida de las otras,
-   ese día corre y no encuentra qué generar -- o peor, no corre y nadie se
-   entera, o publica el tipo de pieza equivocado. */
+   lo mismo: los dos cron (mismos días), la rotación fija de 4 tipos, y que
+   la cabecera del módulo no siga describiendo un calendario ya reemplazado. */
 
 const mjs = readFileSync(new URL("./barbara.mjs", import.meta.url), "utf8");
 const ymlGenerar = readFileSync(new URL("../../.github/workflows/barbara.yml", import.meta.url), "utf8");
 const ymlPublicar = readFileSync(new URL("../../.github/workflows/barbara-publicar-automatico.yml", import.meta.url), "utf8");
 
-const ORDEN_SEMANA = ["lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"];
-const NOMBRES_DIA_GETUTCDAY = ["domingo", "lunes", "martes", "miercoles", "jueves", "viernes", "sabado"];
-
-test("se genera todos los días a las 13:00 Chile (17:00 UTC)", () => {
-  assert.match(ymlGenerar, /cron: '0 17 \* \* \*'/,
-    "el cron de generación no es diario a las 17:00 UTC");
+test("se genera Lun/Mié/Vie a las 13:00 Chile (17:00 UTC)", () => {
+  assert.match(ymlGenerar, /cron: '0 17 \* \* 1,3,5'/,
+    "el cron de generación no es Lun/Mié/Vie a las 17:00 UTC");
 });
 
-test("se publica sola todos los días a las 16:00 Chile (20:00 UTC), 3h después", () => {
-  assert.match(ymlPublicar, /cron: '0 20 \* \* \*'/,
-    "el cron de publicación automática no es diario a las 20:00 UTC");
+test("se publica sola los MISMOS días, 16:00 Chile (20:00 UTC), 3h después", () => {
+  assert.match(ymlPublicar, /cron: '0 20 \* \* 1,3,5'/,
+    "el cron de publicación automática no coincide con los días de generación");
 });
 
-test("NOMBRES_DIA sigue el orden de getUTCDay() (domingo=0)", () => {
-  assert.ok(mjs.includes(JSON.stringify(NOMBRES_DIA_GETUTCDAY).replace(/,/g, ", ")) ||
-    mjs.includes('["domingo", "lunes", "martes", "miercoles", "jueves", "viernes", "sabado"]'),
-    "NOMBRES_DIA no coincide con el orden de getUTCDay() -- el día calculado quedaría desalineado");
+test("la rotación es por CONTADOR de piezas, no por día de la semana", () => {
+  assert.match(mjs, /function serieDeHoy\(log\)/,
+    "serieDeHoy ya no recibe el log -- ¿volvió a decidir por día de la semana?");
+  assert.match(mjs, /SERIES_ROTACION\[previas % 4\]/,
+    "la rotación no se deriva de un contador módulo 4");
+  assert.ok(!mjs.includes("CALENDARIO"),
+    "quedó un CALENDARIO por día de la semana -- la rotación tiene que ser sólo por contador");
 });
 
-test("los 7 días de la semana son válidos (ninguno cae al 'else' de un calendario viejo)", () => {
-  for (const dia of ORDEN_SEMANA) {
-    assert.ok(mjs.includes(`"${dia}"`), `"${dia}" no aparece como día reconocido en barbara.mjs`);
-  }
-});
-
-test("CALENDARIO se construye sobre ORDEN_SEMANA (lunes primero) y no al revés de NOMBRES_DIA", () => {
-  assert.match(mjs, /ORDEN_SEMANA\s*=\s*\[\s*"lunes"/,
-    "ORDEN_SEMANA no arranca en lunes -- el índice %4 de la rotación quedaría corrido");
+test("el contador de turno ignora los reels (tienen su propio calendario)", () => {
+  assert.match(mjs, /!String\(e\.tipo \|\| ""\)\.startsWith\("reel-"\)/,
+    "el filtro de reels desapareció del conteo de turno");
 });
 
 test("la rotación fija son 4 series: carrusel/anuncio de cada marca", () => {
@@ -62,18 +56,19 @@ test("la rotación fija son 4 series: carrusel/anuncio de cada marca", () => {
   assert.match(mjs, /"ad_barbara"/);
 });
 
-test("no quedan restos del calendario viejo restringido a 4 días", () => {
-  // El diseño anterior filtraba `dia` contra una lista de solo 4 nombres
-  // (lunes/miercoles/jueves/sabado). Si vuelve esa lista, martes/viernes/
-  // domingo dejan de reconocerse y caen al fallback silenciosamente.
-  assert.ok(!mjs.includes('["lunes", "miercoles", "jueves", "sabado"].includes(dia)'),
-    "sigue la lista vieja de 4 días válidos -- el resto de la semana quedaría sin serie");
+test("los 7 nombres de día siguen reconocidos (para etiquetar y para 'test')", () => {
+  // `dia` ya no elige la serie, pero sigue etiquetando la pieza en el log y
+  // viajando en los reintentos de Telegram -- si un nombre deja de
+  // reconocerse, ese día cae al "test"/"" por error.
+  for (const dia of ["domingo", "lunes", "martes", "miercoles", "jueves", "viernes", "sabado"]) {
+    assert.ok(mjs.includes(`"${dia}"`), `"${dia}" no aparece como día reconocido en barbara.mjs`);
+  }
 });
 
-test("la cabecera del modulo describe el calendario vigente (diario)", () => {
+test("la cabecera del modulo describe el calendario vigente (3x/semana, por contador)", () => {
   const cabecera = mjs.slice(0, 700).toLowerCase();
-  assert.ok(cabecera.includes("todos los días") || cabecera.includes("1 pieza por día"),
-    "la cabecera no describe la publicación diaria vigente");
-  assert.ok(!cabecera.includes("4 piezas por semana ("),
-    "la cabecera todavía describe el calendario semanal viejo como vigente");
+  assert.ok(cabecera.includes("3 piezas por semana") || cabecera.includes("lun/mié/vie") || cabecera.includes("lun/mie/vie"),
+    "la cabecera no describe la cadencia vigente (3x/semana, Lun/Mié/Vie)");
+  assert.ok(!cabecera.includes("1 pieza por día") && !cabecera.includes("todos los días,"),
+    "la cabecera todavía describe la publicación diaria, ya reemplazada");
 });

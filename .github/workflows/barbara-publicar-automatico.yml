@@ -1,15 +1,17 @@
 name: Barbara - publicación automática 16:00
 
 # Pedido explícito de Joaquín, 26-ago-2026 tarde: el contenido propio de
-# Cóndor se publica SOLO todos los días a las 16:00 Chile, salvo que alguien
-# escriba "bloquear barbara" en el chat interno de Telegram en la ventana de
-# 3h desde que se generó (13:00 Chile, ver barbara.yml). Este workflow es el
-# que decide y dispara -- la lógica vive en publicar-automatico.mjs para
-# poder probarla sin esperar al cron.
+# Cóndor se publica SOLO los mismos días que se genera (Lun/Mié/Vie, 16:00
+# Chile), salvo que alguien escriba "bloquear barbara" en el chat interno de
+# Telegram en la ventana de 3h desde que se generó (13:00 Chile, ver
+# barbara.yml). Este workflow es el que decide y dispara -- la lógica vive en
+# publicar-automatico.mjs para poder probarla sin esperar al cron.
 on:
   schedule:
-    # 16:00 Chile = 20:00 UTC (Chile es UTC-4 todo el año, sin horario de verano)
-      - cron: '0 20 * * *'
+    # 16:00 Chile = 20:00 UTC (Chile es UTC-4 todo el año, sin horario de
+    # verano). Mismos días que la generación -- correr un martes no
+    # encontraría nada y mandaría una alerta de "no hay pieza" sin sentido.
+      - cron: '0 20 * * 1,3,5'
   workflow_dispatch: {}
 
 permissions:
