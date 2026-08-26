@@ -28,6 +28,7 @@ import { fechaLocalISO, proponerHorario } from "./planificador.mjs";
 import { cancelarGeneracion, confirmarGeneracion, fallarGeneracion, reclamarGeneracion } from "./generaciones.mjs";
 import { finalizarTelemetria, guardarTelemetria, iniciarTelemetria, verificarPresupuesto } from "./telemetria.mjs";
 import { inicioMesUTC, limitePlan, metaAcumulada } from "./planes.mjs";
+import { decidirElegibilidad, decidirCuota } from "./elegibilidad.mjs";
 import sharp from "sharp";
 
 const AK = process.env.ANTHROPIC_API_KEY;
@@ -125,33 +126,55 @@ async function generarPara(cliente) {
   const bb = Array.isArray(cliente.barbara_brand_book) ? cliente.barbara_brand_book[0] : cliente.barbara_brand_book;
   const form = Array.isArray(cliente.barbara_formulario) ? cliente.barbara_formulario[0] : cliente.barbara_formulario;
 
-  if (!telegram_chat_id) {
-    console.log(`[${negocio}] sin telegram_chat_id configurado — se salta (staff debe completarlo en el portal).`);
+  const elegibilidad = decidirElegibilidad({ telegram_chat_id, bb, form });
+  if (!elegibilidad.elegible) {
+    if (elegibilidad.motivo === "sin_telegram") {
+      console.log(`[${negocio}] sin telegram_chat_id configurado — se salta (staff debe completarlo en el portal).`);
+    } else {
+      console.log(`[${negocio}] falta brand book o formulario todavía — se salta hasta que el staff los complete.`);
+    }
     return;
   }
-  if (!bb || !form) {
-    console.log(`[${negocio}] falta brand book o formulario todavía — se salta hasta que el staff los complete.`);
-    return;
+
+  // Un plan creado por una persona tiene prioridad sobre el calendario
+  // automático. Se toma sólo cuando está dentro de los próximos siete días:
+  // así Bárbara llega con tiempo a revisión, pero no fabrica hoy una campaña
+  // que el equipo dejó para dentro de tres meses. La fila sigue sin
+  // `barbara_memoria_id` hasta que los assets quedaron persistidos.
+  let planSolicitado = null;
+  if (!isRetry) {
+    const limitePlanificacion = new Date(Date.now() + 7 * 86_400_000).toISOString();
+    const pendientes = await db.get(
+      `barbara_programaciones?barbara_cliente_id=eq.${barbaraId}&tipo=eq.${TIPO}` +
+      `&barbara_memoria_id=is.null&estado=in.(borrador,programada)` +
+      `&creado_por=neq.barbara` +
+      `&programada_para=lte.${encodeURIComponent(limitePlanificacion)}` +
+      `&select=id,titulo,brief,configuracion,plataforma,programada_para,zona_horaria,estado` +
+      `&order=programada_para.asc&limit=1`
+    ).catch(() => []);
+    planSolicitado = pendientes[0] || null;
+    if (planSolicitado) console.log(`[${negocio}] plan editorial solicitado: ${planSolicitado.titulo || planSolicitado.id}`);
   }
 
   // El plan es una regla del motor, no solo una etiqueta del portal. Una
   // pieza nueva cuenta contra el mes; un RETRY corrige la ya entregada y no.
   if (!isRetry) {
     const limite = limitePlan(plan, TIPO);
-    if (!limite) {
-      console.log(`[${negocio}] el plan ${plan} no incluye ${TIPO}.`);
-      return;
-    }
-    const usadas = await db.get(
-      `barbara_memoria?barbara_cliente_id=eq.${barbaraId}&tipo=eq.${TIPO}` +
-      `&fecha=gte.${inicioMesUTC()}&corrige_a=is.null&select=id`,
-    ).catch(() => []);
-    if (usadas.length >= limite) {
-      console.log(`[${negocio}] cuota mensual de ${TIPO} completa (${limite}/${limite}).`);
-      return;
-    }
-    if (RESPETAR_RITMO && usadas.length >= metaAcumulada(limite)) {
-      console.log(`[${negocio}] ${TIPO} va al ritmo mensual (${usadas.length}/${metaAcumulada(limite)} para hoy).`);
+    const usadas = limite
+      ? await db.get(
+          `barbara_memoria?barbara_cliente_id=eq.${barbaraId}&tipo=eq.${TIPO}` +
+          `&fecha=gte.${inicioMesUTC()}&corrige_a=is.null&select=id`,
+        ).catch(() => [])
+      : [];
+    const cuota = decidirCuota({ isRetry, limite, usadas: usadas.length, meta: metaAcumulada(limite || 0), respetarRitmo: RESPETAR_RITMO && !planSolicitado });
+    if (!cuota.puede) {
+      if (cuota.motivo === "plan_sin_tipo") {
+        console.log(`[${negocio}] el plan ${plan} no incluye ${TIPO}.`);
+      } else if (cuota.motivo === "cuota_completa") {
+        console.log(`[${negocio}] cuota mensual de ${TIPO} completa (${limite}/${limite}).`);
+      } else {
+        console.log(`[${negocio}] ${TIPO} va al ritmo mensual (${usadas.length}/${metaAcumulada(limite)} para hoy).`);
+      }
       return;
     }
   }
@@ -160,7 +183,7 @@ async function generarPara(cliente) {
   // cliente — salvo RETRY=1 (el webhook lo pone cuando el cliente pidió
   // una corrección; ahí SÍ hay que regenerar aunque ya se haya publicado).
   const hoyISO = fechaLocalISO(new Date(), zonaHoraria);
-  if (!isRetry) {
+  if (!isRetry && !planSolicitado) {
     const memoriaHoy = await db.get(
       `barbara_memoria?barbara_cliente_id=eq.${barbaraId}&fecha=eq.${hoyISO}&tipo=eq.${TIPO}` +
       `&select=id,entrega_estado,barbara_media(id)&order=creado_en.desc`
@@ -200,7 +223,7 @@ async function generarPara(cliente) {
     : null;
   const claveGeneracion = isRetry
     ? `retry:${baseRetry || "sin-pieza"}:${correccionesPrevias}`
-    : `nuevo:${hoyISO}`;
+    : planSolicitado ? `plan:${planSolicitado.id}` : `nuevo:${hoyISO}`;
   const runGeneracion = await reclamarGeneracion(db, {
     barbaraClienteId: barbaraId, tipo: TIPO, clave: claveGeneracion,
     actor: process.env.GITHUB_RUN_ID ? `github:${process.env.GITHUB_RUN_ID}` : "barbara-clientes",
@@ -312,11 +335,16 @@ async function generarPara(cliente) {
   //
   // En un reintento se mantiene el pilar de la pieza anterior: el cliente
   // pidió corregir ESA pieza, no recibir otra distinta.
+  const configuracionPlan = planSolicitado?.configuracion && typeof planSolicitado.configuracion === "object"
+    ? planSolicitado.configuracion : {};
   const historialPilares = (await db.get(
     `barbara_memoria?barbara_cliente_id=eq.${barbaraId}&pilar=not.is.null` +
     `&select=pilar&order=creado_en.desc&limit=20`
   ).catch(() => [])).map(e => e.pilar);
-  const eleccionPilar = isRetry && historialPilares[0] && PILARES[historialPilares[0]]
+  const pilarSolicitado = !isRetry && PILARES[configuracionPlan.pilar] ? configuracionPlan.pilar : null;
+  const eleccionPilar = pilarSolicitado
+    ? { pilar: pilarSolicitado, instruccion: PILARES[pilarSolicitado].instruccion, reparto: {}, modo: "plan_editorial" }
+    : isRetry && historialPilares[0] && PILARES[historialPilares[0]]
     ? { pilar: historialPilares[0], instruccion: PILARES[historialPilares[0]].instruccion, reparto: {} }
     : elegirPilar(form.pilares, historialPilares);
   const bloquePilar = bloquePilarPrompt(eleccionPilar);
@@ -333,6 +361,19 @@ async function generarPara(cliente) {
 
   const paleta = (bb.paleta_colores || []).map(c => `${c.hex}${c.uso ? ` (${c.uso})` : ""}`).join(", ") || "a criterio, coherente con el rubro";
   const tipos = (form.tipo_contenido || []).join(", ") || "contenido general para redes";
+  const bloquePlanSolicitado = !planSolicitado ? "" : `
+
+PLAN EDITORIAL SOLICITADO POR EL EQUIPO (manda sobre una sugerencia automática):
+Nombre: ${String(planSolicitado.titulo || "Pieza planificada").slice(0, 180)}
+Brief: ${String(planSolicitado.brief || "sin brief adicional").slice(0, 4000)}
+Canal: ${planSolicitado.plataforma}
+Objetivo: ${String(configuracionPlan.objetivo || "no especificado")}
+Mensaje clave: ${String(configuracionPlan.mensaje_clave || "no especificado").slice(0, 600)}
+Llamado a la acción: ${String(configuracionPlan.llamada_accion || "a criterio de Bárbara").slice(0, 300)}
+Debe incluir: ${String(configuracionPlan.incluir || "nada adicional").slice(0, 600)}
+Debe evitar: ${String(configuracionPlan.evitar || "nada adicional").slice(0, 600)}
+Configuración del formato: ${JSON.stringify(configuracionPlan).slice(0, 3000)}
+Respeta este plan; no cambies el tema ni el formato.`;
   // CORRECCIÓN DIRIGIDA. Antes acá había una sola línea que le decía al
   // modelo "genera una versión claramente mejor y distinta", sin pasarle ni
   // el pedido del cliente ni la pieza anterior. Eso no corrige: rehace.
@@ -378,7 +419,7 @@ ${gustosDatos}
 ${reglas}${patrones ? `
 
 LO QUE FUNCIONA EN GENERAL (patrones de rendimiento, no reglas de esta marca):
-${patrones}` : ""}${playbooks}${extraRetry}`;
+${patrones}` : ""}${playbooks}${bloquePlanSolicitado}${extraRetry}`;
 
   // ÁNGULO ELEGIDO ANTES DE GENERAR, con un juez semántico aparte.
   //
@@ -394,7 +435,14 @@ ${patrones}` : ""}${playbooks}${extraRetry}`;
   // arreglar.
   let anguloFijado = "";
   let decisionAngulo = { modo: isRetry ? "correccion_mismo_angulo" : "director_sin_juez" };
-  if (!isRetry) {
+  if (planSolicitado) {
+    const anguloPedido = String(configuracionPlan.mensaje_clave || planSolicitado.titulo || "").trim();
+    decisionAngulo = { modo: "plan_editorial", elegido: anguloPedido || null };
+    if (anguloPedido) {
+      anguloFijado = `\n\nÁNGULO DEFINIDO EN EL PLAN (no lo cambies, desarróllalo):\n"${anguloPedido.slice(0, 600)}"\n` +
+        `En el campo "angulo" del JSON devuelve este mismo foco editorial.`;
+    }
+  } else if (!isRetry) {
     try {
       const historialRaw = await db.get(
         `barbara_memoria?barbara_cliente_id=eq.${barbaraId}&select=angulo&order=creado_en.desc&limit=80`
@@ -494,8 +542,10 @@ ${patrones}` : ""}${playbooks}${extraRetry}`;
   let mediaEntregables = [];
 
   if (TIPO === "ugc") {
+    const tomasUGC = Math.min(3, Math.max(2, Number(configuracionPlan.tomas) || 3));
+    const segundosUGC = Math.min(6, Math.max(4, Number(configuracionPlan.segundos_por_toma) || 5));
     const pedirPlanUGC = async (extra = "") => {
-      const sistema = `Eres Bárbara, directora creativa de "${negocio}" (rubro: ${rubro || "no especificado"}). Diriges un video UGC vertical 9:16 (2-3 tomas de 4-6s): UNA PERSONA mostrando el producto o servicio y HABLÁNDOLE A LA CÁMARA, estilo grabado con su propio celular — casero y genuino, nunca un comercial pulido. La persona puede cambiar entre piezas. Sigues la identidad de marca del cliente. NUNCA repites ángulos de las piezas recientes.
+      const sistema = `Eres Bárbara, directora creativa de "${negocio}" (rubro: ${rubro || "no especificado"}). Diriges un video UGC vertical 9:16 (${tomasUGC} tomas de ${segundosUGC}s): UNA PERSONA mostrando el producto o servicio y HABLÁNDOLE A LA CÁMARA, estilo grabado con su propio celular — casero y genuino, nunca un comercial pulido. La persona puede cambiar entre piezas. Sigues la identidad de marca del cliente. NUNCA repites ángulos de las piezas recientes.
 
 ${REGLA_VERACIDAD}
 
@@ -513,7 +563,8 @@ Responde SOLO con el JSON.`;
     plan_contenido = await pedirPlanUGC("");
     verificacion = await asegurarCorreccion(pedirPlanUGC, plan_contenido);
     plan_contenido = verificacion.plan || plan_contenido;
-    const clips = (plan_contenido.clips || []).slice(0, 3);
+    const clips = (plan_contenido.clips || []).slice(0, tomasUGC)
+      .map((clip) => ({ ...clip, duracion: segundosUGC }));
     const urls = [];
     for (let i = 0; i < clips.length; i++) {
       try {
@@ -528,7 +579,9 @@ Responde SOLO con el JSON.`;
     mediaEntregables = [{ buffer: videoBuf, tipo: "video", mimeType: "video/mp4" }];
 
   } else {
-    const nSlides = TIPO === "historia" ? 1 : 6;
+    const nSlides = TIPO === "historia"
+      ? 1
+      : Math.min(10, Math.max(4, Number(configuracionPlan.slides) || 6));
     const pedirPlanSlides = async (extra = "") => {
       const sistema = `Eres Bárbara, directora creativa de "${negocio}" (rubro: ${rubro || "no especificado"}). Diseñas ${TIPO === "historia" ? "una historia de Instagram (1 imagen)" : `un carrusel de Instagram (${nSlides} slides)`} de nivel agencia. Sigues la identidad de marca del cliente al pie de la letra. Escribes la COPY FINAL de cada slide: el titular y el cuerpo tal cual los va a leer la persona. El diseño lo pone una plantilla de marca, así que NO describes imágenes ni composición — solo escribes las palabras, y tienen que sostenerse solas. NUNCA repites ángulos de las piezas recientes.
 
@@ -553,7 +606,10 @@ Responde SOLO con el JSON.`;
     // Los slides se COMPONEN, no se dibujan. Ver `plantillas.mjs`: un carrusel
     // es una pieza tipográfica, y componerla en HTML deja el texto siempre
     // correcto (tildes, eñes), el hex de marca exacto y el costo en cero.
-    const plantilla = PLANTILLAS[bb.plantilla] ? bb.plantilla : PLANTILLA_POR_DEFECTO;
+    const plantillaPedida = String(configuracionPlan.plantilla || "");
+    const plantilla = PLANTILLAS[plantillaPedida]
+      ? plantillaPedida
+      : PLANTILLAS[bb.plantilla] ? bb.plantilla : PLANTILLA_POR_DEFECTO;
     const logo = await logoDataUri(bb.logo_url);
     if (bb.logo_url && !logo) {
       console.log(`[${negocio}] tiene logo_url pero no se pudo bajar — este carrusel sale con el nombre en texto, revisar el archivo en el brand book.`);
@@ -655,7 +711,9 @@ Responde SOLO con el JSON.`;
 
   const piezaCreada = await db.post("barbara_memoria", {
     barbara_cliente_id: barbaraId,
-    fecha: hoyISO,
+    fecha: planSolicitado
+      ? fechaLocalISO(new Date(planSolicitado.programada_para), planSolicitado.zona_horaria || zonaHoraria)
+      : hoyISO,
     tipo: TIPO,
     angulo: plan_contenido.angulo || "",
     titulo: negocio,
@@ -728,6 +786,18 @@ Responde SOLO con el JSON.`;
         `&barbara_memoria_id=eq.${previa.id}&estado=in.(borrador,programada)`,
         { barbara_memoria_id: piezaId, actualizado_en: new Date().toISOString() },
       );
+    } else if (planSolicitado) {
+      programacionId = planSolicitado.id;
+      decisionHorario = {
+        modo: "plan_editorial",
+        programadaPara: planSolicitado.programada_para,
+        zonaHoraria: planSolicitado.zona_horaria || zonaHoraria,
+      };
+      await db.patch(`barbara_programaciones?id=eq.${planSolicitado.id}&barbara_memoria_id=is.null`, {
+        barbara_memoria_id: piezaId,
+        actualizado_en: new Date().toISOString(),
+      });
+      console.log(`[${negocio}] calendario: pieza enlazada al plan ${planSolicitado.id}`);
     } else if (!isRetry) {
       const desde = new Date().toISOString();
       const ocupadas = await db.get(

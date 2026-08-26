@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { sb } from "../lib/supabase";
 import { Ico } from "../disenio/iconos";
 import { ChatVisor } from "./ChatVisor";
@@ -10,6 +10,19 @@ export function BarbaraChat({ barbaraClienteId }: { barbaraClienteId: string }) 
   const [enviando, setEnviando] = useState(false);
   const [aviso, setAviso] = useState<{ tipo: "ok" | "error"; texto: string } | null>(null);
   const [version, setVersion] = useState(0);
+  const [expandido, setExpandido] = useState(false);
+
+  useEffect(() => {
+    document.body.classList.toggle("barbara-chat-expandido", expandido);
+    const cerrarConEscape = (evento: KeyboardEvent) => {
+      if (evento.key === "Escape") setExpandido(false);
+    };
+    window.addEventListener("keydown", cerrarConEscape);
+    return () => {
+      document.body.classList.remove("barbara-chat-expandido");
+      window.removeEventListener("keydown", cerrarConEscape);
+    };
+  }, [expandido]);
 
   async function enviar() {
     const mensaje = texto.trim();
@@ -28,17 +41,68 @@ export function BarbaraChat({ barbaraClienteId }: { barbaraClienteId: string }) 
     setAviso({ tipo: "ok", texto: r?.respuesta || "Bárbara respondió en la conversación." });
   }
 
-  return <div className="barbara-chat">
-    <div className="barbara-chat-caja">
-      <textarea className="campo" placeholder="Pregúntale una idea, una duda o el estado de tu contenido…" value={texto} rows={2}
-        onChange={(e) => setTexto(e.target.value)} onKeyDown={(e) => {
-          if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void enviar(); }
-        }} />
-      <button className="btn solido barbara-chat-enviar" onClick={enviar} disabled={enviando || !texto.trim()}>
-        {enviando ? "…" : Ico.mas({ t: 16 })}
-      </button>
-    </div>
-    {aviso && <p className={aviso.tipo === "error" ? "error" : "ok-msg"}>{aviso.texto}</p>}
-    <div style={{ marginTop: 14 }}><ChatVisor key={version} barbaraClienteId={barbaraClienteId} /></div>
-  </div>;
+  return (
+    <section className={"barbara-chat" + (expandido ? " expandido" : "")} aria-label="Chat con Bárbara">
+      <header className="barbara-chat-cabecera">
+        <div className="barbara-chat-identidad">
+          <img src="/assets/barbara/avatar.png" alt="" aria-hidden="true" />
+          <span>
+            <b>Bárbara</b>
+            <small>Tu agente de contenido</small>
+          </span>
+        </div>
+        <span className="barbara-chat-estado"><i /> Disponible</span>
+      </header>
+
+      <div className="barbara-chat-conversacion">
+        <ChatVisor key={version} barbaraClienteId={barbaraClienteId} />
+      </div>
+
+      <footer className="barbara-chat-compositor">
+        {aviso && (
+          <p className={aviso.tipo === "error" ? "error" : "ok-msg"} role="status">
+            {aviso.texto}
+          </p>
+        )}
+        <div className="barbara-chat-caja">
+          <textarea
+            className="campo"
+            aria-label="Mensaje para Bárbara"
+            placeholder="Escríbele a Bárbara…"
+            value={texto}
+            rows={1}
+            onChange={(e) => setTexto(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                void enviar();
+              }
+            }}
+          />
+          <div className="barbara-chat-acciones">
+            <button
+              type="button"
+              className="btn barbara-chat-expandir"
+              aria-label={expandido ? "Restaurar tamaño del chat" : "Expandir chat a pantalla completa"}
+              title={expandido ? "Restaurar chat" : "Expandir chat"}
+              aria-pressed={expandido}
+              onClick={() => setExpandido((valor) => !valor)}
+            >
+              {expandido ? Ico.contraer({ t: 18 }) : Ico.expandir({ t: 18 })}
+            </button>
+            <button
+              type="button"
+              className="btn solido barbara-chat-enviar"
+              aria-label="Enviar mensaje"
+              onClick={enviar}
+              disabled={enviando || !texto.trim()}
+            >
+              {enviando ? <span className="barbara-chat-enviando" aria-hidden="true" /> : Ico.enviar({ t: 18, g: 2 })}
+            </button>
+          </div>
+        </div>
+        <small className="barbara-chat-ayuda">Enter para enviar · Shift + Enter para una nueva línea</small>
+      </footer>
+    </section>
+  );
 }

@@ -1846,7 +1846,6 @@ html[data-barbara-sentido="vuelve"]::view-transition-old(root) {
 }
 .barbara-modulo .barbara-modulo-rail,
 .barbara-modulo .barbara-tarjeta,
-.barbara-modulo .barbara-modulo-grupo,
 .barbara-modulo .barbara-tarjeta-interna,
 .barbara-modulo .bloque,
 .barbara-modulo .barbara-config-seccion,
@@ -2451,4 +2450,1401 @@ body.barbara-activa .brindis {
   .barbara-modulo .error,
   .barbara-modulo .ok-msg,
   .barbara-modulo .aviso { animation: none; }
+}
+
+/* ── EL BOTÓN DE ENVIAR VUELVE A SER UN CÍRCULO ───────────────────────────
+   Se veía como un cuadrado redondeado: el botón lleva `class="btn solido
+   barbara-chat-enviar"`, y `.barbara-modulo .btn { border-radius: 10px }`
+   (0,2,0) le ganaba a `.barbara-chat-enviar { border-radius: 999px }`
+   (0,1,0). Se confirmó midiendo el `borderRadius` computado en el
+   navegador: devolvía "10px".
+
+   Va al final del archivo y con la misma especificidad que la regla que lo
+   pisaba, para ganar por orden de cascada — que es como se resuelve esto
+   sin escalar a `!important`. */
+.barbara-modulo .barbara-chat-enviar {
+  border-radius: 999px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+/* Deshabilitado ≠ apagado. Con `opacity:.45` el lima quedaba verde oliva
+   sucio sobre el fondo oscuro y parecía un error de color, no un estado.
+   Se baja a vidrio neutro con el icono tenue: se lee como "todavía no",
+   que es lo que significa. */
+.barbara-modulo .barbara-chat-enviar:disabled {
+  opacity: 1;
+  background: rgba(205,251,62,.16);
+  border-color: rgba(205,251,62,.22);
+  color: rgba(205,251,62,.55);
+  box-shadow: none;
+  cursor: default;
+}
+
+/* ══ CONVERSACIÓN COMO PRODUCTO · pase 26-ago ══════════════════════════════
+   El inicio deja de ser "saludo con un campo" y pasa a tener una superficie
+   de conversación estable. La estructura no depende de cuántos mensajes
+   devuelve Supabase, así que demo y producción conservan el mismo layout. */
+.barbara-modulo {
+  --panel: rgba(6,8,11,.64);
+  --panel-2: rgba(6,8,11,.52);
+  --lateral: rgba(5,7,10,.72);
+  --barbara-blur: blur(22px) saturate(150%);
+  --barbara-retrato: clamp(280px, 27vw, 390px);
+  grid-template-columns: 270px minmax(0, 1fr);
+  gap: 24px;
+  min-height: 100dvh;
+  padding: 24px;
+}
+
+.barbara-modulo .barbara-modulo-rail {
+  height: calc(100dvh - 48px);
+  max-height: calc(100dvh - 48px);
+  padding: 17px;
+  background: var(--lateral);
+  border-color: rgba(255,255,255,.13);
+}
+.barbara-modulo-contenido { width: 100%; }
+.barbara-inicio { gap: 24px; }
+
+/* Bárbara gana presencia sin encerrar el saludo en otra tarjeta. */
+.barbara-modulo .barbara-hero {
+  display: grid;
+  grid-template-columns: minmax(300px, .78fr) minmax(430px, 1.22fr);
+  align-items: center;
+  min-height: clamp(440px, 42vw, 560px);
+  gap: clamp(28px, 4vw, 68px);
+  padding: clamp(18px, 2.5vw, 34px) clamp(10px, 1.8vw, 26px);
+}
+.barbara-modulo .barbara-hero-avatar {
+  width: var(--barbara-retrato);
+  height: var(--barbara-retrato);
+}
+.barbara-modulo .barbara-hero-img {
+  width: var(--barbara-retrato);
+  height: var(--barbara-retrato);
+}
+.barbara-modulo .barbara-hero-cuerpo .barbara-titular {
+  max-width: 820px;
+  font-size: clamp(43px, 5.2vw, 76px);
+}
+.barbara-modulo .barbara-hero-cuerpo > p {
+  max-width: 650px;
+  font-size: clamp(15px, 1.25vw, 18px);
+}
+
+/* El halo se extiende bastante más allá del sprite. La escala y la opacidad
+   siguen animándose en compositor, sin recalcular layout. */
+.barbara-hero-avatar::before {
+  width: 560%;
+  height: 560%;
+  background: radial-gradient(circle, rgba(205,251,62,.19) 0%, rgba(205,251,62,.095) 23%, rgba(205,251,62,.035) 43%, transparent 68%);
+  filter: blur(14px);
+}
+.barbara-hero-anillo {
+  width: 360%;
+  height: 360%;
+}
+
+/* Panel de chat: opaco donde hace falta, todavía ligado al cosmos mediante
+   saturación y un filo de luz. */
+.barbara-modulo .barbara-chat {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto minmax(340px, 1fr) auto;
+  min-height: clamp(590px, 68vh, 760px);
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 26px;
+  background:
+    linear-gradient(145deg, rgba(255,255,255,.045), transparent 31%),
+    rgba(5,7,10,.79);
+  backdrop-filter: blur(28px) saturate(150%);
+  -webkit-backdrop-filter: blur(28px) saturate(150%);
+  box-shadow: 0 30px 80px rgba(0,0,0,.46), inset 0 1px 0 rgba(255,255,255,.09);
+}
+.barbara-chat-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 72px;
+  gap: 18px;
+  padding: 13px 20px;
+  border-bottom: 1px solid rgba(255,255,255,.085);
+  background: rgba(3,5,8,.50);
+}
+.barbara-chat-identidad { display: flex; align-items: center; gap: 11px; }
+.barbara-chat-identidad img {
+  width: 42px;
+  height: 42px;
+  border: 1px solid rgba(205,251,62,.25);
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow: 0 0 22px rgba(205,251,62,.12);
+}
+.barbara-chat-identidad span { display: grid; gap: 2px; }
+.barbara-chat-identidad b { font-family: var(--barbara-serif); font-size: 17px; font-weight: 600; }
+.barbara-chat-identidad small { color: var(--texto-3); font-size: 10.5px; letter-spacing: .035em; }
+.barbara-chat-estado {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--texto-2);
+  font-size: 11px;
+}
+.barbara-chat-estado i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--azul);
+  box-shadow: 0 0 11px rgba(205,251,62,.72);
+}
+
+.barbara-chat-conversacion {
+  min-height: 0;
+  overflow: hidden;
+  background: rgba(3,5,8,.20);
+}
+.barbara-modulo .barbara-chat-historial {
+  display: block;
+  height: 100%;
+  max-height: none;
+  padding: 12px 0 28px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-color: rgba(205,251,62,.24) transparent;
+}
+.barbara-modulo .barbara-chat-mensaje {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  width: 100%;
+  max-width: none;
+  gap: 14px;
+  align-items: start;
+  padding: 20px clamp(22px, 6vw, 92px);
+  border: 0;
+  border-bottom: 1px solid rgba(255,255,255,.055);
+  border-radius: 0;
+  background: rgba(255,255,255,.018);
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.barbara-modulo .barbara-chat-mensaje.barbara {
+  background: rgba(10,13,16,.52);
+}
+.barbara-modulo .barbara-chat-mensaje.cliente {
+  align-self: auto;
+  border-color: rgba(255,255,255,.055);
+  border-radius: 0;
+  background: rgba(4,6,9,.12);
+  box-shadow: none;
+}
+.barbara-modulo .barbara-chat-mensaje.staff { background: rgba(124,182,236,.055); }
+.barbara-chat-remitente {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 11px;
+  background: rgba(255,255,255,.055);
+}
+.barbara-chat-remitente img { width: 100%; height: 100%; object-fit: cover; }
+.barbara-chat-remitente span { color: var(--azul); font-size: 12px; font-weight: 750; }
+.barbara-chat-mensaje-cuerpo { width: min(100%, 820px); min-width: 0; }
+.barbara-modulo .barbara-chat-mensaje-cuerpo > b {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--texto);
+  font-size: 12px;
+  font-weight: 650;
+}
+.barbara-modulo .barbara-chat-mensaje-cuerpo > b small {
+  color: var(--texto-3);
+  font-weight: 450;
+}
+.barbara-modulo .barbara-chat-mensaje-cuerpo > p {
+  margin: 0;
+  color: #e8eae3;
+  font-size: 14px;
+  line-height: 1.65;
+  white-space: pre-wrap;
+}
+.barbara-chat-vacio {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100%;
+  gap: 16px;
+  padding: 44px;
+  text-align: left;
+}
+.barbara-chat-vacio img { width: 58px; height: 58px; border-radius: 50%; object-fit: cover; }
+.barbara-chat-vacio b { font-family: var(--barbara-serif); font-size: 24px; }
+.barbara-chat-vacio p { max-width: 450px; margin: 6px 0 0; color: var(--texto-2); line-height: 1.55; }
+
+.barbara-chat-compositor {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  justify-items: center;
+  gap: 7px;
+  padding: 17px clamp(18px, 5vw, 64px) 13px;
+  border-top: 1px solid rgba(255,255,255,.085);
+  background: rgba(3,5,8,.80);
+  box-shadow: 0 -20px 44px rgba(0,0,0,.20);
+}
+.barbara-chat-compositor > :is(.error, .ok-msg) { width: min(100%, 900px); margin: 0; }
+.barbara-modulo .barbara-chat-compositor .barbara-chat-caja {
+  width: min(100%, 900px);
+  min-height: 64px;
+  margin: 0 auto;
+  padding: 9px 9px 9px 20px;
+  border: 1px solid rgba(255,255,255,.17);
+  border-radius: 22px;
+  background: rgba(12,15,18,.92);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  box-shadow: 0 14px 36px rgba(0,0,0,.38), inset 0 1px 0 rgba(255,255,255,.075);
+}
+.barbara-modulo .barbara-chat-caja textarea {
+  max-height: 150px;
+  min-height: 40px;
+  padding: 10px 0;
+  line-height: 1.45;
+}
+.barbara-modulo .barbara-chat-enviar { width: 46px; height: 46px; }
+.barbara-chat-ayuda { margin: 0; color: var(--texto-3); font-size: 10px; text-align: center; }
+.barbara-chat-enviando {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(16,20,7,.32);
+  border-top-color: #101407;
+  border-radius: 50%;
+  animation: barbara-chat-gira .7s linear infinite;
+}
+@keyframes barbara-chat-gira { to { transform: rotate(360deg); } }
+
+/* Opacidad corregida: estos son los tokens finales que llegan al bundle de
+   producción. Ya no dependen de cuál de los pases anteriores ganó la cascada. */
+.barbara-modulo .barbara-tarjeta,
+.barbara-modulo .barbara-modulo-grupo,
+.barbara-modulo .barbara-tarjeta-interna,
+.barbara-modulo .bloque,
+.barbara-modulo .barbara-config-seccion,
+.barbara-modulo .barbara-uso,
+.barbara-modulo .barbara-red {
+  background: rgba(6,8,11,.64);
+  backdrop-filter: var(--barbara-blur);
+  -webkit-backdrop-filter: var(--barbara-blur);
+}
+.barbara-modulo .barbara-modulo-grupo {
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.barbara-modulo .barbara-calendario-celda,
+.barbara-modulo .barbara-calendario-celda:hover { background: rgba(7,9,12,.50); }
+.barbara-modulo .barbara-calendario-celda.hoy,
+.barbara-modulo .barbara-calendario-celda.hoy:hover {
+  background: linear-gradient(145deg, rgba(205,251,62,.10), rgba(7,9,12,.62));
+}
+.barbara-modulo .barbara-calendario-chip {
+  background:
+    radial-gradient(circle at 0 0, color-mix(in srgb, var(--chip-acento) 8%, transparent), transparent 60%),
+    rgba(6,8,11,.66);
+}
+.barbara-modulo .campo,
+.barbara-modulo .campo:focus,
+.barbara-estado-operacion,
+.barbara-programacion-editor,
+.barbara-modulo .barbara-stat-tarjeta,
+.barbara-modulo .tabla-caja,
+.barbara-modulo .mcp-copiable,
+.barbara-modulo .barbara-entrega,
+.barbara-modulo .barbara-slides li,
+.barbara-modulo .barbara-entrega-hook,
+.barbara-modulo .barbara-entrega-comentario { background: rgba(7,9,12,.58); }
+.barbara-modulo .chip-toggle { background: rgba(7,9,12,.64); }
+
+@media (max-width: 1050px) {
+  .barbara-modulo { grid-template-columns: 230px minmax(0, 1fr); }
+  .barbara-modulo .barbara-hero {
+    grid-template-columns: minmax(240px, .7fr) minmax(340px, 1.3fr);
+    min-height: 430px;
+  }
+  .barbara-modulo { --barbara-retrato: clamp(240px, 29vw, 310px); }
+  .barbara-hero-avatar::before { width: 500%; height: 500%; }
+}
+
+@media (max-width: 900px) {
+  .barbara-modulo {
+    --barbara-pad: 12px;
+    --barbara-retrato: clamp(220px, 42vw, 300px);
+    display: flex;
+    padding: var(--barbara-pad);
+  }
+  .barbara-modulo .barbara-modulo-rail { height: auto; max-height: none; }
+  .barbara-modulo .barbara-hero {
+    grid-template-columns: 1fr;
+    min-height: 0;
+    text-align: center;
+  }
+  .barbara-modulo .barbara-hero-cuerpo > p { margin-inline: auto; }
+  .barbara-modulo .barbara-chat { min-height: 620px; }
+  .barbara-hero-avatar::before { width: 470%; height: 470%; }
+  .barbara-hero-anillo { width: 330%; height: 330%; }
+}
+
+@media (max-width: 560px) {
+  .barbara-modulo { --barbara-retrato: 220px; }
+  .barbara-modulo .barbara-hero-cuerpo .barbara-titular { font-size: clamp(36px, 12vw, 52px); }
+  .barbara-modulo .barbara-chat { min-height: 560px; border-radius: 19px; }
+  .barbara-chat-cabecera { min-height: 64px; padding: 10px 13px; }
+  .barbara-chat-estado { font-size: 0; }
+  .barbara-chat-estado i { width: 8px; height: 8px; }
+  .barbara-modulo .barbara-chat-mensaje {
+    grid-template-columns: 32px minmax(0, 1fr);
+    gap: 10px;
+    padding: 17px 14px;
+  }
+  .barbara-chat-remitente { width: 32px; height: 32px; border-radius: 9px; }
+  .barbara-chat-compositor { padding: 12px 10px 9px; }
+  .barbara-modulo .barbara-chat-compositor .barbara-chat-caja {
+    min-height: 56px;
+    padding: 7px 7px 7px 15px;
+    border-radius: 17px;
+  }
+  .barbara-modulo .barbara-chat-enviar { width: 42px; height: 42px; }
+  .barbara-chat-ayuda { display: none; }
+  .barbara-hero-avatar::before { width: 430%; height: 430%; }
+  .barbara-hero-anillo { width: 310%; height: 310%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .barbara-chat-enviando { animation: none; }
+}
+
+/* ══ MESA DE TRABAJO · conversación + cosmos · 26-ago ════════════════════
+   El primer viewport tiene dos actores y ningún panel ornamental: Bárbara a
+   la izquierda y la conversación a la derecha. La escena sigue siendo el
+   plano dominante; el vidrio sólo sostiene contraste tipográfico. */
+.barbara-inicio-principal {
+  display: grid;
+  grid-template-columns: minmax(340px, .82fr) minmax(520px, 1.18fr);
+  min-height: min(760px, calc(100dvh - 48px));
+  gap: clamp(26px, 3vw, 56px);
+  align-items: stretch;
+}
+.barbara-modulo .barbara-inicio-principal .barbara-hero {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  padding: clamp(22px, 3vw, 48px) 0 clamp(30px, 5vw, 72px) clamp(8px, 1.4vw, 22px);
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: clamp(16px, 2.6vh, 28px);
+  text-align: left;
+}
+.barbara-modulo .barbara-inicio-principal .barbara-hero-avatar {
+  width: clamp(280px, 28vw, 430px);
+  height: clamp(280px, 28vw, 430px);
+  margin-left: clamp(-42px, -2vw, -18px);
+}
+.barbara-modulo .barbara-inicio-principal .barbara-hero-img {
+  width: 100%;
+  height: 100%;
+}
+.barbara-modulo .barbara-inicio-principal .barbara-hero-cuerpo {
+  position: relative;
+  z-index: 4;
+  max-width: 620px;
+}
+.barbara-modulo .barbara-inicio-principal .barbara-titular {
+  max-width: 620px;
+  font-size: clamp(40px, 4.4vw, 68px);
+  line-height: .98;
+}
+.barbara-modulo .barbara-inicio-principal .barbara-hero-cuerpo > p {
+  max-width: 520px;
+  margin-top: 15px;
+  font-size: clamp(14px, 1.15vw, 17px);
+}
+
+/* Chat translúcido: el blur es corto para refractar la cinta sin borrarla. */
+.barbara-modulo .barbara-inicio-principal .barbara-chat {
+  min-width: 0;
+  min-height: min(760px, calc(100dvh - 48px));
+  border-color: rgba(255,255,255,.13);
+  background:
+    linear-gradient(145deg, rgba(255,255,255,.038), transparent 34%),
+    rgba(3,5,8,.12);
+  backdrop-filter: blur(10px) saturate(138%);
+  -webkit-backdrop-filter: blur(10px) saturate(138%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 26px 70px rgba(0,0,0,.18);
+}
+.barbara-inicio-principal .barbara-chat-cabecera {
+  background: rgba(3,5,8,.10);
+  backdrop-filter: blur(8px) saturate(135%);
+  -webkit-backdrop-filter: blur(8px) saturate(135%);
+}
+.barbara-inicio-principal .barbara-chat-conversacion { background: transparent; }
+.barbara-inicio-principal .barbara-chat-compositor {
+  padding-inline: clamp(14px, 2.7vw, 34px);
+  background: linear-gradient(180deg, rgba(3,5,8,.04), rgba(3,5,8,.22));
+  backdrop-filter: blur(11px) saturate(140%);
+  -webkit-backdrop-filter: blur(11px) saturate(140%);
+  box-shadow: 0 -18px 40px rgba(0,0,0,.08);
+}
+.barbara-modulo .barbara-inicio-principal .barbara-chat-compositor .barbara-chat-caja {
+  background: rgba(5,8,10,.38);
+  backdrop-filter: blur(15px) saturate(145%);
+  -webkit-backdrop-filter: blur(15px) saturate(145%);
+}
+
+/* Conversación tipo mensajería: cada turno es una burbuja, no una fila de
+   tabla. Bárbara conserva el borde izquierdo; cliente y staff se leen a la
+   derecha como la misma voz de “nosotros”. */
+.barbara-modulo .barbara-chat-historial {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  padding: 24px clamp(16px, 2.6vw, 32px) 34px;
+}
+.barbara-modulo .barbara-chat-mensaje,
+.barbara-modulo .barbara-chat-mensaje.barbara,
+.barbara-modulo .barbara-chat-mensaje.cliente,
+.barbara-modulo .barbara-chat-mensaje.staff {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  grid-template-areas: "avatar cuerpo";
+  width: fit-content;
+  max-width: min(84%, 660px);
+  gap: 10px;
+  align-items: end;
+  padding: 9px 13px 10px 9px;
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 18px 18px 18px 6px;
+  background: rgba(5,8,10,.30);
+  backdrop-filter: blur(12px) saturate(142%);
+  -webkit-backdrop-filter: blur(12px) saturate(142%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.055), 0 12px 30px rgba(0,0,0,.10);
+}
+.barbara-modulo .barbara-chat-mensaje.cliente,
+.barbara-modulo .barbara-chat-mensaje.staff {
+  grid-template-columns: minmax(0, 1fr) 32px;
+  grid-template-areas: "cuerpo avatar";
+  margin-left: auto;
+  padding: 9px 9px 10px 13px;
+  border-color: rgba(205,251,62,.20);
+  border-radius: 18px 18px 6px 18px;
+  background: linear-gradient(145deg, rgba(205,251,62,.13), rgba(9,13,10,.30));
+}
+.barbara-chat-remitente { grid-area: avatar; width: 30px; height: 30px; border-radius: 10px; }
+.barbara-chat-mensaje-cuerpo { grid-area: cuerpo; width: auto; max-width: 600px; }
+.barbara-modulo .barbara-chat-mensaje-cuerpo > b { margin: 0 0 3px; font-size: 10.5px; }
+.barbara-modulo .barbara-chat-mensaje-cuerpo > p { font-size: 13.5px; line-height: 1.55; }
+
+.barbara-semana-resumen { margin-top: 2px; }
+.barbara-semana-titulo { display: grid; gap: 5px; margin-bottom: 18px; }
+.barbara-semana-titulo h3 { margin: 0; }
+.barbara-semana-resumen .barbara-calendario-contexto > span { display: none; }
+.barbara-semana-resumen .barbara-calendario-rango { font-family: var(--barbara-serif); font-size: 18px; }
+.barbara-semana-resumen .barbara-calendario-grilla { min-height: 250px; }
+
+/* Calendario editorial: creación visible, drop zones y modal progresivo. */
+.barbara-calendario-crear { min-height: 38px; gap: 7px; white-space: nowrap; }
+.barbara-calendario-celda.recibe { transition: border-color .16s ease, background .16s ease; }
+.barbara-calendario-celda.recibe:hover {
+  border-color: rgba(205,251,62,.46);
+  background: rgba(205,251,62,.075);
+}
+.barbara-calendario-chip[draggable="true"] { cursor: grab; }
+.barbara-calendario-chip[draggable="true"]:active { cursor: grabbing; }
+
+body.barbara-activa .barbara-plan-editor { width: min(980px, calc(100vw - 28px)); max-width: 980px; }
+body.barbara-activa .barbara-plan-editor .contenido { display: grid; gap: 17px; }
+.barbara-plan-formatos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; }
+.barbara-plan-formatos > button {
+  display: grid;
+  min-height: 82px;
+  padding: 13px;
+  gap: 4px;
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 14px;
+  background: rgba(4,7,9,.16);
+  color: var(--texto);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.barbara-plan-formatos > button:hover { border-color: rgba(205,251,62,.27); }
+.barbara-plan-formatos > button.activo { border-color: rgba(205,251,62,.48); background: rgba(205,251,62,.10); box-shadow: inset 0 1px 0 rgba(255,255,255,.08); }
+.barbara-plan-formatos > button:disabled { opacity: .42; cursor: not-allowed; }
+.barbara-plan-formatos b { font-size: 13px; }
+.barbara-plan-formatos small { color: var(--texto-3); font-size: 10.5px; line-height: 1.4; }
+.barbara-plan-dos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.barbara-plan-tres { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.barbara-plan-personalizacion,
+.barbara-plan-recurrencia {
+  display: grid;
+  gap: 13px;
+  padding: 15px;
+  border: 1px solid rgba(255,255,255,.09);
+  border-radius: 16px;
+  background: rgba(4,7,9,.13);
+}
+.barbara-plan-personalizacion > header { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
+.barbara-plan-personalizacion > header b { font-family: var(--barbara-serif); font-size: 16px; }
+.barbara-plan-personalizacion > header small { color: var(--texto-3); font-size: 10.5px; }
+.barbara-plan-tiktok { display: flex; align-items: end; flex-wrap: wrap; gap: 13px 18px; }
+.barbara-plan-tiktok .campo-lbl { min-width: 190px; }
+.barbara-plan-tiktok > label:not(.campo-lbl) { display: flex; min-height: 38px; align-items: center; gap: 6px; color: var(--texto-2); font-size: 11px; }
+.barbara-plan-reglas { display: grid; grid-template-columns: repeat(7, minmax(74px, 1fr)); gap: 7px; }
+.barbara-plan-reglas > div { display: grid; gap: 5px; padding: 6px; border: 1px solid rgba(255,255,255,.08); border-radius: 10px; opacity: .48; }
+.barbara-plan-reglas > div.elegida { opacity: 1; border-color: rgba(205,251,62,.36); background: rgba(205,251,62,.055); }
+.barbara-plan-reglas button { min-height: 30px; border: 0; background: transparent; color: var(--texto-2); font: inherit; font-size: 10px; font-weight: 700; cursor: pointer; }
+.barbara-plan-reglas .campo { min-width: 0; padding: 6px 3px; font-size: 10px; }
+.barbara-plan-recurrencia > p,
+.barbara-plan-cuota { margin: 0; color: var(--texto-3); font-size: 10.5px; line-height: 1.5; }
+
+/* Analítica: datos densos con una lectura editorial, no una colección de
+   tarjetas KPI intercambiables. */
+.barbara-analisis { display: grid; gap: 22px; }
+.barbara-analisis-resumen { display: grid; grid-template-columns: repeat(4, 1fr); border-block: 1px solid rgba(255,255,255,.09); }
+.barbara-analisis-resumen > div { display: grid; min-height: 122px; align-content: center; gap: 4px; padding: 18px; border-right: 1px solid rgba(255,255,255,.08); }
+.barbara-analisis-resumen > div:last-child { border-right: 0; }
+.barbara-analisis-resumen small,
+.barbara-grafica header small { color: var(--texto-3); font-size: 9.5px; letter-spacing: .09em; text-transform: uppercase; }
+.barbara-analisis-resumen b { font-family: var(--barbara-serif); font-size: clamp(28px, 3vw, 44px); font-weight: 560; line-height: 1; }
+.barbara-analisis-resumen span { color: var(--texto-3); font-size: 9.5px; line-height: 1.4; }
+.barbara-graficas-grid { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(300px, .55fr); gap: 14px; }
+.barbara-graficas-grid.inferior { grid-template-columns: minmax(0, 1.2fr) minmax(300px, .8fr); }
+.barbara-grafica {
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 19px;
+  background: rgba(4,7,9,.18);
+  backdrop-filter: blur(12px) saturate(145%);
+  -webkit-backdrop-filter: blur(12px) saturate(145%);
+}
+.barbara-grafica > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 15px; margin-bottom: 18px; }
+.barbara-grafica h3 { margin: 3px 0 0; font-family: var(--barbara-serif); font-size: 19px; font-weight: 560; }
+.barbara-grafica > header > span { color: var(--texto-3); font-size: 10px; }
+.barbara-grafica-lienzo svg { display: block; width: 100%; overflow: visible; }
+.barbara-grafica-lienzo .guia { stroke: rgba(255,255,255,.075); stroke-width: 1; }
+.barbara-grafica-lienzo .linea { fill: none; stroke: var(--azul); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.barbara-grafica-lienzo circle { fill: #091006; stroke: var(--azul); stroke-width: 3; }
+.barbara-grafica-etiquetas { display: flex; justify-content: space-between; gap: 4px; color: var(--texto-3); font-size: 8px; }
+.barbara-mezcla-barra { display: flex; height: 12px; overflow: hidden; border-radius: 99px; background: rgba(255,255,255,.05); }
+.barbara-mezcla-barra i { height: 100%; }
+.barbara-mezcla :is(.likes) { background: #CDFB3E; }
+.barbara-mezcla :is(.guardados) { background: #7CB6EC; }
+.barbara-mezcla :is(.compartidos) { background: #D7A4FF; }
+.barbara-mezcla :is(.comentarios) { background: #F0B36B; }
+.barbara-mezcla :is(.clics) { background: #F08A7E; }
+.barbara-mezcla-lista { display: grid; gap: 10px; margin-top: 22px; }
+.barbara-mezcla-lista > div { display: grid; grid-template-columns: 8px 1fr auto 32px; align-items: center; gap: 8px; font-size: 11px; }
+.barbara-mezcla-lista > div > i { width: 8px; height: 8px; border-radius: 50%; }
+.barbara-mezcla-lista span { color: var(--texto-2); }
+.barbara-mezcla-lista small { color: var(--texto-3); text-align: right; }
+.barbara-ranking ol { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+.barbara-ranking li { display: grid; grid-template-columns: minmax(140px, 1fr) minmax(80px, .7fr) 44px; align-items: center; gap: 12px; }
+.barbara-ranking li > div { display: grid; min-width: 0; gap: 2px; }
+.barbara-ranking li b { overflow: hidden; font-size: 11px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.barbara-ranking li small { color: var(--texto-3); font-size: 8.5px; text-transform: capitalize; }
+.barbara-ranking li > span { height: 6px; overflow: hidden; border-radius: 99px; background: rgba(255,255,255,.06); }
+.barbara-ranking li > span i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, rgba(205,251,62,.28), var(--azul)); }
+.barbara-ranking li strong { color: var(--azul); font-size: 11px; text-align: right; }
+.barbara-lectura > p { color: var(--texto-2); font-size: 13px; line-height: 1.65; }
+.barbara-lectura-dato { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 13px; margin: 22px 0; }
+.barbara-lectura-dato span { font-family: var(--barbara-serif); color: var(--azul); font-size: 38px; }
+.barbara-lectura-dato p { margin: 0; color: var(--texto-3); font-size: 10px; line-height: 1.45; }
+.barbara-lectura > small { color: var(--texto-3); font-size: 9px; }
+.barbara-analisis-redes { display: grid; gap: 14px; margin-top: 6px; }
+.barbara-analisis-seccion-titulo { display: grid; gap: 4px; }
+.barbara-analisis-seccion-titulo h2 { margin: 0; font-family: var(--barbara-serif); font-size: 24px; }
+.barbara-analisis-vacio { display: flex; min-height: 300px; align-items: center; justify-content: center; gap: 30px; padding: 34px; border: 1px solid rgba(255,255,255,.09); border-radius: 20px; background: rgba(4,7,9,.14); }
+.barbara-analisis-vacio h2 { margin: 6px 0 10px; font-family: var(--barbara-serif); font-size: 28px; }
+.barbara-analisis-vacio p { max-width: 600px; margin: 0; color: var(--texto-2); line-height: 1.6; }
+.barbara-analisis-orbita { position: relative; width: 90px; height: 90px; flex: 0 0 auto; border: 1px solid rgba(205,251,62,.18); border-radius: 50%; }
+.barbara-analisis-orbita::before { position: absolute; inset: 18px; border: 1px solid rgba(205,251,62,.28); border-radius: inherit; content: ""; }
+.barbara-analisis-orbita i { position: absolute; top: 8px; left: 50%; width: 11px; height: 11px; border-radius: 50%; background: var(--azul); box-shadow: 0 0 20px rgba(205,251,62,.55); animation: barbara-orbita-analisis 7s linear infinite; transform-origin: 0 37px; }
+@keyframes barbara-orbita-analisis { to { transform: rotate(360deg); } }
+
+/* El fallback raster acompaña la amplitud nueva del renderer WebGL. */
+@keyframes barbara-levitar-lejos {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(.997); opacity: .90; }
+  50% { transform: translate3d(-10px, -15px, 0) scale(1.007); opacity: .99; }
+}
+@keyframes barbara-cinta-flota {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(.997); opacity: .80; }
+  50% { transform: translate3d(18px, -17px, 0) scale(1.007); opacity: 1; }
+}
+
+@media (max-width: 1180px) {
+  .barbara-inicio-principal { grid-template-columns: minmax(280px, .7fr) minmax(460px, 1.3fr); gap: 22px; }
+  .barbara-modulo .barbara-inicio-principal .barbara-hero-avatar { width: clamp(250px, 26vw, 340px); height: clamp(250px, 26vw, 340px); }
+  .barbara-modulo .barbara-inicio-principal .barbara-titular { font-size: clamp(36px, 4.3vw, 56px); }
+}
+@media (max-width: 900px) {
+  .barbara-inicio-principal { grid-template-columns: 1fr; min-height: 0; }
+  .barbara-modulo .barbara-inicio-principal .barbara-hero { min-height: 540px; align-items: center; padding: 22px 14px 30px; text-align: center; }
+  .barbara-modulo .barbara-inicio-principal .barbara-hero-avatar { margin-left: 0; }
+  .barbara-modulo .barbara-inicio-principal .barbara-hero-cuerpo > p { margin-inline: auto; }
+  .barbara-modulo .barbara-inicio-principal .barbara-chat { min-height: 640px; }
+  .barbara-graficas-grid,
+  .barbara-graficas-grid.inferior { grid-template-columns: 1fr; }
+  .barbara-analisis-resumen { grid-template-columns: repeat(2, 1fr); }
+  .barbara-analisis-resumen > div:nth-child(2) { border-right: 0; }
+  .barbara-analisis-resumen > div:nth-child(-n+2) { border-bottom: 1px solid rgba(255,255,255,.08); }
+}
+@media (max-width: 680px) {
+  .barbara-plan-formatos,
+  .barbara-plan-dos,
+  .barbara-plan-tres { grid-template-columns: 1fr; }
+  .barbara-plan-reglas { grid-template-columns: repeat(4, 1fr); }
+  .barbara-plan-personalizacion > header { display: grid; }
+  .barbara-modulo .barbara-chat-mensaje,
+  .barbara-modulo .barbara-chat-mensaje.barbara,
+  .barbara-modulo .barbara-chat-mensaje.cliente,
+  .barbara-modulo .barbara-chat-mensaje.staff { max-width: 92%; }
+  .barbara-analisis-resumen { grid-template-columns: 1fr; }
+  .barbara-analisis-resumen > div { min-height: 100px; border-right: 0; border-bottom: 1px solid rgba(255,255,255,.08); }
+  .barbara-analisis-vacio { align-items: flex-start; flex-direction: column; }
+  .barbara-ranking li { grid-template-columns: minmax(120px, 1fr) 46px; }
+  .barbara-ranking li > span { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .barbara-analisis-orbita i { animation: none; }
+}
+
+/* ══ AJUSTE DE COMPOSICIÓN · referencia 26-ago ══════════════════════════════
+   El saludo vuelve a gobernar la parte alta y la conversación comienza más
+   abajo. El vacío superior derecho no es espacio perdido: permite leer el
+   planeta antes de entrar a la superficie de trabajo. */
+html:has(body.barbara-activa),
+body.barbara-activa,
+body.barbara-activa #root,
+body.barbara-activa .portal-app {
+  width: 100%;
+  min-height: 100%;
+  height: auto;
+  max-height: none;
+  overflow-y: visible;
+}
+html:has(body.barbara-activa),
+body.barbara-activa { overflow-x: hidden; }
+body.barbara-activa { overflow-y: auto; }
+body.barbara-chat-expandido { overflow: hidden; }
+
+.barbara-modulo,
+.barbara-modulo-contenido,
+.barbara-seccion-crecer,
+.barbara-inicio {
+  height: auto;
+  max-height: none;
+  overflow: visible;
+}
+.barbara-modulo {
+  min-height: 100dvh;
+  padding-bottom: clamp(72px, 9vh, 120px);
+}
+.barbara-modulo-contenido { padding-bottom: 24px; }
+.barbara-inicio { gap: clamp(32px, 4vw, 58px); }
+
+.barbara-inicio-cabecera,
+.barbara-inicio-principal {
+  display: grid;
+  grid-template-columns: minmax(360px, .78fr) minmax(520px, 1.22fr);
+  gap: clamp(28px, 4vw, 72px);
+}
+.barbara-inicio-cabecera {
+  position: relative;
+  z-index: 3;
+  min-height: clamp(170px, 20vh, 230px);
+  align-items: end;
+  padding: clamp(20px, 4vh, 52px) 0 0;
+}
+.barbara-inicio-cabecera .barbara-hero-cuerpo {
+  grid-column: 2;
+  width: min(100%, 980px);
+  min-width: 0;
+  padding-right: clamp(10px, 2vw, 30px);
+}
+.barbara-inicio-cabecera .barbara-rotulo { margin-bottom: 18px; }
+.barbara-modulo .barbara-inicio-cabecera .barbara-titular {
+  max-width: 980px;
+  margin: 0;
+  overflow: visible;
+  font-size: clamp(46px, 5.5vw, 82px);
+  line-height: 1.08;
+  text-wrap: balance;
+}
+.barbara-inicio-cabecera .barbara-hero-cuerpo > p {
+  max-width: 700px;
+  margin: 16px 0 0;
+  color: var(--texto-2);
+  font-size: clamp(15px, 1.25vw, 18px);
+  line-height: 1.55;
+}
+.barbara-palabra {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.barbara-inicio-principal {
+  min-height: 0;
+  align-items: start;
+}
+.barbara-modulo .barbara-inicio-principal .barbara-hero {
+  display: flex;
+  min-height: clamp(600px, 69vh, 760px);
+  align-items: center;
+  justify-content: flex-start;
+  padding: clamp(16px, 4vh, 52px) 0 0;
+}
+.barbara-modulo .barbara-inicio-principal .barbara-hero-avatar {
+  width: clamp(360px, 31vw, 500px);
+  height: clamp(360px, 31vw, 500px);
+  margin: 0 auto;
+}
+.barbara-modulo .barbara-inicio-principal .barbara-chat {
+  min-height: clamp(620px, 70vh, 790px);
+  margin-top: clamp(52px, 8vh, 104px);
+}
+
+/* El halo acompaña al personaje, no tiñe todo el plano. La escala de Bárbara
+   permanece intacta; sólo bajan radio y luminancia de sus capas traseras. */
+.barbara-hero-avatar::before {
+  width: 205%;
+  height: 205%;
+  background: radial-gradient(circle, rgba(205,251,62,.075) 0%, rgba(205,251,62,.026) 31%, rgba(205,251,62,.008) 49%, transparent 69%);
+  filter: blur(18px);
+  animation: barbara-halo-respira-suave 7.2s var(--barbara-respirar) infinite;
+}
+.barbara-hero-anillo {
+  width: 184%;
+  height: 184%;
+  animation: barbara-anillo-respira-suave 7.2s var(--barbara-respirar) infinite;
+}
+@keyframes barbara-halo-respira-suave {
+  0%, 100% { opacity: .22; transform: scale(.98) translateZ(0); }
+  50% { opacity: .40; transform: scale(1.025) translateZ(0); }
+}
+@keyframes barbara-anillo-respira-suave {
+  0%, 100% { opacity: .26; transform: translate(-50%,-50%) scale(.985) translateZ(0); }
+  50% { opacity: .44; transform: translate(-50%,-50%) scale(1.018) translateZ(0); }
+}
+
+/* Expandir/restaurar vive junto al envío para que la acción esté disponible
+   exactamente en el punto donde se usa el chat. */
+.barbara-chat-acciones {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 7px;
+}
+.barbara-modulo .barbara-chat-expandir {
+  display: grid;
+  width: 46px;
+  height: 46px;
+  min-width: 46px;
+  padding: 0;
+  place-items: center;
+  border-color: rgba(255,255,255,.14);
+  border-radius: 999px;
+  background: rgba(255,255,255,.045);
+  color: var(--texto-2);
+}
+.barbara-modulo .barbara-chat-expandir:hover {
+  border-color: rgba(205,251,62,.35);
+  background: rgba(205,251,62,.09);
+  color: var(--azul);
+}
+.barbara-modulo .barbara-chat.expandido {
+  position: fixed;
+  inset: 18px;
+  z-index: 100;
+  width: auto;
+  height: auto;
+  min-width: 0;
+  min-height: 0;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  border-color: rgba(255,255,255,.18);
+  background: rgba(3,5,8,.88);
+  backdrop-filter: blur(28px) saturate(145%);
+  -webkit-backdrop-filter: blur(28px) saturate(145%);
+  box-shadow: 0 0 0 18px rgba(0,0,0,.80), 0 36px 100px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.09);
+}
+.barbara-modulo .barbara-chat.expandido .barbara-chat-historial {
+  padding-inline: clamp(24px, 12vw, 220px);
+}
+
+/* En Bárbara se prioriza leer sobre truncar. Las fichas crecen hacia abajo
+   cuando un título o nombre no cabe en la línea disponible. */
+.barbara-modulo :is(h1, h2, h3, h4, p, b, strong, small, em, label, button) {
+  word-break: normal;
+  overflow-wrap: normal;
+  hyphens: none;
+}
+.barbara-modulo :is(
+  .barbara-calendario-chip-copia small,
+  .barbara-calendario-chip-copia strong,
+  .barbara-entrega-resumen small,
+  .barbara-biblioteca-info p,
+  .barbara-ranking li b
+) {
+  display: block;
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+  -webkit-line-clamp: unset;
+  -webkit-box-orient: initial;
+}
+.barbara-calendario-chip-copia,
+.barbara-chat-mensaje-cuerpo,
+.barbara-entrega-resumen > span:first-child,
+.barbara-ranking li > div { min-width: 0; }
+.barbara-calendario-chip-copia strong,
+.barbara-chat-mensaje-cuerpo > p,
+.barbara-entrega-resumen small,
+.barbara-biblioteca-info p,
+.barbara-ranking li b { line-height: 1.45; }
+
+@media (max-width: 1180px) {
+  .barbara-inicio-cabecera,
+  .barbara-inicio-principal { grid-template-columns: minmax(300px, .72fr) minmax(430px, 1.28fr); gap: 26px; }
+  .barbara-modulo .barbara-inicio-principal .barbara-hero-avatar {
+    width: clamp(330px, 34vw, 430px);
+    height: clamp(330px, 34vw, 430px);
+  }
+  .barbara-modulo .barbara-inicio-cabecera .barbara-titular { font-size: clamp(42px, 5.5vw, 68px); }
+}
+
+@media (max-width: 900px) {
+  .barbara-inicio-cabecera,
+  .barbara-inicio-principal { grid-template-columns: 1fr; }
+  .barbara-inicio-cabecera { min-height: 0; padding: 24px 14px 0; text-align: center; }
+  .barbara-inicio-cabecera .barbara-hero-cuerpo { grid-column: 1; padding: 0; }
+  .barbara-inicio-cabecera .barbara-hero-cuerpo > p { margin-inline: auto; }
+  .barbara-modulo .barbara-inicio-principal .barbara-hero { min-height: 470px; padding-top: 8px; }
+  .barbara-modulo .barbara-inicio-principal .barbara-hero-avatar {
+    width: clamp(330px, 58vw, 440px);
+    height: clamp(330px, 58vw, 440px);
+  }
+  .barbara-modulo .barbara-inicio-principal .barbara-chat { min-height: 640px; margin-top: 12px; }
+}
+
+@media (max-width: 560px) {
+  .barbara-modulo .barbara-inicio-cabecera .barbara-titular { font-size: clamp(38px, 12vw, 56px); line-height: 1.1; }
+  .barbara-modulo .barbara-inicio-principal .barbara-hero { min-height: 390px; }
+  .barbara-modulo .barbara-inicio-principal .barbara-hero-avatar {
+    width: clamp(285px, 80vw, 350px);
+    height: clamp(285px, 80vw, 350px);
+  }
+  .barbara-modulo .barbara-chat-expandir,
+  .barbara-modulo .barbara-chat-enviar { width: 42px; height: 42px; min-width: 42px; }
+  .barbara-modulo .barbara-chat.expandido { inset: 6px; border-radius: 18px; box-shadow: 0 0 0 6px rgba(0,0,0,.88); }
+  .barbara-modulo .barbara-chat.expandido .barbara-chat-historial { padding-inline: 14px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .barbara-hero-avatar::before { animation: none; opacity: .30; }
+  .barbara-hero-anillo { animation: none; opacity: .34; }
+}
+
+/* ══ PRIORIDAD A LA CONVERSACIÓN · pase de proporciones ════════════════════
+   El riel permanece anclado al viewport; el saludo usa el ancho disponible
+   y el cuerpo se reparte 30/70 a favor de la herramienta de conversación. */
+@media (min-width: 901px) {
+  .barbara-modulo {
+    --barbara-rail-ancho: 270px;
+    grid-template-columns: var(--barbara-rail-ancho) minmax(0, 1fr);
+  }
+  .barbara-modulo .barbara-modulo-rail {
+    position: fixed;
+    top: 24px;
+    left: 24px;
+    z-index: 20;
+    width: var(--barbara-rail-ancho);
+    height: calc(100dvh - 48px);
+    max-height: calc(100dvh - 48px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .barbara-modulo-contenido { grid-column: 2; }
+}
+
+.barbara-inicio { gap: clamp(30px, 3.4vw, 48px); }
+.barbara-inicio-cabecera,
+.barbara-inicio-principal {
+  grid-template-columns: minmax(270px, .34fr) minmax(620px, 1.66fr);
+  gap: clamp(14px, 1.8vw, 28px);
+}
+.barbara-inicio-cabecera {
+  min-height: clamp(150px, 18vh, 205px);
+  padding-top: clamp(12px, 2.5vh, 30px);
+}
+.barbara-inicio-cabecera .barbara-hero-cuerpo {
+  grid-column: 1 / -1;
+  width: 100%;
+  max-width: none;
+  padding-right: 0;
+}
+.barbara-modulo .barbara-inicio-cabecera .barbara-titular {
+  width: 100%;
+  max-width: none;
+  font-size: clamp(52px, 6vw, 90px);
+  line-height: 1.04;
+  text-wrap: pretty;
+}
+.barbara-inicio-cabecera .barbara-hero-cuerpo > p {
+  max-width: 880px;
+  margin-top: 12px;
+}
+
+.barbara-inicio-principal {
+  --barbara-chat-alto: clamp(540px, calc(100dvh - 270px), 650px);
+  align-items: start;
+}
+.barbara-modulo .barbara-inicio-principal .barbara-hero {
+  height: var(--barbara-chat-alto);
+  min-height: var(--barbara-chat-alto);
+  justify-content: center;
+  padding: 0;
+}
+.barbara-modulo .barbara-inicio-principal .barbara-hero-avatar {
+  width: clamp(300px, 24vw, 380px);
+  height: clamp(300px, 24vw, 380px);
+}
+.barbara-modulo .barbara-inicio-principal .barbara-chat {
+  height: var(--barbara-chat-alto);
+  min-height: var(--barbara-chat-alto);
+  max-height: var(--barbara-chat-alto);
+  margin-top: 0;
+}
+.barbara-modulo .barbara-inicio-principal .barbara-chat-historial {
+  gap: 10px;
+  padding-block: 18px 22px;
+}
+.barbara-modulo .barbara-inicio-principal .barbara-chat-mensaje,
+.barbara-modulo .barbara-inicio-principal .barbara-chat-mensaje.barbara,
+.barbara-modulo .barbara-inicio-principal .barbara-chat-mensaje.cliente,
+.barbara-modulo .barbara-inicio-principal .barbara-chat-mensaje.staff {
+  max-width: min(88%, 820px);
+}
+.barbara-inicio-principal .barbara-chat-cabecera {
+  min-height: 64px;
+  padding-block: 10px;
+}
+.barbara-inicio-principal .barbara-chat-compositor {
+  padding-block: 12px 9px;
+}
+
+@media (max-width: 1180px) and (min-width: 901px) {
+  .barbara-modulo { --barbara-rail-ancho: 236px; grid-template-columns: var(--barbara-rail-ancho) minmax(0, 1fr); }
+  .barbara-inicio-cabecera,
+  .barbara-inicio-principal { grid-template-columns: minmax(220px, .3fr) minmax(0, 1.7fr); gap: 16px; }
+  .barbara-modulo .barbara-inicio-principal .barbara-hero-avatar {
+    width: clamp(260px, 27vw, 330px);
+    height: clamp(260px, 27vw, 330px);
+  }
+  .barbara-modulo .barbara-inicio-cabecera .barbara-titular { font-size: clamp(46px, 6vw, 72px); }
+}
+
+@media (max-width: 900px) {
+  .barbara-modulo .barbara-modulo-rail {
+    position: static;
+    width: 100%;
+    height: auto;
+    max-height: none;
+    overflow: visible;
+  }
+  .barbara-modulo-contenido { grid-column: auto; }
+  .barbara-inicio-cabecera,
+  .barbara-inicio-principal { grid-template-columns: 1fr; }
+  .barbara-inicio-principal { --barbara-chat-alto: 620px; }
+  .barbara-modulo .barbara-inicio-principal .barbara-hero { height: 390px; min-height: 390px; }
+  .barbara-modulo .barbara-inicio-principal .barbara-hero-avatar {
+    width: clamp(290px, 54vw, 360px);
+    height: clamp(290px, 54vw, 360px);
+  }
+}
+
+@media (max-width: 560px) {
+  .barbara-modulo .barbara-inicio-cabecera .barbara-titular { font-size: clamp(40px, 12vw, 58px); }
+  .barbara-inicio-principal { --barbara-chat-alto: 590px; }
+  .barbara-modulo .barbara-inicio-principal .barbara-hero { height: 340px; min-height: 340px; }
+  .barbara-modulo .barbara-inicio-principal .barbara-hero-avatar {
+    width: clamp(260px, 76vw, 320px);
+    height: clamp(260px, 76vw, 320px);
+  }
+}
+
+/* ══ PRESENCIA VIVA DE BÁRBARA ═════════════════════════════════════════════
+   La columna del personaje funciona como un pequeño escenario contenido. La
+   burbuja pertenece a ese escenario y nunca invade el producto principal. */
+.barbara-modulo .barbara-inicio-principal .barbara-hero {
+  position: relative;
+  isolation: isolate;
+}
+.barbara-modulo .barbara-inicio-principal .barbara-hero-avatar {
+  width: min(320px, calc(100% - 32px));
+  height: auto;
+  aspect-ratio: 1;
+  margin-inline: auto;
+  transform: translateX(-8px);
+}
+.barbara-hero-personaje {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 2;
+  width: 118%;
+  height: 118%;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+}
+.barbara-hero-personaje .barbara-hero-img {
+  width: 100%;
+  height: 100%;
+}
+.barbara-estado-vivo {
+  position: absolute;
+  top: clamp(14px, 3.6vh, 38px);
+  left: 50%;
+  z-index: 6;
+  display: grid;
+  width: min(260px, calc(100% - 24px));
+  height: auto;
+  min-height: 0;
+  max-height: none;
+  gap: 5px;
+  padding: 11px 14px 12px;
+  overflow: visible;
+  border: 1px solid rgba(255,255,255,.13);
+  border-radius: 16px 16px 16px 5px;
+  background: rgba(5,8,10,.70);
+  color: var(--texto);
+  box-shadow: 0 14px 34px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.055);
+  backdrop-filter: blur(16px) saturate(135%);
+  -webkit-backdrop-filter: blur(16px) saturate(135%);
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+.barbara-estado-vivo::after {
+  position: absolute;
+  bottom: -7px;
+  left: 22px;
+  width: 13px;
+  height: 13px;
+  border-right: 1px solid rgba(255,255,255,.13);
+  border-bottom: 1px solid rgba(255,255,255,.13);
+  background: rgba(5,8,10,.70);
+  content: "";
+  transform: rotate(45deg);
+}
+.barbara-estado-vivo > span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--texto-3);
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: .11em;
+  text-transform: uppercase;
+}
+.barbara-estado-vivo > span i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--azul);
+  box-shadow: 0 0 11px rgba(205,251,62,.58);
+}
+.barbara-estado-vivo > p {
+  margin: 0;
+  color: #eceee8;
+  font-size: 11.5px;
+  line-height: 1.45;
+  text-wrap: pretty;
+  animation: barbara-estado-cambia .42s cubic-bezier(.22,.8,.3,1) both;
+}
+@keyframes barbara-estado-cambia {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 1180px) and (min-width: 901px) {
+  .barbara-modulo .barbara-inicio-principal .barbara-hero-avatar {
+    width: min(290px, calc(100% - 24px));
+    height: auto;
+    transform: translateX(-5px);
+  }
+  .barbara-estado-vivo { width: min(230px, calc(100% - 18px)); padding-inline: 12px; }
+}
+
+@media (max-width: 900px) {
+  .barbara-modulo .barbara-inicio-principal .barbara-hero-avatar {
+    width: clamp(290px, 54vw, 350px);
+    height: auto;
+    transform: none;
+  }
+  .barbara-estado-vivo { top: 4px; width: min(290px, calc(100% - 30px)); }
+}
+
+@media (max-width: 560px) {
+  .barbara-modulo .barbara-inicio-principal .barbara-hero-avatar {
+    width: clamp(260px, 74vw, 310px);
+    height: auto;
+  }
+  .barbara-estado-vivo { width: min(270px, calc(100% - 22px)); }
+  .barbara-hero-personaje { width: 114%; height: 114%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .barbara-estado-vivo > p { animation: none; }
+}
+
+/* Actividad viva: una sola firma de movimiento sobre el personaje. Las cuatro
+   fases conservan la misma huella para que comunicar trabajo no mueva el layout. */
+.barbara-trabajando {
+  position: absolute;
+  top: calc(50% - 198px);
+  left: 50%;
+  z-index: 8;
+  width: 36px;
+  height: 36px;
+  border: 1px solid rgba(205,251,62,.22);
+  border-radius: 50%;
+  background: rgba(3,6,7,.64);
+  box-shadow: 0 0 24px rgba(205,251,62,.13), inset 0 1px 0 rgba(255,255,255,.08);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+.barbara-trabajando svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.barbara-trabajando-forma {
+  opacity: 0;
+  stroke: var(--azul);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+  filter: drop-shadow(0 0 4px rgba(205,251,62,.48));
+  transform-box: fill-box;
+  transform-origin: center;
+  transform: scale(.72) rotate(-12deg);
+  transition: opacity .34s ease, transform .52s cubic-bezier(.22,.8,.3,1);
+}
+.barbara-trabajando-forma .relleno { fill: var(--azul); stroke: none; }
+.barbara-trabajando-forma .nucleo { fill: rgba(205,251,62,.16); }
+.barbara-trabajando[data-forma="estrella"] .forma-estrella,
+.barbara-trabajando[data-forma="orbita"] .forma-orbita,
+.barbara-trabajando[data-forma="pulso"] .forma-pulso,
+.barbara-trabajando[data-forma="nucleo"] .forma-nucleo {
+  opacity: 1;
+  transform: scale(1) rotate(0);
+}
+.barbara-trabajando[data-forma="orbita"] .forma-orbita {
+  stroke-dasharray: 4 3;
+  animation: barbara-indicador-orbita 2.8s linear infinite;
+}
+@keyframes barbara-indicador-orbita { to { stroke-dashoffset: -28; } }
+
+/* Bárbara crece dentro del mismo escenario: no se altera su columna, halo ni chat. */
+.barbara-hero-personaje { width: 136%; height: 136%; }
+
+/* Tarjetas editoriales simples: el tipo, no una barra lateral ni el estado,
+   determina el color. El estado sigue disponible en texto y accesibilidad. */
+.barbara-modulo .barbara-calendario-chip {
+  --chip-acento: #cdfb3e;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: 7px;
+  min-height: 48px;
+  padding: 7px;
+  border: 1px solid color-mix(in srgb, var(--chip-acento) 30%, rgba(255,255,255,.08));
+  border-left: 1px solid color-mix(in srgb, var(--chip-acento) 30%, rgba(255,255,255,.08));
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--chip-acento) 8%, rgba(5,8,10,.76));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.045);
+  backdrop-filter: blur(9px) saturate(125%);
+  -webkit-backdrop-filter: blur(9px) saturate(125%);
+  transition: opacity .16s ease, transform .16s ease, border-color .16s ease, background .16s ease;
+}
+.barbara-modulo .barbara-calendario-chip::after { display: none; }
+.barbara-modulo .barbara-calendario-chip.tipo-carrusel { --chip-acento: #cdfb3e; }
+.barbara-modulo .barbara-calendario-chip.tipo-historia { --chip-acento: #b8a6ff; }
+.barbara-modulo .barbara-calendario-chip.tipo-ugc { --chip-acento: #ff8d72; }
+.barbara-modulo .barbara-calendario-chip .barbara-calendario-chip-icono {
+  width: 22px;
+  height: 22px;
+  border: 0;
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--chip-acento) 17%, transparent);
+  color: color-mix(in srgb, var(--chip-acento) 88%, white);
+  box-shadow: none;
+  font-family: var(--barbara-sans);
+  font-size: 9px;
+  font-weight: 800;
+}
+.barbara-calendario-chip-meta small { color: var(--chip-acento); }
+.barbara-modulo .barbara-calendario-chip.futura:hover {
+  border-color: color-mix(in srgb, var(--chip-acento) 56%, rgba(255,255,255,.12));
+  background: color-mix(in srgb, var(--chip-acento) 12%, rgba(6,9,11,.82));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+  transform: translateY(-1px);
+}
+.barbara-calendario-chip.arrastrando { opacity: .28; transform: scale(.97); }
+.barbara-modulo .barbara-calendario-celda.destino,
+.barbara-modulo .barbara-calendario-celda.destino:hover {
+  border-color: rgba(205,251,62,.62);
+  background: rgba(205,251,62,.09);
+  box-shadow: inset 0 0 0 1px rgba(205,251,62,.12), 0 0 24px rgba(205,251,62,.06);
+}
+
+/* La curva explica sus valores sin depender del hover. */
+.barbara-grafica-lienzo .eje-y {
+  fill: var(--texto-3);
+  font-family: var(--barbara-sans);
+  font-size: 9px;
+  font-weight: 600;
+}
+.barbara-grafica-lienzo .valor-punto {
+  fill: #eef3e6;
+  font-family: var(--barbara-sans);
+  font-size: 9px;
+  font-weight: 700;
+  paint-order: stroke;
+  stroke: rgba(3,5,7,.92);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+.barbara-grafica-evolucion .barbara-grafica-etiquetas { padding-inline: 58px 28px; }
+
+@media (max-width: 1180px) and (min-width: 901px) {
+  .barbara-hero-personaje { width: 132%; height: 132%; }
+  .barbara-trabajando { top: calc(50% - 184px); }
+}
+
+@media (max-width: 900px) {
+  .barbara-hero-personaje { width: 130%; height: 130%; }
+  .barbara-trabajando { top: 18px; }
+}
+
+@media (max-width: 560px) {
+  .barbara-hero-personaje { width: 126%; height: 126%; }
+  .barbara-trabajando { top: 5px; }
+  .barbara-grafica-evolucion .barbara-grafica-etiquetas { padding-inline: 44px 18px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .barbara-trabajando,
+  .barbara-trabajando-forma,
+  .barbara-calendario-chip { transition: none; }
+  .barbara-trabajando[data-forma="orbita"] .forma-orbita { animation: none; }
+}
+
+/* Calendario temporal: una sola línea de borde usa el color completo del tipo.
+   Los días cerrados se leen como archivo, no como espacios todavía editables. */
+.barbara-modulo .barbara-calendario-chip,
+.barbara-modulo .barbara-calendario-chip.futura,
+.barbara-modulo .barbara-calendario-chip.futura:hover {
+  border: 1px solid var(--chip-acento);
+  border-color: var(--chip-acento);
+}
+.barbara-modulo .barbara-calendario-celda.pasado,
+.barbara-modulo .barbara-calendario-celda.pasado:hover {
+  border-color: rgba(255,255,255,.075);
+  background-color: rgba(5,7,9,.46);
+  background-image: repeating-linear-gradient(
+    135deg,
+    transparent 0,
+    transparent 9px,
+    rgba(210,216,205,.075) 9px,
+    rgba(210,216,205,.075) 10px
+  );
+}
+.barbara-calendario-celda.pasado .barbara-calendario-num {
+  color: rgba(205,210,202,.42);
+}
+.barbara-calendario-celda.pasado .barbara-calendario-chip {
+  opacity: .32;
+  filter: grayscale(1) saturate(0);
+}
+
+/* Contrato de superficies para producción. El color base existe por separado
+   del blur y del gradiente: aunque una plataforma no componga backdrop-filter,
+   la interfaz nunca puede quedar visualmente vacía. */
+.barbara-modulo {
+  --barbara-produccion-superficie: rgba(5,8,10,.68);
+  --barbara-produccion-superficie-fuerte: rgba(4,7,10,.82);
+  --barbara-produccion-superficie-suave: rgba(7,10,13,.56);
+}
+.barbara-modulo .barbara-modulo-rail {
+  background-color: var(--barbara-produccion-superficie-fuerte);
+}
+.barbara-modulo .barbara-inicio-principal .barbara-chat {
+  background-color: rgba(4,7,10,.56);
+  background-image: linear-gradient(145deg, rgba(255,255,255,.04), transparent 34%);
+}
+.barbara-inicio-principal .barbara-chat-cabecera {
+  background-color: rgba(4,7,10,.54);
+}
+.barbara-inicio-principal .barbara-chat-conversacion {
+  background-color: rgba(3,6,9,.28);
+}
+.barbara-modulo .barbara-inicio-principal .barbara-chat-mensaje.barbara {
+  background-color: rgba(7,11,13,.54);
+}
+.barbara-modulo .barbara-inicio-principal .barbara-chat-mensaje.cliente,
+.barbara-modulo .barbara-inicio-principal .barbara-chat-mensaje.staff {
+  background-color: rgba(22,29,12,.48);
+}
+.barbara-inicio-principal .barbara-chat-compositor {
+  background-color: rgba(3,6,9,.72);
+}
+.barbara-modulo .barbara-inicio-principal .barbara-chat-compositor .barbara-chat-caja {
+  background-color: rgba(9,13,16,.90);
+}
+.barbara-modulo .barbara-tarjeta,
+.barbara-modulo .barbara-tarjeta-interna,
+.barbara-modulo .bloque,
+.barbara-modulo .barbara-config-seccion,
+.barbara-modulo .barbara-uso,
+.barbara-modulo .barbara-red,
+.barbara-modulo .barbara-grafica {
+  background-color: var(--barbara-produccion-superficie);
+}
+.barbara-modulo .barbara-calendario-celda:not(.pasado) {
+  background-color: var(--barbara-produccion-superficie-suave);
+}
+.barbara-modulo .barbara-calendario-chip {
+  background-color: rgba(6,9,12,.82);
+  background-image: linear-gradient(145deg, color-mix(in srgb, var(--chip-acento) 12%, transparent), transparent 64%);
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  @supports not (-webkit-backdrop-filter: blur(1px)) {
+    .barbara-modulo .barbara-inicio-principal .barbara-chat,
+    .barbara-modulo .barbara-tarjeta,
+    .barbara-modulo .barbara-grafica,
+    .barbara-modulo .barbara-config-seccion,
+    .barbara-modulo .barbara-red { background-color: rgba(5,8,10,.92); }
+    .barbara-modulo .barbara-calendario-celda:not(.pasado) { background-color: rgba(7,10,13,.88); }
+  }
 }

@@ -37,19 +37,12 @@
  */
 import { claude, textOf, supabase } from "./motor.mjs";
 import { construirContrastes, huellaEvidencia, materialAnonimo } from "./rendimiento.mjs";
+import { MINIMO_PIEZAS, MINIMO_MARCAS, cumpleUmbralGlobal } from "./umbral-global.mjs";
 
 const SB_URL = process.env.SUPABASE_URL;
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const AK = process.env.ANTHROPIC_API_KEY;
 const APLICAR = process.argv.includes("--aplicar");
-
-/* Mínimo de piezas cerradas para que mirar el conjunto signifique algo. Por
-   debajo de esto, cualquier "patrón" es la casualidad de dos clientes. */
-const MINIMO_PIEZAS = 12;
-/* Y de cuántas marcas distintas: 20 piezas de un solo cliente describen a ese
-   cliente, no un patrón global. Eso es justo lo que la memoria individual ya
-   hace mejor. */
-const MINIMO_MARCAS = 3;
 
 if (!SB_URL || !SB_KEY) { console.error("Faltan SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY"); process.exit(1); }
 if (!AK) { console.error("Falta ANTHROPIC_API_KEY"); process.exit(1); }
@@ -100,7 +93,7 @@ async function main() {
   console.log(`Piezas cerradas: ${piezas.length} de ${marcas.size} marcas ` +
               `(${bien.length} sin correcciones, ${mal.length} con correcciones).`);
 
-  if (piezas.length < MINIMO_PIEZAS || marcas.size < MINIMO_MARCAS) {
+  if (!cumpleUmbralGlobal({ totalPiezas: piezas.length, totalMarcas: marcas.size })) {
     console.log(
       `\nTodavía no alcanza para destilar nada (hacen falta ${MINIMO_PIEZAS} piezas ` +
       `de ${MINIMO_MARCAS} marcas). No se inventa un patrón con poca muestra: ` +

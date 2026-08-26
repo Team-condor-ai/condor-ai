@@ -83,6 +83,30 @@ function quienEs(req) {
   return { rol: partes[1], email: decodeURIComponent(partes.slice(2).join(".")) };
 }
 
+/**
+ * Lee `clientes.negocio` sobre una fila con relación incrustada.
+ *
+ * PostgREST deja filtrar por una columna de la tabla embebida
+ * (`?clientes.negocio=eq.Cóndor.AI`, lo que hace `/acceso/barbara` para
+ * encontrar la ficha de Cóndor). Acá eso llegaba como la clave literal
+ * "clientes.negocio", se resolvía a `undefined` y la consulta devolvía
+ * vacío: staff veía "No existe todavía la fila de Cóndor.AI".
+ *
+ * La relación puede venir como objeto o como arreglo de uno, según cómo la
+ * declare cada pantalla; se cubren las dos.
+ */
+function leerRuta(fila, clave) {
+  if (!clave.includes(".")) return fila[clave];
+  let actual = fila;
+  for (const paso of clave.split(".")) {
+    if (actual == null) return undefined;
+    if (Array.isArray(actual)) actual = actual[0];
+    if (actual == null) return undefined;
+    actual = actual[paso];
+  }
+  return actual;
+}
+
 /** Subconjunto de PostgREST: lo que estas pantallas usan y nada más. */
 function filtrar(filas, params) {
   let r = [...filas];
@@ -97,7 +121,7 @@ function filtrar(filas, params) {
     else if (val === "null") val = null;
     else if (/^-?\d+$/.test(val)) val = Number(val);
     r = r.filter((f) => {
-      const a = f[k];
+      const a = leerRuta(f, k);
       switch (op) {
         case "eq": case "is": return a === val;
         case "neq": return a !== val;
@@ -143,6 +167,21 @@ function comoRLS(tabla, filas, quien, datos) {
   if (tabla === "clientes") return filas.filter((f) => f.id === mio.id);
   if (tabla === "cobros" || tabla === "pagos")
     return filas.filter((f) => f.cliente_id === mio.id);
+
+  /* Bárbara: `cliente_ve_su_barbara` y las políticas hermanas limitan cada
+     tabla a la ficha del cliente dueño de la sesión. Sin esto el cliente
+     demo vería la Bárbara de Cóndor —que existe para que staff entre por
+     /acceso/barbara— y la demo mentiría justo sobre el aislamiento entre
+     marcas, que es el invariante central del producto. */
+  if (tabla === "barbara_clientes")
+    return filas.filter((f) => f.cliente_id === mio.id);
+  if (tabla.startsWith("barbara_")) {
+    const mias = new Set(
+      datos.barbara_clientes.filter((b) => b.cliente_id === mio.id).map((b) => b.id),
+    );
+    return filas.filter((f) =>
+      f.barbara_cliente_id === undefined || mias.has(f.barbara_cliente_id));
+  }
   return filas;
 }
 
@@ -208,6 +247,67 @@ export function pluginPortalDemo() {
         // ── es_admin(): lo mismo que decide el rol en Postgres ──
         if (ruta === "/rest/v1/rpc/es_admin") {
           return json(res, quien ? quien.rol === "staff" : false);
+        }
+
+        // ── RPC del calendario de Bárbara ───────────────────────────────
+        // En producción estas operaciones son SECURITY DEFINER y verifican
+        // propiedad/estado. La demo reproduce la mutación para que crear,
+        // arrastrar y editar no sean botones de utilería.
+        if (ruta === "/rest/v1/rpc/barbara_crear_planes" && req.method === "POST") {
+          if (!quien) return json(res, { message: "no autenticado" }, 401);
+          const b = (await cuerpoJson(req)) ?? {};
+          const ocurrencias = Array.isArray(b.p_ocurrencias) ? b.p_ocurrencias : [];
+          if (!ocurrencias.length || !String(b.p_titulo || "").trim()) return json(res, { message: "plan incompleto" }, 400);
+          const serieId = ocurrencias.length > 1 ? uuid() : null;
+          const creadas = ocurrencias.map((programada_para) => ({
+            id: uuid(), barbara_cliente_id: b.p_barbara_cliente_id, barbara_memoria_id: null,
+            tipo: b.p_tipo, plataforma: b.p_plataforma, programada_para,
+            estado: "borrador", zona_horaria: b.p_zona_horaria || "America/Santiago",
+            motivo_reprogramacion: null,
+            razon_planificacion: ocurrencias.length > 1 ? "Serie semanal creada en el portal" : "Plan creado en el portal",
+            ultimo_error: null, intentos_publicacion: 0,
+            titulo: String(b.p_titulo).trim(), brief: b.p_brief || null,
+            configuracion: b.p_configuracion || {}, serie_id: serieId,
+            recurrencia_reglas: b.p_recurrencia_reglas || null,
+            recurrencia_desde: b.p_recurrencia_desde || null,
+            recurrencia_hasta: b.p_recurrencia_hasta || null,
+            barbara_memoria: { angulo: String(b.p_titulo).trim() },
+            creado_por: quien.email, creado_en: new Date().toISOString(), actualizado_en: new Date().toISOString(),
+          }));
+          datos.barbara_programaciones.push(...creadas);
+          return json(res, creadas);
+        }
+        if (ruta === "/rest/v1/rpc/barbara_actualizar_plan" && req.method === "POST") {
+          if (!quien) return json(res, { message: "no autenticado" }, 401);
+          const b = (await cuerpoJson(req)) ?? {};
+          const fila = datos.barbara_programaciones.find((p) => p.id === b.p_programacion_id);
+          if (!fila) return json(res, { message: "Plan no encontrado" }, 404);
+          Object.assign(fila, {
+            plataforma: b.p_plataforma, titulo: String(b.p_titulo || "").trim(),
+            brief: b.p_brief || null, configuracion: b.p_configuracion || {},
+            actualizado_en: new Date().toISOString(),
+          });
+          return json(res, fila);
+        }
+        if (ruta === "/rest/v1/rpc/barbara_reprogramar" && req.method === "POST") {
+          if (!quien) return json(res, { message: "no autenticado" }, 401);
+          const b = (await cuerpoJson(req)) ?? {};
+          const fila = datos.barbara_programaciones.find((p) => p.id === b.p_programacion_id);
+          if (!fila) return json(res, { message: "Programación no encontrada" }, 404);
+          Object.assign(fila, {
+            programada_para: b.p_programada_para, motivo_reprogramacion: b.p_motivo || null,
+            actualizado_en: new Date().toISOString(),
+          });
+          return json(res, fila);
+        }
+        if (ruta === "/rest/v1/rpc/barbara_cambiar_estado_programacion" && req.method === "POST") {
+          if (!quien) return json(res, { message: "no autenticado" }, 401);
+          const b = (await cuerpoJson(req)) ?? {};
+          const fila = datos.barbara_programaciones.find((p) => p.id === b.p_programacion_id);
+          if (!fila) return json(res, { message: "Programación no encontrada" }, 404);
+          fila.estado = b.p_estado;
+          fila.actualizado_en = new Date().toISOString();
+          return json(res, fila);
         }
 
         // ── Tablas ──

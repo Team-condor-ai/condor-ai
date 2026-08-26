@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Ico } from "../disenio/iconos";
 import { navegarConTransicion } from "../disenio/vistaTransicion";
 import { useNombreUsuario } from "../auth/nombreUsuario";
-import { saludo, subtituloSaludo } from "./saludo";
+import { saludoHora, subtituloSaludo } from "./saludo";
 import { TituloAnimado } from "./TituloAnimado";
 import { infoPlan, type BarbaraBrandBook, type BarbaraFormulario } from "./tipos";
 import { BarbaraChat } from "./BarbaraChat";
@@ -12,6 +12,7 @@ import { BarbaraBiblioteca } from "./BarbaraBiblioteca";
 import { BarbaraAnalisis } from "./BarbaraAnalisis";
 import { BarbaraConfiguracion } from "./BarbaraConfiguracion";
 import { BarbaraFondoCosmico } from "./BarbaraFondoCosmico";
+import { BarbaraEstadoVivo } from "./BarbaraEstadoVivo";
 import { GrafoMemoria } from "../staff/memoria/GrafoMemoria";
 import { Mcp } from "../staff/Mcp";
 
@@ -194,40 +195,51 @@ export function BarbaraModulo({
         >
         {seccion === "chat" && (
           <div className="barbara-inicio">
-            <div className="barbara-hero">
-              <div className="barbara-hero-avatar">
-                <img className="barbara-hero-anillo" src="/assets/barbara/fondo/anillo.webp" alt="" aria-hidden="true" />
-                {poseBarbaraAnterior !== null && (
-                  <img
-                    key={poseBarbaraAnterior}
-                    src={POSES_BARBARA[poseBarbaraAnterior]}
-                    alt=""
-                    aria-hidden="true"
-                    className="barbara-hero-img barbara-hero-img-animada saliendo"
-                  />
-                )}
-                <img
-                  key={poseBarbara}
-                  src={POSES_BARBARA[poseBarbara]}
-                  alt="Bárbara"
-                  className="barbara-hero-img barbara-hero-img-animada entrando"
-                  onError={(evento) => {
-                    evento.currentTarget.onerror = null;
-                    evento.currentTarget.src = POSES_BARBARA[0];
-                  }}
-                />
-              </div>
+            <div className="barbara-inicio-cabecera">
               <div className="barbara-hero-cuerpo">
                 <span className="barbara-rotulo">Bárbara · tu agente de contenido</span>
-                <TituloAnimado texto={saludo(nombreUsuario)} className="barbara-titular" />
+                <TituloAnimado texto={saludoHora(nombreUsuario, negocio)} className="barbara-titular" />
                 <p>{subtituloSaludo(negocio)}</p>
-                <BarbaraChat barbaraClienteId={barbaraClienteId} />
               </div>
             </div>
+            <div className="barbara-inicio-principal">
+              <div className="barbara-hero" aria-label="Bárbara, tu agente de contenido">
+                <BarbaraEstadoVivo />
+                <div className="barbara-hero-avatar">
+                  <img className="barbara-hero-anillo" src="/assets/barbara/fondo/anillo.webp" alt="" aria-hidden="true" />
+                  <div className="barbara-hero-personaje">
+                    {poseBarbaraAnterior !== null && (
+                      <img
+                        key={poseBarbaraAnterior}
+                        src={POSES_BARBARA[poseBarbaraAnterior]}
+                        alt=""
+                        aria-hidden="true"
+                        className="barbara-hero-img barbara-hero-img-animada saliendo"
+                      />
+                    )}
+                    <img
+                      key={poseBarbara}
+                      src={POSES_BARBARA[poseBarbara]}
+                      alt="Bárbara"
+                      className="barbara-hero-img barbara-hero-img-animada entrando"
+                      onError={(evento) => {
+                        evento.currentTarget.onerror = null;
+                        evento.currentTarget.src = POSES_BARBARA[0];
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+              <BarbaraChat barbaraClienteId={barbaraClienteId} />
+            </div>
 
-            <div className="barbara-tarjeta">
-              <h3>{Ico.reuniones({ t: 17 })} Tu semana de contenido</h3>
-              <BarbaraCalendario barbaraClienteId={barbaraClienteId} vistaInicial="semana" nombreCliente={nombreUsuario || negocio} />
+            <div className="barbara-tarjeta barbara-semana-resumen">
+              <div className="barbara-semana-titulo">
+                <span className="barbara-rotulo">En curso</span>
+                <h3>{Ico.reuniones({ t: 17 })} Tu semana de contenido</h3>
+              </div>
+              <BarbaraCalendario barbaraClienteId={barbaraClienteId} vistaInicial="semana"
+                nombreCliente={nombreUsuario || negocio} plan={plan} resumen />
             </div>
           </div>
         )}
@@ -243,7 +255,8 @@ export function BarbaraModulo({
         {seccion === "calendario" && (
           <div className="barbara-tarjeta">
             <h1>{Ico.reuniones({ t: 22 })} Calendario</h1>
-            <BarbaraCalendario barbaraClienteId={barbaraClienteId} vistaInicial="mes" nombreCliente={nombreUsuario || negocio} />
+            <BarbaraCalendario barbaraClienteId={barbaraClienteId} vistaInicial="mes"
+              nombreCliente={nombreUsuario || negocio} plan={plan} />
           </div>
         )}
 

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { BrandBookEditor } from "../staff/agentes-ia/BrandBookEditor";
+import { ConectarCanalBarbara } from "../staff/agentes-ia/ConectarCanalBarbara";
 import { FormularioBarbara } from "../cliente/FormularioBarbara";
 import type { BarbaraBrandBook, BarbaraFormulario } from "./tipos";
 import { sb } from "../lib/supabase";
@@ -41,6 +42,7 @@ export function BarbaraConfiguracion({ barbaraClienteId, negocio, rubro, brandBo
   const [canales, setCanales] = useState<{ id: string; plataforma: string; activo: boolean; auto_publicar: boolean }[]>([]);
   const [zonaHoraria, setZonaHoraria] = useState("America/Santiago");
   const [guardandoCanal, setGuardandoCanal] = useState<string | null>(null);
+  const [conectandoCanal, setConectandoCanal] = useState(false);
   const [error, setError] = useState("");
 
   async function cargarOperacion() {
@@ -144,6 +146,11 @@ export function BarbaraConfiguracion({ barbaraClienteId, negocio, rubro, brandBo
             </button>
           </div>
         ))}
+        {esStaff && (
+          <button className="btn" style={{ marginTop: 10 }} onClick={() => setConectandoCanal(true)}>
+            Conectar canal
+          </button>
+        )}
       </section>
 
       {editandoFormulario && (
@@ -152,6 +159,14 @@ export function BarbaraConfiguracion({ barbaraClienteId, negocio, rubro, brandBo
           inicial={formulario}
           cerrar={() => setEditandoFormulario(false)}
           guardado={() => { setEditandoFormulario(false); onCambio(); }}
+        />
+      )}
+
+      {conectandoCanal && (
+        <ConectarCanalBarbara
+          barbaraClienteId={barbaraClienteId}
+          cerrar={() => setConectandoCanal(false)}
+          guardado={() => { setConectandoCanal(false); void cargarOperacion(); }}
         />
       )}
     </div>

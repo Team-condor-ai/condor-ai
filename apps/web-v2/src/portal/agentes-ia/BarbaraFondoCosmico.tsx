@@ -47,9 +47,9 @@ type RecursoWebGL = {
 
 const CAPAS_WEBGL: CapaWebGL[] = [
   { id: "particulas", src: "/assets/barbara/fondo/particulas.webp", x: 0, y: 0, ancho: .992, amplitudX: -2.75, amplitudY: 3.5, periodo: 14.4, opacidadMinima: .82, opacidadMaxima: .94 },
-  { id: "planeta-chico", src: "/assets/barbara/fondo/planeta-chico.webp", x: .464, y: .0634, ancho: .10229, amplitudX: -3.25, amplitudY: -7.25, periodo: 11.6, opacidadMinima: .78, opacidadMaxima: .96, bloom: .22, fase: 1.1 },
+  { id: "planeta-chico", src: "/assets/barbara/fondo/planeta-chico.webp", x: .464, y: .0634, ancho: .10229, amplitudX: -10.5, amplitudY: -15.5, periodo: 10.4, opacidadMinima: .78, opacidadMaxima: .96, bloom: .22, fase: 1.1 },
   { id: "planeta-grande", src: "/assets/barbara/fondo/planeta-grande.webp", x: .572, y: .021, ancho: .428, amplitudX: 3.75, amplitudY: -13.5, periodo: 8.8, opacidadMinima: .88, opacidadMaxima: 1, bloom: .24, fase: .25 },
-  { id: "cinta", src: "/assets/barbara/fondo/cinta-vidrio.webp", x: 0, y: 0, ancho: 1, amplitudX: 7.5, amplitudY: -9.25, periodo: 12.8, opacidadMinima: .76, opacidadMaxima: .98, bloom: .19, fase: 2.4 },
+  { id: "cinta", src: "/assets/barbara/fondo/cinta-vidrio.webp", x: 0, y: 0, ancho: 1, amplitudX: 18, amplitudY: -17, periodo: 10.8, opacidadMinima: .76, opacidadMaxima: .98, bloom: .19, fase: 2.4 },
 ];
 
 function compilarShader(gl: WebGLRenderingContext, tipo: number, fuente: string) {

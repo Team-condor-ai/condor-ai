@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "node scripts/gen-sitio.mjs && tsc -b && vite build && node scripts/prerender.mjs",
+    "build": "node scripts/gen-sitio.mjs && tsc -b && vite build && node scripts/verificar-superficies-barbara.mjs && node scripts/prerender.mjs",
     "test:cartola": "node --experimental-strip-types --test scripts/cartola.test.ts",
     "cf:check": "node scripts/verificar-cloudflare.mjs",
     "cf:deploy": "npm run build && npm run cf:check && wrangler deploy",

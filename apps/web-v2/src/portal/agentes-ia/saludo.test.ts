@@ -5,6 +5,7 @@ import {
   indiceEstable,
   nombreDePila,
   saludo,
+  saludoHora,
   subtituloSaludo,
 } from "./saludo.ts";
 
@@ -91,4 +92,32 @@ test("el subtítulo cambia con la franja y nombra el negocio", () => {
   const noche = subtituloSaludo("Tecnobox", alas(22));
   assert.notEqual(madrugada, manana);
   assert.notEqual(manana, noche);
+});
+
+/* La regla que pidió Max: SIEMPRE fórmula de la hora y SIEMPRE un nombre.
+   Son las dos mitades del pedido y se prueban por separado, porque cada una
+   se rompió por su cuenta: el titular decía "Hola, cerrando el día" —sin
+   hora reconocible y sin nombre— aunque el calendario justo al lado ya
+   saludaba bien. */
+test("saludoHora usa la fórmula de la franja", () => {
+  assert.match(saludoHora("Carmen", "Tecnobox", alas(9)), /^Buenos días, Carmen$/);
+  assert.match(saludoHora("Carmen", "Tecnobox", alas(15)), /^Buenas tardes, Carmen$/);
+  assert.match(saludoHora("Carmen", "Tecnobox", alas(22)), /^Buenas noches, Carmen$/);
+});
+
+test("la madrugada saluda buenas noches, no buenos días", () => {
+  // A las 3 AM "buenos días" suena a error; en español no hay fórmula propia.
+  assert.match(saludoHora("Carmen", "Tecnobox", alas(3)), /^Buenas noches, Carmen$/);
+});
+
+test("sin nombre de pila utilizable, cae al negocio en vez de quedarse sin nombre", () => {
+  // `nombreDePila` devuelve null a propósito ante un correo pegado; el
+  // negocio siempre existe y siempre se puede leer en voz alta.
+  assert.equal(saludoHora("maximilianopinocv", "Cóndor.AI", alas(15)), "Buenas tardes, Cóndor.AI");
+  assert.equal(saludoHora(null, "Tecnobox", alas(9)), "Buenos días, Tecnobox");
+});
+
+test("sin nombre ni respaldo no deja una coma colgando", () => {
+  assert.equal(saludoHora(null, null, alas(15)), "Buenas tardes");
+  assert.equal(saludoHora("", "  ", alas(22)), "Buenas noches");
 });

@@ -138,6 +138,22 @@ export const Ico = {
       <path d="M12 5v14M5 12h14" />
     </Svg>
   ),
+  enviar: (p: Props = {}) => (
+    <Svg {...p}>
+      <path d="M12 19V5" />
+      <path d="m6.5 10.5 5.5-5.5 5.5 5.5" />
+    </Svg>
+  ),
+  expandir: (p: Props = {}) => (
+    <Svg {...p}>
+      <path d="M8.5 3.5h-5v5M15.5 3.5h5v5M20.5 15.5v5h-5M8.5 20.5h-5v-5" />
+    </Svg>
+  ),
+  contraer: (p: Props = {}) => (
+    <Svg {...p}>
+      <path d="M8.5 3.5v5h-5M15.5 3.5v5h5M20.5 15.5h-5v5M3.5 15.5h5v5" />
+    </Svg>
+  ),
   /** Columnas de un tablero: por hacer, en curso, hecho. */
   tablero: (p: Props = {}) => (
     <Svg {...p}>

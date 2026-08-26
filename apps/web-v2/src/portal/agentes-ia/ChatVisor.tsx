@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { sb, fecha } from "../lib/supabase";
 import type { BarbaraChat } from "./tipos";
 
@@ -21,10 +21,10 @@ export function ChatVisor({ barbaraClienteId }: { barbaraClienteId: string }) {
   const [mensajes, setMensajes] = useState<BarbaraChat[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
+  const historial = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let vivo = true;
-    setCargando(true);
     sb.from("barbara_chats")
       .select("*")
       .eq("barbara_cliente_id", barbaraClienteId)
@@ -40,20 +40,39 @@ export function ChatVisor({ barbaraClienteId }: { barbaraClienteId: string }) {
     };
   }, [barbaraClienteId]);
 
+  useEffect(() => {
+    if (!cargando && mensajes.length) {
+      const elemento = historial.current;
+      if (elemento) elemento.scrollTop = elemento.scrollHeight;
+    }
+  }, [cargando, mensajes.length]);
+
   if (cargando) return <p className="vacio">Cargando conversación…</p>;
   if (error) return <p className="error">{error}</p>;
-  // Sin mensajes no se muestra nada: el chat de arriba ya invita a escribir,
-  // así que un cartel explicando el vacío sólo agregaba ruido (pedido de
-  // Joaquín, 25-ago-2026).
-  if (mensajes.length === 0) return null;
+  if (mensajes.length === 0) return (
+    <div className="barbara-chat-vacio">
+      <img src="/assets/barbara/avatar.png" alt="" aria-hidden="true" />
+      <div>
+        <b>¿En qué trabajamos hoy?</b>
+        <p>Pídeme ideas, revisa el estado de una pieza o conversemos sobre tu calendario.</p>
+      </div>
+    </div>
+  );
 
   return (
-    <div className="barbara-chat-historial" aria-label="Conversación con Bárbara">
+    <div ref={historial} className="barbara-chat-historial" role="log" aria-live="polite" aria-label="Conversación con Bárbara">
       {mensajes.map((m) => (
-        <div key={m.id} className={"barbara-chat-mensaje " + m.remitente}>
-          <b>{ETIQUETA[m.remitente]} <small>· {fecha(m.creado_en)}</small></b>
-          <p>{m.mensaje}</p>
-        </div>
+        <article key={m.id} className={"barbara-chat-mensaje " + m.remitente}>
+          <div className="barbara-chat-remitente" aria-hidden="true">
+            {m.remitente === "barbara"
+              ? <img src="/assets/barbara/avatar.png" alt="" />
+              : <span>{m.remitente === "staff" ? "C" : "T"}</span>}
+          </div>
+          <div className="barbara-chat-mensaje-cuerpo">
+            <b>{ETIQUETA[m.remitente]} <small>· {fecha(m.creado_en)}</small></b>
+            <p>{m.mensaje}</p>
+          </div>
+        </article>
       ))}
     </div>
   );

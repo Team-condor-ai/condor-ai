@@ -35,10 +35,23 @@ const ESCALONADO_TOTAL = 0.43; // s, el techo del barrido completo
 export function TituloAnimado({ texto, className }: { texto: string; className?: string }) {
   const ref = useRef<HTMLHeadingElement>(null);
 
-  const letras = useMemo(() => Array.from(texto), [texto]);
+  const palabras = useMemo(() => {
+    const lista = texto.trim().split(/\s+/).filter(Boolean);
+    return lista.map((palabra, indice) => ({
+      palabra,
+      inicio: lista.slice(0, indice).reduce(
+        (total, anterior) => total + Array.from(anterior).length,
+        0,
+      ),
+    }));
+  }, [texto]);
+  const cantidadLetras = useMemo(
+    () => palabras.reduce((total, segmento) => total + Array.from(segmento.palabra).length, 0),
+    [palabras],
+  );
   const paso = useMemo(
-    () => Math.min(PASO_MAXIMO, ESCALONADO_TOTAL / Math.max(1, letras.length)),
-    [letras.length],
+    () => Math.min(PASO_MAXIMO, ESCALONADO_TOTAL / Math.max(1, cantidadLetras)),
+    [cantidadLetras],
   );
 
   useEffect(() => {
@@ -74,23 +87,31 @@ export function TituloAnimado({ texto, className }: { texto: string; className?:
           encuentre 33 spans sueltos puede deletrear la frase. */}
       <span className="visualmente-oculto">{texto}</span>
       <span aria-hidden="true">
-        {letras.map((ch, i) => (
-          <span
-            key={i}
-            className="barbara-letra"
-            style={
-              quieto
-                ? undefined
-                : {
-                    opacity: 0,
-                    transform: "translateY(.34em)",
-                    transition:
-                      `opacity ${DURACION}s ${CURVA} ${(i * paso).toFixed(3)}s, ` +
-                      `transform ${DURACION}s ${CURVA} ${(i * paso).toFixed(3)}s`,
+        {palabras.map(({ palabra, inicio }, indicePalabra) => (
+          <span className="barbara-palabra" key={`${palabra}-${inicio}`}>
+            {Array.from(palabra).map((ch, indiceLetra) => {
+              const indice = inicio + indiceLetra;
+              return (
+                <span
+                  key={indice}
+                  className="barbara-letra"
+                  style={
+                    quieto
+                      ? undefined
+                      : {
+                          opacity: 0,
+                          transform: "translateY(.34em)",
+                          transition:
+                            `opacity ${DURACION}s ${CURVA} ${(indice * paso).toFixed(3)}s, ` +
+                            `transform ${DURACION}s ${CURVA} ${(indice * paso).toFixed(3)}s`,
+                        }
                   }
-            }
-          >
-            {ch === " " ? " " : ch}
+                >
+                  {ch}
+                </span>
+              );
+            })}
+            {indicePalabra < palabras.length - 1 ? " " : null}
           </span>
         ))}
       </span>

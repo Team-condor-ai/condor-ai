@@ -14,7 +14,16 @@ const MAX_INTENTOS = 3;
 const GH_TOKEN = Deno.env.get("GITHUB_DISPATCH_TOKEN") || Deno.env.get("GH_TOKEN") || "";
 
 async function insertarChat(sb: any, clienteId: string, remitente: "cliente" | "barbara" | "staff", mensaje: string, piezaId: string | null = null) {
-  await sb.from("barbara_chats").insert({ barbara_cliente_id: clienteId, remitente, mensaje, pieza_id: piezaId });
+  const { data } = await sb.from("barbara_chats").insert({ barbara_cliente_id: clienteId, remitente, mensaje, pieza_id: piezaId }).select("id").single();
+  return data?.id ?? null;
+}
+
+function aprenderDeMensaje(barbaraClienteId: string, mensaje: string, mensajeId: string | null) {
+  fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/barbara-aprender-chat`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}` },
+    body: JSON.stringify({ barbara_cliente_id: barbaraClienteId, mensaje, mensaje_id: mensajeId }),
+  }).catch(() => {});
 }
 
 async function dispararReintento(barbaraClienteId: string, piezaId: string, tipo: string) {
@@ -88,7 +97,8 @@ Deno.serve(async (req) => {
   }
 
   if (accion === "chat") {
-    await insertarChat(sb, barbaraClienteId, admin ? "staff" : "cliente", mensaje);
+    const chatId = await insertarChat(sb, barbaraClienteId, admin ? "staff" : "cliente", mensaje);
+    if (!admin) aprenderDeMensaje(barbaraClienteId, mensaje, chatId);
     const respuesta = await conversar(sb, barbaraClienteId, mensaje);
     await insertarChat(sb, barbaraClienteId, "barbara", respuesta);
     return json({ ok: true, respuesta });

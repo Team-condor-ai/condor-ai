@@ -160,6 +160,24 @@ export function crearDatos() {
       notas: null,
       creado_en: mesAtras(9) + "T10:00:00Z",
     },
+    /* Cóndor es cliente de su propio producto: `/acceso/barbara` busca esta
+       ficha POR NOMBRE DE NEGOCIO cuando entra staff (ver `Barbara.tsx`).
+       Sin esta fila, staff veía "No existe todavía la fila de Cóndor.AI en
+       Bárbara Clientes" y el módulo era inalcanzable en modo demo. */
+    {
+      id: uid(7),
+      email: CORREO_STAFF,
+      nombre: "Cóndor.AI",
+      telefono: null,
+      negocio: "Cóndor.AI",
+      plan: "Interno",
+      concepto: "Cóndor usando su propio producto",
+      moneda: "CLP",
+      web_url: "condorai.cl",
+      archivado: false,
+      notas: null,
+      creado_en: mesAtras(8) + "T10:00:00Z",
+    },
   ];
 
   // Los campos viejos siguen existiendo en la base (se borran en una segunda
@@ -906,7 +924,286 @@ export function crearDatos() {
     },
   ];
 
+  /* ── Bárbara ───────────────────────────────────────────────────────────
+     Sin estas filas el módulo no era alcanzable en modo demo: el ítem del
+     menú lo decide `useTieneBarbara`, que pide una fila de
+     `barbara_clientes` con `activo = true`, y sin ella la ruta rebota.
+
+     El plugin resuelve un `select` anidado como `fila[relacion] ?? []`
+     (ver `plugin-demo.mjs`), así que las relaciones van INCRUSTADAS en la
+     propia fila en vez de en tablas aparte. Es la misma forma que devuelve
+     PostgREST en la base real. */
+  const dia = (n) => {
+    const d = new Date(HOY);
+    d.setDate(d.getDate() + n);
+    return d.toISOString().slice(0, 10);
+  };
+  const instante = (n, hora = 10) => {
+    const d = new Date(HOY);
+    d.setDate(d.getDate() + n);
+    d.setHours(hora, 0, 0, 0);
+    return d.toISOString();
+  };
+
+/* Se genera un set COMPLETO por marca, no uno solo compartido: el cliente
+   demo entra a la Bárbara de Tecnobox y staff a la de Cóndor.AI, y cada
+   una tiene que tener sus propias piezas, chats y memoria para que el
+   aislamiento entre marcas se vea de verdad en pantalla. `base` desplaza
+   los uid para que las dos no colisionen. */
+function crearBarbara({ base, clienteId, negocio, email, dia, instante, mesAtras }) {
+  const uid = (n) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
+  const barbaraId = uid(base);
+
+  const barbara_brand_book = [{
+    id: uid(base + 10), barbara_cliente_id: barbaraId,
+    paleta_colores: [
+      { hex: "#CDFB3E", uso: "Acento y llamados a la acción" },
+      { hex: "#0A0A0B", uso: "Fondo principal" },
+      { hex: "#F4F5EF", uso: "Texto sobre oscuro" },
+    ],
+    tipografia: "Fraunces para titulares, Inter para texto",
+    logo_url: null,
+    detalles: "Nada de stock genérico. Fondos oscuros, un solo acento lima, mucho aire.",
+    plantilla: "editorial",
+    actualizado_en: mesAtras(1) + "T12:00:00Z",
+  }];
+
+  const barbara_formulario = [{
+    id: uid(base + 11), barbara_cliente_id: barbaraId,
+    tipo_contenido: ["carrusel", "historia"],
+    publico_objetivo: "Dueños de pymes en Chile que venden por Instagram y no tienen equipo de marketing.",
+    tono: "Cercano y directo, sin jerga de agencia. Tutea.",
+    restricciones: "No prometer resultados en plazos. No usar “revoluciona” ni “disrupción”.",
+    ejemplos_referencia: "Cuentas que explican con ejemplos concretos en vez de frases motivacionales.",
+    producto_destacar: "Bárbara, la agente de contenido de Cóndor.AI",
+    pilares: { educar: 45, mostrar: 25, autoridad: 20, comunidad: 10 },
+    actualizado_en: mesAtras(1) + "T12:00:00Z",
+  }];
+
+  const barbara_clientes = [{
+    id: barbaraId,
+    cliente_id: clienteId,
+    plan: "plus",
+    rubro: "Marketing con IA",
+    activo: true,
+    telegram_chat_id: "demo-chat-id",
+    zona_horaria: "America/Santiago",
+    mcp_token: null,
+    creado_en: mesAtras(2) + "T10:00:00Z",
+    clientes: { negocio, email },
+    barbara_brand_book,
+    barbara_formulario,
+    barbara_correcciones: [{ bloqueado: false }],
+  }];
+
+  const pieza = (n, dias, tipo, angulo, estado, extra = {}) => ({
+    id: uid(base + 20 + n),
+    barbara_cliente_id: barbaraId,
+    fecha: dia(dias),
+    tipo,
+    angulo,
+    estado,
+    contenido: {
+      caption: `${angulo}\n\nTe lo explicamos en 6 pasos, sin vueltas.\n\n¿Lo aplicarías esta semana?\n\n#pymechile #contenido #marketing`,
+      slides: [
+        { titular: angulo, cuerpo: "El gancho que abre la pieza." },
+        { titular: "El problema real", cuerpo: "Lo que le pasa a tu cuenta hoy, dicho sin adornos." },
+        { titular: "Qué hacer", cuerpo: "Un paso concreto que se puede aplicar hoy mismo." },
+      ],
+    },
+    correcciones_pedidas: 0,
+    revision_comentario: null,
+    revisada_en: null,
+    canal_publicacion: null,
+    publicacion_url: null,
+    publicada_en: null,
+    aprobada_sin_cambios: null,
+    corrige_a: null,
+    entrega_estado: "entregada",
+    creado_en: instante(dias, 9),
+    ...extra,
+  });
+
+  const barbara_memoria = [
+    pieza(1, -9, "carrusel", "Tres señales de que tu contenido no está midiendo nada", "publicada", {
+      estado: "publicada", canal_publicacion: "Instagram", publicada_en: instante(-9, 18),
+      aprobada_sin_cambios: true,
+    }),
+    pieza(2, -6, "historia", "El error de publicar todos los días sin un pilar", "publicada", {
+      estado: "publicada", canal_publicacion: "Instagram", publicada_en: instante(-6, 19),
+      aprobada_sin_cambios: false, correcciones_pedidas: 1,
+    }),
+    pieza(3, -3, "carrusel", "Cómo se ve un calendario de contenido que sí se cumple", "aprobada", {
+      estado: "aprobada", revisada_en: instante(-3, 16), aprobada_sin_cambios: true,
+    }),
+    pieza(4, -1, "carrusel", "Qué mirar en tus métricas cuando recién empiezas", "requiere_ajuste", {
+      estado: "requiere_ajuste", correcciones_pedidas: 1,
+      revision_comentario: "El segundo slide queda muy técnico, bajémoslo a algo más simple.",
+      revisada_en: instante(-1, 11),
+    }),
+    pieza(5, 0, "carrusel", "Por qué tu mejor post no fue el que más te gustó", "en_revision", {
+      estado: "en_revision",
+    }),
+  ];
+
+  const barbara_programaciones = [
+    {
+      id: uid(base + 40), barbara_cliente_id: barbaraId, barbara_memoria_id: uid(base + 25),
+      tipo: "carrusel", plataforma: "instagram", programada_para: instante(1, 10),
+      estado: "programada", zona_horaria: "America/Santiago",
+      motivo_reprogramacion: null,
+      razon_planificacion: "Martes 10:00 es la ventana con mejor alcance en el historial de la cuenta.",
+      ultimo_error: null, intentos_publicacion: 0,
+      titulo: "Por qué tu mejor post no fue el que más te gustó", brief: null,
+      configuracion: { pilar: "educar", objetivo: "interaccion", slides: 6, plantilla: "editorial" }, serie_id: null,
+      barbara_memoria: { angulo: "Por qué tu mejor post no fue el que más te gustó" },
+    },
+    {
+      id: uid(base + 41), barbara_cliente_id: barbaraId, barbara_memoria_id: null,
+      tipo: "historia", plataforma: "instagram", programada_para: instante(3, 19),
+      estado: "borrador", zona_horaria: "America/Santiago",
+      motivo_reprogramacion: null,
+      razon_planificacion: "Complementa el carrusel del martes con el pilar Comunidad.",
+      ultimo_error: null, intentos_publicacion: 0,
+      titulo: "Responder las 3 dudas que más te repiten", brief: "Una historia breve con caja de preguntas.",
+      configuracion: { pilar: "comunidad", objetivo: "interaccion", interaccion: "preguntas" }, serie_id: null,
+      barbara_memoria: { angulo: "Responder las 3 dudas que más te repiten" },
+    },
+  ];
+
+  const titulosMedidos = [
+    "La métrica que sí importa al empezar", "Tres errores de un calendario imposible",
+    "Así se construye un pilar de contenido", "Lo que aprendimos publicando menos",
+    "Una semana de contenido sin improvisar", "El post que más guardó la audiencia",
+    "Cómo convertir una pregunta en carrusel", "Detrás de una pieza que sí se aprobó",
+  ];
+  const tiposMedidos = ["carrusel", "historia", "carrusel", "ugc", "carrusel", "historia", "carrusel", "ugc"];
+  const programasMedidos = titulosMedidos.map((titulo, i) => ({
+    id: uid(base + 100 + i), barbara_cliente_id: barbaraId,
+    barbara_memoria_id: uid(base + 21 + (i % 5)), tipo: tiposMedidos[i],
+    plataforma: tiposMedidos[i] === "ugc" ? "tiktok" : "instagram",
+    programada_para: instante(-48 + i * 6, 18), estado: "publicada",
+    zona_horaria: "America/Santiago", motivo_reprogramacion: null,
+    razon_planificacion: "Publicación demo con analítica confirmada.", ultimo_error: null,
+    intentos_publicacion: 1, titulo, brief: null, configuracion: {}, serie_id: null,
+    barbara_memoria: { angulo: titulo },
+  }));
+  barbara_programaciones.push(...programasMedidos);
+
+  const barbara_metricas_actuales = programasMedidos.map((p, i) => {
+    const alcance = [2450, 1220, 3180, 5060, 3890, 1740, 6240, 7310][i];
+    const meGusta = [138, 71, 212, 348, 256, 104, 421, 512][i];
+    const comentarios = [12, 18, 15, 27, 21, 11, 34, 42][i];
+    const compartidos = [31, 14, 48, 62, 56, 19, 94, 88][i];
+    const guardados = [84, 22, 116, 43, 132, 47, 188, 61][i];
+    const clics = [24, 9, 36, 58, 42, 13, 71, 82][i];
+    return {
+      id: base * 100 + i, barbara_cliente_id: barbaraId,
+      barbara_memoria_id: p.barbara_memoria_id, programacion_id: p.id,
+      plataforma: p.plataforma, external_id: `demo-post-${base}-${i}`,
+      capturado_en: instante(-47 + i * 6, 12), me_gusta: meGusta,
+      comentarios, compartidos, guardados, alcance, impresiones: Math.round(alcance * 1.28),
+      reproducciones: p.tipo === "ugc" ? Math.round(alcance * 1.42) : 0,
+      clics, seguidores: 4280 + i * 37,
+      interacciones: meGusta + comentarios + compartidos + guardados + clics,
+    };
+  });
+
+  const barbara_chats = [
+    { id: uid(base + 50), barbara_cliente_id: barbaraId, remitente: "cliente", pieza_id: null,
+      mensaje: "Hola Bárbara, ¿cómo va el contenido de esta semana?", creado_en: instante(-1, 15) },
+    { id: uid(base + 51), barbara_cliente_id: barbaraId, remitente: "barbara", pieza_id: null,
+      mensaje: "Hola. Tienes una pieza esperando revisión y otra con un ajuste pedido. El carrusel del martes ya quedó programado para las 10:00.",
+      creado_en: instante(-1, 15) },
+    { id: uid(base + 52), barbara_cliente_id: barbaraId, remitente: "cliente", pieza_id: null,
+      mensaje: "Perfecto. Prefiero siempre un tono cercano, nada formal.", creado_en: instante(0, 9) },
+    { id: uid(base + 53), barbara_cliente_id: barbaraId, remitente: "barbara", pieza_id: null,
+      mensaje: "Anotado. Lo aplico desde la próxima pieza sin que tengas que repetirlo.",
+      creado_en: instante(0, 9) },
+  ];
+
+  const barbara_canales = [{
+    id: uid(base + 60), barbara_cliente_id: barbaraId, plataforma: "instagram",
+    proveedor: "blotato", account_ref: "demo-cuenta-ig", target: {},
+    activo: true, auto_publicar: false, aprobado_por: null, aprobado_en: null,
+    creado_en: mesAtras(1) + "T10:00:00Z", actualizado_en: mesAtras(1) + "T10:00:00Z",
+  }, {
+    id: uid(base + 61), barbara_cliente_id: barbaraId, plataforma: "tiktok",
+    proveedor: "tiktok", account_ref: `@${negocio.toLowerCase().replace(/[^a-z0-9]/g, "")}`,
+    target: {}, activo: true, auto_publicar: false, aprobado_por: null, aprobado_en: null,
+    creado_en: mesAtras(1) + "T10:00:00Z", actualizado_en: mesAtras(1) + "T10:00:00Z",
+  }];
+
+  const nodo = (n, tipo, titulo, contenido, peso) => ({
+    id: uid(base + 70 + n), barbara_cliente_id: barbaraId, tipo, titulo, contenido,
+    peso, activo: true, confianza: 1, etiquetas: [], version: 1,
+    origen: "Conversación en el portal", fuente_tipo: "chat", fuente_id: null,
+    actualizado_por: "barbara",
+    creado_en: instante(-8, 12), actualizado_en: instante(0, 9),
+  });
+
+  const barbara_memoria_nodos = [
+    nodo(1, "perfil", "Perfil de la marca",
+      "Pyme chilena de tecnología que vende por Instagram. Habla de tú, evita la jerga de agencia.", 5),
+    nodo(2, "gusto", "Tono cercano, nunca formal",
+      "Prefiere que las piezas hablen de tú y suenen como una persona, no como un comunicado.", 3),
+    nodo(3, "gusto", "Sin promesas de resultados",
+      "No quiere frases que prometan crecimiento en un plazo determinado.", 2),
+    nodo(4, "dato", "Su público son dueños de pyme",
+      "Personas que gestionan ellas mismas la cuenta, sin equipo de marketing.", 2),
+  ];
+
+  const barbara_memoria_relaciones = [
+    { id: uid(base + 80), barbara_cliente_id: barbaraId, origen_id: uid(base + 71), destino_id: uid(base + 72),
+      tipo: "relacionada", creado_en: instante(-8, 12) },
+    { id: uid(base + 81), barbara_cliente_id: barbaraId, origen_id: uid(base + 71), destino_id: uid(base + 74),
+      tipo: "relacionada", creado_en: instante(-8, 12) },
+  ];
+
+  const barbara_correcciones = [{
+    id: uid(base + 90), barbara_cliente_id: barbaraId, intentos_usados: 1, bloqueado: false,
+    actualizado_en: instante(-1, 11),
+  }];
+
   return {
+    barbara_clientes,
+    barbara_brand_book,
+    barbara_formulario,
+    barbara_memoria,
+    barbara_programaciones,
+    barbara_metricas_actuales,
+    barbara_chats,
+    barbara_canales,
+    barbara_memoria_nodos,
+    barbara_memoria_relaciones,
+    barbara_correcciones,
+  };
+}
+
+  /* Dos marcas con set propio: la del cliente demo (Tecnobox) y la de
+     Cóndor.AI, que es la que abre staff desde /acceso/barbara. Los `base`
+     no se pisan entre sí. */
+  const marcas = [
+    crearBarbara({ base: 700, clienteId: uid(1), negocio: "Tecnobox", email: CORREO_CLIENTE, dia, instante, mesAtras }),
+    crearBarbara({ base: 800, clienteId: uid(7), negocio: "Cóndor.AI", email: CORREO_STAFF, dia, instante, mesAtras }),
+  ];
+  const deLasMarcas = (clave) => marcas.flatMap((m) => m[clave]);
+
+  return {
+    barbara_clientes: deLasMarcas("barbara_clientes"),
+    barbara_brand_book: deLasMarcas("barbara_brand_book"),
+    barbara_formulario: deLasMarcas("barbara_formulario"),
+    barbara_memoria: deLasMarcas("barbara_memoria"),
+    barbara_programaciones: deLasMarcas("barbara_programaciones"),
+    barbara_metricas_actuales: deLasMarcas("barbara_metricas_actuales"),
+    barbara_chats: deLasMarcas("barbara_chats"),
+    barbara_canales: deLasMarcas("barbara_canales"),
+    barbara_memoria_nodos: deLasMarcas("barbara_memoria_nodos"),
+    barbara_memoria_relaciones: deLasMarcas("barbara_memoria_relaciones"),
+    barbara_correcciones: deLasMarcas("barbara_correcciones"),
+    barbara_memoria_propuestas: [],
+    barbara_reglas: [],
+    barbara_patrones: [],
     clientes,
     cobros,
     pagos,

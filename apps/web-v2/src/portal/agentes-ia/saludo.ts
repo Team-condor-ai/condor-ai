@@ -57,6 +57,38 @@ export function nombreDePila(nombre?: string | null): string | null {
   return primera[0].toLocaleUpperCase("es") + primera.slice(1);
 }
 
+/**
+ * El saludo del titular: SIEMPRE la fórmula de la hora y SIEMPRE un nombre.
+ *
+ * Pedido de Max (25-ago-2026): "siempre debería mencionar el nombre del
+ * cliente, decir buenos días o buenas noches o buenas tardes dependiendo de
+ * la hora". Las variantes de `SALUDOS` más abajo no cumplen eso —"Hola X,
+ * cerrando el día" no dice la hora, y sin nombre utilizable quedaban en un
+ * "Hola" pelado, que es justo lo que se veía en pantalla.
+ *
+ * EL RESPALDO ES EL NEGOCIO, Y ESO IMPORTA. `nombreDePila` devuelve `null`
+ * a propósito cuando lo único que hay es un correo pegado
+ * ("maximilianopinocv"): saludar así delata la máquina. Pero el nombre del
+ * negocio SIEMPRE existe y siempre se puede leer en voz alta, así que sirve
+ * de segundo nombre sin inventar nada ni sonar robótico.
+ *
+ * La madrugada saluda "buenas noches": en español no hay fórmula propia para
+ * las 3 AM y "buenos días" a esa hora suena a error.
+ */
+export function saludoHora(
+  nombre?: string | null,
+  respaldo?: string | null,
+  ahora: Date = new Date(),
+): string {
+  const franja = franjaDe(ahora.getHours());
+  const formula =
+    franja === "mañana" ? "Buenos días"
+    : franja === "tarde" ? "Buenas tardes"
+    : "Buenas noches";
+  const destinatario = nombreDePila(nombre) || (respaldo || "").trim();
+  return destinatario ? `${formula}, ${destinatario}` : formula;
+}
+
 /** Las variantes por franja. La primera de cada lista es la más neutra. */
 const SALUDOS: Record<Franja, ((n: string | null) => string)[]> = {
   madrugada: [
