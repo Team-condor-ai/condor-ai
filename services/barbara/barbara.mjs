@@ -1,6 +1,7 @@
 // condor.ai · Empleada IA "Barbara" — 4 piezas por semana (GitHub Actions)
-// Lun = carrusel de Cóndor · Mar = anuncio de Cóndor (imagen única)
-// Jue = carrusel de Bárbara · Vie = anuncio de Bárbara (imagen única)
+// Calendario vigente (26-ago-2026, fijado por Joaquín), 09:00 Chile:
+//   Lun = carrusel de Cóndor   · Mié = anuncio de Cóndor (imagen única)
+//   Jue = carrusel de Bárbara  · Sáb = anuncio de Bárbara (imagen única)
 // Cada marca alterna entre sus DOS templates por semana ISO, así los cuatro
 // templates de carrusel se turnan sin repetirse dos semanas seguidas.
 // Imágenes con HIGGSFIELD (nano_banana_2). Memoria anti-repetición en content-log.json:
@@ -36,10 +37,13 @@ const OUTBOX = process.env.BARBARA_OUTBOX_DIR;
 // Día → tipo
 const rawDia = (process.env.DIA || "").trim().toLowerCase();
 let dia = rawDia;
-if (!["lunes", "martes", "jueves", "viernes"].includes(dia)) {
-  // 1=Lun 2=Mar 4=Jue 5=Vie — los 4 dias del calendario nuevo.
+if (!["lunes", "miercoles", "jueves", "sabado"].includes(dia)) {
+  // 1=Lun 3=Mie 4=Jue 6=Sab — el calendario que fijó Joaquín el 26-ago-2026.
+  // Antes era Lun/Mar/Jue/Vie: dos pares pegados (lun-mar y jue-vie) dejaban
+  // el fin de semana entero sin publicar y concentraban las 4 piezas en 4
+  // días corridos. Repartido así queda un espacio de 1-2 días entre cada una.
   const wd = new Date().getUTCDay();
-  dia = { 1: "lunes", 2: "martes", 4: "jueves", 5: "viernes" }[wd] || "lunes";
+  dia = { 1: "lunes", 3: "miercoles", 4: "jueves", 6: "sabado" }[wd] || "lunes";
 }
 
 // ── Piezas de marca compartidas ─────────────────────────────────────────────
@@ -265,10 +269,10 @@ const CARRUSELES_CONDOR = ["noticias", "servicios"];
 const CARRUSELES_BARBARA = ["barbara_producto", "barbara_datos"];
 
 const CALENDARIO = {
-  lunes: () => CARRUSELES_CONDOR[semanaISO() % 2],
-  martes: () => "ad_condor",
-  jueves: () => CARRUSELES_BARBARA[semanaISO() % 2],
-  viernes: () => "ad_barbara",
+  lunes:     () => CARRUSELES_CONDOR[semanaISO() % 2],   // carrusel Cóndor
+  miercoles: () => "ad_condor",                          // anuncio Cóndor
+  jueves:    () => CARRUSELES_BARBARA[semanaISO() % 2],  // carrusel Bárbara
+  sabado:    () => "ad_barbara",                         // anuncio Bárbara
 };
 
 // Semana ISO. El índice avanza por semana REAL y no por corrida: contando
@@ -445,12 +449,13 @@ async function main() {
   }
 
   // 0) Candado anti-doble-publicación: si ya se publicó UN CARRUSEL hoy, no volver a generar.
-  //    OJO: filtra por tipo de carrusel (lunes/miercoles/viernes). El content-log es COMPARTIDO
-  //    con los reels (mar/jue), así que NO debe bloquear si lo de hoy fue un reel u otra cosa.
+  //    OJO: filtra por los tipos que genera ESTE workflow (los 4 días del
+  //    calendario). El content-log es COMPARTIDO con los reels, así que NO
+  //    debe bloquear si lo de hoy fue un reel u otra cosa.
   //    Un RETRY=1 sí permite re-generar (cuando el equipo rechaza el contenido).
   if (!isRetry) {
     const hoyISO = new Date().toISOString().slice(0, 10);
-    const tiposCarrusel = ["lunes", "miercoles", "viernes"];
+    const tiposCarrusel = ["lunes", "miercoles", "jueves", "sabado"];
     const yaHoy = leerLog().some(e => e.fecha === hoyISO && tiposCarrusel.includes(e.tipo));
     if (yaHoy) {
       console.log("Barbara ya publicó un carrusel hoy (" + hoyISO + "). No se vuelve a generar. Usa RETRY=1 para rehacerlo.");
@@ -458,7 +463,7 @@ async function main() {
     }
   }
 
-  // 1) Investigación (solo lunes/viernes)
+  // 1) Investigación (solo los días de carrusel: lunes y jueves)
   let research = "";
   if (tema.investiga) {
     try {
@@ -815,7 +820,7 @@ Responde SOLO con el JSON.`,
     "Para algo puntual, corre el workflow _Barbara_ a mano con:",
     "• `SERIE=" + claveSerie + "` — repite esta misma serie",
     "• `SERIE=noticias|servicios|barbara_producto|barbara_datos|ad_condor|ad_barbara` — cambia de serie",
-    "• `DIA=lunes|martes|jueves|viernes` — fuerza el día",
+    "• `DIA=lunes|miercoles|jueves|sabado` — fuerza el día",
     "• `RETRY=1` — salta el candado de 1 pieza por día",
     "",
     "El diseño de cada serie vive en `services/barbara/barbara.mjs`, en la constante `T_" + claveSerie.toUpperCase() + "`. Ahí se cambian colores, tipografía y retícula — el contenido no se toca, lo escribe Bárbara cada vez.",
