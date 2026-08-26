@@ -71,11 +71,13 @@ const dif = (n: React.ReactNode) => <Suspense fallback={cargando}>{n}</Suspense>
 const MENU_STAFF: Grupo[] = [
   {
     titulo: "Resumen",
+    clave: "resumen",
     icono: "panel",
     entradas: [{ a: "/acceso/dashboard", texto: "Panel", icono: "panel" }],
   },
   {
     titulo: "Clientes",
+    clave: "clientes",
     icono: "clientes",
     entradas: [
       { a: "/acceso/clientes", texto: "Cóndor.AI", icono: "condor" },
@@ -84,6 +86,7 @@ const MENU_STAFF: Grupo[] = [
   },
   {
     titulo: "Finanzas y contabilidad",
+    clave: "finanzas",
     icono: "libro",
     entradas: [
       { a: "/acceso/cobros", texto: "Cobros", icono: "cobros" },
@@ -92,6 +95,7 @@ const MENU_STAFF: Grupo[] = [
   },
   {
     titulo: "Organización",
+    clave: "organizacion",
     icono: "tablero",
     entradas: [
       { a: "/acceso/organizacion/tablero", texto: "Tablero", icono: "tablero" },
@@ -102,19 +106,27 @@ const MENU_STAFF: Grupo[] = [
   },
   {
     titulo: "Agentes IA",
+    clave: "agentes",
     icono: "barbara",
+    // En fila, no apiladas: Memoria no es otra sección del menú, es lo que
+    // Bárbara recuerda. Juntas se leen como una sola cosa con dos puertas.
+    fila: true,
     entradas: [
       // "Bárbara" abre EL portal directo (Cóndor.AI, como cualquier cliente
       // usando su propio producto) — pedido explícito de Joaquín (24-ago):
       // sin pasos intermedios, sin lista, sin botón "Ver portal". La lista
       // completa de clientes de Bárbara (administrar, dar de alta) sigue en
       // /acceso/agentes-ia, alcanzable desde dentro del portal en Ajustes.
-      { a: "/acceso/barbara", texto: "Bárbara", icono: "barbara", transicion: true },
-      { a: "/acceso/memoria", texto: "Memoria", icono: "memoria" },
+      { a: "/acceso/barbara", texto: "Bárbara", icono: "barbara", transicion: true,
+        agente: "barbara", oficio: "Contenido" },
+      // Sin bajada: en 71 px "LO QUE SABE" se corta en "LO QUE S…", y una
+      // etiqueta cortada comunica menos que ninguna.
+      { a: "/acceso/memoria", texto: "Memoria", icono: "memoria", agente: "memoria" },
     ],
   },
   {
     titulo: "Operación",
+    clave: "operacion",
     icono: "reuniones",
     entradas: [
       { a: "/acceso/correos", texto: "Correos", icono: "correos" },
@@ -124,6 +136,7 @@ const MENU_STAFF: Grupo[] = [
   },
   {
     titulo: "Sistema",
+    clave: "sistema",
     icono: "ajustes",
     entradas: [
       { a: "/acceso/mapa", texto: "Mapa", icono: "grafo" },
@@ -275,10 +288,11 @@ function PortalContenido() {
   const menuCliente: Grupo[] = [
     {
       titulo: "Mi servicio",
+      clave: "operacion",
       icono: "plan",
       entradas: tieneBarbara ? [...MENU_CLIENTE_BASE, ITEM_BARBARA] : MENU_CLIENTE_BASE,
     },
-    { titulo: "Cuenta", icono: "ajustes", entradas: [ITEM_CUENTA] },
+    { titulo: "Cuenta", clave: "resumen", icono: "ajustes", entradas: [ITEM_CUENTA] },
   ];
 
   return envolver(
