@@ -18,14 +18,6 @@ async function insertarChat(sb: any, clienteId: string, remitente: "cliente" | "
   return data?.id ?? null;
 }
 
-function aprenderDeMensaje(barbaraClienteId: string, mensaje: string, mensajeId: string | null) {
-  fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/barbara-aprender-chat`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}` },
-    body: JSON.stringify({ barbara_cliente_id: barbaraClienteId, mensaje, mensaje_id: mensajeId }),
-  }).catch(() => {});
-}
-
 async function dispararReintento(barbaraClienteId: string, piezaId: string, tipo: string) {
   if (!GH_TOKEN) return false;
   const r = await fetch(`https://api.github.com/repos/${REPO}/actions/workflows/${WORKFLOW}/dispatches`, {
@@ -36,13 +28,14 @@ async function dispararReintento(barbaraClienteId: string, piezaId: string, tipo
   return r.ok;
 }
 
-async function conversar(sb: any, barbaraClienteId: string, mensaje: string) {
+type MensajeSesion = { remitente: "cliente" | "barbara"; mensaje: string };
+
+async function conversar(sb: any, barbaraClienteId: string, mensaje: string, historialSesion: MensajeSesion[]) {
   const AK = Deno.env.get("ANTHROPIC_API_KEY");
   if (!AK) return "Recibí tu mensaje. El equipo debe habilitar el canal de conversación para responderte desde aquí.";
-  const [{ data: ficha }, { data: recientes }, { data: historial }] = await Promise.all([
+  const [{ data: ficha }, { data: recientes }] = await Promise.all([
     sb.from("barbara_clientes").select("rubro,clientes(negocio),barbara_formulario(publico_objetivo,tono,producto_destacar)").eq("id", barbaraClienteId).maybeSingle(),
     sb.from("barbara_memoria").select("tipo,angulo,estado").eq("barbara_cliente_id", barbaraClienteId).order("creado_en", { ascending: false }).limit(5),
-    sb.from("barbara_chats").select("remitente,mensaje").eq("barbara_cliente_id", barbaraClienteId).order("creado_en", { ascending: false }).limit(8),
   ]);
   const negocio = (ficha as any)?.clientes?.negocio || "la marca";
   const formulario = (ficha as any)?.barbara_formulario?.[0] || (ficha as any)?.barbara_formulario || {};
@@ -51,15 +44,37 @@ async function conversar(sb: any, barbaraClienteId: string, mensaje: string) {
     `Público: ${formulario.publico_objetivo || "sin definir"}. Tono: ${formulario.tono || "sin definir"}.`,
     `Piezas recientes: ${(recientes ?? []).map((p: any) => `${p.tipo}: ${p.angulo || "sin ángulo"} (${p.estado || "histórica"})`).join(" | ") || "sin piezas"}.`,
   ].join("\n");
-  const conversacion = (historial ?? []).reverse().map((m: any) => `${m.remitente}: ${m.mensaje}`).join("\n");
+  const mensajesModelo = historialSesion.slice(-10).map((entrada) => ({
+    role: entrada.remitente === "barbara" ? "assistant" : "user",
+    content: entrada.mensaje,
+  }));
+  mensajesModelo.push({ role: "user", content: mensaje });
   try {
     const r = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: { "x-api-key": AK, "anthropic-version": "2023-06-01", "content-type": "application/json" },
       body: JSON.stringify({
-        model: "claude-sonnet-5", max_tokens: 500,
-        system: "Eres Bárbara, directora de contenido de una marca. Respondes en español, breve y concreta. Ayudas a idear, aclarar el estado de entregas y orientar el uso del producto. No dices que una pieza fue publicada si no lo confirma el contexto. No tomes una pregunta como una corrección ni prometas una regeneración. Para cambios a una entrega, recuerda usar Entregas.",
-        messages: [{ role: "user", content: `${contexto}\n\nConversación reciente:\n${conversacion || "(primera conversación)"}\n\nMensaje actual: ${mensaje}` }],
+        model: "claude-sonnet-5", max_tokens: 900,
+        system: `Eres Bárbara, directora de contenido de esta marca. Respondes en español natural, profesional, directa y cercana.
+
+CONTEXTO VERIFICADO DE LA MARCA
+${contexto}
+
+REGLAS DE CONTENIDO
+- Ayuda a idear, ordenar decisiones, explicar entregas y orientar el uso del producto.
+- No afirmes que una pieza fue publicada ni que tienes datos en vivo si el contexto no lo confirma.
+- No tomes una pregunta como una corrección ni prometas regeneraciones. Para cambiar una entrega, indica brevemente que se hace en Entregas.
+- Habla como colaboradora experta. Evita frases genéricas, relleno, repeticiones y encabezados burocráticos.
+
+REGLAS DE ESCRITURA
+- Abre con la respuesta o recomendación concreta, no con un resumen del contexto que ya conoces.
+- Usa párrafos cortos. Si hay 3 o más elementos comparables, usa una lista.
+- Usa pasos numerados solo cuando exista un orden real.
+- Puedes usar Markdown simple: títulos breves con ##, listas con -, negrita con ** y citas con >.
+- Nunca muestres asteriscos sueltos, JSON, tablas Markdown ni bloques de código salvo que el usuario los pida.
+- No repitas etiquetas como Marca, Rubro, Público o Tono a menos que sean necesarias para responder.
+- Cierra con una sola pregunta útil solo cuando necesites una decisión para avanzar.`,
+        messages: mensajesModelo,
       }),
     });
     if (!r.ok) throw new Error("modelo no disponible");
@@ -80,10 +95,17 @@ Deno.serve(async (req) => {
   if (!user?.email) return json({ error: "no autenticado" }, 401);
 
   let accion = "chat", barbaraClienteId = "", mensaje = "", piezaId = "", canal = "";
+  let historialSesion: MensajeSesion[] = [];
   try {
     const body = await req.json();
     accion = String(body?.accion || "chat"); barbaraClienteId = String(body?.barbara_cliente_id || "").trim();
     mensaje = String(body?.mensaje || "").trim().slice(0, 2000); piezaId = String(body?.pieza_id || "").trim(); canal = String(body?.canal || "").trim().slice(0, 80);
+    historialSesion = Array.isArray(body?.historial)
+      ? body.historial.slice(-10).map((entrada: any): MensajeSesion => ({
+          remitente: entrada?.remitente === "barbara" ? "barbara" : "cliente",
+          mensaje: String(entrada?.mensaje || "").trim().slice(0, 4000),
+        })).filter((entrada: MensajeSesion) => entrada.mensaje)
+      : [];
   } catch { return json({ error: "cuerpo inválido" }, 400); }
   if (!barbaraClienteId || !["chat", "correccion", "aprobar", "publicar"].includes(accion)) return json({ error: "solicitud inválida" }, 400);
   if (["chat", "correccion"].includes(accion) && !mensaje) return json({ error: "escribe un mensaje" }, 400);
@@ -97,10 +119,9 @@ Deno.serve(async (req) => {
   }
 
   if (accion === "chat") {
-    const chatId = await insertarChat(sb, barbaraClienteId, admin ? "staff" : "cliente", mensaje);
-    if (!admin) aprenderDeMensaje(barbaraClienteId, mensaje, chatId);
-    const respuesta = await conversar(sb, barbaraClienteId, mensaje);
-    await insertarChat(sb, barbaraClienteId, "barbara", respuesta);
+    // La conversación del portal es efímera: el navegador entrega solo el
+    // contexto de esta visita y no se insertan mensajes en barbara_chats.
+    const respuesta = await conversar(sb, barbaraClienteId, mensaje, historialSesion);
     return json({ ok: true, respuesta });
   }
 

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { sb, fecha } from "../lib/supabase";
 
 type Plataforma = "instagram" | "facebook" | "tiktok" | "linkedin";
@@ -38,6 +38,50 @@ const memoriaDe = (p?: ProgramacionMetrica) => p
   ? Array.isArray(p.barbara_memoria) ? p.barbara_memoria[0] : p.barbara_memoria
   : null;
 
+/** Índice de escalonado para las animaciones de entrada. Va en una custom
+ *  property y no en un `animation-delay` inline para que el CSS conserve el
+ *  control del ritmo y del respeto a `prefers-reduced-motion`. */
+const escalon = (indice: number) => ({ "--barbara-orden": indice }) as CSSProperties;
+
+const sinMovimiento = () =>
+  typeof window !== "undefined"
+  && typeof window.matchMedia === "function"
+  && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/**
+ * Las cifras del resumen suben desde cero al abrir la pestaña. Es la parte
+ * del movimiento que NO puede vivir en CSS: el valor mostrado es texto.
+ * Curva cubic-out para que el número desacelere igual que la tarjeta que lo
+ * enmarca; sin movimiento reducido salta directo al valor final.
+ */
+function useCifraAnimada(valor: number, duracion = 1100) {
+  const reducido = sinMovimiento();
+  // Se guarda el AVANCE, no la cifra: con movimiento reducido el hook
+  // devuelve el valor final sin tocar estado, y el efecto no tiene que
+  // llamar a setState de forma síncrona para ponerse al día.
+  const [avance, setAvance] = useState(0);
+  const cuadro = useRef(0);
+
+  useEffect(() => {
+    if (reducido) return;
+    const inicio = performance.now();
+    const paso = (ahora: number) => {
+      const t = Math.min(1, (ahora - inicio) / duracion);
+      setAvance(1 - (1 - t) ** 3);
+      if (t < 1) cuadro.current = requestAnimationFrame(paso);
+    };
+    cuadro.current = requestAnimationFrame(paso);
+    return () => cancelAnimationFrame(cuadro.current);
+  }, [valor, duracion, reducido]);
+
+  return reducido ? valor : valor * avance;
+}
+
+function Cifra({ valor, formatear }: { valor: number; formatear: (n: number) => string }) {
+  const mostrado = useCifraAnimada(valor);
+  return <b>{formatear(mostrado)}</b>;
+}
+
 const suma = (filas: Metrica[], campo: keyof Metrica) =>
   filas.reduce((total, fila) => total + Number(fila[campo] || 0), 0);
 
@@ -58,7 +102,10 @@ export function BarbaraAnalisis({ barbaraClienteId }: { barbaraClienteId: string
           .eq("barbara_cliente_id", barbaraClienteId),
         sb.from("barbara_canales").select("plataforma,activo,account_ref").eq("barbara_cliente_id", barbaraClienteId),
         sb.from("barbara_programaciones")
-          .select("id,tipo,programada_para,titulo,barbara_memoria(angulo)")
+          // `titulo` pertenece a la migración de planes editoriales. El
+          // análisis también debe funcionar en instalaciones que aún no la
+          // aplican; el ángulo de la memoria es el nombre estable de la pieza.
+          .select("id,tipo,programada_para,barbara_memoria(angulo)")
           .eq("barbara_cliente_id", barbaraClienteId).eq("estado", "publicada")
           .order("programada_para", { ascending: true }).limit(90),
       ]);
@@ -111,10 +158,10 @@ export function BarbaraAnalisis({ barbaraClienteId }: { barbaraClienteId: string
       ) : (
         <>
           <section className="barbara-analisis-resumen" aria-label="Resumen de rendimiento">
-            <div><small>Alcance acumulado</small><b>{formato(alcance)}</b><span>personas alcanzadas por las piezas medidas</span></div>
-            <div><small>Interacciones</small><b>{formato(interacciones)}</b><span>likes, comentarios, guardados, compartidos y clics</span></div>
-            <div><small>Tasa de interacción</small><b>{tasa.toFixed(1)}%</b><span>interacciones sobre alcance</span></div>
-            <div><small>Reproducciones</small><b>{formato(reproducciones)}</b><span>cuando la red reporta video</span></div>
+            <div style={escalon(0)}><small>Alcance acumulado</small><Cifra valor={alcance} formatear={(n) => formato(Math.round(n))} /><span>personas alcanzadas por las piezas medidas</span></div>
+            <div style={escalon(1)}><small>Interacciones</small><Cifra valor={interacciones} formatear={(n) => formato(Math.round(n))} /><span>likes, comentarios, guardados, compartidos y clics</span></div>
+            <div style={escalon(2)}><small>Tasa de interacción</small><Cifra valor={tasa} formatear={(n) => `${n.toFixed(1)}%`} /><span>interacciones sobre alcance</span></div>
+            <div style={escalon(3)}><small>Reproducciones</small><Cifra valor={reproducciones} formatear={(n) => formato(Math.round(n))} /><span>cuando la red reporta video</span></div>
           </section>
 
           <div className="barbara-graficas-grid">
@@ -133,7 +180,7 @@ export function BarbaraAnalisis({ barbaraClienteId }: { barbaraClienteId: string
           <span className="barbara-rotulo">Por canal</span><h2>Estado de tus cuentas</h2>
         </div>
         <div className="barbara-redes">
-          {REDES.map((red) => <PanelRed key={red.id} nombre={red.nombre} cuenta={red.cuenta}
+          {REDES.map((red, indice) => <PanelRed key={red.id} nombre={red.nombre} cuenta={red.cuenta} orden={indice}
             canal={canales.find((c) => c.plataforma === red.id)} filas={porRed.get(red.id) ?? []} />)}
         </div>
       </section>
@@ -180,8 +227,11 @@ function GraficaRendimiento({ puntos }: { puntos: Punto[] }) {
           <line x1={margen.izquierda} y1={yDe(valor)} x2={ancho - margen.derecha} y2={yDe(valor)} className="guia" />
           <text x={margen.izquierda - 10} y={yDe(valor) + 3} textAnchor="end" className="eje-y">{formato(valor)}</text>
         </g>)}
-        <polygon points={area} fill="url(#barbara-area)" /><polyline points={linea} className="linea" />
-        {coordenadas.map(({ x, y, p }) => <g key={p.programacion_id}>
+        <polygon points={area} className="area" fill="url(#barbara-area)" />
+        {/* `pathLength=1` normaliza el largo real del trazo: el dash puede
+            animarse sin medirlo en JS y sin depender de cuántos puntos haya. */}
+        <polyline points={linea} className="linea" pathLength={1} />
+        {coordenadas.map(({ x, y, p }, indice) => <g key={p.programacion_id} className="barbara-grafica-punto" style={escalon(indice)}>
           <text x={x} y={y - 12} textAnchor="middle" className="valor-punto">{formato(p.alcance)}</text>
           <circle cx={x} cy={y} r="5"><title>{p.titulo}: {formato(p.alcance)} de alcance</title></circle>
         </g>)}
@@ -202,8 +252,8 @@ function MezclaInteracciones({ metricas }: { metricas: Metrica[] }) {
   const total = segmentos.reduce((acc, s) => acc + s.valor, 0);
   return <section className="barbara-grafica barbara-mezcla">
     <header><div><small>Calidad de respuesta</small><h3>Qué hace la audiencia</h3></div><span>{formato(total)} acciones</span></header>
-    <div className="barbara-mezcla-barra" aria-label="Distribución de interacciones">{segmentos.filter((s) => s.valor > 0).map((s) => <i key={s.nombre} className={s.clase} style={{ width: `${(s.valor / Math.max(1, total)) * 100}%` }} title={`${s.nombre}: ${formato(s.valor)}`} />)}</div>
-    <div className="barbara-mezcla-lista">{segmentos.map((s) => <div key={s.nombre}><i className={s.clase} /><span>{s.nombre}</span><b>{formato(s.valor)}</b><small>{total ? `${((s.valor / total) * 100).toFixed(0)}%` : "0%"}</small></div>)}</div>
+    <div className="barbara-mezcla-barra" aria-label="Distribución de interacciones">{segmentos.filter((s) => s.valor > 0).map((s, indice) => <i key={s.nombre} className={s.clase} style={{ width: `${(s.valor / Math.max(1, total)) * 100}%`, ...escalon(indice) }} title={`${s.nombre}: ${formato(s.valor)}`} />)}</div>
+    <div className="barbara-mezcla-lista">{segmentos.map((s, indice) => <div key={s.nombre} style={escalon(indice)}><i className={s.clase} /><span>{s.nombre}</span><b>{formato(s.valor)}</b><small>{total ? `${((s.valor / total) * 100).toFixed(0)}%` : "0%"}</small></div>)}</div>
   </section>;
 }
 
@@ -212,7 +262,7 @@ function MejoresPiezas({ puntos }: { puntos: Punto[] }) {
   const maxima = Math.max(1, ...mejores.map((p) => p.tasa));
   return <section className="barbara-grafica barbara-ranking">
     <header><div><small>Comparativa</small><h3>Piezas con mejor respuesta</h3></div><span>por tasa</span></header>
-    <ol>{mejores.map((p) => <li key={p.programacion_id}>
+    <ol>{mejores.map((p, indice) => <li key={p.programacion_id} style={escalon(indice)}>
       <div><b>{p.titulo}</b><small>{p.tipo} · {p.plataforma}</small></div>
       <span><i style={{ width: `${(p.tasa / maxima) * 100}%` }} /></span><strong>{p.tasa.toFixed(1)}%</strong>
     </li>)}</ol>
@@ -236,11 +286,11 @@ function LecturaBarbara({ puntos }: { puntos: Punto[] }) {
   </section>;
 }
 
-function PanelRed({ nombre, cuenta, canal, filas }: { nombre: string; cuenta: string; canal: Canal | undefined; filas: Metrica[] }) {
+function PanelRed({ nombre, cuenta, canal, filas, orden }: { nombre: string; cuenta: string; canal: Canal | undefined; filas: Metrica[]; orden: number }) {
   const alcance = suma(filas, "alcance"), interacciones = suma(filas, "interacciones"), reproducciones = suma(filas, "reproducciones");
   const ultima = filas.reduce<Metrica | null>((mejor, m) => !mejor || m.capturado_en > mejor.capturado_en ? m : mejor, null);
   const seguidores = ultima?.seguidores ?? null, tasa = alcance > 0 ? (interacciones / alcance) * 100 : null, conectada = Boolean(canal?.activo);
-  return <section className="barbara-red">
+  return <section className="barbara-red" style={escalon(orden)}>
     <header><div><b>{nombre}</b>{canal?.account_ref && <small>{canal.account_ref}</small>}</div><span className={"pill " + (conectada ? "ok" : "gris")}>{conectada ? "Conectada" : "Sin conectar"}</span></header>
     {!filas.length ? <p className="tenue">{conectada ? "Conectada para publicar; falta recibir analítica." : `Falta dar de alta la ${cuenta}.`}</p> : <>
       <div className="barbara-red-cifras">{seguidores !== null && <div><small>Seguidores</small><b>{formato(seguidores)}</b></div>}<div><small>Alcance</small><b>{formato(alcance)}</b></div><div><small>Interacciones</small><b>{formato(interacciones)}</b></div>{tasa !== null && <div><small>Tasa</small><b>{tasa.toFixed(1)}%</b></div>}{reproducciones > 0 && <div><small>Reproducciones</small><b>{formato(reproducciones)}</b></div>}<div><small>Piezas medidas</small><b>{filas.length}</b></div></div>

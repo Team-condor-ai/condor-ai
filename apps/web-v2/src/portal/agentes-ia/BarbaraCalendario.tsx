@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { sb } from "../lib/supabase";
 import { Ico } from "../disenio/iconos";
 import { saludoHora } from "./saludo";
@@ -66,6 +66,7 @@ export function BarbaraCalendario({ barbaraClienteId, vistaInicial = "mes", nomb
   const [piezas, setPiezas] = useState<Pieza[]>([]);
   const [programaciones, setProgramaciones] = useState<Programacion[]>([]);
   const [seleccionada, setSeleccionada] = useState<Programacion | null>(null);
+  const [piezaSeleccionada, setPiezaSeleccionada] = useState<Pieza | null>(null);
   const [nuevaHora, setNuevaHora] = useState("");
   const [motivo, setMotivo] = useState("");
   const [zonaHoraria, setZonaHoraria] = useState("America/Santiago");
@@ -95,16 +96,44 @@ export function BarbaraCalendario({ barbaraClienteId, vistaInicial = "mes", nomb
         // puede ser distinta a la del navegador que está mirando el portal.
         const desdeUTC = new Date(desde); desdeUTC.setDate(desdeUTC.getDate() - 1);
         const hastaUTC = new Date(hasta); hastaUTC.setDate(hastaUTC.getDate() + 1);
+        const consultarProgramaciones = async () => {
+          const completa = await sb.from("barbara_programaciones")
+            .select("id,tipo,plataforma,programada_para,estado,zona_horaria,motivo_reprogramacion,razon_planificacion,ultimo_error,intentos_publicacion,titulo,brief,configuracion,serie_id,barbara_memoria(angulo)")
+            .eq("barbara_cliente_id", barbaraClienteId)
+            .gte("programada_para", desdeUTC.toISOString()).lt("programada_para", hastaUTC.toISOString())
+            .order("programada_para", { ascending: true });
+          if (!completa.error) return completa;
+
+          // Algunas instalaciones todavía no tienen la migración de planes
+          // editoriales. El calendario base debe seguir cargando en vez de
+          // imprimir el error técnico de una columna faltante en la pantalla.
+          const faltaMigracion = /barbara_programaciones\.(titulo|brief|configuracion|serie_id)|column .* does not exist/i
+            .test(completa.error.message || "");
+          if (!faltaMigracion) return completa;
+
+          const basica = await sb.from("barbara_programaciones")
+            .select("id,tipo,plataforma,programada_para,estado,zona_horaria,motivo_reprogramacion,razon_planificacion,ultimo_error,intentos_publicacion,barbara_memoria(angulo)")
+            .eq("barbara_cliente_id", barbaraClienteId)
+            .gte("programada_para", desdeUTC.toISOString()).lt("programada_para", hastaUTC.toISOString())
+            .order("programada_para", { ascending: true });
+          if (basica.error) return basica;
+          return {
+            ...basica,
+            data: (basica.data ?? []).map((programacion) => ({
+              ...programacion,
+              titulo: null,
+              brief: null,
+              configuracion: null,
+              serie_id: null,
+            })),
+          };
+        };
         const [historial, futuro, cuenta] = await Promise.all([
           sb.from("barbara_memoria")
             .select("id,fecha,tipo,angulo,aprobada_sin_cambios,correcciones_pedidas")
             .eq("barbara_cliente_id", barbaraClienteId)
             .gte("fecha", fechaLocal(desde)).lt("fecha", fechaLocal(hasta)),
-          sb.from("barbara_programaciones")
-            .select("id,tipo,plataforma,programada_para,estado,zona_horaria,motivo_reprogramacion,razon_planificacion,ultimo_error,intentos_publicacion,titulo,brief,configuracion,serie_id,barbara_memoria(angulo)")
-            .eq("barbara_cliente_id", barbaraClienteId)
-            .gte("programada_para", desdeUTC.toISOString()).lt("programada_para", hastaUTC.toISOString())
-            .order("programada_para", { ascending: true }),
+          consultarProgramaciones(),
           sb.from("barbara_clientes").select("zona_horaria").eq("id", barbaraClienteId).maybeSingle(),
         ]);
         if (!vivo) return;
@@ -123,6 +152,7 @@ export function BarbaraCalendario({ barbaraClienteId, vistaInicial = "mes", nomb
   for (let i = 0; i < cantidad; i++) { const d = new Date(base); d.setDate(d.getDate() + i); dias.push(d); }
 
   const abrir = (p: Programacion) => {
+    setPiezaSeleccionada(null);
     setSeleccionada(p);
     setNuevaHora(inputEnZona(p.programada_para, p.zona_horaria));
     setMotivo(p.motivo_reprogramacion || "");
@@ -200,7 +230,7 @@ export function BarbaraCalendario({ barbaraClienteId, vistaInicial = "mes", nomb
   }
 
   return (
-    <div className="barbara-calendario">
+    <div className={`barbara-calendario${resumen ? " resumen" : ""}`}>
       <div className="barbara-calendario-nav">
         <div className="barbara-calendario-contexto">
           <span>{saludoCalendario(nombreCliente)}</span>
@@ -216,9 +246,9 @@ export function BarbaraCalendario({ barbaraClienteId, vistaInicial = "mes", nomb
       </div>
 
       {error && <p className="error">{error}</p>}
-      <div className={"barbara-calendario-grilla" + (vista === "mes" ? " mes" : "")}>
+      <div key={`${vista}-${etiquetaRango}`} className={"barbara-calendario-grilla" + (vista === "mes" ? " mes" : "")}>
         {DIAS.map((d) => <div key={d} className="barbara-calendario-diasem">{d}</div>)}
-        {dias.map((d) => {
+        {dias.map((d, indiceDia) => {
           const diaIso = fechaLocal(d);
           const esPasado = diaIso < HOY;
           const enMes = vista === "semana" || d.getMonth() === ancla.getMonth();
@@ -227,6 +257,7 @@ export function BarbaraCalendario({ barbaraClienteId, vistaInicial = "mes", nomb
           return (
             <div key={diaIso}
               className={"barbara-calendario-celda" + (diaIso === HOY ? " hoy" : "") + (esPasado ? " pasado" : "") + (enMes ? "" : " fuera") + (arrastrando && !esPasado ? " recibe" : "") + (destino === diaIso ? " destino" : "")}
+              style={{ "--barbara-dia-indice": indiceDia } as CSSProperties}
               onDragEnter={(e) => { if (arrastrando && !esPasado) { e.preventDefault(); setDestino(diaIso); } }}
               onDragOver={(e) => { if (arrastrando && !esPasado) { e.preventDefault(); e.dataTransfer.dropEffect = "move"; setDestino(diaIso); } }}
               onDrop={(e) => {
@@ -262,7 +293,17 @@ export function BarbaraCalendario({ barbaraClienteId, vistaInicial = "mes", nomb
                 </button>
               ))}
               {historicas.map((p) => (
-                <div key={p.id} className={`barbara-calendario-chip historica tipo-${p.tipo}`} title={`Para ${nombreCliente}: ${p.angulo || p.tipo}`}>
+                <button
+                  type="button"
+                  key={p.id}
+                  className={`barbara-calendario-chip historica tipo-${p.tipo}`}
+                  title={`Para ${nombreCliente}: ${p.angulo || p.tipo}`}
+                  aria-label={`Publicada: ${p.angulo || p.tipo}. Toca para ver detalles.`}
+                  onClick={() => {
+                    setSeleccionada(null);
+                    setPiezaSeleccionada(p);
+                  }}
+                >
                   <span className="barbara-calendario-chip-icono" aria-hidden="true">{visualDe(p.tipo).sigla}</span>
                   <span className="barbara-calendario-chip-copia">
                     <span className="barbara-calendario-chip-meta">
@@ -271,12 +312,34 @@ export function BarbaraCalendario({ barbaraClienteId, vistaInicial = "mes", nomb
                     </span>
                     <strong>{p.angulo || p.tipo}</strong>
                   </span>
-                </div>
+                </button>
               ))}
             </div>
           );
         })}
       </div>
+
+      {piezaSeleccionada && (
+        <div className="barbara-calendario-detalle" role="status">
+          <span className={`barbara-calendario-chip-icono tipo-${piezaSeleccionada.tipo}`} aria-hidden="true">
+            {visualDe(piezaSeleccionada.tipo).sigla}
+          </span>
+          <div>
+            <small>Publicado · {piezaSeleccionada.fecha}</small>
+            <strong>{piezaSeleccionada.angulo || visualDe(piezaSeleccionada.tipo).nombre}</strong>
+            <span>
+              {piezaSeleccionada.aprobada_sin_cambios
+                ? "Aprobada sin cambios"
+                : `${piezaSeleccionada.correcciones_pedidas || 0} corrección${
+                    (piezaSeleccionada.correcciones_pedidas || 0) === 1 ? "" : "es"} solicitada${
+                    (piezaSeleccionada.correcciones_pedidas || 0) === 1 ? "" : "s"}`}
+            </span>
+          </div>
+          <button type="button" className="icono-btn" aria-label="Cerrar detalle" onClick={() => setPiezaSeleccionada(null)}>
+            {Ico.cerrar({ t: 14 })}
+          </button>
+        </div>
+      )}
 
       {seleccionada && (
         <div className="barbara-programacion-editor">

@@ -421,6 +421,18 @@ export function pluginPortalDemo() {
             });
             return json(res, { ok: true, enviados, fallos: [], demo: true });
           }
+          if (fn === "barbara-chat") {
+            const b = (await cuerpoJson(req)) ?? {};
+            if (b.accion === "chat") {
+              const pedido = String(b.mensaje || "tu idea").trim();
+              return json(res, {
+                ok: true,
+                demo: true,
+                respuesta: `Podemos convertir **${pedido}** en una pieza mucho más concreta.\n\n## Enfoque recomendado\n- Abrir con una tensión real de la audiencia.\n- Resolver una sola idea por publicación.\n- Cerrar con una acción que calce con el objetivo de la marca.\n\n¿Quieres que lo trabajemos como carrusel, historia o video UGC?`,
+              });
+            }
+            return json(res, { ok: true, demo: true });
+          }
           if (fn === "tipo-cambio") return json(res, { tasas: datos.tipos_cambio, refrescado: false });
           if (fn === "mcp-condor-token") return json(res, { token: "demo-token", nombre: "demo" });
           return json(res, { ok: true, demo: true });

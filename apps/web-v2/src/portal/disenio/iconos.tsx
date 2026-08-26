@@ -237,6 +237,11 @@ export const Ico = {
       <path d="M4 7h16M4 12h16M4 17h16" />
     </Svg>
   ),
+  cerrar: (p: Props = {}) => (
+    <Svg {...p} g={1.8}>
+      <path d="m5.5 5.5 13 13M18.5 5.5l-13 13" />
+    </Svg>
+  ),
   salir: (p: Props = {}) => (
     <Svg {...p}>
       <path d="M9 21H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3" />

@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { sb, fecha } from "../lib/supabase";
 import type { BarbaraChat } from "./tipos";
+import { BarbaraAvatar } from "./BarbaraAvatar";
+import { BarbaraMensaje } from "./BarbaraMensaje";
 
 const ETIQUETA: Record<BarbaraChat["remitente"], string> = {
   cliente: "Cliente",
@@ -51,7 +53,7 @@ export function ChatVisor({ barbaraClienteId }: { barbaraClienteId: string }) {
   if (error) return <p className="error">{error}</p>;
   if (mensajes.length === 0) return (
     <div className="barbara-chat-vacio">
-      <img src="/assets/barbara/avatar.png" alt="" aria-hidden="true" />
+      <BarbaraAvatar />
       <div>
         <b>¿En qué trabajamos hoy?</b>
         <p>Pídeme ideas, revisa el estado de una pieza o conversemos sobre tu calendario.</p>
@@ -65,12 +67,12 @@ export function ChatVisor({ barbaraClienteId }: { barbaraClienteId: string }) {
         <article key={m.id} className={"barbara-chat-mensaje " + m.remitente}>
           <div className="barbara-chat-remitente" aria-hidden="true">
             {m.remitente === "barbara"
-              ? <img src="/assets/barbara/avatar.png" alt="" />
+              ? <BarbaraAvatar />
               : <span>{m.remitente === "staff" ? "C" : "T"}</span>}
           </div>
           <div className="barbara-chat-mensaje-cuerpo">
             <b>{ETIQUETA[m.remitente]} <small>· {fecha(m.creado_en)}</small></b>
-            <p>{m.mensaje}</p>
+            {m.remitente === "barbara" ? <BarbaraMensaje texto={m.mensaje} /> : <p>{m.mensaje}</p>}
           </div>
         </article>
       ))}

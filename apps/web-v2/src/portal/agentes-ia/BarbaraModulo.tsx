@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { useNavigate } from "react-router-dom";
 import { Ico } from "../disenio/iconos";
 import { navegarConTransicion } from "../disenio/vistaTransicion";
@@ -13,6 +13,7 @@ import { BarbaraAnalisis } from "./BarbaraAnalisis";
 import { BarbaraConfiguracion } from "./BarbaraConfiguracion";
 import { BarbaraFondoCosmico } from "./BarbaraFondoCosmico";
 import { BarbaraEstadoVivo } from "./BarbaraEstadoVivo";
+import { BarbaraAvatar } from "./BarbaraAvatar";
 import { GrafoMemoria } from "../staff/memoria/GrafoMemoria";
 import { Mcp } from "../staff/Mcp";
 
@@ -27,11 +28,20 @@ const NAV: { grupo: string; icono: keyof typeof Ico; items: { id: Seccion; texto
     { id: "calendario", texto: "Calendario", icono: "reuniones" },
     { id: "biblioteca", texto: "Entregas", icono: "biblioteca" },
   ] },
+  { grupo: "Inteligencia", icono: "memoria", items: [
+    { id: "memoria", texto: "Memoria", icono: "memoria" },
+  ] },
   { grupo: "Ajustes", icono: "ajustes", items: [
     { id: "mcp", texto: "MCP", icono: "mcp" },
     { id: "configuracion", texto: "Configuración", icono: "ajustes" },
   ] },
 ];
+
+/** Orden plano de las secciones: escalona la entrada del riel sin depender
+ *  de la posición dentro de cada grupo. */
+const ORDEN_NAV: Record<Seccion, number> = Object.fromEntries(
+  NAV.flatMap((grupo) => grupo.items).map((item, indice) => [item.id, indice]),
+) as Record<Seccion, number>;
 
 const NOMBRE_SECCION: Record<Seccion, string> = {
   chat: "Bárbara IA",
@@ -100,6 +110,12 @@ export function BarbaraModulo({
   const [seccion, setSeccion] = useState<Seccion>("chat");
   const [poseBarbara, setPoseBarbara] = useState(siguienteIndiceBarbara);
   const [poseBarbaraAnterior, setPoseBarbaraAnterior] = useState<number | null>(null);
+  const [menuMovilAbierto, setMenuMovilAbierto] = useState(false);
+  /* La coreografía de apertura corre UNA sola vez por visita. Si viviera en
+     CSS sin bandera, cada cambio de sección la volvería a disparar (la
+     sección se remonta por `key`) y el módulo se sentiría inestable. */
+  const [entradaInicial, setEntradaInicial] = useState(true);
+  const [esMovil, setEsMovil] = useState(() => typeof window !== "undefined" && window.innerWidth <= 900);
   const poseActual = useRef(poseBarbara);
   const navegar = useNavigate();
   const nombreUsuario = useNombreUsuario();
@@ -111,6 +127,36 @@ export function BarbaraModulo({
     document.body.classList.add("barbara-activa");
     return () => document.body.classList.remove("barbara-activa");
   }, []);
+
+  useEffect(() => {
+    const fin = window.setTimeout(() => setEntradaInicial(false), 2600);
+    return () => window.clearTimeout(fin);
+  }, []);
+
+  /* Cambiar de sección desde el cajón dejaba la página donde estaba: en móvil
+     el título de la sección nueva aparecía tapado por la barra fija. */
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [seccion]);
+
+  useEffect(() => {
+    document.body.classList.toggle("barbara-menu-movil-abierto", menuMovilAbierto);
+    const cerrarMenu = (evento: KeyboardEvent) => {
+      if (evento.key === "Escape") setMenuMovilAbierto(false);
+    };
+    const cerrarEnDesktop = () => {
+      const movil = window.innerWidth <= 900;
+      setEsMovil(movil);
+      if (!movil) setMenuMovilAbierto(false);
+    };
+    window.addEventListener("keydown", cerrarMenu);
+    window.addEventListener("resize", cerrarEnDesktop);
+    return () => {
+      document.body.classList.remove("barbara-menu-movil-abierto");
+      window.removeEventListener("keydown", cerrarMenu);
+      window.removeEventListener("resize", cerrarEnDesktop);
+    };
+  }, [menuMovilAbierto]);
 
   /* Las poses no son un sprite sheet: cambiar un src de golpe se leia como
      un salto. Conservamos la pose anterior mientras entra la siguiente. */
@@ -139,10 +185,47 @@ export function BarbaraModulo({
   }, [poseBarbaraAnterior]);
 
   return (
-    <div className="barbara-modulo">
+    <div className={"barbara-modulo" + (entradaInicial ? " barbara-entrada-inicial" : "")}>
       <BarbaraFondoCosmico />
-      <aside className="barbara-modulo-rail" aria-label="Navegación de Bárbara">
+      <header className="barbara-mobile-bar">
+        <button
+          type="button"
+          className="barbara-mobile-menu-btn"
+          aria-label="Abrir navegación de Bárbara"
+          aria-controls="barbara-navegacion"
+          aria-expanded={menuMovilAbierto}
+          onClick={() => setMenuMovilAbierto(true)}
+        >
+          {Ico.menu({ t: 20 })}
+        </button>
+        <div className="barbara-mobile-identidad">
+          <BarbaraAvatar />
+          <span><b>Bárbara</b><small>{NOMBRE_SECCION[seccion]}</small></span>
+        </div>
+      </header>
+      <button
+        type="button"
+        className={`barbara-mobile-backdrop${menuMovilAbierto ? " visible" : ""}`}
+        aria-label="Cerrar navegación"
+        tabIndex={menuMovilAbierto ? 0 : -1}
+        onClick={() => setMenuMovilAbierto(false)}
+      />
+      <aside
+        id="barbara-navegacion"
+        className={`barbara-modulo-rail${menuMovilAbierto ? " abierto" : ""}`}
+        aria-label="Navegación de Bárbara"
+        aria-hidden={esMovil && !menuMovilAbierto ? true : undefined}
+        inert={esMovil && !menuMovilAbierto ? true : undefined}
+      >
         <div className="barbara-modulo-rail-cabecera">
+          <button
+            type="button"
+            className="barbara-mobile-cerrar"
+            aria-label="Cerrar navegación"
+            onClick={() => setMenuMovilAbierto(false)}
+          >
+            {Ico.cerrar({ t: 19 })}
+          </button>
           <button
             className="barbara-modulo-volver"
             onClick={() => navegarConTransicion(navegar, volverA, "vuelve")}
@@ -151,7 +234,7 @@ export function BarbaraModulo({
           </button>
           <div className="barbara-modulo-marca">
             <span className="barbara-modulo-avatar">
-              <img src="/assets/barbara/avatar.png" alt="" />
+              <BarbaraAvatar />
             </span>
             <div>
               <b>Bárbara</b>
@@ -161,15 +244,23 @@ export function BarbaraModulo({
         </div>
 
         <nav>
-          {NAV.map((g) => (
-            <div key={g.grupo} className="barbara-modulo-grupo">
+          {NAV.map((g, indiceGrupo) => (
+            <div
+              key={g.grupo}
+              className="barbara-modulo-grupo"
+              style={{ "--barbara-grupo-indice": indiceGrupo } as CSSProperties}
+            >
               <small>{Ico[g.icono]({ t: 12 })} {g.grupo}</small>
               {g.items.map((item) => (
                 <button
                   type="button"
                   key={item.id}
+                  style={{ "--barbara-item-indice": ORDEN_NAV[item.id] } as CSSProperties}
                   className={"barbara-modulo-item" + (seccion === item.id ? " on" : "")}
-                  onClick={() => setSeccion(item.id)}
+                  onClick={() => {
+                    setSeccion(item.id);
+                    setMenuMovilAbierto(false);
+                  }}
                   aria-current={seccion === item.id ? "page" : undefined}
                 >
                   <span className="barbara-modulo-item-dot" />
@@ -195,13 +286,6 @@ export function BarbaraModulo({
         >
         {seccion === "chat" && (
           <div className="barbara-inicio">
-            <div className="barbara-inicio-cabecera">
-              <div className="barbara-hero-cuerpo">
-                <span className="barbara-rotulo">Bárbara · tu agente de contenido</span>
-                <TituloAnimado texto={saludoHora(nombreUsuario, negocio)} className="barbara-titular" />
-                <p>{subtituloSaludo(negocio)}</p>
-              </div>
-            </div>
             <div className="barbara-inicio-principal">
               <div className="barbara-hero" aria-label="Bárbara, tu agente de contenido">
                 <BarbaraEstadoVivo />
@@ -230,7 +314,14 @@ export function BarbaraModulo({
                   </div>
                 </div>
               </div>
-              <BarbaraChat barbaraClienteId={barbaraClienteId} />
+              <div className="barbara-inicio-interaccion">
+                <div className="barbara-hero-cuerpo">
+                  <span className="barbara-rotulo">Bárbara · tu agente de contenido</span>
+                  <TituloAnimado texto={saludoHora(nombreUsuario, negocio)} className="barbara-titular" />
+                  <p>{subtituloSaludo(negocio)}</p>
+                </div>
+                <BarbaraChat barbaraClienteId={barbaraClienteId} />
+              </div>
             </div>
 
             <div className="barbara-tarjeta barbara-semana-resumen">
