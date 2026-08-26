@@ -822,10 +822,14 @@ function Calendario({
                           <span aria-current={clave(d) === hoy ? "date" : undefined}>
                             {d}
                           </span>
+                          {/* El envoltorio es un <div> y no un <span>: la
+                              celda estiliza a su hijo <span> como la burbuja
+                              del número del día (absoluta, 22×22 en grid), y
+                              el bloque de la reunión heredaba esa forma. */}
                           {reuniones
                             .filter((r) => fechaLocal(r.fecha_hora) === clave(d))
                             .map((r) => (
-                              <span className="evento-reunion-caja" key={r.id}>
+                              <div className="evento-reunion-caja" key={r.id}>
                               <button
                                 type="button"
                                 className={`evento reunion${new Date(r.fecha_hora).getTime() < ahora ? " evento-pasado" : ""}`}
@@ -889,7 +893,7 @@ function Calendario({
                                   {Ico.video({ t: 11 })}
                                 </a>
                               )}
-                              </span>
+                              </div>
                             ))}
                         </>
                       )}

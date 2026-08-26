@@ -929,8 +929,11 @@ textarea.campo{resize:vertical;min-height:56px}
    videollamada. Van como hermanos y no anidados porque un <a> dentro de un
    <button> no es HTML válido — el navegador desarma el marcado y se pierde
    uno de los dos gestos. */
-.portal-app .evento-reunion-caja{position:relative;display:block}
+.portal-app .cal-celda>.evento-reunion-caja{position:relative;display:block}
 .portal-app .evento-entrar{position:absolute;top:7px;right:6px;z-index:6;display:grid;place-items:center;width:19px;height:19px;border-radius:6px;background:color-mix(in srgb,#8B5CF6 22%,var(--panel));color:#8B5CF6;text-decoration:none;opacity:.85;transition:opacity .16s ease,background-color .16s ease}
 .portal-app .evento-entrar:hover{opacity:1;background:color-mix(in srgb,#8B5CF6 34%,var(--panel))}
 .portal-app .evento-reunion-caja .evento.reunion{cursor:pointer}
+/* Con link, el título tiene que cortarse ANTES de la insignia: si no, se
+   desliza por debajo y se lee "Demo Bárba[cámara]". */
+.portal-app .evento-reunion-caja:has(.evento-entrar) .evento.reunion{padding-right:30px}
 .portal-app .evento-reunion-caja .evento.evento-pasado+.evento-entrar{opacity:.5}
