@@ -127,6 +127,38 @@ async function todosLosInsights(urlInicial, token, fetchImpl) {
   return filas;
 }
 
+/**
+ * Fecha desde la cual el gasto entra al libro.
+ *
+ * La barrera de verdad vive en `contabilizar_gasto_meta` (ver la migracion
+ * 20260826_meta_ads_reset_y_corte): aunque este script se equivoque, el RPC
+ * devuelve null y no escribe nada. Leerla aca sirve para NO pedirle a Meta
+ * dias que igual se van a descartar y para que el resumen diga la verdad.
+ *
+ * Si la tabla todavia no existe en ese proyecto se sigue de largo sin corte:
+ * una instalacion sin la migracion debe comportarse como antes, no fallar.
+ */
+async function leerCorte(base, serviceKey, fetchImpl) {
+  try {
+    const respuesta = await fetchImpl(
+      `${base.replace(/\/$/, "")}/rest/v1/meta_ads_ajustes?select=contabilizar_desde&limit=1`,
+      {
+        headers: {
+          apikey: serviceKey,
+          Authorization: `Bearer ${serviceKey}`,
+          Accept: "application/json",
+        },
+      },
+    );
+    if (!respuesta.ok) return "";
+    const filas = await respuesta.json();
+    const desde = Array.isArray(filas) ? filas[0]?.contabilizar_desde : null;
+    return /^\d{4}-\d{2}-\d{2}$/.test(String(desde || "")) ? String(desde) : "";
+  } catch {
+    return "";
+  }
+}
+
 async function guardarGasto(base, serviceKey, gasto, fetchImpl) {
   const respuesta = await fetchImpl(
     `${base.replace(/\/$/, "")}/rest/v1/rpc/contabilizar_gasto_meta`,
@@ -162,6 +194,28 @@ export async function ejecutar({
     throw new Error("Faltan SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY");
   }
 
+  // El corte recorta la ventana antes de salir a la red. Si la ventana entera
+  // queda antes del corte no hay nada que pedir y se termina en silencio: es
+  // lo que pasa todos los dias hasta que llega la fecha.
+  const corte = opciones.dryRun
+    ? ""
+    : await leerCorte(supabaseUrl, serviceKey, fetchImpl);
+  const desde = corte && corte > opciones.desde ? corte : opciones.desde;
+  if (corte && desde > opciones.hasta) {
+    return {
+      cuenta,
+      moneda: "CLP",
+      desde,
+      hasta: opciones.hasta,
+      corte,
+      filas: 0,
+      guardados: 0,
+      omitidos: 0,
+      total: 0,
+      dryRun: opciones.dryRun,
+    };
+  }
+
   const api = `https://graph.facebook.com/${version}`;
   const cuentaUrl = new URL(`${api}/${cuenta}`);
   cuentaUrl.searchParams.set("fields", "id,name,currency,timezone_name");
@@ -176,7 +230,7 @@ export async function ejecutar({
   insightsUrl.searchParams.set("time_increment", "1");
   insightsUrl.searchParams.set(
     "time_range",
-    JSON.stringify({ since: opciones.desde, until: opciones.hasta }),
+    JSON.stringify({ since: desde, until: opciones.hasta }),
   );
   insightsUrl.searchParams.set("limit", "500");
 
@@ -185,11 +239,15 @@ export async function ejecutar({
   let guardados = 0;
   let total = 0;
 
+  let omitidos = 0;
+
   for (const fila of conGasto) {
     const monto = Number(fila.spend);
     total += monto;
     if (opciones.dryRun) continue;
-    await guardarGasto(
+    // El RPC responde null cuando la fecha queda antes del corte. Se cuenta
+    // en vez de tratarlo como error: es el reset funcionando.
+    const guardado = await guardarGasto(
       supabaseUrl,
       serviceKey,
       {
@@ -208,16 +266,19 @@ export async function ejecutar({
       },
       fetchImpl,
     );
-    guardados += 1;
+    if (guardado === null) omitidos += 1;
+    else guardados += 1;
   }
 
   return {
     cuenta: datosCuenta.name || cuenta,
     moneda: datosCuenta.currency || "CLP",
-    desde: opciones.desde,
+    desde,
     hasta: opciones.hasta,
+    corte,
     filas: conGasto.length,
     guardados,
+    omitidos,
     total: Number(total.toFixed(4)),
     dryRun: opciones.dryRun,
   };
@@ -227,9 +288,13 @@ async function main() {
   cargarEnv();
   const resumen = await ejecutar();
   const accion = resumen.dryRun ? "leidos" : "sincronizados";
+  const corte = resumen.corte ? ` · corte ${resumen.corte}` : "";
+  const omitidos = resumen.omitidos
+    ? ` · ${resumen.omitidos} omitidos por el corte`
+    : "";
   console.log(
-    `Meta Ads: ${resumen.filas} gastos ${accion} (${resumen.desde} a ${resumen.hasta}) · ` +
-      `${resumen.moneda} ${resumen.total} · ${resumen.cuenta}`,
+    `Meta Ads: ${resumen.filas} gastos ${accion} (${resumen.desde} a ${resumen.hasta})${corte} · ` +
+      `${resumen.moneda} ${resumen.total} · ${resumen.cuenta}${omitidos}`,
   );
 }
 

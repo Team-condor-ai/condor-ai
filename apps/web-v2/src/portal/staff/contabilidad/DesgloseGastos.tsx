@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { plata } from "../../lib/supabase";
 import { mesDe } from "../graficos";
-import type { Asiento, Cuenta, GastoMeta } from "./tipos";
+import type { Asiento, Cuenta, GastoMeta, MetaAdsAjustes } from "./tipos";
 
 type FilaDistribucion = {
   clave: string;
@@ -66,10 +66,12 @@ export function DesgloseGastos({
   cuentas,
   asientos,
   gastosMeta,
+  metaAjustes = null,
 }: {
   cuentas: Cuenta[];
   asientos: Asiento[];
   gastosMeta: GastoMeta[];
+  metaAjustes?: MetaAdsAjustes | null;
 }) {
   const mesActual = new Date().toISOString().slice(0, 7);
   const [periodo, setPeriodo] = useState(mesActual);
@@ -82,6 +84,21 @@ export function DesgloseGastos({
     ]);
     return [...disponibles].filter(Boolean).sort().reverse();
   }, [asientos, gastosMeta, mesActual]);
+
+  // Un mes anterior al corte no es un mes sin datos: es un mes que se decidió
+  // no contabilizar. La diferencia importa porque el cero de agosto-2026 fue
+  // deliberado y sin este aviso parece que el sync se cayó.
+  const periodoAntesDelCorte = Boolean(
+    metaAjustes && periodo < mesDe(metaAjustes.contabilizar_desde),
+  );
+  // La pastilla no puede decir "excluido" mientras la tabla de abajo muestra
+  // plata: si quedaron filas de antes del corte manda lo que se ve en pantalla.
+  const fechaCorteLegible = metaAjustes
+    ? new Date(`${metaAjustes.contabilizar_desde}T12:00:00`).toLocaleDateString(
+        "es-CL",
+        { day: "numeric", month: "long", year: "numeric" },
+      )
+    : "";
 
   const d = useMemo(() => {
     const cuentaDe = new Map(cuentas.map((c) => [c.id, c]));
@@ -202,6 +219,7 @@ export function DesgloseGastos({
     };
   }, [asientos, cuentas, gastosMeta, periodo]);
 
+  const excluidoYVacio = periodoAntesDelCorte && !d.campanas.length;
   const nombrePeriodo = new Date(`${periodo}-15T12:00:00`).toLocaleDateString(
     "es-CL",
     {
@@ -312,10 +330,20 @@ export function DesgloseGastos({
             </div>
           </div>
           <div className="meta-estado">
-            <span className={d.ultimaSync ? "pill ok" : "pill warn"}>
-              {d.ultimaSync
-                ? "Sincronización activa"
-                : "Sin datos sincronizados"}
+            <span
+              className={
+                excluidoYVacio
+                  ? "pill gris"
+                  : d.ultimaSync
+                    ? "pill ok"
+                    : "pill warn"
+              }
+            >
+              {excluidoYVacio
+                ? "Período excluido"
+                : d.ultimaSync
+                  ? "Sincronización activa"
+                  : "Sin datos sincronizados"}
             </span>
             {d.ultimaSync && (
               <small>
@@ -364,6 +392,13 @@ export function DesgloseGastos({
               </tbody>
             </table>
           </div>
+        ) : excluidoYVacio ? (
+          <p className="vacio">
+            {nombrePeriodo} quedó fuera del registro: la contabilidad de Meta
+            Ads parte el {fechaCorteLegible}
+            {metaAjustes?.motivo ? ` — ${metaAjustes.motivo}` : "."} El gasto de
+            esos días existió en Meta, pero no descuenta en el libro.
+          </p>
         ) : (
           <p className="vacio">
             No hay gasto de campañas en {nombrePeriodo}. Cuando Meta reporte

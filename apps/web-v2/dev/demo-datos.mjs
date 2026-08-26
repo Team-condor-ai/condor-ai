@@ -512,9 +512,20 @@ export function crearDatos() {
       duracion_min: 30,
       cliente: "Planeta Shop",
       meet_url: null,
+      contacto: "Rocío Pérez",
+      email: "rocio@planetashop.cl",
       creado_por: uid(900),
       created_at: mesAtras(1) + "T10:00:00Z",
     },
+  ];
+
+  // Tabla puente reunion ↔ invitado. La primera lleva dos invitados y la
+  // segunda uno: asi se ve que el editor los trae marcados y que quitar a
+  // alguien realmente lo saca.
+  const reuniones_admins = [
+    { reunion_id: uid(590), admin_id: uid(900) },
+    { reunion_id: uid(590), admin_id: uid(901) },
+    { reunion_id: uid(591), admin_id: uid(901) },
   ];
 
   const tareas = [
@@ -862,11 +873,25 @@ export function crearDatos() {
     },
   ];
 
+  // Tres perfiles y no uno: con un solo miembro no se puede probar invitar a
+  // alguien mas, quitarlo, ni ver a quien le llegaria el reenvio.
   const admin_profiles = [
     {
       id: uid(900),
       email: CORREO_STAFF,
       nombre: "demo",
+      created_at: mesAtras(9) + "T10:00:00Z",
+    },
+    {
+      id: uid(901),
+      email: "max@condorai.cl",
+      nombre: "Maximiliano",
+      created_at: mesAtras(9) + "T10:00:00Z",
+    },
+    {
+      id: uid(902),
+      email: "ale@condorai.cl",
+      nombre: "Alejandro",
       created_at: mesAtras(9) + "T10:00:00Z",
     },
   ];
@@ -1225,5 +1250,17 @@ function crearBarbara({ base, clienteId, negocio, email, dia, instante, mesAtras
     asientos_descuadrados: [],
     gastos_fijos,
     gastos_meta,
+    reuniones_admins,
+    // Corte del sync de Meta: en demo se deja en el pasado para que el mes
+    // actual se vea normal. En produccion vale 2026-09-01 (ver la migracion
+    // 20260826_meta_ads_reset_y_corte).
+    meta_ads_ajustes: [
+      {
+        id: true,
+        contabilizar_desde: mesAtras(2).slice(0, 8) + "01",
+        motivo: "Corte de ejemplo del modo demo.",
+        actualizado_en: mesAtras(2) + "T00:00:00Z",
+      },
+    ],
   };
 }

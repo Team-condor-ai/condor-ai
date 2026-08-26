@@ -5,6 +5,11 @@ import { Ico } from "../../disenio/iconos";
 import { useConfirmacion } from "../../disenio/Confirmacion";
 import { EditorReunion } from "../EditorReunion";
 import { NotasInternas } from "./NotasInternas";
+import {
+  contarPersonas,
+  destinatariosDeReunion,
+  reenviarAvisoReunion,
+} from "../reenviarReunion";
 import type {
   Cliente,
   Cobro,
@@ -92,7 +97,8 @@ export function Organizacion() {
     Tarea | "nueva" | "nueva_agendada" | null
   >(null);
   const [editandoMeta, setEditandoMeta] = useState<Meta | "nueva" | null>(null);
-  const [editandoReunion, setEditandoReunion] = useState(false);
+  // `"nueva"` abre el editor en blanco; una reunión lo abre con sus datos.
+  const [editandoReunion, setEditandoReunion] = useState<Reunion | "nueva" | null>(null);
   const [filtro, setFiltro] = useState<"todas" | "mias" | "vencidas">("todas");
 
   async function cargar(silencioso = false) {
@@ -196,7 +202,7 @@ export function Organizacion() {
             </button>
             <button
               className="btn solido"
-              onClick={() => setEditandoReunion(true)}
+              onClick={() => setEditandoReunion("nueva")}
             >
               {Ico.reuniones({ t: 15 })} Agendar reunión
             </button>
@@ -369,6 +375,7 @@ export function Organizacion() {
                 lista.map((r) => (r.id === id ? { ...r, ...cambios } : r)),
               )
             }
+            editarReunion={setEditandoReunion}
             quitarReunion={(id) =>
               setReuniones((lista) => lista.filter((r) => r.id !== id))
             }
@@ -411,9 +418,10 @@ export function Organizacion() {
       )}
       {editandoReunion && (
         <EditorReunion
-          cerrar={() => setEditandoReunion(false)}
+          existente={editandoReunion === "nueva" ? null : editandoReunion}
+          cerrar={() => setEditandoReunion(null)}
           guardado={() => {
-            setEditandoReunion(false);
+            setEditandoReunion(null);
             void cargar(true);
           }}
         />
@@ -429,6 +437,7 @@ function Calendario({
   abrir,
   actualizarTarea,
   actualizarReunion,
+  editarReunion,
   quitarReunion,
   restaurarReunion,
   error,
@@ -439,6 +448,7 @@ function Calendario({
   abrir: (t: Tarea) => void;
   actualizarTarea: (id: string, cambios: Partial<Tarea>) => void;
   actualizarReunion: (id: string, cambios: Partial<Reunion>) => void;
+  editarReunion: (reunion: Reunion) => void;
   quitarReunion: (id: string) => void;
   restaurarReunion: (reunion: Reunion) => void;
   error: (mensaje: string) => void;
@@ -446,6 +456,8 @@ function Calendario({
   const confirmar = useConfirmacion();
   const [mes, setMes] = useState(() => new Date());
   const [ahora] = useState(() => Date.now());
+  const [reenviando, setReenviando] = useState("");
+  const [enviado, setEnviado] = useState("");
   const [ajustando, setAjustando] = useState<{
     id: string;
     tipo: "tarea" | "reunion";
@@ -706,6 +718,28 @@ function Calendario({
     .filter((r) => new Date(r.fecha_hora).getTime() < ahora)
     .sort((a, b) => +new Date(b.fecha_hora) - +new Date(a.fecha_hora));
 
+  async function reenviar(r: Reunion) {
+    const destinatarios = await destinatariosDeReunion(r);
+    if (!destinatarios.length) {
+      error("Esa reunión no tiene invitados con correo. Edítala para agregar alguno.");
+      return;
+    }
+    if (!await confirmar(
+      `¿Reenviar el correo de "${r.titulo}" a ${contarPersonas(destinatarios.length)}?`,
+      destinatarios.map((d) => d.nombre).join(", "),
+      "Reenviar",
+    )) return;
+    setReenviando(r.id);
+    setEnviado("");
+    try {
+      await reenviarAvisoReunion(r, destinatarios);
+      setEnviado(`Correo reenviado a ${contarPersonas(destinatarios.length)}.`);
+    } catch (fallo) {
+      error(fallo instanceof Error ? fallo.message : "No se pudo reenviar el correo.");
+    }
+    setReenviando("");
+  }
+
   async function eliminar(r: Reunion) {
     if (!await confirmar(`¿Eliminar la reunión "${r.titulo}"?`, undefined, "Eliminar")) return;
     quitarReunion(r.id);
@@ -750,7 +784,8 @@ function Calendario({
         </div>
         <p className="cal-ayuda">
           Arrastra una tarea para moverla; toma sus costados para cambiar inicio
-          o término. En reuniones, estira el borde inferior para ajustar minutos.
+          o término. En reuniones, estira el borde inferior para ajustar minutos
+          y tócalas para editar título, link, invitados o reenviar el correo.
         </p>
         <div className="cal-grid">
           {["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"].map((x) => (
@@ -790,17 +825,12 @@ function Calendario({
                           {reuniones
                             .filter((r) => fechaLocal(r.fecha_hora) === clave(d))
                             .map((r) => (
-                              <a
-                                key={r.id}
+                              <span className="evento-reunion-caja" key={r.id}>
+                              <button
+                                type="button"
                                 className={`evento reunion${new Date(r.fecha_hora).getTime() < ahora ? " evento-pasado" : ""}`}
-                                href={r.meet_url || undefined}
-                                target={r.meet_url ? "_blank" : undefined}
-                                rel={r.meet_url ? "noreferrer" : undefined}
-                                title={
-                                  r.meet_url
-                                    ? "Entrar a la videollamada"
-                                    : r.descripcion || undefined
-                                }
+                                onClick={() => editarReunion(r)}
+                                title={`Editar "${r.titulo}"${r.descripcion ? ` — ${r.descripcion}` : ""}`}
                                 style={
                                   {
                                     "--duracion-evento": `${Math.min(100, ((ajustando?.id === r.id ? ajustando.valor : r.duracion_min ?? 60) / 180) * 100)}%`,
@@ -846,7 +876,20 @@ function Calendario({
                                     e.stopPropagation();
                                   }}
                                 />
-                              </a>
+                              </button>
+                              {r.meet_url && (
+                                <a
+                                  className="evento-entrar"
+                                  href={r.meet_url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  title="Entrar a la videollamada"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  {Ico.video({ t: 11 })}
+                                </a>
+                              )}
+                              </span>
                             ))}
                         </>
                       )}
@@ -934,14 +977,21 @@ function Calendario({
       {proximas.length === 0 && (
         <p className="vacio">No hay reuniones próximas agendadas.</p>
       )}
+      {enviado && <p className="aviso ok">{enviado}</p>}
       <AgendaReuniones
         datos={proximas}
         titulo="Próximas reuniones"
+        editar={editarReunion}
+        reenviar={reenviar}
+        reenviando={reenviando}
         eliminar={eliminar}
       />
       <AgendaReuniones
         datos={pasadas}
         titulo="Reuniones anteriores"
+        editar={editarReunion}
+        reenviar={reenviar}
+        reenviando={reenviando}
         eliminar={eliminar}
       />
     </>
@@ -951,10 +1001,16 @@ function Calendario({
 function AgendaReuniones({
   datos,
   titulo,
+  editar,
+  reenviar,
+  reenviando,
   eliminar,
 }: {
   datos: Reunion[];
   titulo: string;
+  editar: (r: Reunion) => void;
+  reenviar: (r: Reunion) => void;
+  reenviando: string;
   eliminar: (r: Reunion) => void;
 }) {
   if (!datos.length) return null;
@@ -1002,6 +1058,21 @@ function AgendaReuniones({
                       {Ico.video({ t: 15 })}
                     </a>
                   )}
+                  <button
+                    className="icono-btn"
+                    title="Editar reunión, link e invitados"
+                    onClick={() => editar(r)}
+                  >
+                    {Ico.editar({ t: 15 })}
+                  </button>
+                  <button
+                    className="icono-btn"
+                    title="Reenviar el correo a los invitados"
+                    disabled={reenviando === r.id}
+                    onClick={() => reenviar(r)}
+                  >
+                    {Ico.correos({ t: 15 })}
+                  </button>
                   <button
                     className="icono-btn peligro"
                     title="Eliminar reunión"

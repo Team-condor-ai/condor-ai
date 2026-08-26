@@ -91,6 +91,17 @@ export type GastoMeta = {
 };
 
 /**
+ * Corte del sync de Meta Ads: el gasto anterior a `contabilizar_desde` no
+ * entra al libro. Lo impone el RPC `contabilizar_gasto_meta`; la pantalla solo
+ * lo muestra para que un mes en cero se lea como decisión y no como falla.
+ */
+export type MetaAdsAjustes = {
+  contabilizar_desde: string;
+  motivo: string | null;
+  actualizado_en: string;
+};
+
+/**
  * Arma un asiento de partida doble con dos líneas.
  *
  * Es la ÚNICA forma en que el portal escribe contabilidad: así no hay manera

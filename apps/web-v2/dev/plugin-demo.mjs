@@ -433,6 +433,21 @@ export function pluginPortalDemo() {
             }
             return json(res, { ok: true, demo: true });
           }
+          if (fn === "reunion-notificar") {
+            const b = (await cuerpoJson(req)) ?? {};
+            const destinos = Array.isArray(b.invitados_email) ? b.invitados_email : [];
+            // No se manda nada: se imprime en la consola de Vite para poder
+            // revisar a quien le habria llegado y con que tono.
+            console.log(
+              `[demo] reunion-notificar (${b.motivo || "nueva"}) · "${b.titulo}" · ` +
+                `${destinos.length} destinatario(s): ${destinos.map((d) => d.email).join(", ") || "ninguno"}` +
+                (b.meet_url ? ` · link ${b.meet_url}` : ""),
+            );
+            return json(res, {
+              ok: true, demo: true, motivo: b.motivo || "nueva",
+              telegram: { ok: true }, emails: { enviados: destinos.length },
+            });
+          }
           if (fn === "tipo-cambio") return json(res, { tasas: datos.tipos_cambio, refrescado: false });
           if (fn === "mcp-condor-token") return json(res, { token: "demo-token", nombre: "demo" });
           return json(res, { ok: true, demo: true });

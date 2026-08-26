@@ -119,6 +119,9 @@ export type Reunion = {
   duracion_min: number | null;
   cliente: string | null;
   meet_url: string | null;
+  /** Invitado externo: lo llena `agendar-publico` cuando reserva un lead. */
+  contacto: string | null;
+  email: string | null;
   creado_por: string | null;
   created_at: string | null;
   serie_id: string | null;

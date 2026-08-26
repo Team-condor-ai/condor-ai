@@ -12,7 +12,7 @@ import { DesgloseGastos } from "./DesgloseGastos";
 import { ImportarCartola } from "./ImportarCartola";
 import { TransferirFondos } from "./TransferirFondos";
 import { Pasivos } from "./Pasivos";
-import type { Asiento, Cuenta, GastoMeta, SaldoCuenta } from "./tipos";
+import type { Asiento, Cuenta, GastoMeta, MetaAdsAjustes, SaldoCuenta } from "./tipos";
 
 const PESTANAS = [
   { id: "resumen", texto: "Resumen" },
@@ -51,6 +51,7 @@ export function Contabilidad() {
   const [saldos, setSaldos] = useState<SaldoCuenta[]>([]);
   const [asientos, setAsientos] = useState<Asiento[]>([]);
   const [gastosMeta, setGastosMeta] = useState<GastoMeta[]>([]);
+  const [metaAjustes, setMetaAjustes] = useState<MetaAdsAjustes | null>(null);
   const [descuadrados, setDescuadrados] = useState<
     { id: string; glosa: string }[]
   >([]);
@@ -75,7 +76,7 @@ export function Contabilidad() {
 
   async function cargar() {
     setCargando(true);
-    const [cu, sa, as, de, gm] = await Promise.all([
+    const [cu, sa, as, de, gm, ma] = await Promise.all([
       sb.from("cuentas").select("*").order("orden"),
       sb.from("saldos_cuentas").select("*"),
       sb
@@ -89,6 +90,10 @@ export function Contabilidad() {
         .select("*")
         .order("fecha", { ascending: false })
         .limit(2000),
+      sb
+        .from("meta_ads_ajustes")
+        .select("contabilizar_desde,motivo,actualizado_en")
+        .maybeSingle(),
     ]);
     if (cu.error)
       setError(
@@ -101,6 +106,9 @@ export function Contabilidad() {
     // La contabilidad sigue funcionando si la migración de Meta aún no fue
     // desplegada. En ese caso Desglose usa los asientos meta_ads como respaldo.
     setGastosMeta((gm.data ?? []) as GastoMeta[]);
+    // Igual que `gastos_meta`: si la migración del corte no está aplicada, la
+    // pantalla se comporta como antes en vez de romperse.
+    setMetaAjustes((ma.data ?? null) as MetaAdsAjustes | null);
     setDescuadrados((de.data ?? []) as { id: string; glosa: string }[]);
     setCargando(false);
   }
@@ -432,6 +440,7 @@ export function Contabilidad() {
             cuentas={cuentas}
             asientos={asientos}
             gastosMeta={gastosMeta}
+            metaAjustes={metaAjustes}
           />
         )}
 

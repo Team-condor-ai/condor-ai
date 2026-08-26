@@ -91,6 +91,15 @@ export const Ico = {
       <path d="M9 13h6M9 17h4" />
     </Svg>
   ),
+  /* Lápiz sobre una hoja: el gesto universal de "editar esto". Faltaba y las
+     acciones de fila estaban usando el engranaje de ajustes, que significa
+     otra cosa (configurar el módulo, no modificar el registro). */
+  editar: (p: Props = {}) => (
+    <Svg {...p}>
+      <path d="M12 20h8" />
+      <path d="M16.5 3.6a2.1 2.1 0 0 1 3 3L7.4 18.7l-4 1 1-4Z" />
+    </Svg>
+  ),
   correos: (p: Props = {}) => (
     <Svg {...p}>
       <rect x="2.5" y="5" width="19" height="14" rx="2.4" />

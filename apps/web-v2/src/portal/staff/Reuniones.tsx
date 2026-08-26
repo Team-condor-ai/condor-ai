@@ -3,6 +3,11 @@ import { sb } from "../lib/supabase";
 import { Ico } from "../disenio/iconos";
 import { useConfirmacion } from "../disenio/Confirmacion";
 import { EditorReunion } from "./EditorReunion";
+import {
+  contarPersonas,
+  destinatariosDeReunion,
+  reenviarAvisoReunion,
+} from "./reenviarReunion";
 import type { Reunion } from "./tipos";
 
 /**
@@ -33,7 +38,10 @@ export function Reuniones() {
   const [filas, setFilas] = useState<Reunion[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
-  const [editando, setEditando] = useState(false);
+  // `"nueva"` abre el editor en blanco; una reunión lo abre con sus datos.
+  const [editando, setEditando] = useState<Reunion | "nueva" | null>(null);
+  const [reenviando, setReenviando] = useState("");
+  const [enviado, setEnviado] = useState("");
 
   async function cargar() {
     setCargando(true);
@@ -66,6 +74,34 @@ export function Reuniones() {
     p.sort((a, b) => +new Date(a.fecha_hora) - +new Date(b.fecha_hora));
     return { proximas: p, pasadas: q };
   }, [filas]);
+
+  /**
+   * Reenvía el aviso sin abrir el editor: el caso de "se me perdió el correo"
+   * o "agregué el link, mándalo de nuevo".
+   */
+  async function reenviar(r: Reunion) {
+    const destinatarios = await destinatariosDeReunion(r);
+    if (!destinatarios.length) {
+      setError("Esa reunión no tiene invitados con correo. Edítala para agregar alguno.");
+      return;
+    }
+    if (!await confirmar(
+      `¿Reenviar el correo de "${r.titulo}" a ${contarPersonas(destinatarios.length)}?`,
+      destinatarios.map((d) => d.nombre).join(", "),
+      "Reenviar",
+    )) return;
+
+    setReenviando(r.id);
+    setError("");
+    setEnviado("");
+    try {
+      await reenviarAvisoReunion(r, destinatarios);
+      setEnviado(`Correo reenviado a ${contarPersonas(destinatarios.length)}.`);
+    } catch (fallo) {
+      setError(`No se pudo reenviar: ${fallo instanceof Error ? fallo.message : "error desconocido"}`);
+    }
+    setReenviando("");
+  }
 
   async function eliminar(r: Reunion) {
     if (!await confirmar(`¿Eliminar la reunión "${r.titulo}"?`, undefined, "Eliminar")) return;
@@ -111,6 +147,21 @@ export function Reuniones() {
                     </a>
                   )}
                   <button
+                    className="icono-btn"
+                    title="Editar reunión, link e invitados"
+                    onClick={() => setEditando(r)}
+                  >
+                    {Ico.editar({ t: 15 })}
+                  </button>
+                  <button
+                    className="icono-btn"
+                    title="Reenviar el correo a los invitados"
+                    disabled={reenviando === r.id}
+                    onClick={() => reenviar(r)}
+                  >
+                    {Ico.correos({ t: 15 })}
+                  </button>
+                  <button
                     className="icono-btn peligro"
                     title="Eliminar"
                     onClick={() => eliminar(r)}
@@ -142,13 +193,14 @@ export function Reuniones() {
         >
           {Ico.video({ t: 15 })} Reunión instantánea
         </a>
-        <button className="btn solido" onClick={() => setEditando(true)}>
+        <button className="btn solido" onClick={() => setEditando("nueva")}>
           {Ico.mas({ t: 15 })} Agendar reunión
         </button>
       </div>
 
       <div className="cuerpo">
         {error && <p className="error">{error}</p>}
+        {enviado && <p className="aviso ok">{enviado}</p>}
         {cargando && <p className="vacio">Cargando…</p>}
 
         {!cargando && (
@@ -170,9 +222,10 @@ export function Reuniones() {
 
       {editando && (
         <EditorReunion
-          cerrar={() => setEditando(false)}
+          existente={editando === "nueva" ? null : editando}
+          cerrar={() => setEditando(null)}
           guardado={() => {
-            setEditando(false);
+            setEditando(null);
             cargar();
           }}
         />
