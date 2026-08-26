@@ -52,8 +52,25 @@ test("generarImagen manda gpt-image-2 con aspect_ratio y resolution, y devuelve 
   assert.equal(url, "https://x/i.png");
   const cuerpo = JSON.parse(f.llamadas[0].opt.body);
   assert.equal(cuerpo.model, "gpt-image-2-text-to-image");
-  assert.equal(cuerpo.input.aspect_ratio, "4:5");
-  assert.equal(cuerpo.input.resolution, "2K");
+  // 26-ago-2026: "4:5" explícito le hacía 422 a createTask -- "auto" + "1K"
+  // da el mismo 4:5 exacto (1122×1402) sin pasar por esa ruta rota.
+  assert.equal(cuerpo.input.aspect_ratio, "auto");
+  assert.equal(cuerpo.input.resolution, "1K");
+});
+
+test("createTask sin taskId falla YA, en vez de colgar 9 min preguntando por 'undefined'", async () => {
+  // 26-ago-2026: Kie a veces envuelve un error (ratio no soportado, sin
+  // crédito) en un 200 HTTP con `data: null` -- sin este chequeo, `esperar`
+  // pregunta por un taskId inexistente hasta el timeout.
+  const f = fetchFalso({
+    "/jobs/createTask": { body: { code: 422, msg: "temporarily unavailable", data: null } },
+  });
+  await assert.rejects(
+    () => generarImagen("x", { env: ENV, fetchFn: f, dormir: sinDormir }),
+    /createTask no devolvió taskId/,
+  );
+  // Un solo llamado: nunca llegó a golpear recordInfo con "undefined".
+  assert.equal(f.llamadas.length, 1);
 });
 
 test("hace polling hasta que deja de estar en curso", async () => {

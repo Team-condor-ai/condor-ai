@@ -105,7 +105,10 @@ async function dispararWorkflowContenido(workflow: string, inputs: Record<string
 function parseComando(texto: string): { comando: string; resto: string } | null {
   const limpio = texto.trim().replace(/\s+/g, " ");
   const bajo = limpio.toLowerCase();
-  for (const alias of ["denuevo barbara", "de nuevo barbara", "aprobar barbara"]) {
+  for (const alias of [
+    "denuevo barbara", "de nuevo barbara", "aprobar barbara",
+    "bloquear barbara", "desbloquear barbara",
+  ]) {
     // Tiene que EMPEZAR con el comando y seguir con un separador (o terminar
     // ahi). Exigir separador evita que "denuevo barbarita" se cuele; aceptar
     // cualquier puntuacion evita el hueco que encontro el test: escribir
@@ -113,7 +116,11 @@ function parseComando(texto: string): { comando: string; resto: string } | null 
     if (!bajo.startsWith(alias)) continue;
     const siguiente = bajo[alias.length];
     if (siguiente === undefined || /[\s,.:;!?¡¿()\[\]-]/.test(siguiente)) {
-      const comando = alias === "aprobar barbara" ? "aprobar" : "denuevo";
+      const comando =
+        alias === "aprobar barbara" ? "aprobar"
+        : alias === "bloquear barbara" ? "bloquear"
+        : alias === "desbloquear barbara" ? "desbloquear"
+        : "denuevo";
       // Se corta sobre el texto ORIGINAL para no perder mayúsculas ni tildes:
       // el resto se le pasa a un modelo, y "más corto" no es "mas corto".
       const resto = limpio.slice(alias.length).replace(/^[\s,.:;-]+/, "").trim();
@@ -123,12 +130,40 @@ function parseComando(texto: string): { comando: string; resto: string } | null 
   return null;
 }
 
+// Fecha de HOY en Chile (America/Santiago, UTC-4 fijo todo el año) como
+// YYYY-MM-DD -- misma clave que usa `barbara-publicar-automatico.yml` para
+// preguntar si el día de hoy está bloqueado.
+function hoyChile(): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Santiago" }).format(new Date());
+}
+
 /** true si ya se manejó el mensaje acá (chat interno) y no hay que seguir. */
-async function manejarChatInterno(chatId: number | string, textoOriginal: string): Promise<boolean> {
+async function manejarChatInterno(sb: any, chatId: number | string, textoOriginal: string): Promise<boolean> {
   if (!CHAT_INTERNO || String(chatId) !== String(CHAT_INTERNO)) return false;
 
   const parsed = parseComando(textoOriginal);
   if (!parsed) return true; // chat interno, pero no es un comando conocido
+
+  if (parsed.comando === "bloquear") {
+    const hoy = hoyChile();
+    const { error } = await sb.from("barbara_bloqueos_contenido").upsert(
+      { fecha: hoy, motivo: parsed.resto ? parsed.resto.slice(0, 300) : "bloqueado desde Telegram, sin motivo escrito" },
+      { onConflict: "fecha" },
+    );
+    await tgSend(chatId, error
+      ? "⚠️ No pude guardar el bloqueo. Revisa los logs de la función."
+      : `⛔ Publicación de hoy (${hoy}) bloqueada. No se sube nada a las 16:00. Escribe *desbloquear barbara* si te arrepientes.`);
+    return true;
+  }
+
+  if (parsed.comando === "desbloquear") {
+    const hoy = hoyChile();
+    const { error } = await sb.from("barbara_bloqueos_contenido").delete().eq("fecha", hoy);
+    await tgSend(chatId, error
+      ? "⚠️ No pude quitar el bloqueo. Revisa los logs de la función."
+      : `✅ Bloqueo de hoy (${hoy}) levantado. Si sigue en ventana, se publica a las 16:00.`);
+    return true;
+  }
 
   if (parsed.comando === "denuevo") {
     const ultimo = await ultimoContenido();
@@ -305,17 +340,18 @@ Deno.serve(async (req) => {
   const fileVoz = msg?.voice?.file_id || msg?.audio?.file_id || msg?.video_note?.file_id || null;
   if (!chatId || (!texto && !fileVoz)) return new Response("ok", { status: 200 });
 
-  // Chat interno del equipo (contenido propio de Cóndor): se resuelve acá y
-  // se corta, ANTES de tocar `barbara_clientes` — ese chat nunca va a ser un
-  // cliente, así que no tiene sentido ni gastar la consulta.
-  if (await manejarChatInterno(chatId, texto)) {
-    return new Response("ok", { status: 200 });
-  }
-
   const sb = createClient(
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   );
+
+  // Chat interno del equipo (contenido propio de Cóndor): se resuelve acá y
+  // se corta, ANTES de tocar `barbara_clientes` — ese chat nunca va a ser un
+  // cliente, así que no tiene sentido ni gastar la consulta. Necesita `sb`
+  // desde el 26-ago-2026 para "bloquear barbara" / "desbloquear barbara".
+  if (await manejarChatInterno(sb, chatId, texto)) {
+    return new Response("ok", { status: 200 });
+  }
 
   // 2) ¿Este chat es de algún cliente activo de Bárbara? Si no hay match,
   //    puede ser otro chat/grupo random donde está el bot — se ignora, pero

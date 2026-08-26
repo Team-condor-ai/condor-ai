@@ -15,7 +15,10 @@ import test from "node:test";
 function parseComando(texto) {
   const limpio = texto.trim().replace(/\s+/g, " ");
   const bajo = limpio.toLowerCase();
-  for (const alias of ["denuevo barbara", "de nuevo barbara", "aprobar barbara"]) {
+  for (const alias of [
+    "denuevo barbara", "de nuevo barbara", "aprobar barbara",
+    "bloquear barbara", "desbloquear barbara",
+  ]) {
     // Tiene que EMPEZAR con el comando y seguir con un separador (o terminar
     // ahi). Exigir separador evita que "denuevo barbarita" se cuele; aceptar
     // cualquier puntuacion evita el hueco que encontro el test: escribir
@@ -23,7 +26,11 @@ function parseComando(texto) {
     if (!bajo.startsWith(alias)) continue;
     const siguiente = bajo[alias.length];
     if (siguiente === undefined || /[\s,.:;!?¡¿()\[\]-]/.test(siguiente)) {
-      const comando = alias === "aprobar barbara" ? "aprobar" : "denuevo";
+      const comando =
+        alias === "aprobar barbara" ? "aprobar"
+        : alias === "bloquear barbara" ? "bloquear"
+        : alias === "desbloquear barbara" ? "desbloquear"
+        : "denuevo";
       const resto = limpio.slice(alias.length).replace(/^[\s,.:;-]+/, "").trim();
       return { comando, resto };
     }
@@ -91,4 +98,14 @@ test("aprobar con texto detrás se atiende igual (el resto se ignora)", () => {
   // escribe "Aprobar barbara dale", tiene que publicar, no quedarse mudo.
   const r = parseComando("Aprobar barbara dale nomás");
   assert.equal(r.comando, "aprobar");
+});
+
+test("bloquear y desbloquear (26-ago-2026): la publicación de las 16:00", () => {
+  assert.deepEqual(parseComando("Bloquear barbara"), { comando: "bloquear", resto: "" });
+  assert.deepEqual(parseComando("Desbloquear barbara"), { comando: "desbloquear", resto: "" });
+  // "desbloquear" empieza con "de" igual que "de nuevo" -- tiene que elegir
+  // el alias correcto y no confundirse con "denuevo".
+  const r = parseComando("Bloquear barbara, el carrusel de hoy quedó feo");
+  assert.equal(r.comando, "bloquear");
+  assert.equal(r.resto, "el carrusel de hoy quedó feo");
 });

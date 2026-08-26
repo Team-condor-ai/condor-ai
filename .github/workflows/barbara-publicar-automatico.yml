@@ -1,0 +1,39 @@
+name: Barbara - publicación automática 16:00
+
+# Pedido explícito de Joaquín, 26-ago-2026 tarde: el contenido propio de
+# Cóndor se publica SOLO todos los días a las 16:00 Chile, salvo que alguien
+# escriba "bloquear barbara" en el chat interno de Telegram en la ventana de
+# 3h desde que se generó (13:00 Chile, ver barbara.yml). Este workflow es el
+# que decide y dispara -- la lógica vive en publicar-automatico.mjs para
+# poder probarla sin esperar al cron.
+on:
+  schedule:
+    # 16:00 Chile = 20:00 UTC (Chile es UTC-4 todo el año, sin horario de verano)
+      - cron: '0 20 * * *'
+  workflow_dispatch: {}
+
+permissions:
+  actions: write   # necesario para disparar barbara-publicar-blotato.yml
+  contents: read
+
+concurrency:
+  group: barbara-publicar-automatico
+  cancel-in-progress: false
+
+jobs:
+  publicar-si-corresponde:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Decidir y disparar (o avisar por qué no)
+        run: node services/barbara/publicar-automatico.mjs
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}

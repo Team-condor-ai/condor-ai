@@ -321,7 +321,10 @@ export async function genImagen(prompt, idx) {
   // kie-api.mjs. Si no hay KIE_API_KEY, sigue con lo de antes (API oficial de
   // Higgsfield si está, si no el CLI) sin cambiar nada de ese camino.
   if (kieDisponible()) {
-    const url = await kieImagen(safe, { aspectRatio: "4:5", resolucion: "2K" });
+    // 26-ago-2026: "4:5" explícito rompía createTask en Kie (ver kie-api.mjs).
+    // "auto" + "1K" da el mismo 4:5 exacto, cuesta menos y evita el recorte
+    // de Instagram sobre 2K -- confirmado por Rat.IA la misma madrugada.
+    const url = await kieImagen(safe, { aspectRatio: "auto", resolucion: "1K" });
     registrarMedia({ proveedor: "kie", modelo: "gpt-image-2", imagenes: 1 });
     return url;
   }

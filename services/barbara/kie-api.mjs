@@ -136,8 +136,16 @@ function urlDelResultado(estado) {
 
 /** Genera una imagen con gpt-image-2 y devuelve su URL. */
 export async function generarImagen(prompt, {
-  aspectRatio = "4:5",
-  resolucion = "2K",
+  // 26-ago-2026: "4:5" explícito le respondía 422 "temporarily unavailable"
+  // en createTask -- pero envuelto en un 200 HTTP, así que `pedir()` no lo
+  // veía como error. El taskId salía undefined y `esperar` colgaba 9 min
+  // preguntando por una tarea que nunca existió. "auto" + "1K" da el mismo
+  // 4:5 exacto (1122×1402) sin pasar por esa ruta rota, y de paso cuesta
+  // menos (6 créditos vs 10) y evita el recorte de Instagram sobre el 2K
+  // (ratio 0.7778, no es 4:5). Confirmado en producción por Rat.IA la misma
+  // madrugada — ver `vigia-precios/ratia_carrusel.py`.
+  aspectRatio = "auto",
+  resolucion = "1K",
   env = process.env,
   fetchFn = fetch,
   ...opciones
@@ -153,8 +161,16 @@ export async function generarImagen(prompt, {
     env, fetchFn,
   });
 
+  // Kie envuelve algunos errores (ratio no soportado, sin crédito) en un 200
+  // HTTP con `data: null` -- sin este chequeo, `esperar` se cuelga 9 minutos
+  // preguntando por un taskId que nunca existió. Fallar acá mismo, ya.
+  const taskId = creada.data?.taskId || creada.taskId;
+  if (!taskId) {
+    throw new Error(`Kie API: createTask no devolvió taskId — ${JSON.stringify(creada).slice(0, 300)}`);
+  }
+
   const estado = exigirCompletada(
-    await esperar(creada.data?.taskId || creada.taskId, { env, fetchFn, ...opciones }),
+    await esperar(taskId, { env, fetchFn, ...opciones }),
     "imagen"
   );
   const url = urlDelResultado(estado);
@@ -187,8 +203,13 @@ export async function generarVideo(prompt, {
     env, fetchFn,
   });
 
+  const taskIdVideo = creada.data?.taskId || creada.taskId;
+  if (!taskIdVideo) {
+    throw new Error(`Kie API: createTask no devolvió taskId — ${JSON.stringify(creada).slice(0, 300)}`);
+  }
+
   const estado = exigirCompletada(
-    await esperar(creada.data?.taskId || creada.taskId, { env, fetchFn, timeoutMs: 15 * 60 * 1000, ...opciones }),
+    await esperar(taskIdVideo, { env, fetchFn, timeoutMs: 15 * 60 * 1000, ...opciones }),
     "video"
   );
   const url = urlDelResultado(estado);

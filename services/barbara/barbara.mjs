@@ -1,9 +1,17 @@
-// condor.ai · Empleada IA "Barbara" — 4 piezas por semana (GitHub Actions)
-// Calendario vigente (26-ago-2026, fijado por Joaquín), 09:00 Chile:
-//   Lun = carrusel de Cóndor   · Mié = anuncio de Cóndor (imagen única)
-//   Jue = carrusel de Bárbara  · Sáb = anuncio de Bárbara (imagen única)
+// condor.ai · Empleada IA "Barbara" — 1 pieza por día (GitHub Actions)
+// Calendario vigente (26-ago-2026 tarde, fijado por Joaquín), 13:00 Chile:
+// TODOS los días, rotando los 4 tipos en orden fijo — 2 son de Cóndor, 2 de
+// Bárbara, así ninguna marca queda sin turno en 4 días corridos:
+//   día%4=0 carrusel Cóndor · día%4=1 anuncio Cóndor
+//   día%4=2 carrusel Bárbara · día%4=3 anuncio Bárbara
+// (antes era Lun/Mié/Jue/Sáb, 4 piezas/semana; reemplazado por publicación
+// diaria — ver docs/BITACORA-2026-08-26.md)
 // Cada marca alterna entre sus DOS templates por semana ISO, así los cuatro
 // templates de carrusel se turnan sin repetirse dos semanas seguidas.
+// Se genera y manda a Telegram 3h antes de publicar (13:00 Chile) y se
+// publica solo a las 16:00 Chile salvo que alguien escriba "bloquear
+// barbara" en el chat interno antes de esa hora — ver
+// barbara-publicar-automatico.yml y telegram-barbara-clientes.
 // Imágenes con HIGGSFIELD (nano_banana_2). Memoria anti-repetición en content-log.json:
 // el director lee lo último creado y recibe la orden de NO repetir e INNOVAR.
 // Manda a Telegram para revisar antes de subir.
@@ -35,15 +43,15 @@ const LOG = "services/barbara/content-log.json";
 const OUTBOX = process.env.BARBARA_OUTBOX_DIR;
 
 // Día → tipo
+const NOMBRES_DIA = ["domingo", "lunes", "martes", "miercoles", "jueves", "viernes", "sabado"];
 const rawDia = (process.env.DIA || "").trim().toLowerCase();
 let dia = rawDia;
-if (!["lunes", "miercoles", "jueves", "sabado"].includes(dia)) {
-  // 1=Lun 3=Mie 4=Jue 6=Sab — el calendario que fijó Joaquín el 26-ago-2026.
-  // Antes era Lun/Mar/Jue/Vie: dos pares pegados (lun-mar y jue-vie) dejaban
-  // el fin de semana entero sin publicar y concentraban las 4 piezas en 4
-  // días corridos. Repartido así queda un espacio de 1-2 días entre cada una.
+if (!NOMBRES_DIA.includes(dia)) {
+  // Publicación diaria desde el 26-ago-2026 tarde (antes era 4 piezas/semana,
+  // Lun/Mié/Jue/Sáb). getUTCDay() ya cubre los 7 días -- CALENDARIO más abajo
+  // rota los 4 tipos de pieza en orden fijo sobre esos 7 nombres.
   const wd = new Date().getUTCDay();
-  dia = { 1: "lunes", 3: "miercoles", 4: "jueves", 6: "sabado" }[wd] || "lunes";
+  dia = NOMBRES_DIA[wd];
 }
 
 // ── Piezas de marca compartidas ─────────────────────────────────────────────
@@ -253,27 +261,39 @@ const SERIES = {
 // saldría nunca.
 const ROTATIVAS = ["servicios", "barbara_producto", "barbara_datos"];
 
-// ── El calendario NUEVO (23-ago-2026) ──────────────────────────────────────
+// ── El calendario NUEVO (26-ago-2026 tarde) ─────────────────────────────────
 //
-// Joaquín lo redefinió: 4 piezas por semana, dos de cada marca.
+// Joaquín pasó a publicación DIARIA (antes: 4 piezas/semana, Lun/Mié/Jue/Sáb
+// -- ver el commit del 26-ago temprano, revertido acá mismo horas después).
+// Los 4 tipos de pieza rotan en orden fijo sobre los 7 días, así ninguna
+// marca queda 4 días seguidos sin turno:
 //
-//   Lunes     · carrusel de CÓNDOR   (noticias ↔ servicios)
-//   Martes    · anuncio de CÓNDOR    (imagen única)
-//   Jueves    · carrusel de BÁRBARA  (barbara_producto ↔ barbara_datos)
-//   Viernes   · anuncio de BÁRBARA   (imagen única)
+//   lunes/viernes     · carrusel de CÓNDOR   (noticias ↔ servicios)
+//   martes/sábado     · anuncio de CÓNDOR    (imagen única)
+//   miércoles/domingo · carrusel de BÁRBARA  (barbara_producto ↔ barbara_datos)
+//   jueves            · anuncio de BÁRBARA   (imagen única)
 //
 // Cada marca alterna entre SUS DOS templates por semana ISO, así los cuatro
 // templates de carrusel se turnan sin que ninguno se repita dos semanas
-// seguidas — que es lo que se pidió.
+// seguidas — que es lo que se pidió el 23-ago.
 const CARRUSELES_CONDOR = ["noticias", "servicios"];
 const CARRUSELES_BARBARA = ["barbara_producto", "barbara_datos"];
 
-const CALENDARIO = {
-  lunes:     () => CARRUSELES_CONDOR[semanaISO() % 2],   // carrusel Cóndor
-  miercoles: () => "ad_condor",                          // anuncio Cóndor
-  jueves:    () => CARRUSELES_BARBARA[semanaISO() % 2],  // carrusel Bárbara
-  sabado:    () => "ad_barbara",                         // anuncio Bárbara
-};
+// El orden fijo de los 4 tipos. Retomar el mismo día de otra semana siempre
+// elige el mismo TIPO -- lo que varía con `semanaISO()` es solo cuál de los
+// dos templates de esa marca. Semana empieza en lunes a propósito (no en
+// domingo como NOMBRES_DIA, que sigue a getUTCDay()): es el orden en que
+// cualquiera lee un calendario.
+const SERIES_ROTACION = [
+  () => CARRUSELES_CONDOR[semanaISO() % 2],   // carrusel Cóndor
+  () => "ad_condor",                          // anuncio Cóndor
+  () => CARRUSELES_BARBARA[semanaISO() % 2],  // carrusel Bárbara
+  () => "ad_barbara",                         // anuncio Bárbara
+];
+const ORDEN_SEMANA = ["lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"];
+const CALENDARIO = Object.fromEntries(
+  ORDEN_SEMANA.map((nombre, i) => [nombre, SERIES_ROTACION[i % 4]])
+);
 
 // Semana ISO. El índice avanza por semana REAL y no por corrida: contando
 // corridas, un reintento del mismo día adelantaría la rotación y el viernes
