@@ -62,6 +62,25 @@ export const REGLA_VERACIDAD = `REGLA DE VERACIDAD (no negociable): toda cifra, 
 - describir como "de esta semana" o "reciente" algo cuya fecha no tienes.
 Si no tienes el dato, escribe la pieza SIN cifras: un buen texto sin números es publicable, uno con un número inventado no. Esto se publica en la cuenta real de una marca y con su logo encima.`;
 
+/* Regla de numeración de slides. Va en el prompt de imagen de TODA pieza —
+   Cóndor y cada cliente — igual que REGLA_TEXTO.
+
+   Retroalimentación de Joaquín (26-ago-2026), la primera formal sobre
+   Bárbara: mandó la captura del carrusel real de condor.ai con el "1/6"
+   marcado en rojo. "Visualmente no se ve bien que los usuarios vean el
+   número de slide del carrusel".
+
+   Por qué es una regla y no un ajuste de una plantilla: Instagram YA dibuja
+   su propio indicador de posición debajo del carrusel, así que el contador
+   es una segunda barra de progreso, peor y encima del diseño. Y delata que
+   la pieza salió de una plantilla, que es lo contrario de lo que se le
+   vende a un cliente.
+
+   Es PROHIBICIÓN EXPLÍCITA y no una omisión: los modelos de imagen agregan
+   el contador por su cuenta —lo vieron en miles de carruseles de
+   entrenamiento— así que no pedirlo no alcanza para que no aparezca. */
+export const REGLA_SIN_CONTADOR = `SLIDE NUMBERING (critical): do NOT render any slide counter, page number, progress indicator or fraction such as "1/6", "01/05", "3 de 6" anywhere in the frame, in any corner, at any size. The reader must never see which slide number they are on. The frame must contain no slide numbering of any kind.`;
+
 // ── El logo REAL, compuesto encima — nunca dibujado por el modelo ──────────
 //
 // Corregido 22-ago-2026: el primer carrusel publicado le pedía a nano_banana_2
@@ -288,7 +307,14 @@ export async function pegarPersonajeBarbara(buf, indice = 0, posicion = "centro"
 // que barbara.mjs — 3 intentos, aborta de inmediato si el error es de
 // auth/config en vez de transitorio) ----
 export async function genImagen(prompt, idx) {
-  const safe = prompt.replace(/\s+/g, " ").trim().slice(0, 1500);
+  /* La regla de numeración se agrega DESPUÉS del recorte a 1500, nunca
+     antes. El prompt se trunca por el FINAL, así que una regla añadida al
+     texto de entrada es exactamente lo que se pierde cuando el prompt viene
+     largo — ya pasó con REGLA_TEXTO (ver el comentario en barbara.mjs). Al
+     concatenarla acá queda garantizada en el 100% de las imágenes, sean de
+     Cóndor o de un cliente, venga como venga el prompt de arriba. */
+  const safe = prompt.replace(/\s+/g, " ").trim().slice(0, 1500)
+    + " " + REGLA_SIN_CONTADOR;
 
   // Migración 24-ago-2026: Kie.ai (gpt-image-2) es el camino preferido — key
   // estática, no el OAuth de Higgsfield que se rompió cuatro veces. Ver

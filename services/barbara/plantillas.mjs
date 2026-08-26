@@ -92,7 +92,20 @@ function armarHtml(plantilla, d) {
   const serif = /serif|didot|garamond|playfair|georgia/i.test(tipografia);
   const familia = serif ? SERIF : SANS;
   const tinta = esOscuro(color) ? "#ffffff" : "#111111";
-  const paso = total > 1 ? `${indice}/${total}` : "";
+  /* NUNCA se numera la slide (26-ago-2026, retroalimentación de Joaquín).
+     Era `total > 1 ? `${indice}/${total}` : ""`, o sea "1/6" en el pie de
+     cada pieza del carrusel.
+
+     Por qué se saca: el número de slide es información del ARMADO, no del
+     mensaje. Instagram ya dibuja sus propios puntitos de posición debajo del
+     carrusel, así que el contador es una segunda barra de progreso, peor y
+     encima del diseño. Y en una marca delata la plantilla: se ve pieza de
+     serie automatizada en vez de anuncio.
+
+     Se deja la variable —vacía— en vez de borrar los `<span>` del pie: el
+     pie tiene reglas de layout (flex, separación con el logo) y quitarlo
+     movería el logo de sitio en las cuatro plantillas. */
+  const paso = "";
   // El logo del cliente SIEMPRE es el archivo real que subió al brand book
   // (Chrome lo pinta pixel a pixel, como cualquier <img>) — nunca el nombre
   // del negocio escrito con la tipografía de la plantilla, que es lo que

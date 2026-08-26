@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import sharp from "sharp";
-import { pegarLogoCondor, pegarPersonajeBarbara } from "./motor.mjs";
+import { pegarLogoCondor, pegarPersonajeBarbara, REGLA_SIN_CONTADOR } from "./motor.mjs";
 
 /* Un lienzo plano de un color, para poder medir qué queda después de componer. */
 async function lienzo(color, w = 928, h = 1160) {
@@ -126,4 +126,30 @@ test("la pose rota de forma determinista y ciclica", async () => {
   assert.equal(await firma(0), await firma(0));
   assert.equal(await firma(0), await firma(3), "índice 3 vuelve a la pose 0");
   assert.equal(await firma(1), await firma(4));
+});
+
+/* ── Numeración de slides (26-ago-2026) ──────────────────────────────────
+   Retroalimentación de Joaquín sobre el carrusel real de condor.ai: el
+   "1/6" arriba a la derecha. La regla que lo prohíbe tiene que viajar en
+   TODA imagen, así que se fija acá para que nadie la saque sin querer. */
+test("la regla prohibe el contador de slide, no lo omite", () => {
+  // Prohibición explícita: los modelos agregan el contador por su cuenta
+  // si no se les prohíbe, porque es lo que vieron en el entrenamiento.
+  assert.match(REGLA_SIN_CONTADOR, /do NOT render any slide counter/i);
+  // Cubre las formas concretas que ya salieron en piezas reales.
+  for (const forma of ["1/6", "01/05", "3 de 6"]) {
+    assert.ok(REGLA_SIN_CONTADOR.includes(forma),
+      `la regla tiene que nombrar la forma ${forma}`);
+  }
+  // "in any corner": el modelo movía el contador de esquina, no lo quitaba.
+  assert.match(REGLA_SIN_CONTADOR, /in any corner/i);
+});
+
+test("ninguna plantilla del prompt PIDE el contador", async () => {
+  // Tres plantillas base lo pedían ("Top-right: the slide counter"), lo que
+  // contradecía la prohibición. Si alguien la reintroduce, esto falla.
+  const src = await import("node:fs").then((fs) =>
+    fs.promises.readFile(new URL("./barbara.mjs", import.meta.url), "utf8"));
+  assert.ok(!/the slide counter/i.test(src),
+    "alguna plantilla volvió a pedir el contador de slide");
 });

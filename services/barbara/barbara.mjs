@@ -151,11 +151,11 @@ const REGLA_ORTOGRAFIA = `SPELLING (critical): every word rendered in the image 
 // innovar. Mantener el patrón visual y cambiar el fondo es justo lo que hace
 // que una cuenta se vea como una cuenta y no como piezas sueltas.
 
-const T_NOTICIAS = `Editorial tech-news slide, 4:5. Background near-white #F7F7F8 with one soft out-of-focus bloom of blue and pink in a single corner. ${ZONA_LOGO_IZQ} Top-right: the slide counter in bold black. Layout is LEFT-ALIGNED with a wide empty right column. Above the headline, one rounded-square app-icon tile in flat solid blue #1B4DE4 or violet #7B2FBF or crimson #E8203A, with a thin white line icon centred inside. Headline in very heavy grotesque sans, near-black #0A0A0A, tight leading, three or four short lines, with one or two key words filled with the same gradient. Under the headline a short horizontal rule in that gradient. Below it two or three lines of small grey body text. In the empty right column, one floating 3D isometric render or thin-line illustration in blue-violet tones, soft drop shadow, lots of white space around it. Optionally one very large statistic set in the gradient at bottom-left with its explanation beside it. Premium, calm, airy. NO clip-art, NO stock-photo people.`;
+const T_NOTICIAS = `Editorial tech-news slide, 4:5. Background near-white #F7F7F8 with one soft out-of-focus bloom of blue and pink in a single corner. ${ZONA_LOGO_IZQ} Layout is LEFT-ALIGNED with a wide empty right column. Above the headline, one rounded-square app-icon tile in flat solid blue #1B4DE4 or violet #7B2FBF or crimson #E8203A, with a thin white line icon centred inside. Headline in very heavy grotesque sans, near-black #0A0A0A, tight leading, three or four short lines, with one or two key words filled with the same gradient. Under the headline a short horizontal rule in that gradient. Below it two or three lines of small grey body text. In the empty right column, one floating 3D isometric render or thin-line illustration in blue-violet tones, soft drop shadow, lots of white space around it. Optionally one very large statistic set in the gradient at bottom-left with its explanation beside it. Premium, calm, airy. NO clip-art, NO stock-photo people.`;
 
-const T_SERVICIOS = `Centred agency statement slide, 4:5. Background near-white #F7F7F8 with one soft blue-to-pink gradient bloom bleeding in from a corner. ${ZONA_LOGO_CENTRO} Top-right corner: the slide counter in bold black. EVERYTHING IS CENTRE-ALIGNED on one vertical axis. A very large headline in heavy grotesque sans, near-black #0A0A0A, tight leading, filling the middle of the frame, with one whole phrase filled in the same gradient. Optionally one simple thin-line icon centred above the headline drawn in the gradient (a circle, a coin, two chat bubbles) and never more than one. Under the headline two or three centred lines of medium-grey supporting copy at much smaller size. At the very bottom a short centred horizontal rule in the gradient. Enormous breathing room, symmetric margins, poster-like calm. NO photos, NO people, NO clip-art, NO cards or boxes.`;
+const T_SERVICIOS = `Centred agency statement slide, 4:5. Background near-white #F7F7F8 with one soft blue-to-pink gradient bloom bleeding in from a corner. ${ZONA_LOGO_CENTRO} EVERYTHING IS CENTRE-ALIGNED on one vertical axis. A very large headline in heavy grotesque sans, near-black #0A0A0A, tight leading, filling the middle of the frame, with one whole phrase filled in the same gradient. Optionally one simple thin-line icon centred above the headline drawn in the gradient (a circle, a coin, two chat bubbles) and never more than one. Under the headline two or three centred lines of medium-grey supporting copy at much smaller size. At the very bottom a short centred horizontal rule in the gradient. Enormous breathing room, symmetric margins, poster-like calm. NO photos, NO people, NO clip-art, NO cards or boxes.`;
 
-const T_BARBARA_PRODUCTO = `Dark editorial slide, 4:5. Background PURE BLACK #000000 edge to edge. ${ZONA_LOGO_IZQ} Top-right: the slide counter in lime ${LIMA}. Headline set in a high-contrast DISPLAY SERIF with Scotch or Didone flavour, cream #F5F1E8, with the emphasised words in lime ${LIMA}. When the slide is a numbered point, place a small rounded-square OUTLINE badge stroked in lime, holding the number in lime, centred above the headline. In the middle of the frame, one large thin-line icon drawn in lime strokes on the black — a speech bubble, a descending bar chart, a target with an arrow, a calendar, a pencil — line art only, never filled, never another colour. At the bottom, a wide rounded-rectangle OUTLINE stroked in lime holding a small lime line icon at the left and two lines of white sans-serif text, with the number or key phrase in lime bold. Confident, high contrast, generous negative space. NO photos, NO background gradients, NO colour other than black, cream and lime.`;
+const T_BARBARA_PRODUCTO = `Dark editorial slide, 4:5. Background PURE BLACK #000000 edge to edge. ${ZONA_LOGO_IZQ} Headline set in a high-contrast DISPLAY SERIF with Scotch or Didone flavour, cream #F5F1E8, with the emphasised words in lime ${LIMA}. When the slide is a numbered point, place a small rounded-square OUTLINE badge stroked in lime, holding the number in lime, centred above the headline. In the middle of the frame, one large thin-line icon drawn in lime strokes on the black — a speech bubble, a descending bar chart, a target with an arrow, a calendar, a pencil — line art only, never filled, never another colour. At the bottom, a wide rounded-rectangle OUTLINE stroked in lime holding a small lime line icon at the left and two lines of white sans-serif text, with the number or key phrase in lime bold. Confident, high contrast, generous negative space. NO photos, NO background gradients, NO colour other than black, cream and lime.`;
 
 const T_BARBARA_DATOS = `Data-driven editorial slide, 4:5, same brand family as the dark Barbara series but on alternating grounds: this slide is EITHER pure black #000000 with cream #F5F1E8 text, OR warm cream #F2EFE6 with near-black text and olive accents — pick one and commit to it, never split the frame. Top-left: a SOLID rounded-square badge filled lime ${LIMA} with the number in black inside it. Headline in a high-contrast DISPLAY SERIF with the emphasised half in lime ${LIMA}, or in deeper olive #8FA524 when the ground is cream so it stays readable. Under it a short lime rule. Body copy in a geometric sans. For statistics, stack two or three wide rounded-rectangle OUTLINE cards, each with a thin-line icon at the left, one very large lime percentage, and a two-line label beside it. For comparisons, draw a bordered two-column panel with a circled-cross list on the left and a circled-check list on the right, split by a vertical rule with a small circled "VS" on it. Optionally one simple two-bar chart, grey against lime, labelled underneath. Bottom-left, a small grey source line. Editorial, dense but ordered. NO photos, NO clip-art.`;
 
@@ -671,28 +671,39 @@ Responde SOLO con el JSON.`,
     return buf;
   }
 
-  const contadorDe = (i, esUnica) => esUnica
-    ? "\n\nDo NOT render any slide counter, page number or \"1/1\" anywhere in the frame."
-    : `\n\nSLIDE COUNTER: render exactly the text "${i + 1}/${N_SLIDES}" in the top-right corner, nothing else there. Do not invent a different number or format.`;
+  /* NINGUNA PIEZA LLEVA CONTADOR DE SLIDE (26-ago-2026)
+     ------------------------------------------------------------------
+     Retroalimentación de Joaquín mirando el carrusel real de condor.ai:
+     "visualmente no se ve bien que los usuarios vean el número de slide
+     del carrusel".
+
+     Antes esto dictaba "1/6" arriba a la derecha en cada slide. La razón
+     por la que se dictaba sigue siendo cierta —dejárselo al modelo daba
+     "01", "01 / 05", "3/5" y "04/10" en un mismo carrusel— pero la
+     conclusión correcta no era dictarlo mejor: era no ponerlo. El número
+     de slide es información del ARMADO, no del mensaje, e Instagram ya
+     dibuja sus propios puntitos de posición debajo del carrusel. El
+     contador es una segunda barra de progreso, peor, encima del diseño.
+
+     Se conserva la instrucción NEGATIVA (y se aplica siempre): sin ella el
+     modelo agrega el contador por su cuenta, porque es lo que ve en las
+     miles de piezas de carrusel con las que se entrenó. Prohibirlo es
+     activo, no es omitir. */
+  const SIN_CONTADOR =
+    "\n\nDo NOT render any slide counter, page number, progress indicator, "
+    + "\"1/6\"-style fraction or any similar numbering anywhere in the frame, "
+    + "in any corner. The frame must contain no slide numbering of any kind.";
+
+  const contadorDe = () => SIN_CONTADOR;
 
   const imgs = [];
   for (let i = 0; i < slides.length; i++) {
     try {
-      // El contador va DICTADO, no insinuado. Dejándoselo al modelo salieron
-      // "01", "01 / 05", "3/5", "05" y "04/10" en un mismo carrusel de 6: un
-      // modelo de imagen no sabe en qué slide va ni cuántos hay.
-      // Una pieza de UNA sola imagen no lleva contador: "1/1" en la esquina
-      // delata que es una plantilla de carrusel y rompe la ilusión de anuncio.
-      // Se mira N_SLIDES (lo que la SERIE define) y no slides.length: con
-      // SOLO_PORTADA=1 un carrusel de 7 renderiza 1 sola imagen, y confundir
-      // eso con un anuncio le sacaría el contador y la regla de portada — o
-      // sea, la prueba mostraría un diseño distinto al real.
+      // Ninguna pieza lleva numeración de slide — ver `SIN_CONTADOR` arriba.
+      // Vale igual para el carrusel y para la pieza única: lo que antes era
+      // una excepción ("1/1" delata la plantilla) resultó ser la regla.
       const esUnica = N_SLIDES === 1;
-      const contador = esUnica
-        ? "\n\nDo NOT render any slide counter, page number or \"1/1\" anywhere in the frame."
-        // El total es N_SLIDES, no slides.length: con SOLO_PORTADA la prueba
-        // tiene que mostrar "1/7" como saldría de verdad, no "1/1".
-        : `\n\nSLIDE COUNTER: render exactly the text "${i + 1}/${N_SLIDES}" in the top-right corner, nothing else there. Do not invent a different number or format.`;
+      const contador = SIN_CONTADOR;
       // Portada siempre, alternado, nunca dos seguidas, ≥50% del carrusel:
       // se calcula acá (par/impar, 0-indexado) en vez de dejárselo al
       // criterio del director. Pedido de Joaquín el 22-ago-2026 — con 6 o 7
@@ -732,7 +743,7 @@ Responde SOLO con el JSON.`,
       const detalle = (veredictos[i].problemas || []).map((p) => `${p.tipo}: ${p.detalle}`).join(" · ");
       console.log(`  slide ${i + 1} rechazada — ${detalle}`);
       try {
-        imgs[i] = await componerSlide(i, contadorDe(i, esUnica), esUnica);
+        imgs[i] = await componerSlide(i, contadorDe(), esUnica);
         console.log(`  slide ${i + 1} rehecha`);
       } catch (e) {
         console.log(`  slide ${i + 1}: no se pudo rehacer (${String(e).slice(0, 80)}) — va la original`);
