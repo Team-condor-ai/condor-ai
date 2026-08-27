@@ -32,8 +32,12 @@ playbooks de la casa. El encabezado de los playbooks se lo dice
 explícito al modelo: *si choca con lo que pidió esta marca, manda la
 marca*.
 
-`pgvector` **no está en uso** — ver la sección de anti-repetición para
-por qué (falta decidir proveedor de embeddings).
+`pgvector` **está en uso desde el 27-ago-2026**, solo en
+`barbara_memoria_nodos` (gustos/datos/perfil). El puntaje semántico se SUMA
+al puntaje por palabras que ya existía en `memoria.mjs` — no lo reemplaza.
+Ver "Capa de recuperación" más abajo y la migración
+`20260827_barbara_memoria_pgvector.sql`. `barbara_reglas` y
+`barbara_patrones` siguen sin vectorizar (segunda pasada si hace falta).
 
 ## Capa de escritura
 
@@ -45,22 +49,35 @@ métricas de resultado de una pieza:
    memoria de este proyecto).
 2. Otra llamada a Sonnet clasifica si es candidata a memoria global
    (patrón general) o queda solo privada (gusto personal).
-3. Se genera el embedding del contenido y se guarda.
+3. El embedding **no** se genera acá — se rellena perezoso, en la capa de
+   recuperación, la próxima vez que ese cliente genera algo (ver abajo). Así
+   un fallo de OpenAI nunca bloquea guardar una nota.
 
 ## Capa de recuperación
 
-Al momento de generar contenido nuevo:
+Al momento de generar contenido nuevo, en `clientes.mjs`:
 
-1. Se embeddea el input/tarea actual.
-2. Búsqueda por similitud contra: memorias privadas del cliente (top
-   8), patrones globales (top 4), biblioteca fundacional (top 3).
-3. **Fuerza bruta al principio** — para el volumen de notas de un
+1. Se rellenan (`memoria-semantica.mjs::rellenarEmbeddingsFaltantes`) los
+   embeddings que falten de los nodos de ESE cliente — solo lo nuevo desde la
+   última corrida, nunca todos.
+2. Se embeddea el input/tarea actual (`OPENAI_API_KEY`, `text-embedding-3-
+   small`, 1536 dim — Anthropic no tiene endpoint de embeddings, se reusa
+   OpenAI porque YA está en el stack para transcribir notas de voz de
+   Telegram) y se busca por similitud (`barbara_memoria_similares`, coseno)
+   contra las memorias privadas del cliente — hoy solo
+   `barbara_memoria_nodos` (top 8). `barbara_reglas`, `barbara_patrones` y la
+   biblioteca fundacional (playbooks) **todavía no están vectorizados** — es
+   la extensión natural, no construida en esta pasada.
+3. Ese puntaje semántico se SUMA al puntaje por palabras que ya tenía
+   `memoria.mjs` (tope de 22 puntos sobre ~150 posibles) — no lo reemplaza.
+   Sin `OPENAI_API_KEY` configurada, el paso 1 y 2 son no-ops silenciosos y
+   la selección sigue funcionando solo con palabras, como antes del 27-ago.
+4. **Fuerza bruta, sin índice HNSW** — para el volumen de notas de un
    cliente individual (cientos, no millones), comparar contra todas es
-   instantáneo. **HNSW** (índice nativo de `pgvector`) se activa recién
-   cuando el volumen lo justifique — no antes. Es optimización para
-   escala grande; usarla ahora sería complejidad prematura sin
-   beneficio real.
-4. **Prioridad explícita en el prompt del director**: privada > global
+   instantáneo. Se agrega índice recién cuando el volumen lo justifique — no
+   antes. Es optimización para escala grande; usarla ahora sería complejidad
+   prematura sin beneficio real.
+5. **Prioridad explícita en el prompt del director**: privada > global
    > fundacional. Instrucción literal al modelo: si hay conflicto
    entre un patrón general y la preferencia específica del cliente,
    siempre gana el cliente.
@@ -356,8 +373,12 @@ aviso de Telegram ya sale con estos pasos adentro.
    `noticias`.
 4. **Edición de video** con subtítulos/música — primero confirmar si el
    CLI de Higgsfield ya lo expone (ver sección de video).
-5. **Embeddings/pgvector**, sólo si alguna marca acumula miles de
-   ángulos y sólo tras aprobar un proveedor.
+5. ~~Embeddings/pgvector~~ — **hecho 27-ago-2026** para
+   `barbara_memoria_nodos` (ver arriba). Falta setear el secret
+   `OPENAI_API_KEY` en GitHub Actions de este repo (ya existe como secret de
+   Supabase, para las notas de voz de Telegram — es copiar el mismo valor,
+   no crear uno nuevo) y, si vale la pena, extender a `barbara_reglas` y
+   `barbara_patrones`.
 
 Referencia de diseño para el paso 2 cuando se haga: el split entre
 núcleo fijo (tono de marca, reglas inmutables) y memoria dinámica

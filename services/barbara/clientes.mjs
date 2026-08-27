@@ -7,6 +7,9 @@
 // UGC con persona a camara, sin vocera FIJA (seedance1_5, ver motor.mjs).
 //
 // Secrets: ANTHROPIC_API_KEY, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY.
+// OPENAI_API_KEY es opcional (recuperación semántica de memoria, pgvector —
+// ver memoria-semantica.mjs): sin ella, la memoria sigue funcionando solo
+// con el puntaje por palabras que ya había.
 // Telegram lo maneja el outbox `entregador-pendientes.mjs` DESPUÉS de que la
 // pieza y sus assets estén persistidos; una caída del canal no regenera media.
 // Variables: TIPO (carrusel|historia|ugc, default carrusel) · CLIENTE_ID
@@ -29,11 +32,16 @@ import { cancelarGeneracion, confirmarGeneracion, fallarGeneracion, reclamarGene
 import { finalizarTelemetria, guardarTelemetria, iniciarTelemetria, verificarPresupuesto } from "./telemetria.mjs";
 import { inicioMesUTC, limitePlan, metaAcumulada } from "./planes.mjs";
 import { decidirElegibilidad, decidirCuota } from "./elegibilidad.mjs";
+import { rellenarEmbeddingsFaltantes, nodosSimilares } from "./memoria-semantica.mjs";
 import sharp from "sharp";
 
 const AK = process.env.ANTHROPIC_API_KEY;
 const SB_URL = process.env.SUPABASE_URL;
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+// Opcional a propósito: sin ella, la recuperación de memoria sigue
+// funcionando solo con el puntaje por palabras que ya tenía (ver
+// memoria-semantica.mjs — nunca lanza si falta la key).
+const OPENAI_KEY = process.env.OPENAI_API_KEY || "";
 const isTest = process.env.TEST === "1";
 const isRetry = process.env.RETRY === "1";
 const TIPO = (process.env.TIPO || "carrusel").trim().toLowerCase();
@@ -285,8 +293,16 @@ async function generarPara(cliente) {
   // refuerzo.
   const nodosRaw = await db.get(
     `barbara_memoria_nodos?barbara_cliente_id=eq.${barbaraId}&activo=eq.true` +
-    `&select=id,tipo,titulo,contenido,peso,origen,creado_en,actualizado_en&order=peso.desc&limit=60`
+    `&select=id,tipo,titulo,contenido,peso,origen,creado_en,actualizado_en,embedding&order=peso.desc&limit=60`
   ).catch(() => []);
+
+  // BÚSQUEDA SEMÁNTICA sobre esos mismos nodos (memoria-semantica.mjs). Suma
+  // puntaje en memoria.mjs, no reemplaza la coincidencia por palabras — ver
+  // la migración 20260827_barbara_memoria_pgvector.sql para el porqué. Sin
+  // OPENAI_API_KEY configurada, ambos pasos son no-ops silenciosos.
+  const consultaTexto = [form.producto_destacar, form.publico_objetivo, ...(form.tipo_contenido || [])].filter(Boolean).join(" ");
+  await rellenarEmbeddingsFaltantes(db, nodosRaw, { openaiKey: OPENAI_KEY });
+  const similitudNodos = await nodosSimilares(db, barbaraId, consultaTexto, { openaiKey: OPENAI_KEY });
 
   // El grafo agrega contexto de un salto: por ejemplo, una nota sobre un
   // producto puede traer la preferencia visual que el cliente vinculó a ESE
@@ -309,11 +325,8 @@ async function generarPara(cliente) {
     nodos: nodosRaw,
     relaciones: relacionesRaw,
     patrones: patronesRaw,
-    contexto: {
-      tipo: TIPO,
-      rubro,
-      consulta: [form.producto_destacar, form.publico_objetivo, ...(form.tipo_contenido || [])].filter(Boolean).join(" "),
-    },
+    contexto: { tipo: TIPO, rubro, consulta: consultaTexto },
+    similitudNodos,
   });
   const reglas = memoriaSeleccionada.privada.texto || "(todavía no hay memoria privada aplicable)";
   const perfil = memoriaSeleccionada.privada.seleccionadas

@@ -75,12 +75,18 @@ function puntajeRegla(r, ahora, consulta) {
   };
 }
 
-function puntajeNodo(n, ahora, consulta) {
+function puntajeNodo(n, ahora, consulta, similitud = 0) {
   const base = n.tipo === "perfil" ? 105 : n.tipo === "gusto" ? 66 : 60;
   const rel = relevancia([n.titulo, n.contenido, ...(n.etiquetas || [])].join(" "), consulta);
   const confianza = Number.isFinite(Number(n.confianza)) ? Math.max(0, Math.min(1, Number(n.confianza))) : 1;
+  // Semántico: complementa la coincidencia de palabras, no la reemplaza — una
+  // nota puede ser el recuerdo correcto sin compartir ni un término literal
+  // con el pedido ("descuento por temporada" vs. "rebaja de verano"). Tope de
+  // 22 puntos, similar al techo de `relevancia`, para que ninguna de las dos
+  // señales por sí sola decida todo el orden.
+  const semantico = Math.max(0, Math.min(1, Number(similitud) || 0)) * 22;
   return {
-    valor: base + Math.min(25, Math.max(0, n.peso || 1) * 3) + recencia(n.actualizado_en || n.creado_en, ahora) + rel.puntaje - (1 - confianza) * 18,
+    valor: base + Math.min(25, Math.max(0, n.peso || 1) * 3) + recencia(n.actualizado_en || n.creado_en, ahora) + rel.puntaje + semantico - (1 - confianza) * 18,
     coincidencias: rel.coincidencias,
   };
 }
@@ -139,6 +145,7 @@ function dentroDePresupuestoBalanceado(items, maxChars) {
 /** Devuelve contexto privado compacto y explicable, sin tocar datos. */
 export function seleccionarPrivada({
   reglas = [], nodos = [], relaciones = [], contexto = {}, ahora = new Date(), maxChars = MAX_PRIVADA,
+  similitudNodos = null,
 } = {}) {
   const consulta = textoContexto(contexto);
   const candidatas = [
@@ -151,7 +158,7 @@ export function seleccionarPrivada({
       };
     }),
     ...nodos.filter((n) => n.activo !== false && n.contenido).map((n) => {
-      const p = puntajeNodo(n, ahora, consulta);
+      const p = puntajeNodo(n, ahora, consulta, similitudNodos?.get?.(String(n.id)));
       return {
         id: n.id || null, clase: n.tipo || "dato", texto: `[${n.tipo || "dato"}] ${n.titulo || "sin título"}: ${String(n.contenido).trim()}`,
         clave: String(n.contenido).trim(), puntaje: p.valor, coincidencias: p.coincidencias,
@@ -205,8 +212,8 @@ export function seleccionarGlobales(patrones = [], { maxChars = MAX_GLOBAL, cont
 }
 
 /** Un único objeto auditable que el generador puede registrar o imprimir. */
-export function prepararMemoria({ reglas, nodos, relaciones, patrones, contexto, ahora, maxPrivada, maxGlobal } = {}) {
-  const privada = seleccionarPrivada({ reglas, nodos, relaciones, contexto, ahora, maxChars: maxPrivada });
+export function prepararMemoria({ reglas, nodos, relaciones, patrones, contexto, ahora, maxPrivada, maxGlobal, similitudNodos } = {}) {
+  const privada = seleccionarPrivada({ reglas, nodos, relaciones, contexto, ahora, maxChars: maxPrivada, similitudNodos });
   const global = seleccionarGlobales(patrones, { maxChars: maxGlobal, contexto });
   return {
     privada,

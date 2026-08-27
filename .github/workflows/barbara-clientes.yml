@@ -108,6 +108,11 @@ jobs:
           HIGGSFIELD_API_KEY_SECRET: ${{ secrets.HIGGSFIELD_API_KEY_SECRET }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          # Recuperación semántica de memoria (27-ago-2026, pgvector). Opcional:
+          # sin ella, memoria-semantica.mjs no hace nada y sigue funcionando
+          # solo el puntaje por palabras que ya había. Mismo key que ya usa
+          # telegram-barbara-clientes para transcribir notas de voz.
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           TIPO: ${{ github.event.inputs.tipo }}
           CLIENTE_ID: ${{ github.event.inputs.cliente_id }}
           PIEZA_ID: ${{ github.event.inputs.pieza_id }}

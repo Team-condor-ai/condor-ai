@@ -114,3 +114,27 @@ test("confianza baja reduce prioridad sin borrar la memoria", () => {
   });
   assert.equal(r.seleccionadas[0].id, "seguro");
 });
+
+test("similitudNodos (pgvector) puede rescatar un recuerdo sin palabras en común", () => {
+  const nodos = [
+    { id: "literal", tipo: "dato", titulo: "Precio", contenido: "rebaja de verano", peso: 1 },
+    { id: "semantico", tipo: "dato", titulo: "Promo", contenido: "descuento por temporada", peso: 1 },
+  ];
+  // Sin señal semántica, ninguno de los dos comparte palabras con la consulta
+  // salvo el literal — "temporada" no aparece en la consulta.
+  const sinSimilitud = seleccionarPrivada({ ahora, nodos, contexto: { consulta: "rebaja de verano" } });
+  assert.equal(sinSimilitud.seleccionadas[0].id, "literal");
+
+  const similitudNodos = new Map([["semantico", 0.95]]);
+  const conSimilitud = seleccionarPrivada({ ahora, nodos, contexto: { consulta: "rebaja de verano" }, similitudNodos });
+  assert.ok(conSimilitud.seleccionadas.find((x) => x.id === "semantico").puntaje >
+    sinSimilitud.seleccionadas.find((x) => x.id === "semantico").puntaje);
+});
+
+test("prepararMemoria pasa similitudNodos hasta seleccionarPrivada", () => {
+  const nodos = [{ id: "n1", tipo: "dato", titulo: "X", contenido: "algo sin relación literal", peso: 1 }];
+  const similitudNodos = new Map([["n1", 1]]);
+  const conSimilitud = prepararMemoria({ nodos, contexto: { consulta: "otra cosa" }, similitudNodos });
+  const sinSimilitud = prepararMemoria({ nodos, contexto: { consulta: "otra cosa" } });
+  assert.ok(conSimilitud.privada.seleccionadas[0].puntaje > sinSimilitud.privada.seleccionadas[0].puntaje);
+});
