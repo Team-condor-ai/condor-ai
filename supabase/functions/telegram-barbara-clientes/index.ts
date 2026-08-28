@@ -266,6 +266,44 @@ async function transcribir(fileId: string): Promise<string> {
   }
 }
 
+const BUCKET_MEDIA = "barbara-media";
+
+/**
+ * Guarda la foto que mandó el cliente y devuelve su RUTA en el bucket privado.
+ *
+ * NO se guarda la URL que da Telegram: esa URL lleva el token del bot embebido
+ * (`/file/bot<TOKEN>/...`) y el cliente puede leer su propio chat por RLS, así
+ * que dejarla en la fila filtraría el token a cualquiera que abra la
+ * conversación. Se copia el archivo a `barbara-media`, que es privado, y quien
+ * la necesite la firma en el momento.
+ *
+ * Devuelve null ante cualquier problema: una foto que no se pudo guardar no
+ * puede impedir que se procese el mensaje que venía con ella.
+ */
+async function subirImagen(sb: any, barbaraClienteId: string, fileId: string): Promise<string | null> {
+  try {
+    const meta = await (await fetch(
+      `https://api.telegram.org/bot${TG_TOKEN}/getFile?file_id=${fileId}`)).json();
+    const rutaTg = meta?.result?.file_path;
+    if (!rutaTg) { console.error("getFile sin file_path para imagen"); return null; }
+
+    const bytes = await (await fetch(
+      `https://api.telegram.org/file/bot${TG_TOKEN}/${rutaTg}`)).arrayBuffer();
+
+    const ext = (rutaTg.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
+    const destino = `chat/${barbaraClienteId}/${crypto.randomUUID()}.${ext}`;
+    const { error } = await sb.storage.from(BUCKET_MEDIA).upload(destino, bytes, {
+      contentType: ext === "png" ? "image/png" : "image/jpeg",
+      upsert: false,
+    });
+    if (error) { console.error("no se pudo guardar la imagen:", error.message); return null; }
+    return destino;
+  } catch (e) {
+    console.error("subirImagen error:", e);
+    return null;
+  }
+}
+
 
 async function tgSend(chatId: number | string, text: string) {
   try {
@@ -338,7 +376,14 @@ Deno.serve(async (req) => {
   // Una nota de voz no trae `text`. Antes esta línea la descartaba en
   // silencio: el cliente mandaba su corrección hablada y no pasaba nada.
   const fileVoz = msg?.voice?.file_id || msg?.audio?.file_id || msg?.video_note?.file_id || null;
-  if (!chatId || (!texto && !fileVoz)) return new Response("ok", { status: 200 });
+  // Una foto tampoco trae `text`. Telegram manda varias resoluciones del mismo
+  // archivo ordenadas de menor a mayor: la última es la mejor. El pie de foto
+  // viaja en `caption`, no en `text`, así que había que leerlo aparte.
+  const fileFoto = Array.isArray(msg?.photo) && msg.photo.length
+    ? msg.photo[msg.photo.length - 1]?.file_id ?? null
+    : null;
+  if (!texto && msg?.caption) texto = String(msg.caption).trim();
+  if (!chatId || (!texto && !fileVoz && !fileFoto)) return new Response("ok", { status: 200 });
 
   const sb = createClient(
     Deno.env.get("SUPABASE_URL")!,
@@ -413,13 +458,25 @@ Deno.serve(async (req) => {
     return new Response("ok", { status: 200 });
   }
 
-  // 4) Registrar el mensaje del cliente en el espejo del chat.
+  // 4) Registrar el mensaje del cliente en el hilo (portal + Telegram).
+  //    La imagen se copia al bucket privado recién acá, por lo mismo que la
+  //    transcripción: ya sabemos que el chat es de un cliente y que no es un
+  //    reintento de Telegram, así que no se paga por guardar archivos ajenos
+  //    ni duplicados.
+  const imagenPath = fileFoto ? await subirImagen(sb, barbaraClienteId, fileFoto) : null;
   const { error: errInsert } = await sb.from("barbara_chats").insert({
     barbara_cliente_id: barbaraClienteId,
     pieza_id: piezaObjetivo.id,
     remitente: "cliente",
-    mensaje: texto,
+    // Una foto sin pie sigue siendo un mensaje: se deja constancia en el texto
+    // para que el hilo se lea completo y `mensaje` nunca quede vacío.
+    mensaje: texto || "(imagen sin texto)",
     telegram_message_id: telegramMessageId,
+    canal: "telegram",
+    // La transcripción se equivoca: quien aprenda de esto tiene que saber que
+    // el cliente lo dijo hablando y no lo escribió. Ver aprender-conversacion.
+    es_audio: Boolean(!msg?.text && fileVoz),
+    imagen_path: imagenPath,
   });
   if (errInsert) console.error("error insertando barbara_chats:", errInsert.message);
 
