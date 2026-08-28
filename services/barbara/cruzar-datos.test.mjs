@@ -26,6 +26,14 @@ test("una pieza sin alcance no rinde infinito ni rompe la división", () => {
   assert.equal(rendimiento({}), 0);
 });
 
+test("usa la tasa que ya normalizó _shared/barbara-metricas, no una propia", () => {
+  // Si se recalculara acá, habría dos definiciones de "rendimiento" en el
+  // sistema y podrían derivar. Gana la que ya viene calculada.
+  assert.equal(rendimiento({ metricas: { tasa_interaccion: 0.42, alcance: 1000, interacciones: 10 } }), 0.42);
+  // Y si no viene, se calcula igual: las piezas viejas no tienen el campo.
+  assert.equal(rendimiento({ metricas: { alcance: 200, interacciones: 40 } }), 0.2);
+});
+
 test("sin muestras suficientes el veredicto es sin_evidencia, no una corazonada", () => {
   const reglas = [{ id: "r1", regla: "prefiere captions cortos", activa: true }];
   const piezas = [pieza({ id: "p1", texto: "captions cortos", alcance: 1000, interacciones: 200 })];

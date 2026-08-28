@@ -45,6 +45,12 @@ const PESO_VEREDICTO = { contradicha: 0, confirmada: 1, sin_diferencia: 2, sin_e
  */
 export function rendimiento(pieza = {}) {
   const m = pieza.metricas || {};
+  // `_shared/barbara-metricas.mjs` ya normaliza `interacciones` (suma de me
+  // gusta + comentarios + compartidos + guardados) y deja `tasa_interaccion`
+  // calculada. Se prefiere ese valor: recalcularlo acá sería una segunda
+  // definición de "rendimiento" que puede derivar de la del resto del sistema.
+  const tasa = Number(m.tasa_interaccion);
+  if (Number.isFinite(tasa) && tasa >= 0) return tasa;
   const alcance = Number(m.alcance) || 0;
   const interacciones = Number(m.interacciones) || 0;
   if (alcance <= 0) return 0;
