@@ -695,7 +695,14 @@ Responde SOLO con el JSON.`,
     // El logo REAL se pega acá, no se le pide al modelo que lo dibuje (ver
     // el comentario junto a ZONA_LOGO_IZQ). tema.logo es null en las series
     // cuya referencia aprobada no lleva logo en cada slide.
-    if (tema.logo) buf = await pegarLogoCondor(buf, tema.logo);
+    //
+    // PAUSADO 27-ago-2026 (decisión de Joaquín): mientras no se recargue
+    // OpenAI para generar con gpt-image-2 image-to-image (referencia real de
+    // logo), NINGÚN slide lleva logo pegado — ni dibujado por el modelo ni
+    // pegado por script. Solo la paleta de colores (ya va literal en el
+    // prompt de cada template, ver ZONA_LOGO_IZQ/CENTRO). Reactivar
+    // borrando el `&& false` de abajo apenas OpenAI esté cargado.
+    if (tema.logo && false) buf = await pegarLogoCondor(buf, tema.logo);
     // Y el personaje igual: archivo real encima del hueco que dejó el modelo.
     // `i / 2` para que las poses roten de a una entre slides CON personaje
     // (0, 2, 4 → retrato, brazos, carpeta) y no se repita dos veces seguidas.
