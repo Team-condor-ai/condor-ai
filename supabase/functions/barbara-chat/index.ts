@@ -217,7 +217,7 @@ Deno.serve(async (req) => {
     // igual recibió su respuesta. Nunca puede romper el chat.
     // Solo se le manda lo que escribió el CLIENTE, nunca la respuesta de
     // Bárbara: aprender de sí misma convertiría cada invención suya en un
-    // "hecho" de la marca (misma regla que aprender-conversacion.mjs).
+    // "hecho" de la marca y se reforzaría sola en la pieza siguiente.
     if (mensaje) {
       fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/barbara-aprender-chat`, {
         method: "POST",

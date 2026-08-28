@@ -4,7 +4,15 @@
  * reglas que el modelo no puede saltarse.
  */
 
-const UMBRAL_AUTO = 0.86;
+// 28-ago-2026: baja de 0.86 a 0.75 por decisión de Joaquín ("que entre solo,
+// con confianza baja"). Se puede aflojar sin volverse temerario porque:
+//   · el nodo queda con `confianza` y `fuente_tipo`, así que un lote malo se
+//     revierte con una consulta en vez de a mano nodo por nodo;
+//   · `memoria.mjs` ya castiga la confianza baja al recuperar (hasta -18 de
+//     ~150), o sea que lo que entra flojo influye poco hasta reforzarse;
+//   · los filtros duros de abajo (secreto, temporal, conflicto) no se tocan.
+// El piso de propuesta NO se movió: bajo 0.62 se sigue ignorando.
+const UMBRAL_AUTO = 0.75;
 const UMBRAL_PROPUESTA = 0.62;
 
 export function normalizarAprendizaje(texto = "") {
@@ -30,6 +38,22 @@ export function contieneSecreto(texto = "") {
   return /\b(contrasena|password|passphrase|api key|apikey|token|bearer|clave secreta|cvv|numero de tarjeta|semilla|seed phrase)\b/.test(t);
 }
 
+/**
+ * Una pregunta no es un hecho de la marca. "¿usamos azul?" no significa que la
+ * marca use azul, y guardar las dos cosas como equivalentes es de las formas
+ * más rápidas de ensuciar una memoria.
+ *
+ * Va como guardia determinista y no confiada al extractor: el modelo acierta
+ * casi siempre, pero acá el costo de un falso positivo es un "hecho" inventado
+ * que después influye en todo lo que la marca genere.
+ */
+export function pareceConsulta(candidato = {}) {
+  const crudo = String(candidato.contenido || "");
+  if (crudo.includes("?") || crudo.includes("¿")) return true;
+  return /^(que|cual|como|cuando|donde|quien|por que|deberiamos|te parece|puedes|podrias|conviene|sirve|vale la pena)\b/
+    .test(normalizarAprendizaje(crudo));
+}
+
 export function pareceTemporal(candidato = {}) {
   if (candidato.temporal === true || candidato.duracion === "temporal") return true;
   const t = normalizarAprendizaje(candidato.contenido || "");
@@ -49,6 +73,7 @@ export function decidirAprendizaje({ nodos = [], candidato, ahora = new Date() }
   if (contieneSecreto(`${c.titulo || ""} ${c.contenido}`) || c.sensible === true) {
     return { accion: "ignorar", razon: "dato sensible o secreto" };
   }
+  if (pareceConsulta(c)) return { accion: "ignorar", razon: "es una pregunta, no una afirmación sobre la marca" };
   if (pareceTemporal(c)) return { accion: "ignorar", razon: "dato temporal, queda en el chat pero no en memoria durable" };
   if (c.confianza < UMBRAL_PROPUESTA) return { accion: "ignorar", razon: "confianza baja" };
 

@@ -10,6 +10,34 @@ test("crea sólo recuerdos explícitos y con confianza alta", () => {
   assert.equal(r.nodo.contenido, "Prefiere fondos claros");
 });
 
+test("una pregunta no es un hecho de la marca", () => {
+  // "¿usamos azul?" no significa que la marca use azul. Guardar las dos cosas
+  // como equivalentes es de las formas más rápidas de ensuciar la memoria.
+  for (const contenido of [
+    "¿Deberíamos usar azul en los carruseles?",
+    "Que opinas del tono informal?",
+    "conviene mostrar el precio",
+  ]) {
+    const r = decidirAprendizaje({ candidato: { ...base, contenido } });
+    assert.equal(r.accion, "ignorar", `entró como memoria: ${contenido}`);
+  }
+});
+
+test("una afirmación con signo de pregunta adentro no se salva por el texto", () => {
+  // El guardia mira el contenido completo, no solo el final.
+  const r = decidirAprendizaje({ candidato: { ...base, contenido: "El público pregunta ¿hay envío? todo el tiempo" } });
+  assert.equal(r.accion, "ignorar");
+});
+
+test("28-ago-2026: el auto-guardado baja a 0.75, pero el piso de 0.62 no se movió", () => {
+  // Antes 0.80 iba a la cola de propuestas; ahora entra solo con peso bajo.
+  assert.equal(decidirAprendizaje({ candidato: { ...base, confianza: 0.80 } }).accion, "crear");
+  // Y lo que estaba bajo el piso se sigue ignorando igual que siempre.
+  assert.equal(decidirAprendizaje({ candidato: { ...base, confianza: 0.55 } }).accion, "ignorar");
+  // Entre medio sigue existiendo la zona de propuesta.
+  assert.equal(decidirAprendizaje({ candidato: { ...base, confianza: 0.70 } }).accion, "proponer");
+});
+
 test("una evidencia igual refuerza en vez de duplicar", () => {
   const r = decidirAprendizaje({ nodos: [{ id: "a", tipo: "gusto", titulo: "Fondos", contenido: "Prefiere fondos claros", peso: 2 }], candidato: base });
   assert.deepEqual({ accion: r.accion, id: r.id, peso: r.peso }, { accion: "reforzar", id: "a", peso: 3 });

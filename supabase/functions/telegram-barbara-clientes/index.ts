@@ -474,7 +474,7 @@ Deno.serve(async (req) => {
     telegram_message_id: telegramMessageId,
     canal: "telegram",
     // La transcripción se equivoca: quien aprenda de esto tiene que saber que
-    // el cliente lo dijo hablando y no lo escribió. Ver aprender-conversacion.
+    // el cliente lo dijo hablando y no lo escribió, para poder pesarlo distinto.
     es_audio: Boolean(!msg?.text && fileVoz),
     imagen_path: imagenPath,
   });
