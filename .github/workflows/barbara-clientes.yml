@@ -40,7 +40,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: barbara-clientes-${{ inputs.cliente_id || 'todos' }}-${{ inputs.tipo || 'carrusel' }}
+  group: barbara-clientes-${{ github.event.inputs.cliente_id || 'todos' }}-${{ github.event.inputs.tipo || 'carrusel' }}
   cancel-in-progress: false
 
 jobs:
