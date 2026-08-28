@@ -1,0 +1,38 @@
+name: Barbara - cruce semanal de datos
+
+# Cruza lo que cada cliente DECLARO que prefiere (barbara_reglas) contra lo que
+# sus piezas publicadas realmente rindieron, y deja el resultado en
+# barbara_cruces. No avisa a nadie: los hallazgos se acumulan y la
+# presentacion se decide despues, con historial a la vista (Joaquin, 28-ago).
+
+on:
+  schedule:
+    # Lunes 09:00 Chile = 13:00 UTC (Chile es UTC-4 todo el año). Semanal y no
+    # mas seguido porque las metricas se mueven en dias y el cruce exige un
+    # minimo de muestras: correrlo a diario repetiria el mismo veredicto.
+    - cron: "0 13 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: barbara-cruce-semanal
+  cancel-in-progress: false
+
+jobs:
+  cruzar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: services/barbara/package-lock.json
+      - run: npm ci --prefix services/barbara
+      - run: node services/barbara/cruce-semanal.mjs
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
