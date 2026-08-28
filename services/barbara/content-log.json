@@ -191,16 +191,7 @@
     "serie": "servicios",
     "angulo": "La factura mal tipeada a mano que costó $200.000 en reembolsos y una tarde entera arreglando el error: el precio real de los procesos manuales no es el tiempo, es la plata que se va por errores humanos.",
     "titulo": "🚀 Servicios Cóndor — agentes de IA",
-    "runId": "32658517769",
-    "contenido": {
-      "slides": [
-        {
-          "titulo": "Portada",
-          "prompt": "Cover slide, no icon, only centered typography. Large headline reads: 'El error que nadie ve venir'. Below it, smaller grey supporting line reads: 'Hasta que revisas los números'. Slide counter top-right: 1/6."
-        }
-      ],
-      "caption": "Ese error de tipeo no es gratis 👀\n\nUna factura mal digitada a mano. Un cero de más. $200.000 en reembolsos y una tarde entera arreglando el lío.\n\n¿Cuántos errores así se te escapan cada mes sin que los veas?\n\nEn condor.ai automatizamos tus procesos para que los números no dependan de que nadie se equivoque. Síguenos y escríbenos al DM si quieres saber cómo.\n\n#IA #Automatizacion #Pymes #Peru #Chile"
-    }
+    "runId": "32658517769"
   },
   {
     "fecha": "2026-08-28",
@@ -234,6 +225,23 @@
         }
       ],
       "caption": "Tu web dice un precio de hace ocho meses. 😳\nY el cliente sí se dio cuenta.\n\nEntra, ve el error, y no vuelve a confiar aunque lo corrijas al día siguiente.\n¿Cuántas ventas se te han ido así sin que lo notaras?\n\nEn condor.ai mantenemos tu página siempre al día, sin que tengas que tocar nada.\nEscríbenos al DM y te contamos cómo.\n\n#condorai #PyMEsChile #PyMEsPeru #transformaciondigital #webactualizada"
+    }
+  },
+  {
+    "fecha": "2026-08-28",
+    "tipo": "viernes",
+    "serie": "servicios",
+    "angulo": "Ese cliente que te recomendó tres personas nunca se enteró de que ninguna te contactó: la referencia se enfrió porque nadie hizo el segundo paso.",
+    "titulo": "🚀 Servicios Cóndor — agentes de IA",
+    "runId": "33169915656",
+    "contenido": {
+      "slides": [
+        {
+          "titulo": "Portada",
+          "prompt": "Gradient bloom in top-left corner. Thin-line icon of a chat bubble with a fading dotted trail, centred above headline. Exact text to render: Headline: 'La recomendación que se enfrió sola' Supporting line below in grey: 'Nadie hizo el segundo paso'."
+        }
+      ],
+      "caption": "Te recomendaron con tres personas más este mes 🙌\n\n¿Y si te dijera que ninguna te contactó?\nLa referencia no se pierde cuando llega, se pierde en los días que nadie hace el segundo paso.\nEsa venta la termina cerrando otro negocio, no tú.\n\nEn condor.ai construimos agentes de IA que hacen ese seguimiento por ti, para que ninguna recomendación se quede en el aire. Síguenos y escríbenos al DM si quieres que dejemos de perder referidos.\n\n#IA #Automatización #Pymes #Perú #Chile"
     }
   }
 ]
