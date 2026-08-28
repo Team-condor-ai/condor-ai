@@ -175,36 +175,7 @@
     "serie": "barbara_producto",
     "angulo": "Las horas que se van cada semana copiando el mismo post a Instagram, TikTok, Facebook y LinkedIn con distinto tamaño y formato: Bárbara lo adapta y publica en los cuatro sin que nadie toque un editor.",
     "titulo": "🎀 Bárbara — tu agente de contenido",
-    "runId": "32645723494",
-    "contenido": {
-      "slides": [
-        {
-          "titulo": "El ciclo que te roba la semana",
-          "prompt": "Icon: four simplified line-art screens shaped like different platform layouts (story-shaped, square, landscape, feed-shaped) clustered together, thin lines connecting them to a small clock icon above. Headline in cream with 'cuatro veces' emphasised in lime: 'El mismo post, editado cuatro veces'. Bottom rounded-rectangle outline with a lime pencil icon at left and white sans-serif text: 'Instagram, TikTok, Facebook, LinkedIn'."
-        },
-        {
-          "titulo": "Redimensionar sin pensar",
-          "prompt": "Numbered point 1. Icon: three overlapping rectangle frames of different aspect ratios (vertical, square, horizontal) being cropped, thin lime line art. Headline in cream with 'recortar y ajustar' emphasised in lime: 'Recortar y ajustar cada formato'. Bottom rounded-rectangle outline with a lime clock icon at left and white sans-serif text: 'Bárbara ahorra 4 horas a la semana'."
-        },
-        {
-          "titulo": "Escribir el copy cuatro veces",
-          "prompt": "Numbered point 2. Icon: one large speech bubble splitting into four smaller speech bubbles, thin lime line art. Headline in cream with 'reescribir el texto' emphasised in lime: 'Reescribir el texto para cada red'. Bottom rounded-rectangle outline with a lime clock icon at left and white sans-serif text: 'Bárbara ahorra 3 horas a la semana'."
-        },
-        {
-          "titulo": "Publicar uno por uno",
-          "prompt": "Numbered point 3. Icon: a calendar with four small dots representing platforms scattered across different days, thin lime line art. Headline in cream with 'publicar manualmente' emphasised in lime: 'Publicar manualmente en cada app'. Bottom rounded-rectangle outline with a lime clock icon at left and white sans-serif text: 'Bárbara ahorra 2 horas a la semana'."
-        },
-        {
-          "titulo": "Nueve horas de vuelta",
-          "prompt": "Icon: an hourglass with sand almost fully settled at the bottom, thin lime line art, symbolising reclaimed time. Headline in cream with 'nueve horas' emphasised in lime: 'Nueve horas de vuelta cada semana'. Bottom rounded-rectangle outline with a lime target icon at left and white sans-serif text: '¿Qué harías con ese tiempo?'."
-        },
-        {
-          "titulo": "Bárbara ya está lista",
-          "prompt": "Icon: a single thin lime line-art icon of a speech bubble with a small play triangle inside, centred. Headline in cream with 'Bárbara' emphasised in lime: 'Bárbara publica por ti'. Bottom rounded-rectangle outline with a lime arrow icon at left and white sans-serif text: 'Escríbenos al DM'."
-        }
-      ],
-      "caption": "¿Cuántas veces editaste el mismo post hoy? 😩\n\nInstagram pide una medida, TikTok otra, Facebook otra, LinkedIn otra. Multiplica eso por cada publicación de la semana.\nEso no es crear contenido, es hacer el mismo trabajo cuatro veces.\n\nBárbara, la agente de condor.ai, adapta y publica tu contenido en las cuatro redes sin que nadie abra un editor. Síguenos y escríbenos al DM si quieres recuperar esas horas.\n\n#condorai #IA #marketingdigital #pymes #Peru"
-    }
+    "runId": "32645723494"
   },
   {
     "fecha": "2026-08-23",
@@ -258,6 +229,23 @@
         }
       ],
       "caption": "Ese error de tipeo no es gratis 👀\n\nUna factura mal digitada a mano. Un cero de más. $200.000 en reembolsos y una tarde entera arreglando el lío.\n\n¿Cuántos errores así se te escapan cada mes sin que los veas?\n\nEn condor.ai automatizamos tus procesos para que los números no dependan de que nadie se equivoque. Síguenos y escríbenos al DM si quieres saber cómo.\n\n#IA #Automatizacion #Pymes #Peru #Chile"
+    }
+  },
+  {
+    "fecha": "2026-08-28",
+    "tipo": "viernes",
+    "serie": "ad_condor",
+    "angulo": "Si tú te enfermas mañana, ¿tu negocio sigue funcionando sin ti?",
+    "titulo": "📣 Cóndor — anuncio",
+    "runId": "33141204043",
+    "contenido": {
+      "slides": [
+        {
+          "titulo": "Portada única",
+          "prompt": "Single bold advertising image. Headline in cream on black background, heavy grotesque sans, 2 short lines, one phrase in the blue-violet-crimson gradient: '¿Tu negocio sobrevive\\nun día sin ti?' Below it a thin gradient rule, then one line of grey supporting copy: 'Que funcione aunque tú no estés.' One large thin-line icon of a single empty chair or an unattended storefront, off to one side, lots of empty space. At the bottom a rounded rectangle button outlined in the gradient with bold text: 'Escríbenos al DM'."
+        }
+      ],
+      "caption": "Si mañana te enfermas… ¿quién responde los mensajes, publica, atiende? 😳\n\nMuchos negocios dependen de una sola persona para todo lo visible: publicaciones, respuestas, presencia.\n¿Qué pasa el día que esa persona no está?\n\nCondor.ai crea y publica el contenido de tu marca aunque tú no puedas sentarte a hacerlo. Escríbenos al DM y hablemos de cómo implementarlo en tu negocio.\n\n#IA #Emprendimiento #Peru #Chile #Pymes"
     }
   }
 ]
