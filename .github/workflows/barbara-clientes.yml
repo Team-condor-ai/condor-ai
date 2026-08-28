@@ -46,6 +46,10 @@ concurrency:
 jobs:
   barbara-clientes:
     runs-on: ubuntu-latest
+    # El contexto `secrets` NO existe dentro de un `if:` de step. Se expone acá
+    # como env del job para poder preguntar por el en los `if` de mas abajo.
+    env:
+      KIE_API_KEY: ${{ secrets.KIE_API_KEY }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -63,10 +67,10 @@ jobs:
         # (24-ago-2026: sesión en una cuenta free de 0 créditos), así que
         # dejarlo corriendo solo agrega una forma más de que el job falle
         # antes de llegar a la generación real.
-        if: ${{ !secrets.KIE_API_KEY }}
+        if: ${{ !env.KIE_API_KEY }}
         run: npm install -g @higgsfield/cli@1.1.23
       - name: Autenticar Higgsfield (descifrar credenciales rotadas)
-        if: ${{ !secrets.KIE_API_KEY }}
+        if: ${{ !env.KIE_API_KEY }}
         env:
           HF_CREDS_KEY: ${{ secrets.HF_CREDS_KEY }}
           HF_ACCESS: ${{ secrets.HIGGSFIELD_ACCESS_TOKEN }}
