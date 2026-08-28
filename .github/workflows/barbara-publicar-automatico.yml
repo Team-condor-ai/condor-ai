@@ -30,6 +30,12 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: '22'
+          cache: npm
+          cache-dependency-path: services/barbara/package-lock.json
+      - name: Instalar dependencias
+        # Faltaba este paso: motor.mjs importa sharp, y sin node_modules el
+        # job moria con ERR_MODULE_NOT_FOUND antes de decidir nada (26-ago-2026).
+        run: npm ci --prefix services/barbara
       - name: Decidir y disparar (o avisar por qué no)
         run: node services/barbara/publicar-automatico.mjs
         env:
