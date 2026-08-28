@@ -183,36 +183,7 @@
     "serie": "barbara_producto",
     "angulo": "Los comentarios y mensajes directos que se acumulan sin respuesta después de cada publicación, mientras el cliente interesado se enfría y compra en otro lado — Bárbara responde y empuja la conversación hacia la venta.",
     "titulo": "🎀 Bárbara — tu agente de contenido",
-    "runId": "32646299633",
-    "contenido": {
-      "slides": [
-        {
-          "titulo": "Portada",
-          "prompt": "Large thin-line speech bubble icon in lime, cracked or fading at one edge to suggest something lost. Headline text in cream serif with lime emphasis, exact copy: 'El comentario que nadie respondió'. Emphasize 'nadie respondió' in lime."
-        },
-        {
-          "titulo": "El problema",
-          "prompt": "Large thin-line icon of a descending bar chart in lime, representing interest cooling down. Headline exact copy: 'Mientras publicas, los mensajes se acumulan'. Emphasize 'se acumulan' in lime."
-        },
-        {
-          "titulo": "Punto 1",
-          "prompt": "Numbered badge '1' in lime outline square above headline. Large thin-line icon of a speech bubble with a checkmark inside, lime strokes. Headline exact copy: 'Responde cada comentario en segundos'. Emphasize 'en segundos' in lime. Bottom rounded rectangle outline with small clock icon at left and text: 'Ahorra 5 horas a la semana'."
-        },
-        {
-          "titulo": "Punto 2",
-          "prompt": "Numbered badge '2' in lime outline square above headline. Large thin-line icon of a target with an arrow, lime strokes. Headline exact copy: 'Detecta quién está listo para comprar'. Emphasize 'listo para comprar' in lime. Bottom rounded rectangle outline with small clock icon at left and text: 'Ahorra 4 horas a la semana'."
-        },
-        {
-          "titulo": "Punto 3",
-          "prompt": "Numbered badge '3' in lime outline square above headline. Large thin-line icon of two speech bubbles connecting into an arrow pointing forward, lime strokes. Headline exact copy: 'Lleva la conversación al cierre'. Emphasize 'al cierre' in lime. Bottom rounded rectangle outline with small clock icon at left and text: 'Ahorra 3 horas a la semana'."
-        },
-        {
-          "titulo": "CTA",
-          "prompt": "Large thin-line icon of a speech bubble with a small arrow pointing out, lime strokes. Headline exact copy: 'Escríbenos al DM'. Bottom rounded rectangle outline with small icon and short supporting text: 'Bárbara ya está respondiendo'."
-        }
-      ],
-      "caption": "¿Cuántos comentarios se te quedaron sin responder esta semana? 👀\n\nEse \"¿precio?\" o \"¿disponible?\" que nadie contestó a tiempo, se enfría rápido. Y mientras tú sigues creando contenido, el cliente ya está comprando en otro lado.\n\nBárbara responde cada comentario y DM al instante, detecta quién está listo para comprar y empuja la conversación hasta el cierre. Síguenos y escríbenos al DM si quieres que trabaje para tu marca.\n\n#IA #Emprendimiento #Peru #Chile #Negocios"
-    }
+    "runId": "32646299633"
   },
   {
     "fecha": "2026-08-23",
@@ -246,6 +217,23 @@
         }
       ],
       "caption": "Si mañana te enfermas… ¿quién responde los mensajes, publica, atiende? 😳\n\nMuchos negocios dependen de una sola persona para todo lo visible: publicaciones, respuestas, presencia.\n¿Qué pasa el día que esa persona no está?\n\nCondor.ai crea y publica el contenido de tu marca aunque tú no puedas sentarte a hacerlo. Escríbenos al DM y hablemos de cómo implementarlo en tu negocio.\n\n#IA #Emprendimiento #Peru #Chile #Pymes"
+    }
+  },
+  {
+    "fecha": "2026-08-28",
+    "tipo": "viernes",
+    "serie": "servicios",
+    "angulo": "Tu página web muestra un precio de hace ocho meses y un producto que ya no existe: el cliente entra, lo nota, y no vuelve a confiar aunque corrijas el error.",
+    "titulo": "🚀 Servicios Cóndor — agentes de IA",
+    "runId": "33169611615",
+    "contenido": {
+      "slides": [
+        {
+          "titulo": "Portada",
+          "prompt": "Thin-line icon of a browser window with a small crack or fading pixel in one corner, centred above headline. Bloom in top-left corner. Exact Spanish text to render — headline: 'Tu web ya perdió esa venta' — supporting line below: 'Y ni siquiera te diste cuenta'."
+        }
+      ],
+      "caption": "Tu web dice un precio de hace ocho meses. 😳\nY el cliente sí se dio cuenta.\n\nEntra, ve el error, y no vuelve a confiar aunque lo corrijas al día siguiente.\n¿Cuántas ventas se te han ido así sin que lo notaras?\n\nEn condor.ai mantenemos tu página siempre al día, sin que tengas que tocar nada.\nEscríbenos al DM y te contamos cómo.\n\n#condorai #PyMEsChile #PyMEsPeru #transformaciondigital #webactualizada"
     }
   }
 ]
