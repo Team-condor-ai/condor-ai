@@ -13,9 +13,66 @@ const WORKFLOW = "barbara-clientes.yml";
 const MAX_INTENTOS = 3;
 const GH_TOKEN = Deno.env.get("GITHUB_DISPATCH_TOKEN") || Deno.env.get("GH_TOKEN") || "";
 
-async function insertarChat(sb: any, clienteId: string, remitente: "cliente" | "barbara" | "staff", mensaje: string, piezaId: string | null = null) {
-  const { data } = await sb.from("barbara_chats").insert({ barbara_cliente_id: clienteId, remitente, mensaje, pieza_id: piezaId }).select("id").single();
+async function insertarChat(
+  sb: any,
+  clienteId: string,
+  remitente: "cliente" | "barbara" | "staff",
+  mensaje: string,
+  piezaId: string | null = null,
+  extra: { imagen_path?: string | null } = {},
+) {
+  const { data } = await sb.from("barbara_chats").insert({
+    barbara_cliente_id: clienteId,
+    remitente,
+    mensaje,
+    pieza_id: piezaId,
+    // El hilo es uno solo: lo que entra por acá queda marcado como portal para
+    // poder distinguirlo de lo que llega por Telegram sin separarlo en dos
+    // conversaciones. Ver migración 20260828_barbara_chat_unificado.
+    canal: "portal",
+    imagen_path: extra.imagen_path ?? null,
+  }).select("id").single();
   return data?.id ?? null;
+}
+
+const BUCKET_MEDIA = "barbara-media";
+
+/**
+ * El bucket es privado: el modelo no puede leer la ruta directa. Se firma por
+ * un rato corto, solo para esta llamada. Devuelve null si la ruta no existe,
+ * porque una imagen ilegible no debe voltear el chat entero.
+ */
+async function firmar(sb: any, ruta: string | null): Promise<string | null> {
+  if (!ruta) return null;
+  const { data, error } = await sb.storage.from(BUCKET_MEDIA).createSignedUrl(ruta, 300);
+  if (error) { console.error("no se pudo firmar la imagen:", error.message); return null; }
+  return data?.signedUrl ?? null;
+}
+
+/**
+ * El hilo real del cliente, venga del portal o de Telegram.
+ *
+ * Antes el navegador mandaba el historial de la visita y el servidor le creía.
+ * Eso hacía que la conversación se perdiera al recargar, que Telegram y portal
+ * parecieran dos personas distintas, y que el cliente pudiera inventar el
+ * historial que quisiera. Ahora la fuente es la tabla.
+ */
+async function historialReal(sb: any, clienteId: string, limite = 20): Promise<MensajeSesion[]> {
+  const { data } = await sb
+    .from("barbara_chats")
+    .select("remitente,mensaje,canal,creado_en")
+    .eq("barbara_cliente_id", clienteId)
+    .order("creado_en", { ascending: false })
+    .limit(limite);
+  return (data ?? [])
+    .reverse()
+    .map((f: any): MensajeSesion => ({
+      remitente: f.remitente === "barbara" ? "barbara" : "cliente",
+      // De dónde vino importa para que Bárbara no diga "como te decía acá" si
+      // en realidad se lo dijeron por Telegram.
+      mensaje: f.canal === "telegram" ? `(por Telegram) ${f.mensaje}` : String(f.mensaje || ""),
+    }))
+    .filter((m: MensajeSesion) => m.mensaje);
 }
 
 async function dispararReintento(barbaraClienteId: string, piezaId: string, tipo: string) {
@@ -30,12 +87,23 @@ async function dispararReintento(barbaraClienteId: string, piezaId: string, tipo
 
 type MensajeSesion = { remitente: "cliente" | "barbara"; mensaje: string };
 
-async function conversar(sb: any, barbaraClienteId: string, mensaje: string, historialSesion: MensajeSesion[]) {
+async function conversar(
+  sb: any,
+  barbaraClienteId: string,
+  mensaje: string,
+  historialSesion: MensajeSesion[],
+  imagenUrl: string | null = null,
+) {
   const AK = Deno.env.get("ANTHROPIC_API_KEY");
   if (!AK) return "Recibí tu mensaje. El equipo debe habilitar el canal de conversación para responderte desde aquí.";
-  const [{ data: ficha }, { data: recientes }] = await Promise.all([
+  // Se suman las REGLAS y la MEMORIA privada: sin esto Bárbara conversaba sin
+  // saber nada de lo que la marca ya le había enseñado, y el cliente tenía que
+  // repetirle en el chat lo mismo que ya había corregido diez veces.
+  const [{ data: ficha }, { data: recientes }, { data: reglas }, { data: nodos }] = await Promise.all([
     sb.from("barbara_clientes").select("rubro,clientes(negocio),barbara_formulario(publico_objetivo,tono,producto_destacar)").eq("id", barbaraClienteId).maybeSingle(),
     sb.from("barbara_memoria").select("tipo,angulo,estado").eq("barbara_cliente_id", barbaraClienteId).order("creado_en", { ascending: false }).limit(5),
+    sb.from("barbara_reglas").select("regla,veces_reforzada").eq("barbara_cliente_id", barbaraClienteId).eq("activa", true).order("veces_reforzada", { ascending: false }).limit(12),
+    sb.from("barbara_memoria_nodos").select("tipo,titulo,contenido").eq("barbara_cliente_id", barbaraClienteId).eq("activo", true).order("peso", { ascending: false }).limit(12),
   ]);
   const negocio = (ficha as any)?.clientes?.negocio || "la marca";
   const formulario = (ficha as any)?.barbara_formulario?.[0] || (ficha as any)?.barbara_formulario || {};
@@ -43,12 +111,26 @@ async function conversar(sb: any, barbaraClienteId: string, mensaje: string, his
     `Marca: ${negocio}. Rubro: ${(ficha as any)?.rubro || "no especificado"}.`,
     `Público: ${formulario.publico_objetivo || "sin definir"}. Tono: ${formulario.tono || "sin definir"}.`,
     `Piezas recientes: ${(recientes ?? []).map((p: any) => `${p.tipo}: ${p.angulo || "sin ángulo"} (${p.estado || "histórica"})`).join(" | ") || "sin piezas"}.`,
+    `Reglas que la marca ya enseñó: ${(reglas ?? []).map((r: any) => r.regla).join(" | ") || "ninguna todavía"}.`,
+    `Memoria de la marca: ${(nodos ?? []).map((n: any) => `${n.titulo}: ${n.contenido}`).join(" | ") || "vacía"}.`,
   ].join("\n");
-  const mensajesModelo = historialSesion.slice(-10).map((entrada) => ({
+  const mensajesModelo: any[] = historialSesion.slice(-14).map((entrada) => ({
     role: entrada.remitente === "barbara" ? "assistant" : "user",
     content: entrada.mensaje,
   }));
-  mensajesModelo.push({ role: "user", content: mensaje });
+  // Con imagen, el turno del cliente viaja como bloques: la referencia visual
+  // primero y su texto después.
+  if (imagenUrl) {
+    mensajesModelo.push({
+      role: "user",
+      content: [
+        { type: "image", source: { type: "url", url: imagenUrl } },
+        { type: "text", text: mensaje || "Te mando esta imagen como referencia." },
+      ],
+    });
+  } else {
+    mensajesModelo.push({ role: "user", content: mensaje });
+  }
   try {
     const r = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -94,21 +176,23 @@ Deno.serve(async (req) => {
   const { data: { user } } = await sbUsuario.auth.getUser();
   if (!user?.email) return json({ error: "no autenticado" }, 401);
 
-  let accion = "chat", barbaraClienteId = "", mensaje = "", piezaId = "", canal = "";
-  let historialSesion: MensajeSesion[] = [];
+  let accion = "chat", barbaraClienteId = "", mensaje = "", piezaId = "", canal = "", imagenPath = "";
   try {
     const body = await req.json();
     accion = String(body?.accion || "chat"); barbaraClienteId = String(body?.barbara_cliente_id || "").trim();
     mensaje = String(body?.mensaje || "").trim().slice(0, 2000); piezaId = String(body?.pieza_id || "").trim(); canal = String(body?.canal || "").trim().slice(0, 80);
-    historialSesion = Array.isArray(body?.historial)
-      ? body.historial.slice(-10).map((entrada: any): MensajeSesion => ({
-          remitente: entrada?.remitente === "barbara" ? "barbara" : "cliente",
-          mensaje: String(entrada?.mensaje || "").trim().slice(0, 4000),
-        })).filter((entrada: MensajeSesion) => entrada.mensaje)
-      : [];
+    // Referencia visual del cliente: RUTA dentro del bucket privado, no una
+    // URL. Así el chat nunca es un cargador de URLs arbitrarias hacia el
+    // modelo, y el cliente solo puede apuntar a archivos que ya subió.
+    imagenPath = String(body?.imagen_path || "").trim().slice(0, 400);
+    if (imagenPath.includes("..") || imagenPath.startsWith("/")) imagenPath = "";
+    // `historial` del navegador ya no se lee: el hilo se arma desde la tabla.
+    // Se sigue aceptando en el cuerpo para no romper al portal desplegado.
   } catch { return json({ error: "cuerpo inválido" }, 400); }
   if (!barbaraClienteId || !["chat", "correccion", "aprobar", "publicar"].includes(accion)) return json({ error: "solicitud inválida" }, 400);
-  if (["chat", "correccion"].includes(accion) && !mensaje) return json({ error: "escribe un mensaje" }, 400);
+  // Con imagen, el texto puede venir vacío: la imagen ES el mensaje.
+  if (accion === "chat" && !mensaje && !imagenPath) return json({ error: "escribe un mensaje" }, 400);
+  if (accion === "correccion" && !mensaje) return json({ error: "escribe un mensaje" }, 400);
   if (["correccion", "aprobar", "publicar"].includes(accion) && !piezaId) return json({ error: "falta la pieza a revisar" }, 400);
 
   const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
@@ -119,9 +203,28 @@ Deno.serve(async (req) => {
   }
 
   if (accion === "chat") {
-    // La conversación del portal es efímera: el navegador entrega solo el
-    // contexto de esta visita y no se insertan mensajes en barbara_chats.
-    const respuesta = await conversar(sb, barbaraClienteId, mensaje, historialSesion);
+    // 28-ago-2026: la conversación del portal DEJA de ser efímera. Antes no se
+    // insertaba nada y el navegador mandaba el historial de la visita, así que
+    // al recargar se perdía todo, el mismo cliente parecía dos personas
+    // distintas según escribiera por acá o por Telegram, y nada de lo hablado
+    // podía alimentar la memoria. Ahora ambos canales escriben el mismo hilo.
+    const historial = await historialReal(sb, barbaraClienteId);
+    const mensajeId = await insertarChat(sb, barbaraClienteId, admin ? "staff" : "cliente", mensaje || "(imagen)", null, { imagen_path: imagenPath || null });
+    // Se firma recién acá, por 5 minutos y solo para esta llamada al modelo.
+    const respuesta = await conversar(sb, barbaraClienteId, mensaje, historial, await firmar(sb, imagenPath || null));
+    await insertarChat(sb, barbaraClienteId, "barbara", respuesta);
+    // Aprender de lo conversado va aparte y sin esperar: si falla, el cliente
+    // igual recibió su respuesta. Nunca puede romper el chat.
+    // Solo se le manda lo que escribió el CLIENTE, nunca la respuesta de
+    // Bárbara: aprender de sí misma convertiría cada invención suya en un
+    // "hecho" de la marca (misma regla que aprender-conversacion.mjs).
+    if (mensaje) {
+      fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/barbara-aprender-chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}` },
+        body: JSON.stringify({ barbara_cliente_id: barbaraClienteId, mensaje, mensaje_id: mensajeId }),
+      }).catch(() => {});
+    }
     return json({ ok: true, respuesta });
   }
 

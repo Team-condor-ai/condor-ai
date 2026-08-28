@@ -20,8 +20,14 @@
 alter table public.barbara_chats
   add column if not exists canal text,
   -- Imagen que acompaña al mensaje (el cliente manda una referencia visual).
-  -- Es la URL en Storage, no el binario: la tabla es de conversación.
-  add column if not exists imagen_url text,
+  -- Se guarda la RUTA dentro del bucket privado `barbara-media`, no una URL.
+  -- Dos razones concretas:
+  --   1. La URL de archivo de Telegram lleva el token del bot embebido, y el
+  --      cliente puede leer su propio chat por RLS: guardarla filtraría el
+  --      token del bot a cualquiera que abra la conversación.
+  --   2. Una URL firmada expira; una fila de conversación no debería.
+  -- Quien la necesite firma la ruta en el momento de usarla.
+  add column if not exists imagen_path text,
   -- El mensaje llegó como nota de voz y `mensaje` es su transcripción. Importa
   -- para el aprendizaje: una transcripción puede traer errores y no debería
   -- pesar igual que algo que el cliente escribió con sus manos.
