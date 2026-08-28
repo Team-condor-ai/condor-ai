@@ -30,8 +30,11 @@ test("se genera Lun/Mié/Vie a las 13:00 Chile (17:00 UTC)", () => {
     "el cron de generación no es Lun/Mié/Vie a las 17:00 UTC");
 });
 
-test("se publica sola los MISMOS días, 16:00 Chile (20:00 UTC), 3h después", () => {
-  assert.match(ymlPublicar, /cron: '0 20 \* \* 1,3,5'/,
+// 28-ago-2026: Joaquín movió la publicación de 16:00 a 17:00 Chile, con lo que
+// la ventana para escribir "bloquear barbara" pasó de 3h a 4h. El workflow se
+// actualizó ese día pero este test no, y quedó fallando contra el cron viejo.
+test("se publica sola los MISMOS días, 17:00 Chile (21:00 UTC), 4h después", () => {
+  assert.match(ymlPublicar, /cron: '0 21 \* \* 1,3,5'/,
     "el cron de publicación automática no coincide con los días de generación");
 });
 
