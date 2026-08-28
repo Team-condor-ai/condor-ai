@@ -66,8 +66,12 @@ jobs:
         with:
           node-version: '22'
       - name: Instalar dependencias (compone el logo real sobre lo que genera Higgsfield)
+        # npm install podía tocar package-lock.json y dejar el árbol de git
+        # sucio justo antes del "git pull --rebase" del último paso -- eso
+        # rompió la corrida de verificación del 27-ago-2026 ("You have
+        # unstaged changes"). npm ci nunca escribe el lockfile.
         working-directory: services/barbara
-        run: npm install
+        run: npm ci
       - name: Instalar CLI de Higgsfield
         if: env.USA_API_HF != 'true' && env.USA_KIE != 'true'
         # PIN de versión a propósito: instalar @latest hacía que un release rompiente
