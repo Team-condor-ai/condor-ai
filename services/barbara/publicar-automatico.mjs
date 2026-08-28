@@ -1,9 +1,10 @@
 // condor.ai · Publica sola la pieza de HOY, salvo que alguien la bloqueara.
 //
-// Corre a las 16:00 Chile, 3h después de que barbara.yml genera la pieza y
+// Corre a las 17:00 Chile, 4h después de que barbara.yml genera la pieza y
 // la manda a Telegram (13:00 Chile). Pedido explícito de Joaquín, 26-ago-2026
-// tarde: "todos los días publicar a las 16:00, manda las copias al telegram
-// 3 horas antes... y cualquier cosa te aviso para ponerles un bloqueo".
+// tarde (hora movida de 16:00 a 17:00 Chile el 28-ago-2026): "todos los días
+// publicar..., manda las copias al telegram antes... y cualquier cosa te
+// aviso para ponerles un bloqueo".
 //
 // El bloqueo lo escribe alguien en el chat interno de Telegram ("bloquear
 // barbara") -- lo maneja telegram-barbara-clientes/index.ts, que inserta una
@@ -91,7 +92,7 @@ async function main() {
   const pieza = await piezaDeHoy();
   if (!pieza) {
     await tg(
-      `⚠️ 16:00 Chile: no encontré ninguna pieza generada hoy (${hoy}) para publicar. ` +
+      `⚠️ 17:00 Chile: no encontré ninguna pieza generada hoy (${hoy}) para publicar. ` +
       "Probablemente la generación de las 13:00 falló -- revisa el workflow \"Barbara - carruseles RRSS\".",
     );
     console.log("Sin pieza de hoy. Nada que hacer.");
@@ -107,7 +108,7 @@ async function main() {
 
   await dispararPublicacion(pieza.runId);
   await tg(
-    `✅ 16:00 Chile: nadie la bloqueó, publicando sola la pieza de hoy (${pieza.tipo}, run ${pieza.runId}) vía Blotato.\n` +
+    `✅ 17:00 Chile: nadie la bloqueó, publicando sola la pieza de hoy (${pieza.tipo}, run ${pieza.runId}) vía Blotato.\n` +
     'Si algo salió mal, escribe "bloquear barbara" para la próxima y avisa para revisar esta.',
   );
   console.log("Publicación disparada para run", pieza.runId);
@@ -115,6 +116,6 @@ async function main() {
 
 main().catch(async (e) => {
   console.error(e);
-  await tg(`🔴 16:00 Chile: la publicación automática falló -- ${String(e.message || e).slice(0, 300)}`);
+  await tg(`🔴 17:00 Chile: la publicación automática falló -- ${String(e.message || e).slice(0, 300)}`);
   process.exitCode = 1;
 });
