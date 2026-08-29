@@ -199,16 +199,7 @@
     "serie": "ad_condor",
     "angulo": "Si tú te enfermas mañana, ¿tu negocio sigue funcionando sin ti?",
     "titulo": "📣 Cóndor — anuncio",
-    "runId": "33141204043",
-    "contenido": {
-      "slides": [
-        {
-          "titulo": "Portada única",
-          "prompt": "Single bold advertising image. Headline in cream on black background, heavy grotesque sans, 2 short lines, one phrase in the blue-violet-crimson gradient: '¿Tu negocio sobrevive\\nun día sin ti?' Below it a thin gradient rule, then one line of grey supporting copy: 'Que funcione aunque tú no estés.' One large thin-line icon of a single empty chair or an unattended storefront, off to one side, lots of empty space. At the bottom a rounded rectangle button outlined in the gradient with bold text: 'Escríbenos al DM'."
-        }
-      ],
-      "caption": "Si mañana te enfermas… ¿quién responde los mensajes, publica, atiende? 😳\n\nMuchos negocios dependen de una sola persona para todo lo visible: publicaciones, respuestas, presencia.\n¿Qué pasa el día que esa persona no está?\n\nCondor.ai crea y publica el contenido de tu marca aunque tú no puedas sentarte a hacerlo. Escríbenos al DM y hablemos de cómo implementarlo en tu negocio.\n\n#IA #Emprendimiento #Peru #Chile #Pymes"
-    }
+    "runId": "33141204043"
   },
   {
     "fecha": "2026-08-28",
@@ -242,6 +233,43 @@
         }
       ],
       "caption": "Te recomendaron con tres personas más este mes 🙌\n\n¿Y si te dijera que ninguna te contactó?\nLa referencia no se pierde cuando llega, se pierde en los días que nadie hace el segundo paso.\nEsa venta la termina cerrando otro negocio, no tú.\n\nEn condor.ai construimos agentes de IA que hacen ese seguimiento por ti, para que ninguna recomendación se quede en el aire. Síguenos y escríbenos al DM si quieres que dejemos de perder referidos.\n\n#IA #Automatización #Pymes #Perú #Chile"
+    }
+  },
+  {
+    "fecha": "2026-08-28",
+    "tipo": "sabado",
+    "serie": "servicios",
+    "angulo": "La campaña que sigue gastando presupuesto todos los días en un anuncio que dejó de convertir hace tres semanas, porque nadie revisó el dashboard.",
+    "titulo": "🚀 Servicios Cóndor — agentes de IA",
+    "runId": "33224720126",
+    "contenido": {
+      "slides": [
+        {
+          "titulo": "Portada",
+          "prompt": "Thin-line icon of a clock centred above the headline. Exact Spanish text to render, centred, as final copy: Headline: 'El anuncio fantasma sigue cobrando' Support line below in grey: 'Nadie revisó el dashboard en semanas'."
+        },
+        {
+          "titulo": "El gasto no se detiene",
+          "prompt": "Thin-line icon of a speedometer needle in the red zone, centred above the headline. Exact Spanish text to render: Headline: 'El gasto no se detiene solo' Support line: 'Un anuncio muerto sigue consumiendo presupuesto cada día'."
+        },
+        {
+          "titulo": "Costo silencioso",
+          "prompt": "Thin-line icon of a descending bar chart, centred above the headline. Exact Spanish text to render: Headline: 'El costo se acumula en silencio' Support line: 'Cada día sin revisión es plata que no vuelve'."
+        },
+        {
+          "titulo": "Nadie mira el panel",
+          "prompt": "Thin-line icon of an eye with a slash through it, centred above the headline. Exact Spanish text to render: Headline: 'Nadie tiene tiempo de mirar el panel' Support line: 'Por eso el gasto sigue corriendo sin control'."
+        },
+        {
+          "titulo": "La solución",
+          "prompt": "Thin-line icon of an open eye inside a speedometer dial, centred above the headline. Exact Spanish text to render: Headline: 'Un agente que nunca deja de mirar' Support line: 'Detecta cuándo un anuncio deja de rendir y avisa al instante'."
+        },
+        {
+          "titulo": "CTA",
+          "prompt": "Thin-line icon of a chat bubble, centred above the headline. Exact Spanish text to render: Headline: '¿Cuánto lleva gastando tu anuncio muerto?' Support line: 'Escríbenos al DM'."
+        }
+      ],
+      "caption": "Tu anuncio sigue cobrando aunque ya no venda nada 💸\n\n¿Cuándo fue la última vez que revisaste ese dashboard?\nTres semanas sin conversiones y el presupuesto sigue corriendo solo, porque nadie se sentó a mirar el panel.\nEse gasto no vuelve.\n\nEn condor.ai creamos agentes de IA que vigilan tus campañas todo el día y avisan cuando algo deja de rendir, antes de que se coma más plata. Síguenos y escríbenos al DM si quieres que tus anuncios trabajen solos.\n\n#IA #Marketing #Pymes #Peru #Chile"
     }
   }
 ]
