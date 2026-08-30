@@ -99,8 +99,20 @@ function armarHtml(plantilla, d) {
     bullets = [], sellos = [],
   } = d;
 
+  /* El tope de largo se hace cumplir ACÁ, no se le pide al modelo.
+     Verificado el 30-ago-2026 con una corrida real: al prompt se le dijo
+     "máximo 60 caracteres" y devolvió uno de 63, que se partió en dos líneas.
+     Los modelos no cuentan caracteres, estiman — así que un límite que sólo
+     vive en el prompt es una sugerencia.
+
+     El corte es a 78 y no a 60 a propósito: dos líneas se leen bien (se ve en
+     esa misma corrida), lo que rompe la pieza es un bullet de cuatro. Se corta
+     por la última palabra entera, porque un bullet cortado a mitad de palabra
+     se lee peor que uno un poco largo. */
   const lista = (Array.isArray(bullets) ? bullets : [])
-    .map((x) => String(x ?? "").trim()).filter(Boolean).slice(0, 5);
+    .map((x) => String(x ?? "").trim()).filter(Boolean)
+    .map((x) => (x.length <= 78 ? x : x.slice(0, 78).replace(/\s+\S*$/, "") + "…"))
+    .slice(0, 5);
   const marcas = (Array.isArray(sellos) ? sellos : [])
     .map((x) => String(x ?? "").trim()).filter(Boolean).slice(0, 4);
 
