@@ -62,6 +62,11 @@ export const PLANTILLAS = {
     nombre: "Foto",
     descripcion: "Fotografía de fondo con degradado y el texto encima. Necesita imagen.",
   },
+  sello: {
+    nombre: "Sello",
+    descripcion: "Foto de fondo, lista de beneficios y barra de sellos abajo. " +
+      "Para marcas de producto que certifican origen o composición.",
+  },
 };
 
 export const PLANTILLA_POR_DEFECTO = "editorial";
@@ -87,7 +92,17 @@ function armarHtml(plantilla, d) {
     titular = "", cuerpo = "", marca = "", indice = 1, total = 1,
     color = "#111111", color2 = "#f4f2ec", tipografia = "", fondoDataUri = "",
     logo = "",
+    /* Sólo los usa la plantilla `sello`. Van con tope de elementos porque el
+       lienzo es fijo: siete bullets o siete sellos no entran, y el navegador
+       no avisa — recorta en silencio o encoge todo hasta volverlo ilegible.
+       Es mejor perder el sexto sello que perder el titular. */
+    bullets = [], sellos = [],
   } = d;
+
+  const lista = (Array.isArray(bullets) ? bullets : [])
+    .map((x) => String(x ?? "").trim()).filter(Boolean).slice(0, 5);
+  const marcas = (Array.isArray(sellos) ? sellos : [])
+    .map((x) => String(x ?? "").trim()).filter(Boolean).slice(0, 4);
 
   const serif = /serif|didot|garamond|playfair|georgia/i.test(tipografia);
   const familia = serif ? SERIF : SANS;
@@ -213,6 +228,77 @@ function armarHtml(plantilla, d) {
         ${cuerpo ? `<p>${esc(cuerpo)}</p>` : ""}
         <div class="pie">${marcaHtml}<span>${paso}</span></div>
       </div>`,
+
+    /* Como `foto`, pero con las dos cosas que una marca de producto necesita y
+       las otras cuatro plantillas no saben hacer: una lista de beneficios y
+       una barra de sellos abajo.
+
+       POR QUÉ NO ALCANZABA `foto`
+       -----------------------------------------------------------------------
+       Una ficha de producto no es un titular con bajada: es una promesa
+       (titular), sus razones (bullets) y sus garantías (sellos de origen,
+       composición, certificación). Metidas dentro de `cuerpo` como texto
+       corrido, las razones se leen como un párrafo y las garantías se pierden.
+       Separarlas en campos propios permite que cada una tenga el tamaño y el
+       lugar que le corresponde — y que el modelo tenga que pensarlas como
+       cosas distintas al escribir la pieza.
+
+       DEGRADA SIN ROMPERSE
+       -----------------------------------------------------------------------
+       Sin `bullets` ni `sellos` queda igual que `foto`. Sin `fondoDataUri`
+       usa el color de marca. Ninguno de los dos campos es obligatorio, así
+       que una marca puede adoptarla de a poco. */
+    sello: `
+      <style>${comun}
+        body{background:${color}}
+        .fondo{position:absolute;inset:0;background:${
+          fondoDataUri ? `url('${fondoDataUri}') center/cover` : color};}
+        /* Más opaco abajo que en la plantilla foto: acá el texto compite con una lista
+           entera, no con dos líneas. Arriba se deja casi limpio para que se
+           vea el producto, que es lo que la marca está vendiendo. */
+        /* Verificado con una foto real de gpt-image-2 el 30-ago-2026: con el
+           gradiente anterior (.35 al 42%) un titular blanco caía justo sobre
+           la zona clara del producto y se sostenía sólo por el text-shadow.
+           Salió legible esa vez, pero la foto la elige un modelo distinto en
+           cada pieza — el velo tiene que garantizar el contraste con
+           CUALQUIER foto, no confiar en que la próxima sea oscura ahí. */
+        .velo{position:absolute;inset:0;background:linear-gradient(180deg,
+          rgba(0,0,0,.05) 0%,rgba(0,0,0,.50) 38%,rgba(0,0,0,.93) 72%)}
+        /* El padding de abajo deja libre la franja de sellos: si la barra se
+           superpusiera al pie, el logo del cliente quedaría tapado. */
+        /* Con foto el texto se ancla abajo, sobre la zona oscura del velo, y
+           el producto respira arriba. SIN foto ese anclaje deja media pieza
+           vacía, así que se centra: es el caso real cuando el proveedor de
+           imagen falla, y una pieza descompensada se nota más que una simple. */
+        .marco{color:#fff;justify-content:${fondoDataUri ? "flex-end" : "center"};
+          padding:88px 80px ${marcas.length ? 176 : 96}px}
+        h1{font-size:88px;text-shadow:0 2px 24px rgba(0,0,0,.4)}
+        p{font-size:36px;opacity:.93;margin-top:24px}
+        .lista{list-style:none;margin-top:36px;display:flex;flex-direction:column;gap:18px}
+        .lista li{font-size:34px;line-height:1.3;display:flex;gap:20px;align-items:flex-start;
+          font-family:${SANS};text-shadow:0 1px 12px rgba(0,0,0,.45)}
+        /* Punto dibujado con CSS y no un carácter "•": el bullet tipográfico
+           cambia de tamaño y de línea base según la fuente que resuelva el
+           sistema, y acá la familia depende del brand book del cliente. */
+        .lista li::before{content:"";flex:none;width:14px;height:14px;border-radius:50%;
+          background:${color2};margin-top:11px}
+        .pie{opacity:.9;margin-top:40px}
+        .barra{position:absolute;left:0;right:0;bottom:0;height:112px;
+          background:${color};display:flex;align-items:center;justify-content:space-around;
+          gap:24px;padding:0 56px}
+        .barra span{color:${tinta};font-family:${SANS};font-size:24px;font-weight:700;
+          letter-spacing:.1em;text-transform:uppercase;text-align:center;line-height:1.2}
+      </style>
+      <div class="fondo"></div><div class="velo"></div>
+      <div class="marco">
+        <h1>${esc(titular)}</h1>
+        ${cuerpo ? `<p>${esc(cuerpo)}</p>` : ""}
+        ${lista.length ? `<ul class="lista">${
+          lista.map((b) => `<li>${esc(b)}</li>`).join("")}</ul>` : ""}
+        <div class="pie">${marcaHtml}<span>${paso}</span></div>
+      </div>
+      ${marcas.length ? `<div class="barra">${
+        marcas.map((s) => `<span>${esc(s)}</span>`).join("")}</div>` : ""}`,
   };
 
   return `<!doctype html><html lang="es"><head><meta charset="utf-8"></head><body>${

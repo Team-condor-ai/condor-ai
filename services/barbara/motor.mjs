@@ -14,6 +14,7 @@ import { fileURLToPath } from "node:url";
 import sharp from "sharp";
 import { apiDisponible, generarImagen as apiImagen, generarVideo as apiVideo } from "./higgsfield-api.mjs";
 import { apiDisponible as kieDisponible, generarImagen as kieImagen, generarVideo as kieVideo } from "./kie-api.mjs";
+import { imagenDisponible as openaiDisponible, generarImagen as openaiImagen } from "./openai-imagen.mjs";
 import { registrarClaude, registrarMedia } from "./telemetria.mjs";
 
 const ASSETS = fileURLToPath(new URL("./assets/", import.meta.url));
@@ -320,6 +321,24 @@ export async function genImagen(prompt, idx) {
   // estática, no el OAuth de Higgsfield que se rompió cuatro veces. Ver
   // kie-api.mjs. Si no hay KIE_API_KEY, sigue con lo de antes (API oficial de
   // Higgsfield si está, si no el CLI) sin cambiar nada de ese camino.
+  /* 29-ago-2026: OpenAI directo va PRIMERO para imagen. Kie sigue siendo el
+     proveedor de VIDEO (seedance-2-0, ver genVideo) — no se reemplazan, se
+     reparten el trabajo.
+
+     Por qué directo: Kie revende el mismo modelo de OpenAI a precio casi igual
+     (bitácora 27/28-ago), y yendo directo se gana la referencia de imagen que
+     `kie-api.mjs` no implementa — sin ella el envase de un producto sale con
+     la etiqueta inventada. Ver openai-imagen.mjs.
+
+     Si falta OPENAI_API_KEY sigue todo como antes: Kie, y después Higgsfield.
+     La cascada no cambió, sólo se le puso un escalón arriba. */
+  if (openaiDisponible()) {
+    const salida = await openaiImagen(safe, { forma: "vertical", resolucion: "1K" });
+    registrarMedia({ proveedor: "openai", modelo: process.env.OPENAI_MODELO_IMAGEN || "gpt-image-2", imagenes: 1 });
+    // La plantilla mete esto en un background:url(...), y Chrome resuelve el
+    // data URI sin tocar la red. Si la API devolvió una URL, se pasa tal cual.
+    return salida.dataUri || salida.url;
+  }
   if (kieDisponible()) {
     // 26-ago-2026: "4:5" explícito rompía createTask en Kie (ver kie-api.mjs).
     // "auto" + "1K" da el mismo 4:5 exacto, cuesta menos y evita el recorte

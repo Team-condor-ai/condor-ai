@@ -55,14 +55,68 @@ if (!AK || !SB_URL || !SB_KEY) {
 }
 const db = supabase(SB_URL, SB_KEY);
 
-const schema = {
+/**
+ * El schema depende de la PLANTILLA de la marca.
+ *
+ * `sello` es la única que compone una lista de beneficios, así que es la única
+ * que se los pide al modelo. Se hace condicional y no fijo para todos por dos
+ * razones concretas:
+ *
+ *   · el schema es estricto, así que un campo declarado hay que devolverlo
+ *     siempre — a una marca con plantilla `editorial` la obligaría a escribir
+ *     bullets que nadie va a componer, gastando tokens en algo invisible;
+ *   · y sobre todo, Cóndor corre en producción con otra plantilla: si el
+ *     schema cambiara para todos, el primer efecto de esto sería tocar las
+ *     piezas de la cuenta propia sin que nadie lo pidiera.
+ *
+ * Los SELLOS no se le piden al modelo a propósito: son las garantías de la
+ * marca (origen, composición, certificación) y salen del brand book. Pedirlos
+ * al modelo sería invitarlo a inventar una certificación que la marca no
+ * tiene — exactamente lo que REGLA_VERACIDAD prohíbe, y encima impreso sobre
+ * el logo del cliente.
+ */
+/* Las únicas dos que componen sobre una imagen. Las otras tres usan color
+   plano de marca, y pedirles una foto sería gastar en algo que no se ve. */
+const PLANTILLAS_CON_FONDO = new Set(["foto", "sello"]);
+
+function schemaPara(plantilla) {
+  const propsSlide = {
+    titular: { type: "string", description: "El titular del slide, EN ESPAÑOL, tal cual se va a leer. Corto y con fuerza: 4 a 9 palabras. Sin rótulos ni dos puntos de etiqueta." },
+    cuerpo: { type: "string", description: "Una o dos frases que desarrollan el titular, EN ESPAÑOL, tal cual se van a leer. Máximo 160 caracteres. Puede ir vacío si el titular se basta solo." },
+  };
+  const requeridos = ["titular", "cuerpo"];
+
+  if (plantilla === "sello") {
+    propsSlide.bullets = {
+      type: "array",
+      items: { type: "string" },
+      description: "De 0 a 4 razones concretas que sostienen el titular, EN ESPAÑOL, tal cual se van a leer. Una idea por bullet, máximo 60 caracteres cada uno, sin punto final. Son BENEFICIOS o hechos del producto, no adjetivos sueltos: \"punto de humo alto, no se degrada al freír\" sirve; \"delicioso\" no. Deja el array vacío si el titular y el cuerpo se bastan solos.",
+    };
+    requeridos.push("bullets");
+  }
+
+  /* Sólo `foto` y `sello` componen sobre una imagen; el resto usa color plano.
+     A las demás no se les pide la descripción porque no tendrían dónde ponerla
+     — y sobre todo porque generarla cuesta plata: una imagen por slide, seis
+     slides por carrusel. Pedirla "por si acaso" sería gastar en algo invisible.
+
+     La descripción va EN INGLÉS: los modelos de imagen entienden bastante
+     mejor el inglés, y este texto no lo lee nadie más — el copy que sí ve la
+     persona (titular, cuerpo, bullets) sigue en español. */
+  if (PLANTILLAS_CON_FONDO.has(plantilla)) {
+    propsSlide.imagen = {
+      type: "string",
+      description: "Descripción EN INGLÉS de la fotografía de fondo de este slide, para un modelo de imagen. Escena real y fotografiable, coherente con la estética de la marca: qué se ve, cómo es la luz, sobre qué superficie. NO pidas texto, letras, logos ni carteles dentro de la imagen — el texto lo pone la plantilla encima y un modelo escribiendo palabras arruina la pieza. Máximo 300 caracteres.",
+    };
+    requeridos.push("imagen");
+  }
+
+  return {
   type: "object", additionalProperties: false,
   properties: {
     angulo: { type: "string", description: "El ángulo/idea ÚNICO de esta pieza en una frase (para registrar y no repetir)." },
-    slides: { type: "array", items: { type: "object", additionalProperties: false, properties: {
-      titular: { type: "string", description: "El titular del slide, EN ESPAÑOL, tal cual se va a leer. Corto y con fuerza: 4 a 9 palabras. Sin rótulos ni dos puntos de etiqueta." },
-      cuerpo: { type: "string", description: "Una o dos frases que desarrollan el titular, EN ESPAÑOL, tal cual se van a leer. Máximo 160 caracteres. Puede ir vacío si el titular se basta solo." },
-    }, required: ["titular", "cuerpo"] } },
+    slides: { type: "array", items: { type: "object", additionalProperties: false,
+      properties: propsSlide, required: requeridos } },
     // Corregido 22-ago-2026: la primera caption real de Cóndor salió como un
     // párrafo corrido, y por separado Instagram rechazó una publicación por
     // traer 8 hashtags (el límite real es 5). Mismo bug, latente acá también
@@ -71,7 +125,8 @@ const schema = {
     caption: { type: "string", description: `Caption para Instagram, con SALTOS DE LÍNEA reales entre bloques (usa "\\n\\n" en el JSON) — NUNCA un solo párrafo corrido: (1) gancho de 1-2 líneas con 1-2 emojis; (2) cuerpo de 2-4 líneas cortas, tono acorde a la marca del cliente, útil para su público objetivo — puede llevar una pregunta; (3) cierre con CTA; (4) línea final con MÁXIMO 5 hashtags relevantes al rubro del cliente (Instagram rechaza la publicación con más de 5). Que se lea fácil en el feed sin abrir "ver más".` },
   },
   required: ["angulo", "slides", "caption"],
-};
+  };
+}
 
 // UGC: UNA PERSONA MOSTRANDO EL PRODUCTO Y HABLANDO DE ÉL A CÁMARA.
 // Ese es el género completo — no son tomas de producto y ambiente.
@@ -595,8 +650,25 @@ Responde SOLO con el JSON.`;
     const nSlides = TIPO === "historia"
       ? 1
       : Math.min(10, Math.max(4, Number(configuracionPlan.slides) || 6));
+    /* La plantilla se resuelve ANTES de pedirle el plan al modelo: define qué
+       campos tiene que escribir (ver schemaPara). Antes se calculaba después
+       de la llamada, cuando ya era tarde para pedirle nada distinto. */
+    const plantillaPedida = String(configuracionPlan.plantilla || "");
+    const plantilla = PLANTILLAS[plantillaPedida]
+      ? plantillaPedida
+      : PLANTILLAS[bb.plantilla] ? bb.plantilla : PLANTILLA_POR_DEFECTO;
+
+    /* La instrucción sobre imágenes depende de la plantilla, y no es un
+       detalle de estilo: con `foto` o `sello` el schema PIDE una descripción
+       de la escena, así que decirle "no describas imágenes" sería darle una
+       orden que contradice el formato que tiene que devolver. Un modelo con
+       instrucciones contradictorias no falla limpio — improvisa. */
+    const instruccionImagen = PLANTILLAS_CON_FONDO.has(plantilla)
+      ? "Cada slide se compone sobre una FOTOGRAFÍA de fondo que vas a describir en el campo `imagen`, y el texto va encima. La foto tiene que verse hecha para esta marca: su paleta, sus materiales, sus escenarios. Como el texto lo pone la plantilla, la foto NUNCA lleva letras, logos ni carteles. Escribe titulares que se lean bien sobre una imagen: cortos y con contraste."
+      : "El diseño lo pone una plantilla de marca, así que NO describes imágenes ni composición — solo escribes las palabras, y tienen que sostenerse solas.";
+
     const pedirPlanSlides = async (extra = "") => {
-      const sistema = `Eres Bárbara, directora creativa de "${negocio}" (rubro: ${rubro || "no especificado"}). Diseñas ${TIPO === "historia" ? "una historia de Instagram (1 imagen)" : `un carrusel de Instagram (${nSlides} slides)`} de nivel agencia. Sigues la identidad de marca del cliente al pie de la letra. Escribes la COPY FINAL de cada slide: el titular y el cuerpo tal cual los va a leer la persona. El diseño lo pone una plantilla de marca, así que NO describes imágenes ni composición — solo escribes las palabras, y tienen que sostenerse solas. NUNCA repites ángulos de las piezas recientes.
+      const sistema = `Eres Bárbara, directora creativa de "${negocio}" (rubro: ${rubro || "no especificado"}). Diseñas ${TIPO === "historia" ? "una historia de Instagram (1 imagen)" : `un carrusel de Instagram (${nSlides} slides)`} de nivel agencia. Sigues la identidad de marca del cliente al pie de la letra. Escribes la COPY FINAL de cada slide: el titular y el cuerpo tal cual los va a leer la persona. ${instruccionImagen} NUNCA repites ángulos de las piezas recientes.
 
 ${REGLA_VERACIDAD}
 
@@ -605,7 +677,7 @@ Responde SOLO con el JSON.`;
       const plan = JSON.parse(textOf(await claude(AK, {
         model: "claude-sonnet-5", max_tokens: 4000,
         system: sistema,
-        output_config: { format: { type: "json_schema", schema } },
+        output_config: { format: { type: "json_schema", schema: schemaPara(plantilla) } },
         messages: [{ role: "user", content: usuario }],
       })));
       await registrarPrompt({ sistema, usuario, respuesta: plan, correccionPedida: extra || null });
@@ -619,18 +691,44 @@ Responde SOLO con el JSON.`;
     // Los slides se COMPONEN, no se dibujan. Ver `plantillas.mjs`: un carrusel
     // es una pieza tipográfica, y componerla en HTML deja el texto siempre
     // correcto (tildes, eñes), el hex de marca exacto y el costo en cero.
-    const plantillaPedida = String(configuracionPlan.plantilla || "");
-    const plantilla = PLANTILLAS[plantillaPedida]
-      ? plantillaPedida
-      : PLANTILLAS[bb.plantilla] ? bb.plantilla : PLANTILLA_POR_DEFECTO;
     const logo = await logoDataUri(bb.logo_url);
     if (bb.logo_url && !logo) {
       console.log(`[${negocio}] tiene logo_url pero no se pudo bajar — este carrusel sale con el nombre en texto, revisar el archivo en el brand book.`);
     }
+    /* EL FONDO DE CADA SLIDE.
+       ---------------------------------------------------------------------
+       Hasta el 29-ago-2026 esto no existía: `genImagen` se importaba en este
+       archivo y no se llamaba nunca, y `fondoDataUri` no se le pasaba jamás a
+       la plantilla. O sea, ningún carrusel de cliente llevó nunca una foto —
+       salían todos con el color plano de la marca, y la plantilla `foto`
+       estaba disponible sin que nadie pudiera usarla de verdad.
+
+       Cuesta plata: una imagen por slide. Por eso se genera SÓLO si la
+       plantilla compone sobre imagen y el modelo describió una escena.
+
+       Y si la generación falla, el slide sale sin fondo en vez de tumbar el
+       carrusel entero: media pieza es peor que una pieza simple, pero ninguna
+       pieza es peor que las dos. */
+    const fondoDeSlide = async (slide, idx) => {
+      if (!PLANTILLAS_CON_FONDO.has(plantilla) || !slide.imagen) return "";
+      try {
+        const salida = await genImagen(String(slide.imagen), idx);
+        if (!salida) return "";
+        // OpenAI devuelve data URI; Kie devuelve una URL remota. Chrome no
+        // debería depender de la red al componer, así que la URL se baja acá.
+        return String(salida).startsWith("data:") ? String(salida) : await logoDataUri(salida);
+      } catch (e) {
+        console.log(`[${negocio}] slide ${idx + 1} sin fondo (${String(e).slice(0, 110)}) — sale con el color de marca`);
+        return "";
+      }
+    };
+
     const imgs = [];
     for (let i = 0; i < slides.length; i++) {
       try {
+        const fondoDataUri = await fondoDeSlide(slides[i], i);
         imgs.push(componerSlide(plantilla, {
+          fondoDataUri,
           titular: slides[i].titular,
           cuerpo: slides[i].cuerpo,
           marca: negocio,
@@ -640,6 +738,12 @@ Responde SOLO con el JSON.`;
           color: colorMarca,
           color2: colorFondo,
           tipografia: bb.tipografia || "",
+          /* Sólo los usa la plantilla `sello`; las demás los ignoran. Los
+             bullets los escribe el modelo (ver schemaPara); los sellos salen
+             del brand book y son los mismos en toda la marca — son garantías,
+             no copy, y no se le inventan por pieza. */
+          bullets: slides[i].bullets || [],
+          sellos: Array.isArray(bb.sellos) ? bb.sellos : [],
         }));
       } catch (e) {
         console.log(`[${negocio}] slide ${i + 1} falló:`, String(e).slice(0, 140));
@@ -663,19 +767,88 @@ Responde SOLO con el JSON.`;
     // No se rehace automáticamente como en la cuenta propia: acá el reintento
     // gasta uno de los 3 intentos del cliente. Se avisa a staff y la pieza
     // sale igual — el cliente la revisa antes de que se publique.
+    let avisoRevision = "";
     try {
       const veredictos = await revisar(claude, AK, imgs, {
         reducir: (b) => sharp(b).resize({ width: ANCHO_REVISION }).png().toBuffer(),
       });
       const malas = veredictos.filter((v) => !v.aprobada);
-      if (malas.length) {
-        console.log(`[${negocio}] ⚠️ la revisión marcó ${malas.length} slide(s):`);
-        for (const v of malas) {
-          console.log(`   slide ${v.indice + 1}: ` +
-            (v.problemas || []).map((p) => `${p.tipo}: ${p.detalle}`).join(" · "));
-        }
-      } else {
+      if (!malas.length) {
         console.log(`[${negocio}] revisión: ${imgs.length}/${imgs.length} aprobadas`);
+      } else {
+        console.log(`[${negocio}] ⚠️ la revisión marcó ${malas.length} slide(s):`);
+
+        /* SE REHACE SOLO, como en la cuenta propia (barbara.mjs).
+           -----------------------------------------------------------------
+           Hasta el 29-ago-2026 esto sólo imprimía a la consola. El comentario
+           que lo justificaba decía que rehacer "gasta uno de los 3 intentos
+           del cliente", y es falso: `intentos_usados` lo incrementa
+           ÚNICAMENTE la Edge Function `barbara-chat` cuando el cliente
+           escribe pidiendo un cambio. Rehacer un slide dentro de esta misma
+           corrida no lo toca — este archivo sólo lo lee.
+
+           Y son cosas distintas: los 3 intentos son del cliente pidiendo
+           cambios de gusto; esto es un defecto objetivo (una palabra
+           inventada, texto pisado) que nadie pidió y que no debería llegarle.
+           Cobrarle un intento por un error nuestro sería el bug del §1 de
+           como-seguir.md con otra ropa.
+
+           A escala esto no es un lujo: con cientos de clientes nadie va a
+           mirar cada pieza, así que la única revisión que existe de verdad es
+           la automática. */
+        const problemasDe = (v) => (v.problemas || []).map((p) => `${p.tipo}: ${p.detalle}`).join(" · ");
+        /* Un problema es VISUAL si nace de la foto de fondo. El texto lo
+           compone la plantilla en HTML, así que una ortografía mala viene del
+           modelo y no la arregla otra foto: eso se avisa, no se reintenta. */
+        const esVisual = (v) => (v.problemas || []).some(
+          (p) => ["solape", "forma_fantasma", "ilegible"].includes(p.tipo));
+
+        const sinArreglo = [];
+        for (const v of malas) {
+          const i = v.indice;
+          console.log(`   slide ${i + 1}: ${problemasDe(v)}`);
+          if (!esVisual(v) || !PLANTILLAS_CON_FONDO.has(plantilla) || !slides[i]?.imagen) {
+            sinArreglo.push(v);
+            continue;
+          }
+          try {
+            const fondo = await fondoDeSlide(slides[i], i);
+            if (!fondo) { sinArreglo.push(v); continue; }
+            imgs[i] = componerSlide(plantilla, {
+              titular: slides[i].titular, cuerpo: slides[i].cuerpo,
+              marca: negocio, logo, indice: i + 1, total: slides.length,
+              color: colorMarca, color2: colorFondo, tipografia: bb.tipografia || "",
+              bullets: slides[i].bullets || [],
+              sellos: Array.isArray(bb.sellos) ? bb.sellos : [],
+              fondoDataUri: fondo,
+            });
+            console.log(`   slide ${i + 1} rehecho con otro fondo`);
+          } catch (e) {
+            console.log(`   slide ${i + 1}: no se pudo rehacer (${String(e).slice(0, 90)}) — va el original`);
+            sinArreglo.push(v);
+          }
+        }
+
+        /* Se revisa SÓLO lo rehecho: no se paga la vista completa de nuevo ni
+           se arriesga que el revisor cambie de opinión sobre lo ya aprobado. */
+        const rehechos = malas.filter((v) => !sinArreglo.includes(v));
+        if (rehechos.length) {
+          const segunda = await revisar(claude, AK, rehechos.map((v) => imgs[v.indice]), {
+            reducir: (b) => sharp(b).resize({ width: ANCHO_REVISION }).png().toBuffer(),
+          });
+          segunda.forEach((v, k) => { if (!v.aprobada) sinArreglo.push({ ...rehechos[k], problemas: v.problemas }); });
+        }
+
+        if (sinArreglo.length) {
+          // La pieza SALE igual: una pieza con un defecto menor le sirve más
+          // al cliente que ninguna. Pero queda escrito para staff, que es lo
+          // que docs/como-seguir.md §2 pide y hoy no existía.
+          avisoRevision = `${sinArreglo.length} slide(s) siguen con problemas tras rehacer: ` +
+            sinArreglo.map((v) => `#${v.indice + 1} (${problemasDe(v)})`).join(" · ");
+          console.log(`[${negocio}] ⚠️ ${avisoRevision}`);
+        } else {
+          console.log(`[${negocio}] revisión: todo quedó limpio tras rehacer`);
+        }
       }
     } catch (e) {
       console.log(`[${negocio}] revisión no disponible, sigo sin ella:`, String(e).slice(0, 140));
@@ -917,7 +1090,7 @@ async function main() {
 
   const filtroId = SOLO_CLIENTE ? `&id=eq.${SOLO_CLIENTE}` : "";
   const clientes = await db.get(
-    `barbara_clientes?activo=eq.true${filtroId}&select=id,plan,rubro,telegram_chat_id,cliente_id,zona_horaria,clientes(negocio),barbara_brand_book(paleta_colores,tipografia,detalles,logo_url),barbara_formulario(tipo_contenido,publico_objetivo,tono,restricciones,ejemplos_referencia,producto_destacar,pilares)`
+    `barbara_clientes?activo=eq.true${filtroId}&select=id,plan,rubro,telegram_chat_id,cliente_id,zona_horaria,clientes(negocio),barbara_brand_book(paleta_colores,tipografia,detalles,logo_url,plantilla,sellos),barbara_formulario(tipo_contenido,publico_objetivo,tono,restricciones,ejemplos_referencia,producto_destacar,pilares)`
   );
 
   if (!clientes.length) {
