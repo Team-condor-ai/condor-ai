@@ -323,7 +323,7 @@ export async function pegarPersonajeBarbara(buf, indice = 0, posicion = "centro"
 // orden de preferencia, protegida por el cortacircuito; la rama vieja del CLI
 // de Higgsfield —3 intentos, aborta si el error es de auth/config en vez de
 // transitorio— quedó igual, movida a `imagenPorCLI`. ----
-export async function genImagen(prompt, idx) {
+export async function genImagen(prompt, idx, { referencias = [] } = {}) {
   /* La regla de numeración se agrega DESPUÉS del recorte a 1500, nunca
      antes. El prompt se trunca por el FINAL, así que una regla añadida al
      texto de entrada es exactamente lo que se pierde cuando el prompt viene
@@ -365,7 +365,16 @@ export async function genImagen(prompt, idx) {
       nombre: "openai",
       disponible: () => openaiDisponible(),
       ejecutar: async () => {
-        const salida = await openaiImagen(safe, { forma: "vertical", resolucion: "1K" });
+        /* Las referencias son fotos del producto REAL del cliente
+           (`barbara_referencias`). Sólo OpenAI las sabe usar: `kie-api.mjs` es
+           text-to-image puro. Sin ellas el modelo aproxima el envase y le
+           inventa la etiqueta — el 30-ago-2026 se sacó de la nada una marca de
+           aceite llamada "TAPIHUE" y la puso legible sobre la pieza de un
+           cliente. Ese es el defecto que estas fotos vienen a cerrar. */
+        const salida = await openaiImagen(safe, {
+          forma: "vertical", resolucion: "1K",
+          referencias: Array.isArray(referencias) ? referencias : [],
+        });
         registrarMedia({ proveedor: "openai", modelo: process.env.OPENAI_MODELO_IMAGEN || "gpt-image-2", imagenes: 1 });
         // La plantilla mete esto en un background:url(...), y Chrome resuelve el
         // data URI sin tocar la red. Si la API devolvió una URL, se pasa tal cual.

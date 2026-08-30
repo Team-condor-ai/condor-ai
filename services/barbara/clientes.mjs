@@ -83,7 +83,7 @@ const db = supabase(SB_URL, SB_KEY);
    plano de marca, y pedirles una foto sería gastar en algo que no se ve. */
 const PLANTILLAS_CON_FONDO = new Set(["foto", "sello"]);
 
-function schemaPara(plantilla) {
+function schemaPara(plantilla, productos = []) {
   const propsSlide = {
     titular: { type: "string", description: "El titular del slide, EN ESPAÑOL, tal cual se va a leer. Corto y con fuerza: 4 a 9 palabras. Sin rótulos ni dos puntos de etiqueta." },
     cuerpo: { type: "string", description: "Una o dos frases que desarrollan el titular, EN ESPAÑOL, tal cual se van a leer. Máximo 160 caracteres. Puede ir vacío si el titular se basta solo." },
@@ -108,11 +108,38 @@ function schemaPara(plantilla) {
      mejor el inglés, y este texto no lo lee nadie más — el copy que sí ve la
      persona (titular, cuerpo, bullets) sigue en español. */
   if (PLANTILLAS_CON_FONDO.has(plantilla)) {
+    /* Las tres reglas salen de una corrida real del 30-ago-2026 con Silver
+       Roots, no de la teoría:
+
+       · La escena tiene que APOYAR el titular. Un slide decía "los aceites de
+         semilla se oxidan con el calor" sobre una botella de aceite de oliva
+         —producto del propio cliente—, así que la pieza parecía criticar lo
+         que la marca vende. `revision.mjs` no puede cazar eso: no es
+         ortografía ni solape, es coherencia entre texto e imagen.
+
+       · Nada de envases rotulados. Con la instrucción "no escribas texto", el
+         modelo igual dibujó etiquetas legibles, y en una se inventó una marca
+         de aceite llamada "TAPIHUE". Pedirle que no escriba no alcanza: hay
+         que sacarle el motivo para escribir. */
     propsSlide.imagen = {
       type: "string",
-      description: "Descripción EN INGLÉS de la fotografía de fondo de este slide, para un modelo de imagen. Escena real y fotografiable, coherente con la estética de la marca: qué se ve, cómo es la luz, sobre qué superficie. NO pidas texto, letras, logos ni carteles dentro de la imagen — el texto lo pone la plantilla encima y un modelo escribiendo palabras arruina la pieza. Máximo 300 caracteres.",
+      description: "Descripción EN INGLÉS de la fotografía de fondo de este slide, para un modelo de imagen. Escena real y fotografiable, coherente con la estética de la marca: qué se ve, cómo es la luz, sobre qué superficie. TRES REGLAS DURAS: (1) la escena tiene que APOYAR el titular de ESTE slide, nunca contradecirlo — si el titular critica algo, ese algo no puede ser el protagonista de la foto; (2) NADA de envases con etiqueta, frascos rotulados, botellas de marca ni packaging: el modelo escribe mal y se inventa marcas. Mostrá el alimento suelto, en cuenco, tabla, sartén o sobre la madera; (3) terminá siempre con: no text, no labels, no packaging, no brand names, no writing of any kind. Máximo 300 caracteres.",
     };
     requeridos.push("imagen");
+
+    /* Si el cliente subió fotos de su producto real, el modelo elige de cuál
+       habla este slide y el sistema le pasa ESA foto como referencia. Es un
+       enum y no texto libre a propósito: con texto libre habría que adivinar a
+       qué foto se refiere, y adivinar mal es mandar la miel para un texto
+       sobre sal — el mismo error de coherencia con otra cara. */
+    if (productos.length) {
+      propsSlide.producto = {
+        type: "string",
+        enum: [...productos, "ninguno"],
+        description: "De cuál de los productos del cliente habla ESTE slide, para usar su foto real como referencia. Poné \"ninguno\" si el slide no muestra un producto concreto (por ejemplo, uno puramente educativo).",
+      };
+      requeridos.push("producto");
+    }
   }
 
   return {
@@ -667,6 +694,21 @@ Responde SOLO con el JSON.`;
        de la escena, así que decirle "no describas imágenes" sería darle una
        orden que contradice el formato que tiene que devolver. Un modelo con
        instrucciones contradictorias no falla limpio — improvisa. */
+    /* Fotos del producto real que subió el cliente en su onboarding. Tabla
+       aparte y consulta aparte: son varias filas por cliente y no calzan en el
+       `select` anidado del brand book.
+
+       Cae a lista vacía si la migración todavía no se aplicó — sin
+       referencias, la generación sigue exactamente como hoy. */
+    const referencias = await db.get(
+      `barbara_referencias?barbara_cliente_id=eq.${barbaraId}&activa=eq.true` +
+      `&select=url,producto,detalle&order=creado_en.asc&limit=12`
+    ).catch(() => []);
+    const productos = [...new Set(referencias.map((r) => String(r.producto || "").trim()).filter(Boolean))];
+    if (productos.length) {
+      console.log(`[${negocio}] ${referencias.length} foto(s) de referencia: ${productos.join(", ")}`);
+    }
+
     const instruccionImagen = PLANTILLAS_CON_FONDO.has(plantilla)
       ? "Cada slide se compone sobre una FOTOGRAFÍA de fondo que vas a describir en el campo `imagen`, y el texto va encima. La foto tiene que verse hecha para esta marca: su paleta, sus materiales, sus escenarios. Como el texto lo pone la plantilla, la foto NUNCA lleva letras, logos ni carteles. Escribe titulares que se lean bien sobre una imagen: cortos y con contraste."
       : "El diseño lo pone una plantilla de marca, así que NO describes imágenes ni composición — solo escribes las palabras, y tienen que sostenerse solas.";
@@ -681,7 +723,7 @@ Responde SOLO con el JSON.`;
       const plan = JSON.parse(textOf(await claude(AK, {
         model: "claude-sonnet-5", max_tokens: 4000,
         system: sistema,
-        output_config: { format: { type: "json_schema", schema: schemaPara(plantilla) } },
+        output_config: { format: { type: "json_schema", schema: schemaPara(plantilla, productos) } },
         messages: [{ role: "user", content: usuario }],
       })));
       await registrarPrompt({ sistema, usuario, respuesta: plan, correccionPedida: extra || null });
@@ -715,8 +757,15 @@ Responde SOLO con el JSON.`;
        pieza es peor que las dos. */
     const fondoDeSlide = async (slide, idx) => {
       if (!PLANTILLAS_CON_FONDO.has(plantilla) || !slide.imagen) return "";
+      /* La foto real del producto del que habla ESTE slide. El modelo eligió
+         cuál en el campo `producto` (un enum, así que no hay que adivinar), y
+         acá se traduce a la URL. Sin referencias esto queda vacío y todo
+         funciona como antes: son una mejora, no un requisito. */
+      const refs = slide.producto && slide.producto !== "ninguno"
+        ? referencias.filter((r) => r.producto === slide.producto).map((r) => r.url).slice(0, 3)
+        : [];
       try {
-        const salida = await genImagen(String(slide.imagen), idx);
+        const salida = await genImagen(String(slide.imagen), idx, { referencias: refs });
         if (!salida) return "";
         // OpenAI devuelve data URI; Kie devuelve una URL remota. Chrome no
         // debería depender de la red al componer, así que la URL se baja acá.
