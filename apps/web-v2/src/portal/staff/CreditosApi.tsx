@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Ico } from "../disenio/iconos";
-import { sb } from "../lib/supabase";
+import { invocar, sb } from "../lib/supabase";
 
 type EstadoCredito = "ok" | "advertencia" | "sin_datos" | "error" | "requiere_configuracion";
 
@@ -20,6 +20,11 @@ type CreditoApi = {
   fuente: string | null;
   actualizado_en: string | null;
   orden: number;
+  // La setea el backend cuando existe una fila asociada en `api_credenciales`
+  // (ver migración `20260829_api_creditos_revelable.sql`). Antes era un `Set`
+  // hardcodeado acá, pero dejó de servir cuando el staff empezó a dar de alta
+  // proveedores desde el portal.
+  revelable: boolean;
 };
 
 const BASE: CreditoApi[] = [
@@ -28,44 +33,30 @@ const BASE: CreditoApi[] = [
     saldo: null, unidad_saldo: null, uso_periodo: null, unidad_uso: "tokens",
     tokens_entrada: null, tokens_salida: null, costo_usd: null, periodo_desde: null,
     detalle: "Agrega ANTHROPIC_ADMIN_KEY para leer uso y costo. Anthropic no expone el saldo prepago por API.",
-    fuente: "Usage & Cost Admin API", actualizado_en: null, orden: 10,
+    fuente: "Usage & Cost Admin API", actualizado_en: null, orden: 10, revelable: true,
   },
   {
     proveedor: "kie", nombre: "Kie.ai", estado: "sin_datos",
     saldo: null, unidad_saldo: "créditos", uso_periodo: null, unidad_uso: "créditos",
     tokens_entrada: null, tokens_salida: null, costo_usd: null, periodo_desde: null,
     detalle: "Esperando la primera sincronización. Reemplaza a Higgsfield: gpt-image-2 + seedance-2-0.",
-    fuente: "Kie.ai API", actualizado_en: null, orden: 15,
+    fuente: "Kie.ai API", actualizado_en: null, orden: 15, revelable: true,
   },
   {
     proveedor: "higgsfield", nombre: "Higgsfield", estado: "sin_datos",
     saldo: null, unidad_saldo: "créditos", uso_periodo: null, unidad_uso: "créditos",
     tokens_entrada: null, tokens_salida: null, costo_usd: null, periodo_desde: null,
     detalle: "El sincronizador seguro todavía no ha informado el saldo.",
-    fuente: "Higgsfield CLI", actualizado_en: null, orden: 20,
+    fuente: "Higgsfield CLI", actualizado_en: null, orden: 20, revelable: false,
   },
   {
     proveedor: "blotato", nombre: "Blotato", estado: "sin_datos",
     saldo: null, unidad_saldo: "créditos", uso_periodo: null, unidad_uso: null,
     tokens_entrada: null, tokens_salida: null, costo_usd: null, periodo_desde: null,
     detalle: "Blotato permite verificar la conexión, pero no publica un endpoint de saldo de créditos.",
-    fuente: "Blotato API", actualizado_en: null, orden: 30,
+    fuente: "Blotato API", actualizado_en: null, orden: 30, revelable: true,
   },
 ];
-
-// Los que el equipo puede revelar y copiar desde acá (pedido de Joaquín,
-// 25-ago-2026: que no haya que pedírselas a nadie ni buscarlas en los
-// secretos de GitHub).
-//
-// Estar en esta lista NO es lo que da el acceso: la Edge Function
-// `revelar-credencial` verifica `admins` en cada llamada y es la única
-// puerta a `api_credenciales` (esa tabla no tiene policy de SELECT para
-// `authenticated`). Esta constante sólo decide qué botón se dibuja.
-//
-// Para sumar un proveedor: agregarlo acá Y guardar su fila en
-// `api_credenciales`. Si falta la fila, la función responde 404 con el
-// motivo en vez de fallar en silencio.
-const PROVEEDORES_REVELABLES = new Set<string>(["kie", "anthropic", "blotato"]);
 
 const etiquetas: Record<EstadoCredito, string> = {
   ok: "Conectado",
@@ -98,6 +89,7 @@ export function CreditosApi() {
   const [revelada, setRevelada] = useState<{ proveedor: string; valor: string } | null>(null);
   const [copiado, setCopiado] = useState(false);
   const [errorRevelar, setErrorRevelar] = useState("");
+  const [mostrarAgregar, setMostrarAgregar] = useState(false);
 
   const cargar = useCallback(async () => {
     setCargando(true);
@@ -173,9 +165,14 @@ export function CreditosApi() {
           <h1>Créditos y tokens API</h1>
           <small className="subtitulo-barra">Combustible operativo de las automatizaciones</small>
         </div>
-        <button className="btn" onClick={() => void cargar()} disabled={cargando}>
-          {Ico.repetir({ t: 14 })} {cargando ? "Consultando…" : "Actualizar vista"}
-        </button>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button className="btn" onClick={() => setMostrarAgregar(true)}>
+            {Ico.mas({ t: 14 })} Agregar API
+          </button>
+          <button className="btn" onClick={() => void cargar()} disabled={cargando}>
+            {Ico.repetir({ t: 14 })} {cargando ? "Consultando…" : "Actualizar vista"}
+          </button>
+        </div>
       </div>
 
       <div className="cuerpo creditos-api">
@@ -203,7 +200,7 @@ export function CreditosApi() {
               <tbody>
                 {filas.map((f) => {
                   const tokens = (f.tokens_entrada ?? 0) + (f.tokens_salida ?? 0);
-                  const puedeRevelar = PROVEEDORES_REVELABLES.has(f.proveedor);
+                  const puedeRevelar = f.revelable;
                   return <tr key={f.proveedor}>
                     <td><b>{f.nombre}</b><small>{f.fuente || "Fuente no informada"}</small></td>
                     <td><span className={`estado-api ${f.estado}`}><i />{etiquetas[f.estado]}</span></td>
@@ -256,6 +253,197 @@ export function CreditosApi() {
           “No disponible” significa que el proveedor no publica ese dato por API; nunca se interpreta como saldo cero.
         </p>
       </div>
+
+      {mostrarAgregar && (
+        <ModalAgregarApi
+          cerrar={() => setMostrarAgregar(false)}
+          guardado={() => {
+            setMostrarAgregar(false);
+            void cargar();
+          }}
+        />
+      )}
     </>
+  );
+}
+
+// Modal para dar de alta un proveedor nuevo sin editar código.
+// La credencial es opcional: si no se agrega, la fila queda en
+// "requiere_configuracion" y sin botón de revelar hasta que alguien
+// vuelva a abrir el modal y la cargue. La escritura la hace la Edge
+// Function `agregar-credito-api` (staff-only, verifica `admins`).
+function ModalAgregarApi({ cerrar, guardado }: { cerrar: () => void; guardado: () => void }) {
+  const [proveedor, setProveedor] = useState("");
+  const [nombre, setNombre] = useState("");
+  const [fuente, setFuente] = useState("");
+  const [unidadSaldo, setUnidadSaldo] = useState("");
+  const [unidadUso, setUnidadUso] = useState("");
+  const [orden, setOrden] = useState("100");
+  const [detalle, setDetalle] = useState("");
+  const [credencial, setCredencial] = useState("");
+  const [nota, setNota] = useState("");
+  const [guardando, setGuardando] = useState(false);
+  const [error, setError] = useState("");
+
+  async function enviar(ev: React.FormEvent) {
+    ev.preventDefault();
+    setError("");
+    const slug = proveedor.trim().toLowerCase();
+    if (!slug) return setError("Falta el identificador del proveedor.");
+    if (!/^[a-z0-9_-]+$/.test(slug)) {
+      return setError("El identificador solo puede tener letras minúsculas, números, guion y guion bajo.");
+    }
+    if (!nombre.trim()) return setError("Falta el nombre visible.");
+
+    const cuerpo: Record<string, unknown> = { proveedor: slug, nombre: nombre.trim() };
+    if (fuente.trim()) cuerpo.fuente = fuente.trim();
+    if (unidadSaldo.trim()) cuerpo.unidad_saldo = unidadSaldo.trim();
+    if (unidadUso.trim()) cuerpo.unidad_uso = unidadUso.trim();
+    if (detalle.trim()) cuerpo.detalle = detalle.trim();
+    const ordenN = Number(orden);
+    if (Number.isFinite(ordenN)) cuerpo.orden = ordenN;
+    if (credencial.trim()) cuerpo.credencial = credencial.trim();
+    if (nota.trim()) cuerpo.nota = nota.trim();
+
+    setGuardando(true);
+    try {
+      await invocar("agregar-credito-api", cuerpo);
+      guardado();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setGuardando(false);
+    }
+  }
+
+  return (
+    <div className="velo" onClick={cerrar}>
+      <div className="panel-modal" onClick={(e) => e.stopPropagation()}>
+        <header>
+          <h2>Agregar proveedor de API</h2>
+        </header>
+        <div className="contenido">
+          <form onSubmit={enviar} style={{ display: "flex", flexDirection: "column", gap: 13 }}>
+            <label className="campo-lbl">
+              Identificador
+              <input
+                className="campo"
+                required
+                autoFocus
+                value={proveedor}
+                onChange={(e) => setProveedor(e.target.value)}
+                placeholder="openai"
+              />
+              <small>Slug corto en minúsculas. Solo letras, números, guion y guion bajo.</small>
+            </label>
+
+            <label className="campo-lbl">
+              Nombre visible
+              <input
+                className="campo"
+                required
+                value={nombre}
+                onChange={(e) => setNombre(e.target.value)}
+                placeholder="OpenAI"
+              />
+            </label>
+
+            <label className="campo-lbl">
+              Fuente
+              <input
+                className="campo"
+                value={fuente}
+                onChange={(e) => setFuente(e.target.value)}
+                placeholder="OpenAI Usage API"
+              />
+            </label>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              <label className="campo-lbl">
+                Unidad de saldo
+                <input
+                  className="campo"
+                  value={unidadSaldo}
+                  onChange={(e) => setUnidadSaldo(e.target.value)}
+                  placeholder="créditos"
+                />
+              </label>
+              <label className="campo-lbl">
+                Unidad de uso
+                <input
+                  className="campo"
+                  value={unidadUso}
+                  onChange={(e) => setUnidadUso(e.target.value)}
+                  placeholder="tokens"
+                />
+              </label>
+            </div>
+
+            <label className="campo-lbl">
+              Orden
+              <input
+                className="campo"
+                type="number"
+                value={orden}
+                onChange={(e) => setOrden(e.target.value)}
+              />
+              <small>Menor número = aparece antes en la tabla.</small>
+            </label>
+
+            <label className="campo-lbl">
+              Detalle
+              <textarea
+                className="campo"
+                rows={2}
+                value={detalle}
+                onChange={(e) => setDetalle(e.target.value)}
+                placeholder="Nota corta que aparece debajo de la fecha."
+              />
+            </label>
+
+            <hr style={{ border: 0, borderTop: "1px solid var(--linea, rgba(255,255,255,0.08))", margin: "6px 0" }} />
+            <b style={{ fontSize: 13, color: "var(--texto-2)" }}>Credencial (opcional)</b>
+
+            <label className="campo-lbl">
+              API key
+              <input
+                className="campo"
+                type="password"
+                value={credencial}
+                onChange={(e) => setCredencial(e.target.value)}
+                placeholder="sk-..."
+                autoComplete="off"
+              />
+              <small>
+                Si la agregas ahora, queda disponible para revelar y copiar desde la tabla. Si el
+                proveedor se usa en un workflow de GitHub Actions, también hay que ponerla en los
+                secretos del repo — no hay sincronización automática.
+              </small>
+            </label>
+
+            <label className="campo-lbl">
+              Nota interna
+              <input
+                className="campo"
+                value={nota}
+                onChange={(e) => setNota(e.target.value)}
+                placeholder="Dónde se generó, cuándo rota, quién la administra."
+              />
+            </label>
+
+            <button className="btn solido ancho" disabled={guardando}>
+              {guardando ? "Guardando…" : "Agregar proveedor"}
+            </button>
+          </form>
+
+          {error && <p className="error" style={{ marginTop: 10 }}>{error}</p>}
+        </div>
+        <footer>
+          <button type="button" className="btn" onClick={cerrar} disabled={guardando}>
+            Cerrar
+          </button>
+        </footer>
+      </div>
+    </div>
   );
 }
