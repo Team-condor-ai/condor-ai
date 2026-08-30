@@ -1,0 +1,57 @@
+name: Barbara metricas - aprobacion a la primera
+
+# Calcula la tasa de APROBACIÓN A LA PRIMERA de cada cliente, mes a mes, y
+# manda el ranking a Telegram.
+#
+# POR QUÉ EXISTE
+# ---------------------------------------------------------------------------
+# Es la única medición que dice si Bárbara está aprendiendo de verdad. Un
+# cliente puede tener cincuenta reglas guardadas y seguir necesitando tres
+# correcciones por pieza: si la tasa de su mes 6 es igual a la del mes 1, las
+# reglas son decorado. Y al revés, si sube, es la prueba de que la memoria
+# sirve.
+#
+# Hasta el 30-ago-2026 este número no existía en ninguna parte.
+#
+# MENSUAL Y NO DIARIO
+# ---------------------------------------------------------------------------
+# El plan más chico son 12 piezas al mes y el cálculo pide un mínimo de 6
+# cerradas para dar un número. Correrlo diario mostraría el mismo dato
+# noventa veces y, peor, invitaría a reaccionar a una pieza suelta: esto es
+# una tendencia, no una alarma. Las alarmas las manda el generador.
+#
+# Sólo lee: no genera contenido, no gasta en imágenes ni en video. La única
+# llamada pagada es la lectura a Supabase, que es gratis.
+
+on:
+  schedule:
+    # Día 1 de cada mes, 09:00 Chile = 13:00 UTC (invierno UTC-4). Temprano en
+    # el mes, cuando el mes anterior ya está cerrado y todavía se puede
+    # corregir el rumbo del que empieza.
+    - cron: '0 13 1 * *'
+  workflow_dispatch:
+    inputs:
+      cliente:
+        description: 'barbara_cliente_id para ver uno solo (vacío = ranking de todos)'
+        required: false
+        default: ''
+
+jobs:
+  barbara-metricas-aprobacion:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      # Sin `npm ci`: metricas-aprobacion.mjs no importa sharp ni nada nativo
+      # (por eso el import de motor.mjs es diferido). Instalar acá sería un
+      # minuto de runner por mes para nada.
+      - name: Tasa de aprobación a la primera
+        run: node services/barbara/metricas-aprobacion.mjs ${{ inputs.cliente }}
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          BARBARA_ALERTAS_CHAT_ID: ${{ secrets.BARBARA_ALERTAS_CHAT_ID }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}

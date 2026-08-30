@@ -16,6 +16,7 @@ import { apiDisponible, generarImagen as apiImagen, generarVideo as apiVideo } f
 import { apiDisponible as kieDisponible, generarImagen as kieImagen, generarVideo as kieVideo } from "./kie-api.mjs";
 import { imagenDisponible as openaiDisponible, generarImagen as openaiImagen } from "./openai-imagen.mjs";
 import { registrarClaude, registrarMedia } from "./telemetria.mjs";
+import { cortacircuito } from "./cortacircuito.mjs";
 
 const ASSETS = fileURLToPath(new URL("./assets/", import.meta.url));
 
@@ -26,16 +27,30 @@ export async function tg(token, method, payload, isForm = false) {
   return fetch(`https://api.telegram.org/bot${token}/${method}`, opt);
 }
 
+/* Va por el cortacircuito aunque NO tenga cascada, y ése es justamente el
+   incidente del 24 al 27-ago-2026: lo que se agotó fue el crédito de Anthropic,
+   no el de un motor de imagen. Sin alternativa a la que saltar, cortar sólo
+   puede hacer una cosa — fallar rápido — pero eso es exactamente lo que faltó:
+   `clientes.mjs` recorre a todos los clientes en el mismo proceso, así que con
+   el saldo en cero cada uno pagaba su propia llamada condenada, corrida tras
+   corrida, durante tres días. Al segundo "credit balance is too low" el resto
+   de la corrida termina en segundos y con un mensaje que dice el motivo real,
+   en vez de cientos de HTTP 400 idénticos enterrados en el log. */
 export async function claude(apiKey, body) {
-  const r = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: { "x-api-key": apiKey, "anthropic-version": "2023-06-01", "content-type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  if (!r.ok) throw new Error("Claude " + r.status + ": " + (await r.text()).slice(0, 200));
-  const respuesta = await r.json();
-  registrarClaude(respuesta, body?.model || "desconocido");
-  return respuesta;
+  return cortacircuito.cascada([{
+    nombre: "anthropic",
+    ejecutar: async () => {
+      const r = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "x-api-key": apiKey, "anthropic-version": "2023-06-01", "content-type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!r.ok) throw new Error("Claude " + r.status + ": " + (await r.text()).slice(0, 200));
+      const respuesta = await r.json();
+      registrarClaude(respuesta, body?.model || "desconocido");
+      return respuesta;
+    },
+  }], { etiqueta: "Claude" });
 }
 
 export const textOf = (d) => (d.content || []).filter((b) => b.type === "text").map((b) => b.text).join("");
@@ -304,9 +319,10 @@ export async function pegarPersonajeBarbara(buf, indice = 0, posicion = "centro"
   ]).png().toBuffer();
 }
 
-// ---- Higgsfield: generar imagen y devolver URL (mismo patrón de reintentos
-// que barbara.mjs — 3 intentos, aborta de inmediato si el error es de
-// auth/config en vez de transitorio) ----
+// ---- Generar imagen y devolver URL (o data URI). Cascada de proveedores en
+// orden de preferencia, protegida por el cortacircuito; la rama vieja del CLI
+// de Higgsfield —3 intentos, aborta si el error es de auth/config en vez de
+// transitorio— quedó igual, movida a `imagenPorCLI`. ----
 export async function genImagen(prompt, idx) {
   /* La regla de numeración se agrega DESPUÉS del recorte a 1500, nunca
      antes. El prompt se trunca por el FINAL, así que una regla añadida al
@@ -332,27 +348,62 @@ export async function genImagen(prompt, idx) {
 
      Si falta OPENAI_API_KEY sigue todo como antes: Kie, y después Higgsfield.
      La cascada no cambió, sólo se le puso un escalón arriba. */
-  if (openaiDisponible()) {
-    const salida = await openaiImagen(safe, { forma: "vertical", resolucion: "1K" });
-    registrarMedia({ proveedor: "openai", modelo: process.env.OPENAI_MODELO_IMAGEN || "gpt-image-2", imagenes: 1 });
-    // La plantilla mete esto en un background:url(...), y Chrome resuelve el
-    // data URI sin tocar la red. Si la API devolvió una URL, se pasa tal cual.
-    return salida.dataUri || salida.url;
-  }
-  if (kieDisponible()) {
-    // 26-ago-2026: "4:5" explícito rompía createTask en Kie (ver kie-api.mjs).
-    // "auto" + "1K" da el mismo 4:5 exacto, cuesta menos y evita el recorte
-    // de Instagram sobre 2K -- confirmado por Rat.IA la misma madrugada.
-    const url = await kieImagen(safe, { aspectRatio: "auto", resolucion: "1K" });
-    registrarMedia({ proveedor: "kie", modelo: "gpt-image-2", imagenes: 1 });
-    return url;
-  }
-  if (apiDisponible()) {
-    const url = await apiImagen(safe, { aspectRatio: "4:5", formato: "png" });
-    registrarMedia({ proveedor: "higgsfield-api", modelo: process.env.HIGGSFIELD_MODELO_IMAGEN || "configurado", imagenes: 1 });
-    return url;
-  }
+  /* 30-ago-2026: la cascada pasa por `cortacircuito.mjs`. Dos cambios de
+     comportamiento, los dos a favor del cliente:
 
+     · ANTES, cada escalón era un `if` con `return` adentro: si OpenAI estaba
+       configurado y se caía, la excepción salía de `genImagen` y el slide se
+       quedaba sin fondo AUNQUE Kie estuviera configurado y sano. Nunca se
+       llegaba al escalón siguiente. Ahora un fallo baja al que sigue: cortar es
+       para SALTAR, y el cliente sólo se queda sin pieza si no quedó nadie.
+     · Y si un proveedor falla dos veces seguidas por infraestructura (saldo,
+       429, timeout, 503…), se lo salta durante 5 min en vez de volver a pagarle
+       el timeout en los 5 slides que faltan del carrusel y en cada cliente que
+       venga después. Ver el encabezado de cortacircuito.mjs. */
+  return cortacircuito.cascada([
+    {
+      nombre: "openai",
+      disponible: () => openaiDisponible(),
+      ejecutar: async () => {
+        const salida = await openaiImagen(safe, { forma: "vertical", resolucion: "1K" });
+        registrarMedia({ proveedor: "openai", modelo: process.env.OPENAI_MODELO_IMAGEN || "gpt-image-2", imagenes: 1 });
+        // La plantilla mete esto en un background:url(...), y Chrome resuelve el
+        // data URI sin tocar la red. Si la API devolvió una URL, se pasa tal cual.
+        return salida.dataUri || salida.url;
+      },
+    },
+    {
+      nombre: "kie",
+      disponible: () => kieDisponible(),
+      ejecutar: async () => {
+        // 26-ago-2026: "4:5" explícito rompía createTask en Kie (ver kie-api.mjs).
+        // "auto" + "1K" da el mismo 4:5 exacto, cuesta menos y evita el recorte
+        // de Instagram sobre 2K -- confirmado por Rat.IA la misma madrugada.
+        const url = await kieImagen(safe, { aspectRatio: "auto", resolucion: "1K" });
+        registrarMedia({ proveedor: "kie", modelo: "gpt-image-2", imagenes: 1 });
+        return url;
+      },
+    },
+    {
+      nombre: "higgsfield-api",
+      disponible: () => apiDisponible(),
+      ejecutar: async () => {
+        const url = await apiImagen(safe, { aspectRatio: "4:5", formato: "png" });
+        registrarMedia({ proveedor: "higgsfield-api", modelo: process.env.HIGGSFIELD_MODELO_IMAGEN || "configurado", imagenes: 1 });
+        return url;
+      },
+    },
+    // Higgsfield está abandonado desde el 28-ago-2026, así que su rama entra a
+    // la cascada tal cual estaba, sin tocarle nada: sigue siendo la última red
+    // por si algún día no hay ni OPENAI_API_KEY ni KIE_API_KEY, y de paso el
+    // corte la cubre gratis. No se le invierte más que eso.
+    { nombre: "higgsfield-cli", ejecutar: () => imagenPorCLI(safe, idx) },
+  ], { etiqueta: `imagen slide ${idx + 1}` });
+}
+
+/** La rama vieja del CLI de Higgsfield, movida a su propia función SIN cambios
+ *  para que la cascada de `genImagen` sea una lista de pasos parejos. */
+function imagenPorCLI(safe, idx) {
   const args = ["generate", "create", "nano_banana_2", "--prompt", safe, "--aspect_ratio", "4:5", "--resolution", "1k", "--wait", "--wait-timeout", "8m"];
   let ultimo = "";
   for (let intento = 1; intento <= 3; intento++) {
@@ -388,21 +439,40 @@ export async function genImagen(prompt, idx) {
 export async function genVideo(prompt, dur, idx, extraArgs = []) {
   const safe = prompt.replace(/\s+/g, " ").trim().slice(0, 1500);
 
-  // Igual que genImagen: Kie.ai (seedance-2-0) primero si está configurado.
-  // `extraArgs` (hoy sólo `--image` para una foto de referencia, que todavía
-  // no se usa) es del CLI; si algún día se usa, hay que mapear a
-  // image-to-video en la API que corresponda, así que por ahora se cae al CLI.
-  if (kieDisponible() && !extraArgs.length) {
-    const url = await kieVideo(safe, { duracion: dur, aspectRatio: "9:16", resolucion: "720p" });
-    registrarMedia({ proveedor: "kie", modelo: "seedance-2-0", videoSegundos: dur });
-    return url;
-  }
-  if (apiDisponible() && !extraArgs.length) {
-    const url = await apiVideo(safe, { duracion: dur, aspectRatio: "9:16", resolucion: "720" });
-    registrarMedia({ proveedor: "higgsfield-api", modelo: process.env.HIGGSFIELD_MODELO_VIDEO || "configurado", videoSegundos: dur });
-    return url;
-  }
+  // Igual que genImagen: Kie.ai (seedance-2-0) primero si está configurado, y
+  // la cascada entera pasa por el cortacircuito (ver el comentario de allá).
+  //
+  // El `!extraArgs.length` de antes se conserva tal cual, ahora como condición
+  // de disponibilidad: `extraArgs` (hoy sólo `--image` para una foto de
+  // referencia, que todavía no se usa) es del CLI, y ninguna de las dos APIs
+  // tiene mapeado el image-to-video — así que con referencia el único camino
+  // sigue siendo el CLI, exactamente como hasta ahora.
+  return cortacircuito.cascada([
+    {
+      nombre: "kie",
+      disponible: () => kieDisponible() && !extraArgs.length,
+      ejecutar: async () => {
+        const url = await kieVideo(safe, { duracion: dur, aspectRatio: "9:16", resolucion: "720p" });
+        registrarMedia({ proveedor: "kie", modelo: "seedance-2-0", videoSegundos: dur });
+        return url;
+      },
+    },
+    {
+      nombre: "higgsfield-api",
+      disponible: () => apiDisponible() && !extraArgs.length,
+      ejecutar: async () => {
+        const url = await apiVideo(safe, { duracion: dur, aspectRatio: "9:16", resolucion: "720" });
+        registrarMedia({ proveedor: "higgsfield-api", modelo: process.env.HIGGSFIELD_MODELO_VIDEO || "configurado", videoSegundos: dur });
+        return url;
+      },
+    },
+    { nombre: "higgsfield-cli", ejecutar: () => videoPorCLI(safe, dur, idx, extraArgs) },
+  ], { etiqueta: `clip ${idx + 1}` });
+}
 
+/** La rama vieja del CLI de Higgsfield para video, movida sin cambios — mismo
+ *  motivo que `imagenPorCLI`. */
+function videoPorCLI(safe, dur, idx, extraArgs) {
   const args = [
     "generate", "create", "seedance1_5", "--prompt", safe,
     "--aspect_ratio", "9:16", "--duration", String(dur), "--resolution", "720p",

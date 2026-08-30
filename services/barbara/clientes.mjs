@@ -25,6 +25,10 @@ import { elegirAngulo } from "./angulos.mjs";
 import { playbooksPara, bloquePrompt } from "./playbooks.mjs";
 import { elegirPilar, bloquePrompt as bloquePilarPrompt, PILARES } from "./pilares.mjs";
 import { revisar, ANCHO_REVISION } from "./revision.mjs";
+import { alertarRevision, alertarStaff } from "./alertas.mjs";
+// La MISMA instancia que usa motor.mjs (es un singleton del módulo): si acá se
+// creara otra, el resumen del cierre saldría siempre vacío.
+import { cortacircuito } from "./cortacircuito.mjs";
 import { prepararMemoria } from "./memoria.mjs";
 import { persistirMedia } from "./persistencia.mjs";
 import { fechaLocalISO, proponerHorario } from "./planificador.mjs";
@@ -846,6 +850,28 @@ Responde SOLO con el JSON.`;
           avisoRevision = `${sinArreglo.length} slide(s) siguen con problemas tras rehacer: ` +
             sinArreglo.map((v) => `#${v.indice + 1} (${problemasDe(v)})`).join(" · ");
           console.log(`[${negocio}] ⚠️ ${avisoRevision}`);
+
+          /* Y ADEMÁS SE LE AVISA A UNA PERSONA.
+             -------------------------------------------------------------
+             Hasta el 30-ago-2026 esto terminaba en el console.log de arriba
+             y nada más: la pieza salía con el defecto y el aviso quedaba en
+             el log de GitHub Actions, que nadie abre salvo cuando ya hay un
+             cliente escribiendo. La revisión estaba pagada —una llamada a
+             Claude por corrida— y su resultado no llegaba a nadie.
+
+             Va al grupo de Cóndor, NO al cliente: alertas.mjs saca el chat
+             del entorno y ni siquiera acepta uno por parámetro, justamente
+             porque `telegram_chat_id` está a mano en este archivo y
+             mandarle al cliente "tu pieza salió con el titular pisado"
+             sería peor que no avisar.
+
+             No lleva try/catch acá porque `alertarRevision` no lanza nunca,
+             por contrato y con test: si Telegram está caído se pierde el
+             aviso, nunca el carrusel. */
+          await alertarRevision({
+            negocio, tipo: TIPO, plantilla, fecha: hoyISO,
+            total: imgs.length, slides: sinArreglo,
+          });
         } else {
           console.log(`[${negocio}] revisión: todo quedó limpio tras rehacer`);
         }
@@ -1110,6 +1136,30 @@ async function main() {
     }
   }
   console.log(`Listo. ${clientes.length - fallas}/${clientes.length} clientes generados sin error.`);
+
+  /* CIERRE: si algún proveedor quedó cortado, que se entere una persona.
+     ---------------------------------------------------------------------
+     Esto es lo que faltaba del incidente del 24 al 27-ago-2026: no fue que
+     el sistema no supiera que Anthropic estaba sin saldo — fue que lo supo
+     tres días y no se lo dijo a nadie. El cortacircuito evita seguir
+     gastando; este aviso evita el silencio, que es la otra mitad del
+     problema y la más cara.
+
+     Va después del resumen y antes del exit: si todos los clientes
+     fallaron, el motivo suele estar justo acá. */
+  const proveedores = cortacircuito.resumen().filter((p) => p.cortado);
+  if (proveedores.length) {
+    const detalle = proveedores
+      .map((p) => `· ${p.proveedor}: ${p.fallos} fallo(s), reintenta en ${Math.ceil(p.reintentaEnMs / 60000)} min — ${p.motivo}`)
+      .join("\n");
+    console.error(`⚠️ proveedores cortados al terminar:\n${detalle}`);
+    await alertarStaff(
+      `⚠️ Bárbara · proveedor caído\n\n${detalle}\n\n` +
+      `Corrida: ${clientes.length - fallas}/${clientes.length} clientes sin error.\n` +
+      `Revisar saldo y estado del proveedor antes de la próxima corrida.`,
+    ).catch(() => {});  // nunca por encima del exit code
+  }
+
   if (fallas === clientes.length && clientes.length > 0) process.exit(1); // todos fallaron: marca el run en rojo
 }
 
