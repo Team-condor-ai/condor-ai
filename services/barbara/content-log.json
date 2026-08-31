@@ -207,16 +207,7 @@
     "serie": "servicios",
     "angulo": "Tu página web muestra un precio de hace ocho meses y un producto que ya no existe: el cliente entra, lo nota, y no vuelve a confiar aunque corrijas el error.",
     "titulo": "🚀 Servicios Cóndor — agentes de IA",
-    "runId": "33169611615",
-    "contenido": {
-      "slides": [
-        {
-          "titulo": "Portada",
-          "prompt": "Thin-line icon of a browser window with a small crack or fading pixel in one corner, centred above headline. Bloom in top-left corner. Exact Spanish text to render — headline: 'Tu web ya perdió esa venta' — supporting line below: 'Y ni siquiera te diste cuenta'."
-        }
-      ],
-      "caption": "Tu web dice un precio de hace ocho meses. 😳\nY el cliente sí se dio cuenta.\n\nEntra, ve el error, y no vuelve a confiar aunque lo corrijas al día siguiente.\n¿Cuántas ventas se te han ido así sin que lo notaras?\n\nEn condor.ai mantenemos tu página siempre al día, sin que tengas que tocar nada.\nEscríbenos al DM y te contamos cómo.\n\n#condorai #PyMEsChile #PyMEsPeru #transformaciondigital #webactualizada"
-    }
+    "runId": "33169611615"
   },
   {
     "fecha": "2026-08-28",
@@ -270,6 +261,23 @@
         }
       ],
       "caption": "Tu anuncio sigue cobrando aunque ya no venda nada 💸\n\n¿Cuándo fue la última vez que revisaste ese dashboard?\nTres semanas sin conversiones y el presupuesto sigue corriendo solo, porque nadie se sentó a mirar el panel.\nEse gasto no vuelve.\n\nEn condor.ai creamos agentes de IA que vigilan tus campañas todo el día y avisan cuando algo deja de rendir, antes de que se coma más plata. Síguenos y escríbenos al DM si quieres que tus anuncios trabajen solos.\n\n#IA #Marketing #Pymes #Peru #Chile"
+    }
+  },
+  {
+    "fecha": "2026-08-31",
+    "tipo": "lunes",
+    "serie": "ad_condor",
+    "angulo": "No es que no confíes en la inteligencia artificial: es que no confías en soltar el control.",
+    "titulo": "📣 Cóndor — anuncio",
+    "runId": "33442755889",
+    "contenido": {
+      "slides": [
+        {
+          "titulo": "Anuncio Cóndor.ai — soltar el control",
+          "prompt": "Single bold advertising image, 4:5, standalone ad. Pure black background #000000. Reserved top 13% band stays completely empty and untouched, ready for a logo. Enormous heavy grotesque headline filling the upper half, tight leading, 3 short lines, cream #F5F1E8, with the phrase 'soltar el control' filled in the condor.ai gradient (royal blue to violet to crimson): 'No es la IA.\\nEres tú,\\nque no sueltas el control.' Below it, a short horizontal rule in the gradient. One line of supporting copy in medium grey, smaller size: 'Te ayudamos a delegar sin perder el mando.' At the bottom, a wide rounded-rectangle button outlined in the gradient with bold text inside: 'Escríbenos al DM'. Optional single thin-line icon of a hand releasing a floating orb, off to one side, lots of empty space, in blue-violet tones. No stats, no lists, no extra elements."
+        }
+      ],
+      "caption": "No es la IA la que te da miedo 🤖\n\nEs soltar el control. Delegar decisiones, procesos, publicaciones… y confiar en que van a salir bien sin que tú estés mirando cada detalle.\n\n¿Y si el problema nunca fue la tecnología, sino aprender a soltar?\n\nEn condor.ai armamos agentes de IA que trabajan contigo, no a tus espaldas. Escríbenos al DM y damos el primer paso juntos.\n\n#InteligenciaArtificial #Automatizacion #PymesPeru #NegociosChile #TransformacionDigital"
     }
   }
 ]
