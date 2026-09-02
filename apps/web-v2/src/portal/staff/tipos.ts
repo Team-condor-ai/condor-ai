@@ -279,3 +279,76 @@ export const PLANES = CATALOGO_PLANES.flatMap((g) => g.planes);
 export const MONEDAS = ["CLP", "COP", "PEN", "USD"];
 export const ESTADOS_SETUP = ["pendiente", "pagado"];
 export const ESTADOS_MENSUAL = ["pendiente", "al_dia", "vencido"];
+
+/** Filas de `public.prospectos` — CRM de prospección (ver prospectos.sql). */
+export type Prospecto = {
+  id: string;
+  linea: string;
+  negocio: string;
+  contacto: string | null;
+  canales: string[];
+  estado: string;
+  notas: string | null;
+  cerrado: boolean;
+  creado_por_email: string | null;
+  creado_por_nombre: string | null;
+  ultima_actividad_en: string;
+  creado_en: string;
+};
+
+/** Los canales donde se busca prospectos, con su color de marca. */
+export const CANALES_PROSPECTO = [
+  { id: "instagram", texto: "Instagram", color: "#E1306C" },
+  { id: "facebook", texto: "Facebook", color: "#1877F2" },
+  { id: "maps", texto: "Google Maps", color: "#34A853" },
+  { id: "linkedin", texto: "LinkedIn", color: "#0A66C2" },
+] as const;
+
+/**
+ * Los 8 estados del seguimiento, en orden, con cuántos días se espera antes
+ * de avisar que hay que volver a escribirle. El espacio crece con cada
+ * seguimiento — pedido explícito de Joaquín: "mientras más seguimiento, más
+ * tiempo entre medio" — porque insistir todos los días a los 20 días de
+ * silencio quema al prospecto más rápido de lo que lo convierte.
+ *
+ * `recien_contactado`, `cerrado` y `nunca_contesto` son los únicos por los
+ * que un prospecto puede entrar o terminar; los `seguimiento_N` son pasos
+ * intermedios. `cerrado`/`nunca_contesto` no generan más alertas — ya no hay
+ * nada que seguir.
+ */
+export const ESTADOS_PROSPECTO: { id: string; texto: string; diasProximo: number | null }[] = [
+  { id: "recien_contactado", texto: "Recién contactado", diasProximo: 3 },
+  { id: "seguimiento_1", texto: "1er seguimiento", diasProximo: 5 },
+  { id: "seguimiento_2", texto: "2do seguimiento", diasProximo: 7 },
+  { id: "seguimiento_3", texto: "3er seguimiento", diasProximo: 10 },
+  { id: "seguimiento_4", texto: "4to seguimiento", diasProximo: 14 },
+  { id: "seguimiento_5", texto: "5to seguimiento", diasProximo: 14 },
+  { id: "nunca_contesto", texto: "Nunca contestó", diasProximo: null },
+  { id: "cerrado", texto: "Cerrado", diasProximo: null },
+];
+
+export const textoEstadoProspecto = (id: string) =>
+  ESTADOS_PROSPECTO.find((e) => e.id === id)?.texto ?? id;
+
+/**
+ * Días que faltan para que un prospecto necesite seguimiento (negativo =
+ * atrasado). `null` en un estado sin próximo paso (cerrado / nunca contestó).
+ */
+export function diasParaSeguimiento(p: Pick<Prospecto, "estado" | "ultima_actividad_en">): number | null {
+  const cfg = ESTADOS_PROSPECTO.find((e) => e.id === p.estado);
+  if (!cfg || cfg.diasProximo == null) return null;
+  const desde = new Date(p.ultima_actividad_en).getTime();
+  const limite = desde + cfg.diasProximo * 86400000;
+  return Math.ceil((limite - Date.now()) / 86400000);
+}
+
+/**
+ * Meta semanal de contactos por persona (2-sept-2026, pedido explícito de
+ * Joaquín). Corrige la cifra inicial de "70 entre Joaquín y Max": Alejandro
+ * también prospecta, con su propia meta.
+ */
+export const METAS_SEMANALES_PROSPECCION: { email: string; nombre: string; meta: number }[] = [
+  { email: "j.ignaciomunozsilva@gmail.com", nombre: "Joaquín", meta: 50 },
+  { email: "maximilianopinocv@gmail.com", nombre: "Maximiliano", meta: 50 },
+  { email: "alejandrotobarq@gmail.com", nombre: "Alejandro", meta: 30 },
+];

@@ -19,6 +19,7 @@ import { Lateral, type Entrada, type Grupo } from "./disenio/Lateral";
 import { Ico } from "./disenio/iconos";
 import { ConfirmacionProvider } from "./disenio/Confirmacion";
 import { Clientes } from "./staff/Clientes";
+import { Prospeccion } from "./staff/Prospeccion";
 import { Dashboard } from "./staff/Dashboard";
 import { Ratia } from "./staff/ratia/Ratia";
 import { Contabilidad } from "./staff/contabilidad/Contabilidad";
@@ -82,6 +83,14 @@ const MENU_STAFF: Grupo[] = [
     entradas: [
       { a: "/acceso/clientes", texto: "Cóndor.AI", icono: "condor" },
       { a: "/acceso/ratia", texto: "Rat.IA", icono: "ratia" },
+    ],
+  },
+  {
+    titulo: "Comercial",
+    clave: "comercial",
+    icono: "buscar",
+    entradas: [
+      { a: "/acceso/prospeccion", texto: "Prospección", icono: "buscar" },
     ],
   },
   {
@@ -259,6 +268,7 @@ function PortalContenido() {
         <Routes>
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="clientes" element={<Clientes />} />
+          <Route path="prospeccion" element={<Prospeccion />} />
           <Route path="ratia" element={<Ratia />} />
           <Route path="contabilidad" element={<Contabilidad />} />
           <Route path="organizacion/:vista" element={<Organizacion />} />

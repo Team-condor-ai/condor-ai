@@ -384,6 +384,38 @@ export const Ico = {
       <path d="M12 6.3V9.8M17.9 9.6l-3.4 2M17.9 15.2l-3.4-2M12 18v-3.6M6.1 15.2l3.4-2M6.1 9.6l3.4 2" />
     </Svg>
   ),
+
+  /* Canales de prospección (Cóndor Ecommerce, 2-sept-2026). Mismo trazo
+     monocromo que el resto del set — no se usan los logos de marca a color:
+     rompería el lenguaje visual único de todo el portal (ver comentario de
+     arriba, "por qué no SF Symbols"). El color de marca de cada canal se
+     aplica aparte, como fondo de la píldora, no en el trazo del ícono. */
+  instagram: (p: Props = {}) => (
+    <Svg {...p}>
+      <rect x="4" y="4" width="16" height="16" rx="4.5" />
+      <circle cx="12" cy="12" r="3.6" />
+      <circle cx="16.6" cy="7.4" r="0.6" fill="currentColor" stroke="none" />
+    </Svg>
+  ),
+  facebook: (p: Props = {}) => (
+    <Svg {...p}>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M14 8.4h-1.6a1.8 1.8 0 0 0-1.8 1.8V12m0 0H9m1.6 0V19M9 12h3.6" />
+    </Svg>
+  ),
+  maps: (p: Props = {}) => (
+    <Svg {...p}>
+      <path d="M12 21s6.5-6.1 6.5-11A6.5 6.5 0 0 0 5.5 10c0 4.9 6.5 11 6.5 11Z" />
+      <circle cx="12" cy="10" r="2.2" />
+    </Svg>
+  ),
+  linkedin: (p: Props = {}) => (
+    <Svg {...p}>
+      <rect x="4" y="4" width="16" height="16" rx="3" />
+      <circle cx="8.4" cy="8.6" r="0.6" fill="currentColor" stroke="none" />
+      <path d="M8.4 11.4V17M12.4 17v-3.6a1.9 1.9 0 0 1 3.8 0V17" />
+    </Svg>
+  ),
 };
 
 export type NombreIcono = keyof typeof Ico;
