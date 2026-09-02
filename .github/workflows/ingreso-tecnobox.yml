@@ -1,0 +1,29 @@
+name: Sincronizar ingreso de Tecnobox
+
+on:
+  schedule:
+    # Después del cierre del día de Tecnobox Track y de Meta Ads (08:20 UTC),
+    # para que la venta neta del día ya esté completa cuando se recalcula.
+    - cron: "0 9 * * *"
+  workflow_dispatch:
+    inputs:
+      meses:
+        description: Cuántos meses hacia atrás recalcular
+        required: false
+        default: "2"
+
+jobs:
+  sincronizar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Registrar comisión de Tecnobox en Contabilidad
+        run: node services/ingresos-clientes/sincronizar-ingreso-tecnobox.mjs --meses "${{ inputs.meses || '2' }}"
+        env:
+          TECNOBOX_SHOPIFY_TIENDA: ${{ secrets.TECNOBOX_SHOPIFY_TIENDA }}
+          TECNOBOX_SHOPIFY_TOKEN: ${{ secrets.TECNOBOX_SHOPIFY_TOKEN }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}

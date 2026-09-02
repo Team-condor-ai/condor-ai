@@ -102,6 +102,25 @@ export type MetaAdsAjustes = {
 };
 
 /**
+ * Comisión devengada de un cliente de ecommerce, un registro por mes.
+ * `borrador: true` significa que el % salió de un tramo sin confirmar con
+ * el cliente todavía — ver `20260901_ingresos_clientes.sql`.
+ */
+export type IngresoCliente = {
+  id: string;
+  cliente: string;
+  mes: string; // 'YYYY-MM'
+  venta_neta_mes: number;
+  tramo_pct: number | null;
+  comision_calculada: number;
+  aplico_piso: boolean;
+  borrador: boolean;
+  asiento_id: string | null;
+  datos: Record<string, unknown> | null;
+  sincronizado_en: string;
+};
+
+/**
  * Arma un asiento de partida doble con dos líneas.
  *
  * Es la ÚNICA forma en que el portal escribe contabilidad: así no hay manera

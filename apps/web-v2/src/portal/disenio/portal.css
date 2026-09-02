@@ -1262,3 +1262,30 @@ textarea.campo{resize:vertical;min-height:56px}
   .portal-app .agente{transition:none}
   .portal-app .agente:hover{transform:none}
 }
+
+/* ── Monto Ecommerce: tarjeta grande que se expande al apretarla ──────
+   Mismo look que .dashboard-egresos (borde+radio+panel), pero el resumen
+   es un <button> completo para que toda la tarjeta sea clickeable, no
+   solo una esquina. */
+.portal-app .ingreso-ecommerce{border:1px solid var(--borde);border-radius:13px;padding:0;margin-bottom:18px;background:var(--panel);overflow:hidden}
+.portal-app .ingreso-ecommerce-resumen{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;padding:14px;border:0;background:transparent;cursor:pointer;text-align:left;font:inherit;color:inherit}
+.portal-app .ingreso-ecommerce-resumen:hover{background:var(--panel-2)}
+.portal-app .ingreso-ecommerce-resumen .cifra{display:flex;flex-direction:column;gap:2px}
+.portal-app .ingreso-ecommerce-resumen .cifra small{font-size:9.5px;text-transform:uppercase;letter-spacing:.045em;color:var(--texto-3)}
+.portal-app .ingreso-ecommerce-resumen .cifra b{font-size:26px;font-weight:650;letter-spacing:-.035em;font-variant-numeric:tabular-nums}
+.portal-app .ingreso-ecommerce-resumen .cifra span{font-size:11px;color:var(--texto-3)}
+.portal-app .ingreso-ecommerce-flecha{font-size:16px;color:var(--texto-3);transition:transform .15s ease;flex:none}
+.portal-app .ingreso-ecommerce-flecha.abierta{transform:rotate(180deg)}
+.portal-app .ingreso-ecommerce-detalle{padding:0 14px 16px;border-top:1px solid var(--borde)}
+.portal-app .ingreso-ecommerce-plazos{display:flex;gap:6px;margin:14px 0 12px}
+.portal-app .ingreso-ecommerce-clientes{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:12px}
+.portal-app .ingreso-ecommerce-cliente{border:1px solid var(--borde);border-radius:10px;padding:11px 12px;background:var(--panel-2)}
+.portal-app .ingreso-ecommerce-cliente>div{display:flex;align-items:center;gap:7px;margin-bottom:5px}
+.portal-app .shopify-marca{width:22px;height:22px;flex:none;display:grid;place-items:center;border-radius:7px;background:#95BF47}
+.portal-app .ingreso-ecommerce-cliente b{font-size:12.5px}
+.portal-app .ingreso-ecommerce-cliente strong{display:block;font-size:18px;font-variant-numeric:tabular-nums}
+.portal-app .ingreso-ecommerce-cliente small{display:block;font-size:10.5px;color:var(--texto-3);margin-top:2px}
+.portal-app .ingreso-ecommerce-sin-datos{margin:0;font-size:11.5px;color:var(--texto-3);font-style:italic}
+.portal-app .ingreso-ecommerce-aviso{margin:0 0 14px;padding:9px 11px;background:var(--warn-bg);color:var(--warn-tx);border:1px solid var(--warn-bd);border-radius:9px;font-size:11.5px}
+.portal-app .ingreso-ecommerce-detalle h3{margin:0 0 6px;font-size:13px}
+@media(max-width:620px){.portal-app .ingreso-ecommerce-resumen .cifra b{font-size:22px}}
