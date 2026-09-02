@@ -26,7 +26,9 @@ import type {
   Cuenta,
   GastoFijo,
   GastoMeta,
+  IngresoCliente,
 } from "./contabilidad/tipos";
+import { IngresoEcommerce } from "./contabilidad/IngresoEcommerce";
 
 type PagoLite = {
   cliente_id: string;
@@ -64,6 +66,9 @@ export function Dashboard() {
   const [asientos, setAsientos] = useState<Asiento[]>([]);
   const [gastosFijos, setGastosFijos] = useState<GastoFijo[]>([]);
   const [gastosMeta, setGastosMeta] = useState<GastoMeta[]>([]);
+  const [ingresosClientes, setIngresosClientes] = useState<IngresoCliente[]>(
+    [],
+  );
   const [cargando, setCargando] = useState(true);
   const cambio = useCambio();
   const [anio, setAnio] = useState(() => new Date().getFullYear());
@@ -71,7 +76,7 @@ export function Dashboard() {
 
   useEffect(() => {
     (async () => {
-      const [cl, co, pa, ra, ig, re, cu, as, gf, gm] =
+      const [cl, co, pa, ra, ig, re, cu, as, gf, gm, ic] =
         await Promise.all([
           sb.from("clientes").select("*"),
           sb.from("cobros").select("*"),
@@ -89,6 +94,7 @@ export function Dashboard() {
             .select("*")
             .order("fecha", { ascending: false })
             .limit(2000),
+          sb.from("ingresos_clientes").select("*").order("mes"),
         ]);
       setClientes((cl.data ?? []) as Cliente[]);
       setCobros((co.data ?? []) as Cobro[]);
@@ -100,6 +106,7 @@ export function Dashboard() {
       setAsientos((as.data ?? []) as Asiento[]);
       setGastosFijos((gf.data ?? []) as GastoFijo[]);
       setGastosMeta((gm.data ?? []) as GastoMeta[]);
+      setIngresosClientes((ic.data ?? []) as IngresoCliente[]);
       setCargando(false);
     })();
   }, []);
@@ -557,6 +564,8 @@ export function Dashboard() {
             <p>Suscripciones activas de Rat.IA</p>
           </div>
         </div>
+
+        <IngresoEcommerce ingresos={ingresosClientes} />
 
         <section className="bloque dashboard-egresos">
           <header className="dashboard-seccion-cab">
