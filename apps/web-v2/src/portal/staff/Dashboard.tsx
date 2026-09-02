@@ -530,7 +530,7 @@ export function Dashboard() {
           )}
         </section>
 
-        <div className="kpis">
+        <div className="kpis tres">
           <div className="kpi">
             <div className="tile">{Ico.cobros({ t: 18 })}</div>
             <div className="cifra">
@@ -555,13 +555,6 @@ export function Dashboard() {
               <b>{d.clientes}</b>
             </div>
             <p>Clientes de la agencia</p>
-          </div>
-          <div className="kpi">
-            <div className="tile">{Ico.agentesia({ t: 18 })}</div>
-            <div className="cifra">
-              <b>{d.ratActivas}</b>
-            </div>
-            <p>Suscripciones activas de Rat.IA</p>
           </div>
         </div>
 

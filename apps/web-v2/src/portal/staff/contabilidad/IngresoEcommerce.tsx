@@ -4,6 +4,26 @@ import { Barras, corto, mesesDelAnio } from "../graficos";
 import type { IngresoCliente } from "./tipos";
 
 /**
+ * Una bolsa de compras simple, para marcar que Tecnobox vende por Shopify.
+ * Mismo criterio que el círculo "f" de Meta en DesgloseGastos: una marca
+ * externa no sigue el lenguaje de íconos monocromos del portal (ver
+ * disenio/iconos.tsx), va aparte con su propio color — pero en vez de
+ * reconstruir el logo exacto de memoria (fácil de copiar mal un trazo y
+ * que salga irreconocible), es una bolsa genérica reconocible sobre el
+ * verde de la marca.
+ */
+function LogoShopify() {
+  return (
+    <span className="shopify-marca" aria-hidden="true" title="Shopify">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M6 8h12l-1 12a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1L6 8Z" fill="#fff" fillOpacity=".15" />
+        <path d="M9 8V6a3 3 0 0 1 6 0v2" />
+      </svg>
+    </span>
+  );
+}
+
+/**
  * La tarjeta grande de "Monto Ecommerce" en el panel principal.
  *
  * PEDIDO EXACTO: un número grande arriba, y al apretarlo se ve el
@@ -17,8 +37,12 @@ import type { IngresoCliente } from "./tipos";
  * igual acá, con monto en $0 y un aviso explícito, para que la tarjeta
  * no cambie de forma el día que se conecte — solo deja de estar vacía.
  */
-const CLIENTES_ECOMMERCE: { clave: string; nombre: string }[] = [
-  { clave: "tecnobox", nombre: "Tecnobox" },
+const CLIENTES_ECOMMERCE: {
+  clave: string;
+  nombre: string;
+  plataforma?: "shopify";
+}[] = [
+  { clave: "tecnobox", nombre: "Tecnobox", plataforma: "shopify" },
   { clave: "silver_and_co", nombre: "Silver and Co" },
 ];
 
@@ -133,6 +157,7 @@ export function IngresoEcommerce({
             {d.porCliente.map((c) => (
               <div key={c.clave} className="ingreso-ecommerce-cliente">
                 <div>
+                  {c.plataforma === "shopify" && <LogoShopify />}
                   <b>{c.nombre}</b>
                   {c.tieneDatos && c.borrador && (
                     <span className="pill warn">provisional</span>
