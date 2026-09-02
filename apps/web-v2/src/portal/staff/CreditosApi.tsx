@@ -1,6 +1,18 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Ico } from "../disenio/iconos";
 import { invocar, sb } from "../lib/supabase";
+import { NotasInternas } from "./organizacion/NotasInternas";
+
+// "Información interna" (Organización) se fusionó acá el 2-sept-2026 (pedido
+// de Joaquín): las dos pantallas guardaban lo mismo en el fondo -- datos
+// sensibles que hay que poder revelar -- solo que una lo hacía por proveedor
+// de API (con reveal server-side, ver `revelar()` más abajo) y la otra por
+// cuenta suelta (usuario/clave con un toggle simple, ver NotasInternas.tsx).
+// Quedan como dos pestañas de una sola pantalla, "Claves / API Tokens", en
+// vez de fundir sus modelos de datos: el de créditos revela vía Edge
+// Function sin que el navegador vea la llave hasta pedirla, y bajar eso al
+// nivel de NotasInternas sería MENOS seguro, no más ordenado.
+type Vista = "creditos" | "cuentas";
 
 type EstadoCredito = "ok" | "advertencia" | "sin_datos" | "error" | "requiere_configuracion";
 
@@ -82,6 +94,7 @@ function cuando(iso: string | null) {
 const SEGUNDOS_VISIBLE = 25;
 
 export function CreditosApi() {
+  const [vista, setVista] = useState<Vista>("creditos");
   const [filas, setFilas] = useState<CreditoApi[]>(BASE);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
@@ -162,20 +175,35 @@ export function CreditosApi() {
     <>
       <div className="barra">
         <div>
-          <h1>Créditos y tokens API</h1>
-          <small className="subtitulo-barra">Combustible operativo de las automatizaciones</small>
+          <h1>Claves / API Tokens</h1>
+          <small className="subtitulo-barra">Todo lo sensible del equipo: proveedores de API, cuentas, correos y claves</small>
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
-          <button className="btn" onClick={() => setMostrarAgregar(true)}>
-            {Ico.mas({ t: 14 })} Agregar API
-          </button>
-          <button className="btn" onClick={() => void cargar()} disabled={cargando}>
-            {Ico.repetir({ t: 14 })} {cargando ? "Consultando…" : "Actualizar vista"}
-          </button>
-        </div>
+        {vista === "creditos" && (
+          <div style={{ display: "flex", gap: 8 }}>
+            <button className="btn" onClick={() => setMostrarAgregar(true)}>
+              {Ico.mas({ t: 14 })} Agregar API
+            </button>
+            <button className="btn" onClick={() => void cargar()} disabled={cargando}>
+              {Ico.repetir({ t: 14 })} {cargando ? "Consultando…" : "Actualizar vista"}
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="cuerpo creditos-api">
+        <div className="subnav-organizacion">
+          <button className={vista === "creditos" ? "on" : ""} onClick={() => setVista("creditos")}>
+            {Ico.creditos({ t: 15 })} Créditos API
+          </button>
+          <button className={vista === "cuentas" ? "on" : ""} onClick={() => setVista("cuentas")}>
+            {Ico.documentos({ t: 15 })} Cuentas y claves
+          </button>
+        </div>
+
+        {vista === "cuentas" ? (
+          <NotasInternas />
+        ) : (
+        <>
         <section className="creditos-resumen" aria-label="Resumen de integraciones">
           <div><small>Proveedores</small><b>{filas.length}</b></div>
           <div><small>Con datos</small><b>{resumen.conectadas}</b></div>
@@ -252,6 +280,8 @@ export function CreditosApi() {
         <p className="creditos-nota">
           “No disponible” significa que el proveedor no publica ese dato por API; nunca se interpreta como saldo cero.
         </p>
+        </>
+        )}
       </div>
 
       {mostrarAgregar && (

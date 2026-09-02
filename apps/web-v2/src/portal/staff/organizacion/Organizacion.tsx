@@ -1,22 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { sb, fecha, plata } from "../../lib/supabase";
+import { sb, fecha } from "../../lib/supabase";
 import { Ico } from "../../disenio/iconos";
 import { useConfirmacion } from "../../disenio/Confirmacion";
 import { EditorReunion } from "../EditorReunion";
-import { NotasInternas } from "./NotasInternas";
 import {
   contarPersonas,
   destinatariosDeReunion,
   reenviarAvisoReunion,
 } from "../reenviarReunion";
-import type {
-  Cliente,
-  Cobro,
-  Pago,
-  Reunion,
-  SuscriptorRatia,
-} from "../tipos";
+import type { Cliente, Reunion } from "../tipos";
 
 type EstadoTarea = "por_hacer" | "en_curso" | "bloqueada" | "hecha";
 type Prioridad = "baja" | "media" | "alta" | "urgente";
@@ -37,22 +30,6 @@ type Tarea = {
   hecha_en: string | null;
   creado_en: string;
 };
-type Meta = {
-  id: string;
-  titulo: string;
-  detalle: string | null;
-  metrica:
-    | "manual"
-    | "recurrente"
-    | "clientes"
-    | "cobrado_mes"
-    | "suscriptores_ratia";
-  objetivo: number;
-  avance: number;
-  hasta: string | null;
-  estado: "activa" | "lograda" | "archivada";
-};
-
 const COLUMNAS: { id: EstadoTarea; titulo: string; ayuda: string }[] = [
   { id: "por_hacer", titulo: "Por hacer", ayuda: "Lista y sin empezar" },
   { id: "en_curso", titulo: "En curso", ayuda: "Trabajo activo" },
@@ -85,31 +62,22 @@ export function Organizacion() {
   const { vista = "tablero" } = useParams();
   const navega = useNavigate();
   const [tareas, setTareas] = useState<Tarea[]>([]);
-  const [metas, setMetas] = useState<Meta[]>([]);
   const [clientes, setClientes] = useState<Cliente[]>([]);
-  const [cobros, setCobros] = useState<Cobro[]>([]);
-  const [pagos, setPagos] = useState<Pago[]>([]);
-  const [ratia, setRatia] = useState<SuscriptorRatia[]>([]);
   const [reuniones, setReuniones] = useState<Reunion[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
   const [editando, setEditando] = useState<
     Tarea | "nueva" | "nueva_agendada" | null
   >(null);
-  const [editandoMeta, setEditandoMeta] = useState<Meta | "nueva" | null>(null);
   // `"nueva"` abre el editor en blanco; una reunión lo abre con sus datos.
   const [editandoReunion, setEditandoReunion] = useState<Reunion | "nueva" | null>(null);
   const [filtro, setFiltro] = useState<"todas" | "mias" | "vencidas">("todas");
 
   async function cargar(silencioso = false) {
     if (!silencioso) setCargando(true);
-    const [ta, me, cl, co, pa, ra, re] = await Promise.all([
+    const [ta, cl, re] = await Promise.all([
       sb.from("tareas").select("*").order("orden"),
-      sb.from("metas").select("*").order("creado_en", { ascending: false }),
       sb.from("clientes").select("*"),
-      sb.from("cobros").select("*"),
-      sb.from("pagos").select("*"),
-      sb.from("suscriptores_ratia").select("*"),
       sb.from("reuniones").select("*").order("fecha_hora"),
     ]);
     if (ta.error)
@@ -118,11 +86,7 @@ export function Organizacion() {
       );
     else setError("");
     setTareas((ta.data ?? []) as Tarea[]);
-    setMetas((me.data ?? []) as Meta[]);
     setClientes((cl.data ?? []) as Cliente[]);
-    setCobros((co.data ?? []) as Cobro[]);
-    setPagos((pa.data ?? []) as Pago[]);
-    setRatia((ra.data ?? []) as SuscriptorRatia[]);
     setReuniones((re.data ?? []) as Reunion[]);
     if (!silencioso) setCargando(false);
   }
@@ -152,24 +116,6 @@ export function Organizacion() {
     }
   }
 
-  const metricas = useMemo(() => {
-    const mes = new Date().toISOString().slice(0, 7);
-    return {
-      recurrente: cobros
-        .filter((c) => c.tipo === "mensual" && c.estado === "activa")
-        .reduce((t, c) => t + c.monto, 0),
-      clientes: clientes.filter((c) => !c.archivado).length,
-      cobrado_mes: pagos
-        .filter(
-          (p) =>
-            p.estado === "pagado" &&
-            (p.fecha ?? p.creado_en ?? "").startsWith(mes),
-        )
-        .reduce((t, p) => t + (p.monto ?? 0), 0),
-      suscriptores_ratia: ratia.filter((x) => x.estado === "activa").length,
-    };
-  }, [cobros, clientes, pagos, ratia]);
-
   return (
     <>
       <div className="barra">
@@ -179,14 +125,7 @@ export function Organizacion() {
             Trabajo, tiempo y objetivos del equipo
           </small>
         </div>
-        {vista === "metas" ? (
-          <button
-            className="btn solido"
-            onClick={() => setEditandoMeta("nueva")}
-          >
-            {Ico.mas({ t: 15 })} Nueva meta
-          </button>
-        ) : vista === "calendario" ? (
+        {vista === "calendario" ? (
           <div className="botonera">
             <a
               className="btn"
@@ -207,7 +146,7 @@ export function Organizacion() {
               {Ico.reuniones({ t: 15 })} Agendar reunión
             </button>
           </div>
-        ) : vista === "notas" || vista === "informacion" ? null : (
+        ) : (
           <button className="btn solido" onClick={() => setEditando("nueva")}>
             {Ico.mas({ t: 15 })} Nueva tarea
           </button>
@@ -220,25 +159,13 @@ export function Organizacion() {
             className={vista === "tablero" ? "on" : ""}
             onClick={() => navega("/acceso/organizacion/tablero")}
           >
-            {Ico.tablero({ t: 15 })} Tablero
+            {Ico.tablero({ t: 15 })} Tareas
           </button>
           <button
             className={vista === "calendario" ? "on" : ""}
             onClick={() => navega("/acceso/organizacion/calendario")}
           >
             {Ico.reuniones({ t: 15 })} Calendario
-          </button>
-          <button
-            className={vista === "metas" ? "on" : ""}
-            onClick={() => navega("/acceso/organizacion/metas")}
-          >
-            {Ico.meta({ t: 15 })} Metas
-          </button>
-          <button
-            className={vista === "notas" || vista === "informacion" ? "on" : ""}
-            onClick={() => navega("/acceso/organizacion/informacion")}
-          >
-            {Ico.documentos({ t: 15 })} Información interna
           </button>
         </div>
         {cargando ? (
@@ -388,10 +315,16 @@ export function Organizacion() {
             }
             error={setError}
           />
-        ) : vista === "notas" || vista === "informacion" ? (
-          <NotasInternas />
         ) : (
-          <Metas metas={metas} metricas={metricas} editar={setEditandoMeta} />
+          // "Metas" e "Información interna" se retiraron/movieron el
+          // 2-sept-2026 (ver commit de reorganización del portal). Un
+          // marcador viejo a /metas o /informacion cae acá en vez de
+          // reventar: Información interna ahora vive en "Claves / API
+          // Tokens" (/acceso/creditos-api).
+          <p className="vacio">
+            Esta sección se movió. La información interna ahora vive en{" "}
+            <a href="/acceso/creditos-api">Claves / API Tokens</a>.
+          </p>
         )}
       </div>
       {editando && (
@@ -402,16 +335,6 @@ export function Organizacion() {
           cerrar={() => setEditando(null)}
           guardado={() => {
             setEditando(null);
-            void cargar(true);
-          }}
-        />
-      )}
-      {editandoMeta && (
-        <EditorMeta
-          meta={editandoMeta === "nueva" ? null : editandoMeta}
-          cerrar={() => setEditandoMeta(null)}
-          guardado={() => {
-            setEditandoMeta(null);
             void cargar(true);
           }}
         />
@@ -1094,63 +1017,6 @@ function AgendaReuniones({
   );
 }
 
-function Metas({
-  metas,
-  metricas,
-  editar,
-}: {
-  metas: Meta[];
-  metricas: Record<string, number>;
-  editar: (m: Meta) => void;
-}) {
-  return (
-    <div className="metas-grid">
-      {metas
-        .filter((m) => m.estado !== "archivada")
-        .map((m) => {
-          const actual =
-            m.metrica === "manual" ? m.avance : (metricas[m.metrica] ?? 0);
-          const pct = Math.min(
-            100,
-            m.objetivo > 0 ? (actual / m.objetivo) * 100 : 0,
-          );
-          const plataM = ["recurrente", "cobrado_mes"].includes(m.metrica);
-          return (
-            <article className="meta-card" key={m.id} onClick={() => editar(m)}>
-              <div className="meta-top">
-                <span className="meta-icon">{Ico.meta({ t: 18 })}</span>
-                <span className={"pill " + (pct >= 100 ? "ok" : "gris")}>
-                  {pct >= 100 ? "lograda" : "activa"}
-                </span>
-              </div>
-              <h3>{m.titulo}</h3>
-              {m.detalle && <p>{m.detalle}</p>}
-              <div className="progreso">
-                <i style={{ width: `${pct}%` }} />
-              </div>
-              <div className="meta-numeros">
-                <b>{plataM ? plata(actual) : actual.toLocaleString("es-CL")}</b>
-                <span>
-                  de{" "}
-                  {plataM
-                    ? plata(m.objetivo)
-                    : m.objetivo.toLocaleString("es-CL")}{" "}
-                  · {pct.toFixed(0)}%
-                </span>
-              </div>
-              {m.hasta && <small>Fecha objetivo · {fecha(m.hasta)}</small>}
-            </article>
-          );
-        })}
-      {metas.length === 0 && (
-        <p className="vacio">
-          Crea una meta manual o conéctala a ingresos, clientes o suscriptores.
-        </p>
-      )}
-    </div>
-  );
-}
-
 function EditorTarea({
   tarea,
   agendarInicial = false,
@@ -1523,136 +1389,6 @@ function EditorTarea({
             Cancelar
           </button>
           <button className="btn solido">Guardar</button>
-        </footer>
-      </form>
-    </div>
-  );
-}
-
-function EditorMeta({
-  meta,
-  cerrar,
-  guardado,
-}: {
-  meta: Meta | null;
-  cerrar: () => void;
-  guardado: () => void;
-}) {
-  const [f, setF] = useState({
-    titulo: meta?.titulo ?? "",
-    detalle: meta?.detalle ?? "",
-    metrica: meta?.metrica ?? "manual",
-    objetivo: meta?.objetivo ?? 0,
-    avance: meta?.avance ?? 0,
-    hasta: meta?.hasta ?? "",
-  });
-  const [error, setError] = useState("");
-  const set = (k: keyof typeof f, v: string | number) =>
-    setF((p) => ({ ...p, [k]: v }));
-  async function enviar(e: React.FormEvent) {
-    e.preventDefault();
-    const fila = {
-      ...f,
-      titulo: f.titulo.trim(),
-      detalle: f.detalle.trim() || null,
-      hasta: f.hasta || null,
-    };
-    const q = meta
-      ? sb.from("metas").update(fila).eq("id", meta.id)
-      : sb.from("metas").insert(fila);
-    const { error } = await q;
-    if (error) setError(error.message);
-    else guardado();
-  }
-  return (
-    <div className="velo" onClick={cerrar}>
-      <form
-        className="panel-modal"
-        onClick={(e) => e.stopPropagation()}
-        onSubmit={enviar}
-      >
-        <header>
-          <h2>{meta ? "Editar meta" : "Nueva meta"}</h2>
-        </header>
-        <div className="contenido">
-          <label className="campo-lbl">
-            Meta
-            <input
-              className="campo"
-              autoFocus
-              required
-              value={f.titulo}
-              onChange={(e) => set("titulo", e.target.value)}
-              placeholder="Ej: llegar a $5M de MRR"
-            />
-          </label>
-          <label className="campo-lbl">
-            Detalle
-            <textarea
-              className="campo"
-              rows={2}
-              value={f.detalle}
-              onChange={(e) => set("detalle", e.target.value)}
-            />
-          </label>
-          <label className="campo-lbl">
-            Cómo se mide
-            <select
-              className="campo"
-              value={f.metrica}
-              onChange={(e) => set("metrica", e.target.value)}
-            >
-              <option value="manual">Avance manual</option>
-              <option value="recurrente">Ingreso recurrente</option>
-              <option value="clientes">Clientes activos</option>
-              <option value="cobrado_mes">Cobrado este mes</option>
-              <option value="suscriptores_ratia">Suscriptores Rat.IA</option>
-            </select>
-            <small>
-              Las métricas conectadas se actualizan solas con los datos del
-              portal.
-            </small>
-          </label>
-          <div className="dos">
-            <label className="campo-lbl">
-              Objetivo
-              <input
-                className="campo"
-                type="number"
-                min={0}
-                value={f.objetivo || ""}
-                onChange={(e) => set("objetivo", Number(e.target.value))}
-              />
-            </label>
-            <label className="campo-lbl">
-              Fecha objetivo
-              <input
-                className="campo"
-                type="date"
-                value={f.hasta}
-                onChange={(e) => set("hasta", e.target.value)}
-              />
-            </label>
-          </div>
-          {f.metrica === "manual" && (
-            <label className="campo-lbl">
-              Avance actual
-              <input
-                className="campo"
-                type="number"
-                min={0}
-                value={f.avance || ""}
-                onChange={(e) => set("avance", Number(e.target.value))}
-              />
-            </label>
-          )}
-          {error && <p className="error">{error}</p>}
-        </div>
-        <footer>
-          <button type="button" className="btn" onClick={cerrar}>
-            Cancelar
-          </button>
-          <button className="btn solido">Guardar meta</button>
         </footer>
       </form>
     </div>

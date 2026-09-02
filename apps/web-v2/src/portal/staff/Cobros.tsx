@@ -173,19 +173,16 @@ export function Cobros() {
 
   return (
     <>
-      <div className="barra">
+      <div className="cabecera-bloque">
         <div>
-          <h1>Cobros</h1>
-          <small className="subtitulo-barra">
-            Historial de pagos y mensualidades; depura intentos pendientes
-          </small>
+          <h3>Cobros</h3>
+          <p>Historial de pagos y mensualidades; depura intentos pendientes</p>
         </div>
         <button className="btn" onClick={exportar} disabled={!visibles.length}>
           {Ico.descargar({ t: 15 })} Exportar CSV
         </button>
       </div>
-      <div className="cuerpo">
-        {error && <p className="error">{error}</p>}
+      {error && <p className="error">{error}</p>}
         <div className="kpis">
           <div className="kpi">
             <div className="tile">{Ico.cobros({ t: 18 })}</div>
@@ -364,12 +361,11 @@ export function Cobros() {
             </table>
           </div>
         )}
-        <p className="nota-auditoria">
-          Los pagos efectivos y rechazados quedan como historial. Sólo los
-          intentos que aún están pendientes se pueden eliminar; borrar uno no
-          cancela su link en el proveedor de pago.
-        </p>
-      </div>
+      <p className="nota-auditoria">
+        Los pagos efectivos y rechazados quedan como historial. Sólo los
+        intentos que aún están pendientes se pueden eliminar; borrar uno no
+        cancela su link en el proveedor de pago.
+      </p>
     </>
   );
 }

@@ -12,11 +12,19 @@ import { DesgloseGastos } from "./DesgloseGastos";
 import { ImportarCartola } from "./ImportarCartola";
 import { TransferirFondos } from "./TransferirFondos";
 import { Pasivos } from "./Pasivos";
+import { Cobros } from "../Cobros";
 import type { Asiento, Cuenta, GastoMeta, MetaAdsAjustes, SaldoCuenta } from "./tipos";
 
+// "Cobros" se fusionó acá el 2-sept-2026 (pedido de Joaquín): vivía como
+// pestaña propia del menú, separada de Contabilidad, pero es la misma
+// pregunta de plata -- quién pagó y cuánto entró -- vista desde el cliente en
+// vez de la cuenta. `Cobros.tsx` ya no trae su propio encabezado de página:
+// se le sacó el `<div className="barra">` para que no salgan dos títulos
+// apilados al montarlo como pestaña.
 const PESTANAS = [
   { id: "resumen", texto: "Resumen" },
   { id: "desglose", texto: "Desglose de egresos" },
+  { id: "cobros", texto: "Cobros" },
   { id: "pasivos", texto: "Pasivos" },
   { id: "libro", texto: "Libro diario" },
   { id: "fijos", texto: "Gastos fijos" },
@@ -521,6 +529,8 @@ export function Contabilidad() {
             )}
           </section>
         )}
+
+        {pestana === "cobros" && <Cobros />}
 
         {pestana === "fijos" && (
           <GastosFijos

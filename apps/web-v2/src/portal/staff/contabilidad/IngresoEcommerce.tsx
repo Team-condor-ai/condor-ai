@@ -1,3 +1,6 @@
+/* eslint-disable react-refresh/only-export-components -- CLIENTES_ECOMMERCE
+   y LogoShopify se exportan para reusarlos en Productos.tsx (pestaña
+   Ecommerce), mismo criterio que graficos.tsx. */
 import { useMemo, useState } from "react";
 import { plata } from "../../lib/supabase";
 import { Barras, corto, mesesDelAnio } from "../graficos";
@@ -12,7 +15,7 @@ import type { IngresoCliente } from "./tipos";
  * que salga irreconocible), es una bolsa genérica reconocible sobre el
  * verde de la marca.
  */
-function LogoShopify() {
+export function LogoShopify() {
   return (
     <span className="shopify-marca" aria-hidden="true" title="Shopify">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -37,7 +40,7 @@ function LogoShopify() {
  * igual acá, con monto en $0 y un aviso explícito, para que la tarjeta
  * no cambie de forma el día que se conecte — solo deja de estar vacía.
  */
-const CLIENTES_ECOMMERCE: {
+export const CLIENTES_ECOMMERCE: {
   clave: string;
   nombre: string;
   plataforma?: "shopify";

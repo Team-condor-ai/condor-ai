@@ -37,6 +37,7 @@ export function EditorCliente({ cliente, cerrar, guardado }: Props) {
     email: cliente?.email ?? "",
     telefono: cliente?.telefono ?? "",
     plan: cliente?.plan ?? "",
+    linea: cliente?.linea ?? "",
     concepto: cliente?.concepto ?? "",
     moneda: cliente?.moneda ?? "CLP",
     web_url: cliente?.web_url ?? "",
@@ -66,6 +67,7 @@ export function EditorCliente({ cliente, cerrar, guardado }: Props) {
       nombre: f.nombre.trim() || null,
       telefono: f.telefono.trim() || null,
       plan: f.plan.trim() || null,
+      linea: f.linea || null,
       notas: f.notas.trim() || null,
     };
 
@@ -166,6 +168,25 @@ export function EditorCliente({ cliente, cerrar, guardado }: Props) {
               moneda: entre el campo de texto y el desplegable no cabían en
               media pantalla y el texto quedaba cortado a la mitad. */}
           {campoPlan}
+
+          <label className="campo-lbl" style={{ maxWidth: 240 }}>
+            Línea de producto <span style={{ fontWeight: 400, opacity: 0.7 }}>· opcional</span>
+            <select
+              className="campo"
+              value={f.linea}
+              onChange={(e) => set("linea", e.target.value)}
+            >
+              <option value="">Sin clasificar</option>
+              <option value="sites">Cóndor Sites</option>
+              <option value="track">Cóndor Track</option>
+            </select>
+            {/* Cóndor Ecommerce no está acá a propósito: Tecnobox y Silver
+                and Co no son filas de `clientes` -- se administran aparte,
+                ligadas a Shopify (ver IngresoEcommerce.tsx). Ofrecer
+                "ecommerce" acá crearía un cliente que nunca aparecería en
+                la pestaña de Ecommerce de Productos. */}
+            <small>Decide en qué pestaña de "Productos" aparece este cliente.</small>
+          </label>
 
           <label className="campo-lbl" style={{ maxWidth: 240 }}>
             Moneda

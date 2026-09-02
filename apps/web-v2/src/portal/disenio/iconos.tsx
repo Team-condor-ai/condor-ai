@@ -416,6 +416,33 @@ export const Ico = {
       <path d="M8.4 11.4V17M12.4 17v-3.6a1.9 1.9 0 0 1 3.8 0V17" />
     </Svg>
   ),
+
+  /* Líneas de producto en "Productos" (reorganización del portal,
+     2-sept-2026). Genéricos y monocromos a propósito: todavía no hay un
+     logo real por línea cargado en el repo (el branding llegó por
+     WhatsApp) — reemplazar por el logo real de cada línea cuando esté
+     disponible como archivo. */
+  sitesProducto: (p: Props = {}) => (
+    <Svg {...p}>
+      <rect x="3.5" y="5" width="17" height="14" rx="2.2" />
+      <path d="M3.5 9h17" />
+      <circle cx="6.3" cy="7" r="0.5" fill="currentColor" stroke="none" />
+      <circle cx="8.1" cy="7" r="0.5" fill="currentColor" stroke="none" />
+    </Svg>
+  ),
+  ecommerceProducto: (p: Props = {}) => (
+    <Svg {...p}>
+      <path d="M5 8h14l-1.3 10.2a1.6 1.6 0 0 1-1.6 1.4H7.9a1.6 1.6 0 0 1-1.6-1.4L5 8Z" />
+      <path d="M8.5 8V6.5a3.5 3.5 0 0 1 7 0V8" />
+    </Svg>
+  ),
+  trackProducto: (p: Props = {}) => (
+    <Svg {...p}>
+      <path d="M4 15a8 8 0 1 1 16 0" />
+      <path d="M12 15 15.2 10" />
+      <circle cx="12" cy="15" r="1.1" fill="currentColor" stroke="none" />
+    </Svg>
+  ),
 };
 
 export type NombreIcono = keyof typeof Ico;

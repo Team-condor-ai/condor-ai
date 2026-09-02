@@ -18,17 +18,14 @@ import { Login } from "./auth/Login";
 import { Lateral, type Entrada, type Grupo } from "./disenio/Lateral";
 import { Ico } from "./disenio/iconos";
 import { ConfirmacionProvider } from "./disenio/Confirmacion";
-import { Clientes } from "./staff/Clientes";
+import { Productos } from "./staff/Productos";
 import { Prospeccion } from "./staff/Prospeccion";
 import { Dashboard } from "./staff/Dashboard";
-import { Ratia } from "./staff/ratia/Ratia";
 import { Contabilidad } from "./staff/contabilidad/Contabilidad";
 import { Organizacion } from "./staff/organizacion/Organizacion";
 import { Biblioteca } from "./staff/Biblioteca";
 import { Mcp } from "./staff/Mcp";
 import { CreditosApi } from "./staff/CreditosApi";
-import { Cobros } from "./staff/Cobros";
-import { Correos } from "./staff/Correos";
 import { Mapa } from "./staff/Mapa";
 import { AgentesIA } from "./staff/agentes-ia/AgentesIA";
 import { Memoria } from "./staff/memoria/Memoria";
@@ -46,10 +43,9 @@ import { MiCuenta } from "./cliente/MiCuenta";
 // @react-pdf/renderer pesa ~1,1 MB. Importado de frente, el portal entero
 // cargaba 1,5 MB — o sea alguien que solo entra a ver la lista de clientes se
 // bajaba el generador de documentos completo. En diferido, ese peso lo paga
-// únicamente quien abre Herramientas o Comprobantes.
-const Herramientas = lazy(() =>
-  import("./documentos/Herramientas").then((m) => ({ default: m.Herramientas })),
-);
+// únicamente quien abre Comprobantes.
+// "Herramientas" (el otro consumidor de este motor) se retiró del portal el
+// 2-sept-2026 -- ver reorganización pedida por Joaquín.
 const MisBoletas = lazy(() =>
   import("./cliente/MisBoletas").then((m) => ({ default: m.MisBoletas })),
 );
@@ -66,8 +62,10 @@ const dif = (n: React.ReactNode) => <Suspense fallback={cargando}>{n}</Suspense>
  * leerlas todas. Agrupadas por para-que-sirve se salta directo al bloque, y
  * cada bloque se puede plegar cuando no se usa.
  *
- * "Clientes" ahora tiene dos: la cartera de la agencia y los suscriptores de
- * Rat.IA, que son negocios distintos y no se mezclan.
+ * "Clientes" pasó a ser "Productos" el 2-sept-2026 (pedido de Joaquín):
+ * una pestaña por línea de negocio (Sites/Ecommerce/Track) con su logo,
+ * en vez de una lista mezclando todo. Rat.IA salió del menú por completo
+ * -- es un producto B2C aparte, no una línea de Cóndor.ai.
  */
 const MENU_STAFF: Grupo[] = [
   {
@@ -77,12 +75,11 @@ const MENU_STAFF: Grupo[] = [
     entradas: [{ a: "/acceso/dashboard", texto: "Panel", icono: "panel" }],
   },
   {
-    titulo: "Clientes",
-    clave: "clientes",
+    titulo: "Productos",
+    clave: "productos",
     icono: "clientes",
     entradas: [
-      { a: "/acceso/clientes", texto: "Cóndor.AI", icono: "condor" },
-      { a: "/acceso/ratia", texto: "Rat.IA", icono: "ratia" },
+      { a: "/acceso/clientes", texto: "Productos", icono: "clientes" },
     ],
   },
   {
@@ -98,7 +95,6 @@ const MENU_STAFF: Grupo[] = [
     clave: "finanzas",
     icono: "libro",
     entradas: [
-      { a: "/acceso/cobros", texto: "Cobros", icono: "cobros" },
       { a: "/acceso/contabilidad", texto: "Contabilidad", icono: "libro" },
     ],
   },
@@ -107,10 +103,8 @@ const MENU_STAFF: Grupo[] = [
     clave: "organizacion",
     icono: "tablero",
     entradas: [
-      { a: "/acceso/organizacion/tablero", texto: "Tablero", icono: "tablero" },
+      { a: "/acceso/organizacion/tablero", texto: "Tareas", icono: "tablero" },
       { a: "/acceso/organizacion/calendario", texto: "Calendario", icono: "reuniones" },
-      { a: "/acceso/organizacion/metas", texto: "Metas", icono: "meta" },
-      { a: "/acceso/organizacion/informacion", texto: "Información interna", icono: "documentos" },
     ],
   },
   {
@@ -138,8 +132,6 @@ const MENU_STAFF: Grupo[] = [
     clave: "operacion",
     icono: "reuniones",
     entradas: [
-      { a: "/acceso/correos", texto: "Correos", icono: "correos" },
-      { a: "/acceso/herramientas", texto: "Herramientas", icono: "documentos" },
       { a: "/acceso/biblioteca", texto: "Biblioteca", icono: "biblioteca" },
     ],
   },
@@ -149,7 +141,7 @@ const MENU_STAFF: Grupo[] = [
     icono: "ajustes",
     entradas: [
       { a: "/acceso/mapa", texto: "Mapa", icono: "grafo" },
-      { a: "/acceso/creditos-api", texto: "Créditos API", icono: "creditos" },
+      { a: "/acceso/creditos-api", texto: "Claves / API Tokens", icono: "creditos" },
       { a: "/acceso/mcp", texto: "MCP / CLI", icono: "mcp" },
     ],
   },
@@ -267,19 +259,19 @@ function PortalContenido() {
       <Marco menu={MENU_STAFF} nombre={nombre} detalle="Equipo Cóndor">
         <Routes>
           <Route path="dashboard" element={<Dashboard />} />
-          <Route path="clientes" element={<Clientes />} />
+          <Route path="clientes" element={<Productos />} />
           <Route path="prospeccion" element={<Prospeccion />} />
-          <Route path="ratia" element={<Ratia />} />
           <Route path="contabilidad" element={<Contabilidad />} />
           <Route path="organizacion/:vista" element={<Organizacion />} />
           <Route path="reuniones" element={<Navigate to="/acceso/organizacion/calendario" replace />} />
-          <Route path="suscripciones" element={<Navigate to="/acceso/cobros" replace />} />
+          {/* Cobros y Rat.IA se fusionaron/retiraron el 2-sept-2026 --
+              redirecciones para que un marcador o link viejo no rompa. */}
+          <Route path="suscripciones" element={<Navigate to="/acceso/contabilidad?tab=cobros" replace />} />
+          <Route path="cobros" element={<Navigate to="/acceso/contabilidad?tab=cobros" replace />} />
+          <Route path="ratia" element={<Navigate to="/acceso/clientes" replace />} />
           <Route path="biblioteca" element={<Biblioteca />} />
           <Route path="mcp" element={<Mcp />} />
           <Route path="creditos-api" element={<CreditosApi />} />
-          <Route path="cobros" element={<Cobros />} />
-          <Route path="herramientas" element={dif(<Herramientas />)} />
-          <Route path="correos" element={<Correos />} />
           <Route path="mapa" element={<Mapa />} />
           <Route path="agentes-ia" element={<AgentesIA />} />
           <Route path="memoria" element={<Memoria />} />
