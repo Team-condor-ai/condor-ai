@@ -796,7 +796,6 @@ ${PERSONAS.map((p) => `    <article class="fila-persona">
   <div class="lista">
 ${tarjetasLineas()}
   </div>
-${carruselSitios()}
 </div></section>
 
 <!-- CONTACTO (resumen) -->
@@ -1042,13 +1041,14 @@ escribir("productos/ecommerce/index.html", cab({
 ` + cierre("¿Conversamos sobre su tienda?") + pie.replace("</body>", JS_COMUN + "</body>"));
 
 /* ── CÓNDOR MEDIA ───────────────────────────────────────────────────────
-   Línea nueva (agregada 2-sept-2026), todavía SIN modelo comercial
-   público CERRADO — a diferencia de Sites/Ecommerce, que tienen tarifa
-   fija por contrato. Por eso el estimador de abajo se marca explícitamente
-   como REFERENCIAL (los valores no vienen de un pricing aprobado, son un
-   punto de partida razonable para la conversación) y los packs no llevan
-   precio en pesos, solo cantidad — avisar a Joaquín cuando el pricing de
-   Media quede cerrado para reemplazar el estimador por tarifas reales. */
+   Línea nueva (agregada 2-sept-2026), todavía SIN una tabla de precios
+   cerrada como la de Sites/Ecommerce — pero el estimador de video SÍ está
+   calibrado con un dato real de Joaquín (3-sept): 30s, nivel Profesional,
+   entrega Estándar = $68.000 + IVA (ver `BASE` en JS_CALC_MEDIA). El resto
+   de los multiplicadores (Básico/Premium, Urgente) son una extrapolación
+   razonable sobre ese único punto real, no tarifas confirmadas una por
+   una — avisar a Joaquín si alguna no calza con lo que de verdad cobra.
+   Los packs mensuales siguen sin precio en pesos, solo cantidad. */
 const JS_CALC_MEDIA = `
 <script>
 (() => {
@@ -1058,7 +1058,9 @@ const JS_CALC_MEDIA = `
   const salida = document.getElementById("calcResultado");
   const segValor = document.getElementById("calcSegundosValor");
   if (!seg || !nivel || !plazo || !salida) return;
-  const BASE = 3000; // CLP por segundo, nivel Básico, plazo estándar — referencial
+  // Calibrado con el dato real de Joaquín (3-sept-2026): un video de 30s
+  // nivel Profesional con entrega Estándar se cobra $68.000 + IVA.
+  const BASE = 68000 / (30 * 1.6); // CLP por segundo, nivel Básico, plazo estándar
   const NIVEL = { basico: 1, profesional: 1.6, premium: 2.4 };
   const PLAZO = { estandar: 1, urgente: 1.35 };
   const calcular = () => {
@@ -1115,9 +1117,9 @@ escribir("productos/media/index.html", cab({
     </div>
     <div class="calc-resultado">
       <span>Valor estimado</span>
-      <strong id="calcResultado">$0</strong>
+      <span><strong id="calcResultado">$0</strong> <small style="font-size:13px;font-weight:500;color:var(--ink-3)">+ IVA</small></span>
     </div>
-    <p class="calc-nota">Estimador referencial en pesos chilenos, no una tarifa cerrada — se confirma en la reunión. No incluye pauta publicitaria ni licencias de música con derechos especiales.</p>
+    <p class="calc-nota">Estimador en pesos chilenos, calculado sobre nuestras tarifas reales — la cotización final se confirma en la reunión, según el brief. No incluye pauta publicitaria ni licencias de música con derechos especiales.</p>
   </div>
 </div></section>
 

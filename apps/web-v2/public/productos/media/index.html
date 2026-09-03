@@ -103,9 +103,9 @@
     </div>
     <div class="calc-resultado">
       <span>Valor estimado</span>
-      <strong id="calcResultado">$0</strong>
+      <span><strong id="calcResultado">$0</strong> <small style="font-size:13px;font-weight:500;color:var(--ink-3)">+ IVA</small></span>
     </div>
-    <p class="calc-nota">Estimador referencial en pesos chilenos, no una tarifa cerrada — se confirma en la reunión. No incluye pauta publicitaria ni licencias de música con derechos especiales.</p>
+    <p class="calc-nota">Estimador en pesos chilenos, calculado sobre nuestras tarifas reales — la cotización final se confirma en la reunión, según el brief. No incluye pauta publicitaria ni licencias de música con derechos especiales.</p>
   </div>
 </div></section>
 
@@ -454,7 +454,9 @@
   const salida = document.getElementById("calcResultado");
   const segValor = document.getElementById("calcSegundosValor");
   if (!seg || !nivel || !plazo || !salida) return;
-  const BASE = 3000; // CLP por segundo, nivel Básico, plazo estándar — referencial
+  // Calibrado con el dato real de Joaquín (3-sept-2026): un video de 30s
+  // nivel Profesional con entrega Estándar se cobra $68.000 + IVA.
+  const BASE = 68000 / (30 * 1.6); // CLP por segundo, nivel Básico, plazo estándar
   const NIVEL = { basico: 1, profesional: 1.6, premium: 2.4 };
   const PLAZO = { estandar: 1, urgente: 1.35 };
   const calcular = () => {
