@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://api.fontshare.com" />
 <link rel="preconnect" href="https://cdn.fontshare.com" crossorigin />
 <link href="https://api.fontshare.com/v2/css?f[]=switzer@400,500,600,700,800&f[]=satoshi@400,500,700&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="/rediseno/estilo.css?v=deead5d2" />
+<link rel="stylesheet" href="/rediseno/estilo.css?v=f0afa120" />
 </head>
 <body>
 <header class="topbar"><div class="wrap">
@@ -64,25 +64,45 @@
   <a class="btn btn-primario" href="/agendar">Agendar una reunión</a>
 </nav>
 
-<section class="cabecera"><div class="wrap">
+<section class="hero-linea" style="background:linear-gradient(135deg,#2747ff 0%,#7a5bff 55%,#ff3b4e 100%)"><div class="wrap">
   <a class="volver" href="/productos/">Volver a productos</a>
+  <img src="/assets/productos/condor-sites.png" alt="" class="hero-linea-logo" />
   <h1>Cóndor Sites</h1>
   <p class="bajada">Un sitio web propio, sin costo de creación inicial. Un solo plan mensual incluye soporte 24/7, administración y mejoras continuas.</p>
 </div></section>
+<section style="padding-bottom:clamp(40px,5vw,56px)"><div class="wrap dos-col">
+  <div><h2>Qué es Cóndor Sites</h2></div>
+  <div>
+    <p>Un sitio web propio para su empresa —no una plantilla compartida ni un constructor que usted mismo tiene que aprender a operar. Nuestro equipo lo diseña, lo publica y lo mantiene actualizado todos los meses.</p>
+    <div class="hechos" style="margin-top:24px">
+      <div class="hecho"><b>Sin costo inicial</b><span>Se paga solo la mensualidad, desde el primer mes</span></div>
+      <div class="hecho"><b>Soporte 24/7</b><span>Atención continua, no solo horario de oficina</span></div>
+      <div class="hecho"><b>Mejoras incluidas</b><span>Cambios visuales y de contenido, sin cobro extra</span></div>
+      <div class="hecho"><b>Dominio propio</b><span>Publicado bajo la marca de su empresa</span></div>
+    </div>
+  </div>
+</div></section>
 
-<section style="padding-bottom:clamp(40px,5vw,56px)"><div class="wrap">
-  <h2>Un plan, un precio por país</h2>
+<section style="padding-bottom:clamp(40px,5vw,56px)"><div class="wrap planes-centro">
+  <h2>Elija su país para ver el plan</h2>
+  <p style="color:var(--ink-2);margin-top:10px;max-width:50ch">El precio cambia según el país — selecciónelo antes de ver la tarifa, así no hay confusión entre monedas.</p>
   <div class="paises-tabs" role="tablist" aria-label="Elegir país" style="margin-top:22px">
-    <button class="pais-tab activo" data-pais="cl" role="tab" aria-selected="true">Chile</button>
-    <button class="pais-tab" data-pais="pe" role="tab" aria-selected="false">Perú</button>
-    <button class="pais-tab" data-pais="co" role="tab" aria-selected="false">Colombia</button>
+    <button class="pais-tab" data-pais="cl" role="tab" aria-selected="false"><svg viewBox="0 0 3 2" width="20" height="14" aria-hidden="true"><rect width="3" height="2" fill="#fff"/><rect y="1" width="3" height="1" fill="#D52B1E"/><rect width="1" height="1" fill="#0039A6"/><polygon points="0.5,0.16 0.583,0.382 0.82,0.382 0.628,0.518 0.702,0.74 0.5,0.604 0.298,0.74 0.372,0.518 0.18,0.382 0.417,0.382" fill="#fff"/></svg> Chile</button>
+    <button class="pais-tab" data-pais="pe" role="tab" aria-selected="false"><svg viewBox="0 0 3 2" width="20" height="14" aria-hidden="true"><rect width="3" height="2" fill="#fff"/><rect width="1" height="2" fill="#D91023"/><rect x="2" width="1" height="2" fill="#D91023"/></svg> Perú</button>
+    <button class="pais-tab" data-pais="co" role="tab" aria-selected="false"><svg viewBox="0 0 3 2" width="20" height="14" aria-hidden="true"><rect width="3" height="2" fill="#FCD116"/><rect y="1" width="3" height="0.5" fill="#003893"/><rect y="1.5" width="3" height="0.5" fill="#CE1126"/></svg> Colombia</button>
   </div>
 
   <div class="plan-card">
     <img class="plan-icono" src="/assets/productos/condor-sites.png" alt="" />
     <h3>Página web + soporte 24/7 mensual</h3>
+    <ul class="plan-checklist">
+      <li>Creamos su página web sin costo inicial</li>
+      <li>Soporte 24/7 y administración mensual</li>
+      <li>Innovación continua: cambios visuales, nuevos productos y mejoras a pedido</li>
+    </ul>
     <div class="plan-precios">
-      <div class="plan-pais activo" data-pais="cl">
+      <p class="plan-placeholder" id="planSitesPlaceholder">Elija un país arriba para ver el precio y la moneda.</p>
+      <div class="plan-pais" data-pais="cl">
         <div class="plan-precio"><span class="antes">$28.990</span><strong>$20.990</strong><span class="cada">/mes</span></div>
         <p class="plan-moneda">Incluye IVA</p>
       </div>
@@ -95,12 +115,7 @@
         <p class="plan-moneda">Incluye IVA</p>
       </div>
     </div>
-    <ul class="plan-checklist">
-      <li>Creamos su página web sin costo inicial</li>
-      <li>Soporte 24/7 y administración mensual</li>
-      <li>Innovación continua: cambios visuales, nuevos productos y mejoras a pedido</li>
-    </ul>
-    <a class="btn btn-primario" href="/agendar" id="planSitesCta">Empezar en Chile →</a>
+    <a class="btn btn-primario" href="/agendar" id="planSitesCta" hidden>Empezar →</a>
   </div>
 </div></section>
 
@@ -414,12 +429,15 @@
 (() => {
   const tabs = document.querySelectorAll(".pais-tab");
   const cta = document.getElementById("planSitesCta");
+  const marcador = document.getElementById("planSitesPlaceholder");
   if (!tabs.length || !cta) return;
   const NOMBRE = { cl: "Chile", pe: "Perú", co: "Colombia" };
   tabs.forEach((t) => t.addEventListener("click", () => {
     const pais = t.dataset.pais;
     tabs.forEach((o) => { o.classList.toggle("activo", o === t); o.setAttribute("aria-selected", String(o === t)); });
     document.querySelectorAll(".plan-pais").forEach((p) => p.classList.toggle("activo", p.dataset.pais === pais));
+    if (marcador) marcador.classList.add("oculto");
+    cta.hidden = false;
     cta.textContent = "Empezar en " + NOMBRE[pais] + " →";
   }));
 })();

@@ -64,6 +64,28 @@ const ICO = {
 const icono = (n, clase = "ico") =>
   `<svg class="${clase}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICO[n]}</svg>`;
 
+/* Banderas dibujadas a mano, no emoji: Windows no trae las glifas de
+   bandera regional y el tab de país terminaba mostrando "CL"/"PE"/"CO"
+   en vez de la bandera (hallazgo real, 3-sept-2026). Un SVG de 3 franjas
+   se ve igual en cualquier sistema operativo. */
+const BANDERA = {
+  cl: '<svg viewBox="0 0 3 2" width="20" height="14" aria-hidden="true"><rect width="3" height="2" fill="#fff"/><rect y="1" width="3" height="1" fill="#D52B1E"/><rect width="1" height="1" fill="#0039A6"/><polygon points="0.5,0.16 0.583,0.382 0.82,0.382 0.628,0.518 0.702,0.74 0.5,0.604 0.298,0.74 0.372,0.518 0.18,0.382 0.417,0.382" fill="#fff"/></svg>',
+  pe: '<svg viewBox="0 0 3 2" width="20" height="14" aria-hidden="true"><rect width="3" height="2" fill="#fff"/><rect width="1" height="2" fill="#D91023"/><rect x="2" width="1" height="2" fill="#D91023"/></svg>',
+  co: '<svg viewBox="0 0 3 2" width="20" height="14" aria-hidden="true"><rect width="3" height="2" fill="#FCD116"/><rect y="1" width="3" height="0.5" fill="#003893"/><rect y="1.5" width="3" height="0.5" fill="#CE1126"/></svg>',
+};
+
+/* Hero personalizada por línea de producto: mismo patrón para Sites,
+   Ecommerce, Media y Track, cada una con el degradado de su isotipo real
+   y el logo grande — para que cada línea se sienta con identidad propia
+   sin salir de la plantilla compartida (`cab()`/`pie` siguen iguales). */
+const heroLinea = ({ logo, nombre, gradiente, bajada }) => `
+<section class="hero-linea" style="background:${gradiente}"><div class="wrap">
+  <a class="volver" href="/productos/">Volver a productos</a>
+  <img src="${logo}" alt="" class="hero-linea-logo" />
+  <h1>${nombre}</h1>
+  <p class="bajada">${bajada}</p>
+</div></section>`;
+
 /* Las 4 líneas reales de producto (reorganización 3-sept-2026, pedido de
    Joaquín). Mismos logos y mismo orden que usa el desplegable de React en
    `src/components/Nav.tsx` — son dos sistemas de render distintos (este
@@ -848,22 +870,28 @@ ${carruselSitios()}
 /* ── CÓNDOR SITES ───────────────────────────────────────────────────────
    Pricing y proceso reales, sacados de las infografías oficiales del
    2-sept-2026 (ver nota condor_sites_proceso_y_pricing_2026_09_02 en
-   memoria) — no son cifras de ejemplo. La tarjeta de planes con tabs por
-   país reproduce, en el lenguaje visual serio del sitio, la pantalla real
-   de la app Cóndor Sites (capturas recibidas el 3-sept-2026): mismo
-   ícono, mismo precio tachado y el mismo checklist de tres puntos. Debajo
-   va el carrusel de sitios reales que ya entregamos. */
+   memoria) — no son cifras de ejemplo. La tarjeta de planes reproduce, en
+   el lenguaje visual serio del sitio, la pantalla real de la app Cóndor
+   Sites (capturas recibidas el 3-sept-2026): mismo ícono, mismo precio
+   tachado y el mismo checklist. Corrección del 3-sept (segunda ronda):
+   el país ya NO viene preseleccionado — hasta que el visitante elige uno
+   no se muestra ningún precio, para que no lo confunda con el de otro
+   país; antes de la tarjeta va una sección de "qué es" con las mismas
+   tres ventajas explicadas en prosa. */
 const JS_PLANES_SITES = `
 <script>
 (() => {
   const tabs = document.querySelectorAll(".pais-tab");
   const cta = document.getElementById("planSitesCta");
+  const marcador = document.getElementById("planSitesPlaceholder");
   if (!tabs.length || !cta) return;
   const NOMBRE = { cl: "Chile", pe: "Perú", co: "Colombia" };
   tabs.forEach((t) => t.addEventListener("click", () => {
     const pais = t.dataset.pais;
     tabs.forEach((o) => { o.classList.toggle("activo", o === t); o.setAttribute("aria-selected", String(o === t)); });
     document.querySelectorAll(".plan-pais").forEach((p) => p.classList.toggle("activo", p.dataset.pais === pais));
+    if (marcador) marcador.classList.add("oculto");
+    cta.hidden = false;
     cta.textContent = "Empezar en " + NOMBRE[pais] + " →";
   }));
 })();
@@ -873,26 +901,45 @@ escribir("productos/sites/index.html", cab({
   titulo: "Cóndor Sites — condor.ai",
   desc: "Sitio web propio con soporte 24/7 y mejoras continuas, sin costo de creación inicial. Desde $20.990/mes en Chile.",
   ruta: "/productos/sites/",
+}) + heroLinea({
+  logo: "/assets/productos/condor-sites.png",
+  nombre: "Cóndor Sites",
+  gradiente: "linear-gradient(135deg,#2747ff 0%,#7a5bff 55%,#ff3b4e 100%)",
+  bajada: "Un sitio web propio, sin costo de creación inicial. Un solo plan mensual incluye soporte 24/7, administración y mejoras continuas.",
 }) + `
-<section class="cabecera"><div class="wrap">
-  <a class="volver" href="/productos/">Volver a productos</a>
-  <h1>Cóndor Sites</h1>
-  <p class="bajada">Un sitio web propio, sin costo de creación inicial. Un solo plan mensual incluye soporte 24/7, administración y mejoras continuas.</p>
+<section style="padding-bottom:clamp(40px,5vw,56px)"><div class="wrap dos-col">
+  <div><h2>Qué es Cóndor Sites</h2></div>
+  <div>
+    <p>Un sitio web propio para su empresa —no una plantilla compartida ni un constructor que usted mismo tiene que aprender a operar. Nuestro equipo lo diseña, lo publica y lo mantiene actualizado todos los meses.</p>
+    <div class="hechos" style="margin-top:24px">
+      <div class="hecho"><b>Sin costo inicial</b><span>Se paga solo la mensualidad, desde el primer mes</span></div>
+      <div class="hecho"><b>Soporte 24/7</b><span>Atención continua, no solo horario de oficina</span></div>
+      <div class="hecho"><b>Mejoras incluidas</b><span>Cambios visuales y de contenido, sin cobro extra</span></div>
+      <div class="hecho"><b>Dominio propio</b><span>Publicado bajo la marca de su empresa</span></div>
+    </div>
+  </div>
 </div></section>
 
-<section style="padding-bottom:clamp(40px,5vw,56px)"><div class="wrap">
-  <h2>Un plan, un precio por país</h2>
+<section style="padding-bottom:clamp(40px,5vw,56px)"><div class="wrap planes-centro">
+  <h2>Elija su país para ver el plan</h2>
+  <p style="color:var(--ink-2);margin-top:10px;max-width:50ch">El precio cambia según el país — selecciónelo antes de ver la tarifa, así no hay confusión entre monedas.</p>
   <div class="paises-tabs" role="tablist" aria-label="Elegir país" style="margin-top:22px">
-    <button class="pais-tab activo" data-pais="cl" role="tab" aria-selected="true">Chile</button>
-    <button class="pais-tab" data-pais="pe" role="tab" aria-selected="false">Perú</button>
-    <button class="pais-tab" data-pais="co" role="tab" aria-selected="false">Colombia</button>
+    <button class="pais-tab" data-pais="cl" role="tab" aria-selected="false">${BANDERA.cl} Chile</button>
+    <button class="pais-tab" data-pais="pe" role="tab" aria-selected="false">${BANDERA.pe} Perú</button>
+    <button class="pais-tab" data-pais="co" role="tab" aria-selected="false">${BANDERA.co} Colombia</button>
   </div>
 
   <div class="plan-card">
     <img class="plan-icono" src="/assets/productos/condor-sites.png" alt="" />
     <h3>Página web + soporte 24/7 mensual</h3>
+    <ul class="plan-checklist">
+      <li>Creamos su página web sin costo inicial</li>
+      <li>Soporte 24/7 y administración mensual</li>
+      <li>Innovación continua: cambios visuales, nuevos productos y mejoras a pedido</li>
+    </ul>
     <div class="plan-precios">
-      <div class="plan-pais activo" data-pais="cl">
+      <p class="plan-placeholder" id="planSitesPlaceholder">Elija un país arriba para ver el precio y la moneda.</p>
+      <div class="plan-pais" data-pais="cl">
         <div class="plan-precio"><span class="antes">$28.990</span><strong>$20.990</strong><span class="cada">/mes</span></div>
         <p class="plan-moneda">Incluye IVA</p>
       </div>
@@ -905,12 +952,7 @@ escribir("productos/sites/index.html", cab({
         <p class="plan-moneda">Incluye IVA</p>
       </div>
     </div>
-    <ul class="plan-checklist">
-      <li>Creamos su página web sin costo inicial</li>
-      <li>Soporte 24/7 y administración mensual</li>
-      <li>Innovación continua: cambios visuales, nuevos productos y mejoras a pedido</li>
-    </ul>
-    <a class="btn btn-primario" href="/agendar" id="planSitesCta">Empezar en Chile →</a>
+    <a class="btn btn-primario" href="/agendar" id="planSitesCta" hidden>Empezar →</a>
   </div>
 </div></section>
 
@@ -938,27 +980,44 @@ escribir("productos/sites/index.html", cab({
    2-sept-2026 (ver condor_ecommerce_modelo_comercial_2026_09_02 en
    memoria). Perú/Colombia/Paraguay se cotizan aparte, ajustados por costo
    de vida — no se listan cifras acá para no publicar un tipo de cambio
-   que puede quedar desactualizado. */
+   que puede quedar desactualizado. Ampliada el 3-sept (segunda ronda):
+   hero con la identidad de marca, sección de "qué incluye" y un botón de
+   cotizar por cada nivel — antes solo mostraba números sueltos. */
 escribir("productos/ecommerce/index.html", cab({
   titulo: "Cóndor Ecommerce — condor.ai",
   desc: "Tienda en línea administrada de punta a punta: construcción, pasarela de pago, stock y campañas. Desde $69.990/mes + comisión por venta.",
   ruta: "/productos/ecommerce/",
+}) + heroLinea({
+  logo: "/assets/productos/condor-ecommerce.png",
+  nombre: "Cóndor Ecommerce",
+  gradiente: "linear-gradient(135deg,#122fc9 0%,#6f2fd6 55%,#e0266b 100%)",
+  bajada: "Construimos y administramos su tienda en línea: pasarela de pago, boleta, sincronización de stock y, si lo necesita, gestión de campañas.",
 }) + `
-<section class="cabecera"><div class="wrap">
-  <a class="volver" href="/productos/">Volver a productos</a>
-  <h1>Cóndor Ecommerce</h1>
-  <p class="bajada">Construimos y administramos su tienda en línea: pasarela de pago, boleta, sincronización de stock y, si lo necesita, gestión de campañas.</p>
+<section style="padding-bottom:clamp(40px,5vw,56px)"><div class="wrap dos-col">
+  <div><h2>Qué incluye</h2></div>
+  <div>
+    <p>Una tienda propia, no un plan genérico de Shopify configurado a medias: nuestro equipo la construye, la conecta a su stock real y la mantiene funcionando mes a mes.</p>
+    <div class="hechos" style="margin-top:24px">
+      <div class="hecho"><b>Pasarela de pago</b><span>Mercado Pago, configurada y probada</span></div>
+      <div class="hecho"><b>Boleta electrónica</b><span>Emisión automática, cumple SII</span></div>
+      <div class="hecho"><b>Stock sincronizado</b><span>Con su bodega o ERP, sin planillas paralelas</span></div>
+      <div class="hecho"><b>Reporte mensual</b><span>Venta real y comisión, sin sorpresas</span></div>
+    </div>
+  </div>
 </div></section>
 
 <section style="padding-bottom:clamp(56px,7vw,96px)"><div class="wrap">
   <h2>Base mensual, según tamaño de tienda</h2>
   <div class="pasos" style="margin-top:24px">
     <div class="paso"><div class="n">SIMPLE</div><h3>$69.990/mes</h3>
-      <p>Menos de 100 SKU, sin integraciones ni gestión de Ads.</p></div>
+      <p>Menos de 100 SKU, sin integraciones ni gestión de Ads.</p>
+      <a class="btn btn-linea" href="/agendar" style="margin-top:18px">Cotizar plan Simple →</a></div>
     <div class="paso"><div class="n">MEDIA</div><h3>$129.990/mes</h3>
-      <p>100 a 500 SKU, o una integración con bodega o ERP externo.</p></div>
+      <p>100 a 500 SKU, o una integración con bodega o ERP externo.</p>
+      <a class="btn btn-linea" href="/agendar" style="margin-top:18px">Cotizar plan Media →</a></div>
     <div class="paso"><div class="n">COMPLEJA</div><h3>$189.990/mes</h3>
-      <p>Más de 500 SKU, varias integraciones, o incluye gestión de Meta Ads.</p></div>
+      <p>Más de 500 SKU, varias integraciones, o incluye gestión de Meta Ads.</p>
+      <a class="btn btn-linea" href="/agendar" style="margin-top:18px">Cotizar plan Compleja →</a></div>
   </div>
   <h2 style="margin-top:48px">Más una comisión por venta neta mensual</h2>
   <div class="lista" style="margin-top:12px">
@@ -984,50 +1043,172 @@ escribir("productos/ecommerce/index.html", cab({
 
 /* ── CÓNDOR MEDIA ───────────────────────────────────────────────────────
    Línea nueva (agregada 2-sept-2026), todavía SIN modelo comercial
-   público definido — a diferencia de Sites/Ecommerce de arriba, esta
-   página es deliberadamente breve y sin tabla de precios. Avisar a
-   Joaquín al cerrar esta tarea para que la complete cuando el pricing de
-   Media esté cerrado, igual que se hizo con Sites y Ecommerce. */
+   público CERRADO — a diferencia de Sites/Ecommerce, que tienen tarifa
+   fija por contrato. Por eso el estimador de abajo se marca explícitamente
+   como REFERENCIAL (los valores no vienen de un pricing aprobado, son un
+   punto de partida razonable para la conversación) y los packs no llevan
+   precio en pesos, solo cantidad — avisar a Joaquín cuando el pricing de
+   Media quede cerrado para reemplazar el estimador por tarifas reales. */
+const JS_CALC_MEDIA = `
+<script>
+(() => {
+  const seg = document.getElementById("calcSegundos");
+  const nivel = document.getElementById("calcNivel");
+  const plazo = document.getElementById("calcPlazo");
+  const salida = document.getElementById("calcResultado");
+  const segValor = document.getElementById("calcSegundosValor");
+  if (!seg || !nivel || !plazo || !salida) return;
+  const BASE = 3000; // CLP por segundo, nivel Básico, plazo estándar — referencial
+  const NIVEL = { basico: 1, profesional: 1.6, premium: 2.4 };
+  const PLAZO = { estandar: 1, urgente: 1.35 };
+  const calcular = () => {
+    const s = Number(seg.value);
+    segValor.textContent = s + " s";
+    const precio = Math.round((s * BASE * NIVEL[nivel.value] * PLAZO[plazo.value]) / 100) * 100;
+    salida.textContent = "$" + precio.toLocaleString("es-CL");
+  };
+  [seg, nivel, plazo].forEach((el) => el.addEventListener("input", calcular));
+  calcular();
+})();
+</script>
+`;
 escribir("productos/media/index.html", cab({
   titulo: "Cóndor Media — condor.ai",
-  desc: "Contenido para redes sociales de su marca, producido cada semana con apoyo de inteligencia artificial.",
+  desc: "Contenido para redes sociales de su marca, producido cada semana con apoyo de inteligencia artificial. Estimador de video y packs mensuales.",
   ruta: "/productos/media/",
+}) + heroLinea({
+  logo: "/assets/productos/condor-media.png",
+  nombre: "Cóndor Media",
+  gradiente: "linear-gradient(135deg,#0b1437 0%,#16224d 100%)",
+  bajada: "Contenido para las redes sociales de su marca, producido con la identidad visual de su empresa y apoyo de inteligencia artificial.",
 }) + `
-<section class="cabecera"><div class="wrap">
-  <a class="volver" href="/productos/">Volver a productos</a>
-  <h1>Cóndor Media</h1>
-  <p class="bajada">Contenido para las redes sociales de su marca, producido cada semana con la identidad visual de su empresa y apoyo de inteligencia artificial.</p>
-</div></section>
-
-<section style="padding-bottom:clamp(56px,7vw,96px)"><div class="wrap dos-col">
+<section style="padding-bottom:clamp(40px,5vw,56px)"><div class="wrap dos-col">
   <div><h2>Qué incluye</h2></div>
   <div>
     <p>Un calendario de contenido definido, publicación en sus redes y revisión de que cada pieza respete la paleta, el logo y el tono de su marca.</p>
-    <p>El alcance —cantidad de piezas, redes y frecuencia— se define según sus objetivos en la primera reunión, así que la propuesta y el costo se cotizan a medida.</p>
+    <p>El alcance —cantidad de piezas, redes y frecuencia— se define según sus objetivos en la primera reunión, así que la propuesta final se cotiza a medida.</p>
   </div>
 </div></section>
-` + cierre("¿Conversamos sobre su contenido?") + pie.replace("</body>", JS_COMUN + "</body>"));
+
+<section style="padding-bottom:clamp(56px,7vw,96px)"><div class="wrap">
+  <h2>Estime el valor de un video</h2>
+  <p style="color:var(--ink-2);margin-top:10px;max-width:56ch">Cálculo referencial según duración, nivel de producción y plazo de entrega. La cotización final se confirma en la reunión, según el brief real.</p>
+  <div class="calculadora" style="margin-top:26px">
+    <div class="calc-campo">
+      <label>Duración <span class="calc-valor" id="calcSegundosValor">20 s</span></label>
+      <input type="range" id="calcSegundos" min="5" max="120" step="5" value="20" />
+    </div>
+    <div class="calc-campo">
+      <label>Nivel de producción</label>
+      <select id="calcNivel">
+        <option value="basico">Básico — edición simple, sin efectos</option>
+        <option value="profesional" selected>Profesional — motion graphics y color</option>
+        <option value="premium">Premium — guion, actuación y efectos avanzados</option>
+      </select>
+    </div>
+    <div class="calc-campo">
+      <label>Plazo de entrega</label>
+      <select id="calcPlazo">
+        <option value="estandar" selected>Estándar — 5 días hábiles</option>
+        <option value="urgente">Urgente — 48 horas</option>
+      </select>
+    </div>
+    <div class="calc-resultado">
+      <span>Valor estimado</span>
+      <strong id="calcResultado">$0</strong>
+    </div>
+    <p class="calc-nota">Estimador referencial en pesos chilenos, no una tarifa cerrada — se confirma en la reunión. No incluye pauta publicitaria ni licencias de música con derechos especiales.</p>
+  </div>
+</div></section>
+
+<section style="padding-bottom:clamp(56px,7vw,96px)"><div class="wrap">
+  <h2>Packs de videos</h2>
+  <p style="color:var(--ink-2);margin-top:10px;max-width:56ch">Para marcas que necesitan contenido de forma regular, con un solo acuerdo mensual en vez de cotizar cada video por separado.</p>
+  <div class="packs-media">
+    <div class="pack-media">
+      <h4>Pack Semanal</h4>
+      <div class="precio-pack">4 videos <small>al mes</small></div>
+      <ul>
+        <li>1 video corto por semana</li>
+        <li>Nivel profesional</li>
+        <li>Un ajuste incluido por video</li>
+      </ul>
+      <a class="btn btn-linea" href="/agendar" style="margin-top:18px;width:100%;justify-content:center">Cotizar este pack →</a>
+    </div>
+    <div class="pack-media">
+      <h4>Pack Quincenal</h4>
+      <div class="precio-pack">8 videos <small>al mes</small></div>
+      <ul>
+        <li>2 videos por semana</li>
+        <li>Nivel profesional</li>
+        <li>Dos ajustes incluidos por video</li>
+      </ul>
+      <a class="btn btn-linea" href="/agendar" style="margin-top:18px;width:100%;justify-content:center">Cotizar este pack →</a>
+    </div>
+    <div class="pack-media">
+      <h4>Pack Mensual Plus</h4>
+      <div class="precio-pack">12 videos <small>al mes</small></div>
+      <ul>
+        <li>3 videos por semana</li>
+        <li>Nivel premium disponible</li>
+        <li>Ajustes ilimitados dentro del mes</li>
+      </ul>
+      <a class="btn btn-linea" href="/agendar" style="margin-top:18px;width:100%;justify-content:center">Cotizar este pack →</a>
+    </div>
+  </div>
+</div></section>
+
+<section class="seccion oscura"><div class="wrap">
+  <h2 style="margin-top:20px">Cómo funciona</h2>
+  <div class="lista">
+    <article class="fila"><div class="marca-fila">${icono("lupa")}<span class="n">01</span></div>
+      <div><h3>Brief</h3><p class="desc">Una reunión breve para entender su marca, objetivos y referencias. De ahí sale el calendario o el video puntual a producir.</p></div></article>
+    <article class="fila"><div class="marca-fila">${icono("martillo")}<span class="n">02</span></div>
+      <div><h3>Producción</h3><p class="desc">Guion, grabación o generación asistida por IA, edición y ajustes según el nivel contratado.</p></div></article>
+    <article class="fila"><div class="marca-fila">${icono("entrega")}<span class="n">03</span></div>
+      <div><h3>Entrega</h3><p class="desc">Listo para publicar, en el formato de cada red. Con pack mensual, el ciclo se repite automáticamente.</p></div></article>
+  </div>
+</div></section>
+` + cierre("¿Conversamos sobre su contenido?") + pie.replace("</body>", JS_COMUN + JS_CALC_MEDIA + "</body>"));
 
 /* ── CÓNDOR TRACK ───────────────────────────────────────────────────────
    Software a medida (ERPs, paneles, integraciones). Sin nombrar clientes
    ni proyectos internos concretos: son desarrollos confidenciales, y esta
-   página describe la línea de servicio, no casos puntuales. */
+   página describe la línea de servicio, no casos puntuales. Ampliada el
+   3-sept (segunda ronda) con hero de marca, ejemplos concretos de uso y
+   dos vías de contacto en vez de una sola. */
 escribir("productos/track/index.html", cab({
   titulo: "Cóndor Track — condor.ai",
   desc: "Software y paneles de operación a medida: ERPs, integraciones y automatizaciones para procesos que ya existen en su empresa.",
   ruta: "/productos/track/",
+}) + heroLinea({
+  logo: "/assets/productos/condor-track.png",
+  nombre: "Cóndor Track",
+  gradiente: "linear-gradient(135deg,#0f1f6b 0%,#2747ff 100%)",
+  bajada: "Sistemas propios para operar mejor: paneles de control, ERPs livianos e integraciones entre las herramientas que su empresa ya usa.",
 }) + `
-<section class="cabecera"><div class="wrap">
-  <a class="volver" href="/productos/">Volver a productos</a>
-  <h1>Cóndor Track</h1>
-  <p class="bajada">Sistemas propios para operar mejor: paneles de control, ERPs livianos e integraciones entre las herramientas que su empresa ya usa.</p>
-</div></section>
-
-<section style="padding-bottom:clamp(56px,7vw,96px)"><div class="wrap dos-col">
+<section style="padding-bottom:clamp(40px,5vw,56px)"><div class="wrap dos-col">
   <div><h2>Para qué sirve</h2></div>
   <div>
-    <p>Cuando una planilla o un proceso manual ya no aguanta el volumen del negocio, construimos el sistema que lo reemplaza: seguimiento de pedidos, control de stock, paneles de ventas o cualquier operación repetitiva que hoy consume horas de su equipo.</p>
-    <p>No es una plantilla configurada: cada Cóndor Track se diseña sobre el proceso real de la empresa, con acceso y datos que quedan a nombre del cliente.</p>
+    <p>Cuando una planilla o un proceso manual ya no aguanta el volumen del negocio, construimos el sistema que lo reemplaza. No es una plantilla configurada: cada Cóndor Track se diseña sobre el proceso real de la empresa, con acceso y datos que quedan a nombre del cliente.</p>
+    <div class="hechos" style="margin-top:24px">
+      <div class="hecho"><b>Control de stock</b><span>Entradas, salidas y alertas en un solo panel</span></div>
+      <div class="hecho"><b>Seguimiento de pedidos</b><span>Desde que se venden hasta que se entregan</span></div>
+      <div class="hecho"><b>Panel de ventas</b><span>Cifras reales, sin planillas paralelas</span></div>
+      <div class="hecho"><b>Integraciones</b><span>Conecta los sistemas que su empresa ya usa</span></div>
+    </div>
+  </div>
+</div></section>
+
+<section style="padding-bottom:clamp(56px,7vw,96px)"><div class="wrap">
+  <h2>Qué queda al terminar</h2>
+  <div class="lista">
+    <article class="fila"><div class="marca-fila">${icono("panel")}<span class="n">01</span></div>
+      <div><h3>Un panel propio</h3><p class="desc">Diseñado sobre su proceso real, no una plantilla genérica adaptada a la fuerza.</p></div></article>
+    <article class="fila"><div class="marca-fila">${icono("entrega")}<span class="n">02</span></div>
+      <div><h3>Propiedad completa</h3><p class="desc">Código, datos y accesos a nombre de su empresa, sin dependencia de nosotros para seguir operando.</p></div></article>
+    <article class="fila"><div class="marca-fila">${icono("martillo")}<span class="n">03</span></div>
+      <div><h3>Soporte posterior</h3><p class="desc">Acordado por contrato, con tiempos de respuesta definidos para cuando algo falla.</p></div></article>
   </div>
 </div></section>
 
@@ -1040,6 +1221,10 @@ escribir("productos/track/index.html", cab({
       <p>Avances revisables de forma periódica sobre el sistema real, no sobre maquetas. Las correcciones se incorporan antes de que sean costosas.</p></div>
     <div class="paso" style="background:var(--navy-3)"><div class="n">ETAPA 03</div><h3>Entrega y soporte</h3>
       <p>Puesta en producción, documentación y capacitación. La propiedad y los accesos quedan a nombre del cliente, con soporte posterior acordado.</p></div>
+  </div>
+  <div class="hero-cta" style="margin-top:36px">
+    <a class="btn btn-primario" href="/agendar">Agendar diagnóstico →</a>
+    <a class="btn btn-linea" href="/contacto/">Otras vías de contacto</a>
   </div>
 </div></section>
 ` + cierre("¿Cotizamos su sistema?") + pie.replace("</body>", JS_COMUN + "</body>"));

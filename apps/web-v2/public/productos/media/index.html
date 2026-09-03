@@ -4,10 +4,10 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Cóndor Media — condor.ai</title>
-<meta name="description" content="Contenido para redes sociales de su marca, producido cada semana con apoyo de inteligencia artificial." />
+<meta name="description" content="Contenido para redes sociales de su marca, producido cada semana con apoyo de inteligencia artificial. Estimador de video y packs mensuales." />
 <meta name="theme-color" content="#ffffff" />
 <meta property="og:title" content="Cóndor Media — condor.ai" />
-<meta property="og:description" content="Contenido para redes sociales de su marca, producido cada semana con apoyo de inteligencia artificial." />
+<meta property="og:description" content="Contenido para redes sociales de su marca, producido cada semana con apoyo de inteligencia artificial. Estimador de video y packs mensuales." />
 <meta property="og:type" content="website" />
 <meta property="og:locale" content="es_CL" />
 <link rel="canonical" href="https://condorai.cl/productos/media/" />
@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://api.fontshare.com" />
 <link rel="preconnect" href="https://cdn.fontshare.com" crossorigin />
 <link href="https://api.fontshare.com/v2/css?f[]=switzer@400,500,600,700,800&f[]=satoshi@400,500,700&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="/rediseno/estilo.css?v=deead5d2" />
+<link rel="stylesheet" href="/rediseno/estilo.css?v=f0afa120" />
 </head>
 <body>
 <header class="topbar"><div class="wrap">
@@ -64,17 +64,97 @@
   <a class="btn btn-primario" href="/agendar">Agendar una reunión</a>
 </nav>
 
-<section class="cabecera"><div class="wrap">
+<section class="hero-linea" style="background:linear-gradient(135deg,#0b1437 0%,#16224d 100%)"><div class="wrap">
   <a class="volver" href="/productos/">Volver a productos</a>
+  <img src="/assets/productos/condor-media.png" alt="" class="hero-linea-logo" />
   <h1>Cóndor Media</h1>
-  <p class="bajada">Contenido para las redes sociales de su marca, producido cada semana con la identidad visual de su empresa y apoyo de inteligencia artificial.</p>
+  <p class="bajada">Contenido para las redes sociales de su marca, producido con la identidad visual de su empresa y apoyo de inteligencia artificial.</p>
 </div></section>
-
-<section style="padding-bottom:clamp(56px,7vw,96px)"><div class="wrap dos-col">
+<section style="padding-bottom:clamp(40px,5vw,56px)"><div class="wrap dos-col">
   <div><h2>Qué incluye</h2></div>
   <div>
     <p>Un calendario de contenido definido, publicación en sus redes y revisión de que cada pieza respete la paleta, el logo y el tono de su marca.</p>
-    <p>El alcance —cantidad de piezas, redes y frecuencia— se define según sus objetivos en la primera reunión, así que la propuesta y el costo se cotizan a medida.</p>
+    <p>El alcance —cantidad de piezas, redes y frecuencia— se define según sus objetivos en la primera reunión, así que la propuesta final se cotiza a medida.</p>
+  </div>
+</div></section>
+
+<section style="padding-bottom:clamp(56px,7vw,96px)"><div class="wrap">
+  <h2>Estime el valor de un video</h2>
+  <p style="color:var(--ink-2);margin-top:10px;max-width:56ch">Cálculo referencial según duración, nivel de producción y plazo de entrega. La cotización final se confirma en la reunión, según el brief real.</p>
+  <div class="calculadora" style="margin-top:26px">
+    <div class="calc-campo">
+      <label>Duración <span class="calc-valor" id="calcSegundosValor">20 s</span></label>
+      <input type="range" id="calcSegundos" min="5" max="120" step="5" value="20" />
+    </div>
+    <div class="calc-campo">
+      <label>Nivel de producción</label>
+      <select id="calcNivel">
+        <option value="basico">Básico — edición simple, sin efectos</option>
+        <option value="profesional" selected>Profesional — motion graphics y color</option>
+        <option value="premium">Premium — guion, actuación y efectos avanzados</option>
+      </select>
+    </div>
+    <div class="calc-campo">
+      <label>Plazo de entrega</label>
+      <select id="calcPlazo">
+        <option value="estandar" selected>Estándar — 5 días hábiles</option>
+        <option value="urgente">Urgente — 48 horas</option>
+      </select>
+    </div>
+    <div class="calc-resultado">
+      <span>Valor estimado</span>
+      <strong id="calcResultado">$0</strong>
+    </div>
+    <p class="calc-nota">Estimador referencial en pesos chilenos, no una tarifa cerrada — se confirma en la reunión. No incluye pauta publicitaria ni licencias de música con derechos especiales.</p>
+  </div>
+</div></section>
+
+<section style="padding-bottom:clamp(56px,7vw,96px)"><div class="wrap">
+  <h2>Packs de videos</h2>
+  <p style="color:var(--ink-2);margin-top:10px;max-width:56ch">Para marcas que necesitan contenido de forma regular, con un solo acuerdo mensual en vez de cotizar cada video por separado.</p>
+  <div class="packs-media">
+    <div class="pack-media">
+      <h4>Pack Semanal</h4>
+      <div class="precio-pack">4 videos <small>al mes</small></div>
+      <ul>
+        <li>1 video corto por semana</li>
+        <li>Nivel profesional</li>
+        <li>Un ajuste incluido por video</li>
+      </ul>
+      <a class="btn btn-linea" href="/agendar" style="margin-top:18px;width:100%;justify-content:center">Cotizar este pack →</a>
+    </div>
+    <div class="pack-media">
+      <h4>Pack Quincenal</h4>
+      <div class="precio-pack">8 videos <small>al mes</small></div>
+      <ul>
+        <li>2 videos por semana</li>
+        <li>Nivel profesional</li>
+        <li>Dos ajustes incluidos por video</li>
+      </ul>
+      <a class="btn btn-linea" href="/agendar" style="margin-top:18px;width:100%;justify-content:center">Cotizar este pack →</a>
+    </div>
+    <div class="pack-media">
+      <h4>Pack Mensual Plus</h4>
+      <div class="precio-pack">12 videos <small>al mes</small></div>
+      <ul>
+        <li>3 videos por semana</li>
+        <li>Nivel premium disponible</li>
+        <li>Ajustes ilimitados dentro del mes</li>
+      </ul>
+      <a class="btn btn-linea" href="/agendar" style="margin-top:18px;width:100%;justify-content:center">Cotizar este pack →</a>
+    </div>
+  </div>
+</div></section>
+
+<section class="seccion oscura"><div class="wrap">
+  <h2 style="margin-top:20px">Cómo funciona</h2>
+  <div class="lista">
+    <article class="fila"><div class="marca-fila"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span class="n">01</span></div>
+      <div><h3>Brief</h3><p class="desc">Una reunión breve para entender su marca, objetivos y referencias. De ahí sale el calendario o el video puntual a producir.</p></div></article>
+    <article class="fila"><div class="marca-fila"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4 20 10 17 13 11 7 14 4Z"/><path d="m11 7-8 8v4h4l8-8"/></svg><span class="n">02</span></div>
+      <div><h3>Producción</h3><p class="desc">Guion, grabación o generación asistida por IA, edición y ajustes según el nivel contratado.</p></div></article>
+    <article class="fila"><div class="marca-fila"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7 9 18l-5-5"/></svg><span class="n">03</span></div>
+      <div><h3>Entrega</h3><p class="desc">Listo para publicar, en el formato de cada red. Con pack mensual, el ciclo se repite automáticamente.</p></div></article>
   </div>
 </div></section>
 
@@ -363,6 +443,28 @@
     zona.addEventListener("focusin", parar);
     arrancar();
   }
+})();
+</script>
+
+<script>
+(() => {
+  const seg = document.getElementById("calcSegundos");
+  const nivel = document.getElementById("calcNivel");
+  const plazo = document.getElementById("calcPlazo");
+  const salida = document.getElementById("calcResultado");
+  const segValor = document.getElementById("calcSegundosValor");
+  if (!seg || !nivel || !plazo || !salida) return;
+  const BASE = 3000; // CLP por segundo, nivel Básico, plazo estándar — referencial
+  const NIVEL = { basico: 1, profesional: 1.6, premium: 2.4 };
+  const PLAZO = { estandar: 1, urgente: 1.35 };
+  const calcular = () => {
+    const s = Number(seg.value);
+    segValor.textContent = s + " s";
+    const precio = Math.round((s * BASE * NIVEL[nivel.value] * PLAZO[plazo.value]) / 100) * 100;
+    salida.textContent = "$" + precio.toLocaleString("es-CL");
+  };
+  [seg, nivel, plazo].forEach((el) => el.addEventListener("input", calcular));
+  calcular();
 })();
 </script>
 </body>
