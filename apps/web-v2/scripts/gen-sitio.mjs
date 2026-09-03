@@ -103,8 +103,23 @@ const heroLinea = ({ logo, nombre, gradiente, bajada }) => `
 
    Cóndor Media NO incluye carruseles (eso es específico de Bárbara, un
    producto aparte dentro de Cóndor Agents) — corregido el 3-sept tras
-   aviso explícito de Joaquín. */
+   aviso explícito de Joaquín.
+
+   La PRIMERA tarjeta es la única que no vende una línea en particular:
+   presenta a Cóndor.ai en general antes de que las siguientes 4 entren
+   al detalle de cada línea — pedido explícito de Joaquín (3-sept,
+   tercera vuelta), para que lo primero que vea un cliente potencial no
+   sea "esto es solo para sitios web". Su imagen es la foto real de la
+   oficina (la misma que usaba el hero antes de esta función), no un
+   mockup — encaja porque es literalmente la única imagen que no
+   pertenece a ninguna línea específica. */
 const HERO_SLIDES = [
+  {
+    titulo: "Construimos la tecnología detrás de su empresa",
+    bajada: "Sitios web, tiendas en línea, contenido y sistemas a medida — un mismo equipo, de punta a punta.",
+    imagen: "/assets/oficina/oficina.webp",
+    alt: "Equipo de Cóndor.ai",
+  },
   {
     titulo: "Un sitio web propio, siempre actualizado",
     bajada: "Cóndor Sites: creación sin costo inicial, soporte 24/7 y mejoras continuas cada mes.",
