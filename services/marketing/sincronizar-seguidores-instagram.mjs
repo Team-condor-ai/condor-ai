@@ -41,12 +41,16 @@
  * `marketing_seguimiento_diario` se marque solo cuando el número REAL de
  * Instagram lo respalda, no solo porque Samuel o Alejandro lo tildaron.
  *
- * Cómo se calcula: cada corrida compara el `siguiendo` de hoy contra el
- * de la última fila con fecha ANTERIOR a hoy (el estado justo antes de
- * que empezara el día) -- esa diferencia es el crecimiento real desde
- * que arrancó el día. Con el cron corriendo cada 2 horas (ver
- * `instagram-seguidores.yml`), ese número se acerca a "en vivo" sin
- * exponer el token al navegador ni construir un endpoint aparte.
+ * Cómo se calcula: cada corrida compara el `siguiendo` de ahora contra el
+ * PRIMER snapshot de HOY (si ya corrió antes hoy) o, si es la primera
+ * corrida del día, contra la última fila de un día anterior -- esa
+ * diferencia es el crecimiento real desde que arrancó el día. Preferir el
+ * primer snapshot de HOY (en vez de exigir siempre uno de ayer) es lo que
+ * permite verificar la meta EL MISMO DÍA que se conecta esto, sin esperar
+ * a que exista un día completo de historial. Con el cron corriendo cada
+ * 2 horas (ver `instagram-seguidores.yml`), ese número se acerca a
+ * "en vivo" sin exponer el token al navegador ni construir un endpoint
+ * aparte.
  *
  * El resultado SOBRESCRIBE `cantidad` de la fila de hoy en
  * `marketing_seguimiento_diario` en cada corrida. `hecho` solo pasa a
@@ -103,19 +107,36 @@ async function guardarSnapshot(supabaseUrl, serviceKey, fecha, cantidad, siguien
 
 const META_SEGUIDOS_DIA = 200; // mismo valor que META_SEGUIDOS_DIA en tipos.ts
 
-/** El `siguiendo` de la última fila con fecha ANTERIOR a `fecha` -- el
- *  estado justo antes de que empezara el día que se quiere verificar. */
-async function siguiendoAlEmpezarElDia(supabaseUrl, serviceKey, fecha, fetchImpl) {
-  const qs = new URLSearchParams({
-    select: "siguiendo", "fecha": `lt.${fecha}`, "siguiendo": "not.is.null",
+/**
+ * El punto de partida contra el que se mide "cuánto se siguió hoy":
+ * preferentemente el PRIMER snapshot de HOY (para que, con el cron
+ * corriendo cada 2 horas, ya se pueda verificar dentro del mismo día en
+ * vez de recién al día siguiente) -- si hoy es el primer día que corre
+ * esto y todavía no hay un segundo snapshot, cae a la última fila de un
+ * día anterior. Si ninguna de las dos existe (primera corrida de todas),
+ * no hay con qué comparar todavía.
+ */
+async function siguiendoDeReferencia(supabaseUrl, serviceKey, fecha, fetchImpl) {
+  const base = `${supabaseUrl.replace(/\/$/, "")}/rest/v1/marketing_seguidores_snapshot`;
+  const headers = { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` };
+
+  const qsHoy = new URLSearchParams({
+    select: "siguiendo", fecha: `eq.${fecha}`, siguiendo: "not.is.null",
+    order: "creado_en.asc", limit: "1",
+  });
+  const rHoy = await fetchImpl(`${base}?${qsHoy}`, { headers });
+  if (!rHoy.ok) throw new Error(`Supabase (referencia de hoy): ${rHoy.status} ${await rHoy.text()}`);
+  const [primeroDeHoy] = await rHoy.json();
+  if (primeroDeHoy) return primeroDeHoy.siguiendo;
+
+  const qsAyer = new URLSearchParams({
+    select: "siguiendo", fecha: `lt.${fecha}`, siguiendo: "not.is.null",
     order: "fecha.desc,creado_en.desc", limit: "1",
   });
-  const r = await fetchImpl(`${supabaseUrl.replace(/\/$/, "")}/rest/v1/marketing_seguidores_snapshot?${qs}`, {
-    headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` },
-  });
-  if (!r.ok) throw new Error(`Supabase (referencia): ${r.status} ${await r.text()}`);
-  const filas = await r.json();
-  return filas[0]?.siguiendo ?? null;
+  const rAyer = await fetchImpl(`${base}?${qsAyer}`, { headers });
+  if (!rAyer.ok) throw new Error(`Supabase (referencia de ayer): ${rAyer.status} ${await rAyer.text()}`);
+  const [ultimoDeAyer] = await rAyer.json();
+  return ultimoDeAyer?.siguiendo ?? null;
 }
 
 /** Marca en `marketing_seguimiento_diario` cuánto se siguió REALMENTE hoy
@@ -124,7 +145,7 @@ async function siguiendoAlEmpezarElDia(supabaseUrl, serviceKey, fecha, fetchImpl
  *  `generar-semana.mjs`/`asegurarSemana()` de antemano) ni si todavía no
  *  hay un snapshot de referencia (primer día que corre esto). */
 async function verificarMetaDeHoy(supabaseUrl, serviceKey, fecha, siguiendoHoy, fetchImpl) {
-  const referencia = await siguiendoAlEmpezarElDia(supabaseUrl, serviceKey, fecha, fetchImpl);
+  const referencia = await siguiendoDeReferencia(supabaseUrl, serviceKey, fecha, fetchImpl);
   if (referencia == null) return null; // sin historial todavía, no se puede calcular un delta real
 
   const deltaReal = siguiendoHoy - referencia;
