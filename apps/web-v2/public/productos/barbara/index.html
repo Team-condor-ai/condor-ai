@@ -274,9 +274,17 @@ section.bloque{padding:clamp(80px,11vw,150px) 0;position:relative}
   font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
   padding:5px 12px;border-radius:999px;border:1px solid var(--lima);
 }
+.plan .oferta{
+  position:absolute;top:-11px;right:26px;background:#0A0A0A;color:var(--lima);
+  font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  padding:5px 12px;border-radius:999px;border:1px solid var(--lima);
+}
 .plan h3{font-family:Fraunces,Georgia,serif;font-size:27px;font-weight:600;margin-bottom:4px}
 .plan .precio{font-family:Fraunces,Georgia,serif;font-size:41px;font-weight:700;margin:16px 0 4px;letter-spacing:-.02em}
 .plan .precio small{font-family:Inter,sans-serif;font-size:13px;font-weight:500;color:var(--crema-2);letter-spacing:0}
+.plan .precio-antes{font-family:Inter,sans-serif;font-size:17px;font-weight:600;color:var(--crema-2);
+  text-decoration:line-through;text-decoration-color:currentColor;margin-right:2px}
+.plan.destacado .precio-antes{color:rgba(10,10,10,.55)}
 .plan ul{list-style:none;margin-top:20px;display:flex;flex-direction:column;gap:11px}
 .plan li{font-size:14.5px;line-height:1.45;color:var(--crema-2);display:flex;gap:10px;align-items:flex-start}
 .plan li::before{content:"";flex:none;width:16px;height:16px;margin-top:1px;border-radius:999px;
@@ -707,12 +715,13 @@ footer{border-top:1px solid var(--linea);padding:34px 0 46px;margin-top:40px}
   <section class="bloque" id="planes">
     <div class="wrap">
       <h2 class="titulo rev">Planes</h2>
-      <p class="parrafo rev">Precios de lanzamiento. Los primeros clientes los mantienen de por vida.</p>
+      <p class="parrafo rev">50% de descuento sobre el precio de lanzamiento, solo hasta el 20 de octubre. Los primeros clientes lo mantienen de por vida.</p>
 
       <div class="planes">
         <article class="plan rev">
+          <span class="oferta">-50% hasta el 20-oct</span>
           <h3>Bárbara</h3>
-          <div class="precio">$36.990 <small>/mes</small></div>
+          <div class="precio"><span class="precio-antes">$36.990</span> $18.495 <small>/mes</small></div>
           <ul>
             <li>Carruseles cada semana</li>
             <li>Texto listo para publicar en cada uno</li>
@@ -722,8 +731,9 @@ footer{border-top:1px solid var(--linea);padding:34px 0 46px;margin-top:40px}
 
         <article class="plan destacado rev">
           <span class="etiqueta">Más elegido</span>
+          <span class="oferta">-50% hasta el 20-oct</span>
           <h3>Bárbara Go</h3>
-          <div class="precio">$46.990 <small>/mes</small></div>
+          <div class="precio"><span class="precio-antes">$46.990</span> $23.495 <small>/mes</small></div>
           <ul>
             <li>Todo lo del plan Bárbara</li>
             <li>Historias para todos los días</li>
@@ -732,8 +742,9 @@ footer{border-top:1px solid var(--linea);padding:34px 0 46px;margin-top:40px}
         </article>
 
         <article class="plan rev">
+          <span class="oferta">-50% hasta el 20-oct</span>
           <h3>Bárbara Plus</h3>
-          <div class="precio">$54.990 <small>/mes</small></div>
+          <div class="precio"><span class="precio-antes">$54.990</span> $27.495 <small>/mes</small></div>
           <ul>
             <li>Todo lo del plan Go</li>
             <li>Gestión de campañas en Meta y Google</li>
@@ -743,8 +754,11 @@ footer{border-top:1px solid var(--linea);padding:34px 0 46px;margin-top:40px}
       </div>
 
       <p class="nota-planes rev">
-        Todos incluyen soporte y mejoras continuas. Valores en pesos chilenos;
-        también atendemos Colombia y Perú en moneda local.
+        Precio con 50% de descuento válido para contrataciones hasta el 20 de
+        octubre de 2026; después de esa fecha rige el precio de lanzamiento
+        tachado arriba. Todos los planes incluyen soporte y mejoras continuas.
+        Valores en pesos chilenos; también atendemos Colombia y Perú en
+        moneda local.
       </p>
     </div>
   </section>

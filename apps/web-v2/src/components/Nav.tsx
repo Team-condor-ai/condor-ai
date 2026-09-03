@@ -4,21 +4,20 @@ import { Link } from "react-router-dom";
 /**
  * Navegación pública de condor.ai (reorganizada 3-sept-2026, pedido de
  * Joaquín): Inicio, Productos (desplegable con las 4 líneas reales:
- * Sites/Ecommerce/Media/Track), Agentes IA, Contacto. Portal clientes y
- * Agendar reunión se mantienen como siempre — el primero como enlace, el
- * segundo como botón de acción.
+ * Sites/Ecommerce/Media/Track), Equipo, Agentes IA, Contacto. Portal
+ * clientes y Agendar reunión se mantienen como siempre — el primero como
+ * enlace, el segundo como botón de acción.
  *
- * "Agentes IA" apunta directo a la landing de Bárbara (`/productos/
- * barbara/`), que ya existe y es una pieza aparte con su propia identidad
- * (negro/lima) a propósito — mezclarla con el sitio azul/sobrio "teñiría a
- * los dos" (comentario original de esa página). No se reescribió nada ahí:
- * Bárbara es hoy el único miembro de la familia Cóndor Agents, así que su
- * propia landing ES la página de la categoría. Cuando exista un segundo
- * agente, ahí sí conviene un hub que reparta entre ambos.
+ * "Agentes IA" apunta al hub `/productos/agentes/` (Cóndor Agents), NO
+ * directo a la landing de Bárbara: a futuro esa familia sumará más
+ * agentes (hoy mostrados ahí como "próximamente"), así que Bárbara pasa a
+ * ser una subpágina del hub en vez de ser la página de la categoría
+ * entera. Su landing (`/productos/barbara/`) sigue intacta, con su propia
+ * identidad (negro/lima) a propósito.
  *
- * Las secciones viejas (Compañía, Equipo, Clientes/Portafolio, Proceso,
- * Blog) se retiraron del sitio completo, no solo del menú — pedido
- * explícito de Joaquín.
+ * Equipo volvió a la barra el mismo día (estuvo fuera un rato, corregido
+ * de inmediato): Compañía, Clientes/Portafolio, Proceso y Blog sí se
+ * retiraron del sitio completo, no solo del menú.
  */
 type Producto = { label: string; href: string; logo: string };
 const PRODUCTOS: Producto[] = [
@@ -100,7 +99,8 @@ export default function Nav() {
           <div className="nav-links">
             <Link to="/">Inicio</Link>
             <MenuProductos />
-            <a href="/productos/barbara/">Agentes IA</a>
+            <a href="/equipo/">Equipo</a>
+            <a href="/productos/agentes/">Agentes IA</a>
             <a href="/contacto/">Contacto</a>
             <a href="/acceso">Portal clientes</a>
             <a className="cta-sm" href="/agendar/">
@@ -129,7 +129,8 @@ export default function Nav() {
             {p.label}
           </a>
         ))}
-        <a href="/productos/barbara/" onClick={() => setOpen(false)}>Agentes IA</a>
+        <a href="/equipo/" onClick={() => setOpen(false)}>Equipo</a>
+        <a href="/productos/agentes/" onClick={() => setOpen(false)}>Agentes IA</a>
         <a href="/contacto/" onClick={() => setOpen(false)}>Contacto</a>
         <a href="/acceso" onClick={() => setOpen(false)}>Portal clientes</a>
         <a className="btn-cta" href="/agendar/" onClick={() => setOpen(false)}>

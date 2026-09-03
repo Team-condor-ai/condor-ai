@@ -89,14 +89,16 @@ const LINEAS = [
 
 /* NAV ya no es una lista plana: "Productos" es un desplegable con las 4
    líneas de arriba. `drop` marca esa entrada; el resto son enlaces
-   normales. "Agentes IA" apunta directo a la landing de Bárbara
-   (`/productos/barbara/`, página aparte con su propia identidad negro/
-   lima, no generada por este script) porque es hoy el único miembro de
-   la familia Cóndor Agents. */
+   normales. "Agentes IA" apunta al hub de Cóndor Agents
+   (`/productos/agentes/`), NO directo a Bárbara — esa landing pasa a ser
+   una subpágina del hub, porque a futuro habrá más agentes además de
+   ella (hoy mostrados como "próximamente"). Equipo vuelve a la barra,
+   junto a Productos (pedido explícito de Joaquín el 3-sept). */
 const NAV = [
   { url: "/", nombre: "Inicio" },
   { drop: "Productos", hijos: LINEAS },
-  { url: "/productos/barbara/", nombre: "Agentes IA" },
+  { url: "/equipo/", nombre: "Equipo" },
+  { url: "/productos/agentes/", nombre: "Agentes IA" },
   { url: "/contacto/", nombre: "Contacto" },
 ];
 
@@ -522,13 +524,28 @@ const JS_AGENDA = `
 `;
 
 
-const CLIENTES = ["PlanetaShop", "Vitalen", "Smartech", "Veci", "Rat.IA"];
+/* Logos reales (3-sept-2026) + los clientes que todavía no tienen uno
+   cargado en el repo, que se muestran como texto con el mismo trato
+   visual — la tira no distingue entre los dos tipos de tarjeta. */
+const CLIENTES = [
+  { nombre: "Tecnobox", logo: "/assets/clientes/tecnobox.webp" },
+  { nombre: "Neisstech", logo: "/assets/clientes/neisstech.png" },
+  { nombre: "Delta Force", logo: "/assets/clientes/delta-force.png" },
+  { nombre: "Bafles Viva", logo: "/assets/clientes/bafles-viva.jpg" },
+  { nombre: "Ebi Foods", logo: "/assets/clientes/ebi-foods.jpg" },
+  { nombre: "PlanetaShop" },
+  { nombre: "Veci" },
+  { nombre: "Rat.IA" },
+];
+const chipCliente = (c) => c.logo
+  ? `<span class="cliente-chip"><img src="${c.logo}" alt="${c.nombre}" loading="lazy" /></span>`
+  : `<span class="cliente-chip cliente-chip-texto">${c.nombre}</span>`;
 const carrusel = `
 <section class="clientes">
   <div class="titulo">Empresas que han confiado en nosotros</div>
   <div class="pista">
-    ${CLIENTES.map((c) => `<span>${c}</span>`).join("")}
-    ${CLIENTES.map((c) => `<span>${c}</span>`).join("")}
+    ${CLIENTES.map(chipCliente).join("")}
+    ${CLIENTES.map(chipCliente).join("")}
   </div>
 </section>
 `;
@@ -595,10 +612,11 @@ const carruselSitios = () => {
 
 /* Tarjeta de línea para el home y para el hub /productos/ — misma tarjeta en
    los dos lugares, ABIERTA (sin acordeón): cuatro líneas caben sin esconder
-   nada detrás de un clic. */
+   nada detrás de un clic. El logo real de la marca (no un ícono genérico)
+   identifica cada línea — pedido explícito de Joaquín. */
 const tarjetaLinea = (l) => `
   <article class="fila">
-    <div class="marca-fila">${icono(l.ico)}</div>
+    <div class="marca-fila"><img class="marca-logo" src="${l.logo}" alt="" loading="lazy" /></div>
     <div>
       <h3>${l.nombre}</h3>
       <p class="desc">${l.resumen}</p>
@@ -607,6 +625,68 @@ const tarjetaLinea = (l) => `
     </div>
   </article>`;
 const tarjetasLineas = () => LINEAS.map(tarjetaLinea).join("");
+
+/* Equipo — vuelve a la barra y al home (3-sept-2026, corrección el mismo
+   día en que se había retirado). Mismo contenido de fondo que la versión
+   anterior; se reescriben solo los pies de las fotos de oficina, que
+   tenían un tono demasiado informal ("un martes cualquiera") para el
+   resto del sitio. */
+const PERSONAS = [
+  { slug: "joaquin", nombre: "Joaquín Muñoz", rol: "Fundador", foto: "joaquin.jpg",
+    resumen: "Dirige la relación con cada cliente y participa en la definición de todos los proyectos. Responsable de la estrategia técnica y comercial de la compañía.",
+    frase: "Si un proceso todavía no conviene automatizar, prefiero decirlo antes de que el cliente invierta.",
+    bloques: [
+      ["lupa",     "Responsabilidad", "Conduce el levantamiento inicial de cada proyecto y define el alcance junto al cliente. Es la contraparte permanente durante toda la ejecución, no solo en la venta."],
+      ["brujula",  "Enfoque",         "Traducir un problema de operación a una solución acotada y medible. Antes de proponer un desarrollo, estima cuánto tiempo o costo libera."],
+      ["martillo", "En qué participa","Está en la primera reunión de todos los proyectos y en las revisiones de avance. Toma las decisiones de arquitectura de producto junto al equipo técnico."],
+      ["entrega",  "Alcance",         "Estrategia técnica, relación comercial y definición de producto."],
+    ],
+    contacto: [["calendario", "Agendar con Joaquín", "/agendar"], ["correo", CORREO, "mailto:" + CORREO]] },
+
+  { slug: "alejandro", nombre: "Alejandro Tobar", rol: "Backend e infraestructura", foto: "alejandro.jpg",
+    resumen: "A cargo de bases de datos, integraciones y despliegue. Responsable de que los sistemas se mantengan estables a medida que crece el volumen.",
+    frase: "Las decisiones de base de datos se toman pensando en el volumen del año siguiente, no en el de la demostración.",
+    bloques: [
+      ["codigo",   "Responsabilidad", "Diseño del modelo de datos, integraciones con sistemas externos y puesta en producción. Define cómo se migra un esquema sin detener la operación."],
+      ["brujula",  "Enfoque",         "Sistemas que aguantan crecimiento sin reescribirse. Prefiere una solución aburrida que lleva años funcionando antes que una novedad sin rodaje."],
+      ["martillo", "En qué participa","Toda integración con CRM, ERP o pasarelas de pago, y cada despliegue a producción. Es quien responde cuando algo falla fuera de horario."],
+      ["entrega",  "Alcance",         "Backend, bases de datos, integraciones, despliegue e infraestructura."],
+    ],
+    contacto: [["calendario", "Agendar una reunión", "/agendar"], ["correo", CORREO, "mailto:" + CORREO]] },
+
+  { slug: "maximiliano", nombre: "Maximiliano Pino", rol: "Frontend y producto", foto: "maximiliano.jpg",
+    resumen: "Responsable de las interfaces y de la experiencia de uso: que el sistema se entienda sin manual y funcione en cualquier dispositivo.",
+    frase: "Una interfaz que necesita capacitación para usarse está mal diseñada.",
+    bloques: [
+      ["codigo",   "Responsabilidad", "Construcción de las interfaces con las que trabaja el usuario final, y de que el sistema se comporte igual en escritorio y en teléfono."],
+      ["brujula",  "Enfoque",         "Que el equipo del cliente entienda el sistema el primer día. La capacitación debería confirmar lo que ya se intuye, no enseñarlo desde cero."],
+      ["martillo", "En qué participa","Diseño de interacción, desarrollo de la interfaz y las revisiones de avance donde el cliente ve el sistema real por primera vez."],
+      ["entrega",  "Alcance",         "Frontend, diseño de interacción y calidad de la experiencia de uso."],
+    ],
+    contacto: [["calendario", "Agendar una reunión", "/agendar"], ["correo", CORREO, "mailto:" + CORREO]] },
+];
+
+const OFICINA = `
+  <div class="oficina-dos">
+    <figure>
+      <div class="marco"><img src="/assets/oficina/equipo.webp" alt="El equipo de condor.ai" loading="lazy" /></div>
+      <figcaption><b>Un solo equipo, una sola mesa</b>Las decisiones de cada proyecto se toman entre quienes lo construyen, sin capas intermedias entre el cliente y el equipo técnico.</figcaption>
+    </figure>
+    <figure>
+      <div class="marco"><img src="/assets/oficina/oficina.webp" alt="Oficina de condor.ai en Santiago" loading="lazy" /></div>
+      <figcaption><b>Oficina en Santiago</b>Ahí se realizan las reuniones de levantamiento y las revisiones de avance con cada cliente que prefiere una instancia presencial.</figcaption>
+    </figure>
+  </div>`;
+
+const tarjetasEquipo = PERSONAS.map((p) => `
+    <article class="persona">
+      <div class="retrato"><img src="/assets/${p.foto}" alt="${p.nombre}" loading="lazy" /></div>
+      <div class="txt"><h3>${p.nombre}</h3><div class="rol">${p.rol}</div>
+        <div class="mas"><div>
+          <p>${p.resumen}</p>
+          <a class="ver" href="/equipo/${p.slug}.html">Ver más</a>
+        </div></div></div>
+    </article>`).join("");
 
 const escribir = (ruta, html) => {
   const destino = join(PUB, ruta);
@@ -669,6 +749,24 @@ escribir("rediseno/inicio.html", cab({
 
 ${carrusel}
 
+<!-- EQUIPO (resumen) -->
+<section class="seccion oscura"><div class="wrap">
+  <div class="cab">
+    <div>
+      <h2 style="margin-top:20px">Las personas responsables de su proyecto</h2></div>
+    ${verMas("/equipo/", "Ver el equipo completo")}
+  </div>
+${OFICINA}
+  <div class="lista">
+${PERSONAS.map((p) => `    <article class="fila-persona">
+      <div class="retrato-s"><img src="/assets/${p.foto}" alt="${p.nombre}" loading="lazy" /></div>
+      <div><h3>${p.nombre}</h3><div class="rol">${p.rol}</div>
+        <p>${p.resumen}</p>
+        <a class="ver" href="/equipo/${p.slug}.html">Ver más</a></div>
+    </article>`).join("\n")}
+  </div>
+</div></section>
+
 <!-- PRODUCTOS (resumen) -->
 <section class="seccion"><div class="wrap">
   <div class="cab">
@@ -729,7 +827,8 @@ ${carruselSitios()}
       <span class="mono-label">Agentes IA · suscripción mensual</span>
       <h2>Bárbara</h2>
       <p>Tu agente de IA que crea el contenido de Instagram de tu marca cada semana:
-         carruseles, historias y video, con tu paleta y tu logo. Desde $36.990 al mes.</p>
+         carruseles, historias y video, con tu paleta y tu logo.
+         Desde <s>$36.990</s> $18.495/mes — 50% de descuento hasta el 20 de octubre.</p>
       <span class="barbara-tira-cta">Conocer Bárbara →</span>
     </div>
     <img src="/assets/barbara/lockup.jpg" alt="Bárbara, agente de IA de contenido" loading="lazy" />
@@ -752,7 +851,27 @@ ${carruselSitios()}
 /* ── CÓNDOR SITES ───────────────────────────────────────────────────────
    Pricing y proceso reales, sacados de las infografías oficiales del
    2-sept-2026 (ver nota condor_sites_proceso_y_pricing_2026_09_02 en
-   memoria) — no son cifras de ejemplo. */
+   memoria) — no son cifras de ejemplo. La tarjeta de planes con tabs por
+   país reproduce, en el lenguaje visual serio del sitio, la pantalla real
+   de la app Cóndor Sites (capturas recibidas el 3-sept-2026): mismo
+   ícono, mismo precio tachado y el mismo checklist de tres puntos. Debajo
+   va el carrusel de sitios reales que ya entregamos. */
+const JS_PLANES_SITES = `
+<script>
+(() => {
+  const tabs = document.querySelectorAll(".pais-tab");
+  const cta = document.getElementById("planSitesCta");
+  if (!tabs.length || !cta) return;
+  const NOMBRE = { cl: "Chile", pe: "Perú", co: "Colombia" };
+  tabs.forEach((t) => t.addEventListener("click", () => {
+    const pais = t.dataset.pais;
+    tabs.forEach((o) => { o.classList.toggle("activo", o === t); o.setAttribute("aria-selected", String(o === t)); });
+    document.querySelectorAll(".plan-pais").forEach((p) => p.classList.toggle("activo", p.dataset.pais === pais));
+    cta.textContent = "Empezar en " + NOMBRE[pais] + " →";
+  }));
+})();
+</script>
+`;
 escribir("productos/sites/index.html", cab({
   titulo: "Cóndor Sites — condor.ai",
   desc: "Sitio web propio con soporte 24/7 y mejoras continuas, sin costo de creación inicial. Desde $20.990/mes en Chile.",
@@ -764,17 +883,44 @@ escribir("productos/sites/index.html", cab({
   <p class="bajada">Un sitio web propio, sin costo de creación inicial. Un solo plan mensual incluye soporte 24/7, administración y mejoras continuas.</p>
 </div></section>
 
-<section style="padding-bottom:clamp(56px,7vw,96px)"><div class="wrap">
+<section style="padding-bottom:clamp(40px,5vw,56px)"><div class="wrap">
   <h2>Un plan, un precio por país</h2>
-  <div class="pasos" style="margin-top:24px">
-    <div class="paso"><div class="n">CHILE</div><h3>$20.990/mes</h3>
-      <p>Precio de lista $28.990. Incluye IVA.</p></div>
-    <div class="paso"><div class="n">PERÚ</div><h3>S/79/mes</h3>
-      <p>Precio de lista S/109. Incluye IGV.</p></div>
-    <div class="paso"><div class="n">COLOMBIA</div><h3>$69.900/mes</h3>
-      <p>Precio de lista $89.900 COP. Incluye IVA.</p></div>
+  <div class="paises-tabs" role="tablist" aria-label="Elegir país" style="margin-top:22px">
+    <button class="pais-tab activo" data-pais="cl" role="tab" aria-selected="true">Chile</button>
+    <button class="pais-tab" data-pais="pe" role="tab" aria-selected="false">Perú</button>
+    <button class="pais-tab" data-pais="co" role="tab" aria-selected="false">Colombia</button>
   </div>
-  <p style="margin-top:20px;color:var(--ink-2)">Plan único "Página web + soporte 24/7 mensual": creación sin costo inicial, soporte y administración mensual, e innovación continua (cambios visuales, nuevos productos, mejoras a pedido).</p>
+
+  <div class="plan-card">
+    <img class="plan-icono" src="/assets/productos/condor-sites.png" alt="" />
+    <h3>Página web + soporte 24/7 mensual</h3>
+    <div class="plan-precios">
+      <div class="plan-pais activo" data-pais="cl">
+        <div class="plan-precio"><span class="antes">$28.990</span><strong>$20.990</strong><span class="cada">/mes</span></div>
+        <p class="plan-moneda">Incluye IVA</p>
+      </div>
+      <div class="plan-pais" data-pais="pe">
+        <div class="plan-precio"><span class="antes">S/109</span><strong>S/79</strong><span class="cada">/mes</span></div>
+        <p class="plan-moneda">Incluye IGV</p>
+      </div>
+      <div class="plan-pais" data-pais="co">
+        <div class="plan-precio"><span class="antes">$89.900 COP</span><strong>$69.900 COP</strong><span class="cada">/mes</span></div>
+        <p class="plan-moneda">Incluye IVA</p>
+      </div>
+    </div>
+    <ul class="plan-checklist">
+      <li>Creamos su página web sin costo inicial</li>
+      <li>Soporte 24/7 y administración mensual</li>
+      <li>Innovación continua: cambios visuales, nuevos productos y mejoras a pedido</li>
+    </ul>
+    <a class="btn btn-primario" href="/agendar" id="planSitesCta">Empezar en Chile →</a>
+  </div>
+</div></section>
+
+<section style="padding-bottom:clamp(56px,7vw,96px)"><div class="wrap">
+  <h2 style="margin-bottom:8px">Sitios que hemos entregado</h2>
+  <p style="color:var(--ink-2);max-width:60ch">Capturas de sitios reales, en línea hoy — no maquetas.</p>
+  <div style="margin-top:28px">${carruselSitios()}</div>
 </div></section>
 
 <section class="seccion oscura"><div class="wrap">
@@ -788,7 +934,7 @@ escribir("productos/sites/index.html", cab({
       <div><h3>Publicación y mantención</h3><p class="desc">Conexión del dominio, salida en vivo y actualizaciones mes a mes mientras dure la suscripción.</p></div></article>
   </div>
 </div></section>
-` + cierre("¿Le construimos su sitio?") + pie.replace("</body>", JS_COMUN + "</body>"));
+` + cierre("¿Le construimos su sitio?") + pie.replace("</body>", JS_COMUN + JS_PLANES_SITES + "</body>"));
 
 /* ── CÓNDOR ECOMMERCE ───────────────────────────────────────────────────
    Pricing, comisiones y proceso reales del modelo comercial cerrado el
@@ -900,6 +1046,116 @@ escribir("productos/track/index.html", cab({
   </div>
 </div></section>
 ` + cierre("¿Cotizamos su sistema?") + pie.replace("</body>", JS_COMUN + "</body>"));
+
+/* ── CÓNDOR AGENTS (hub) ──────────────────────────────────────────────
+   "Agentes IA" en el menú apunta acá, no directo a Bárbara: a futuro esta
+   familia sumará más agentes. Bárbara es hoy el único que existe, así que
+   es la única tarjeta activa; el resto se muestra desenfocado y marcado
+   "Próximamente" — pedido explícito de Joaquín (3-sept-2026), para no
+   prometer nombres ni fechas de agentes que todavía no se construyeron. */
+escribir("productos/agentes/index.html", cab({
+  titulo: "Cóndor Agents — condor.ai",
+  desc: "La familia de agentes de inteligencia artificial de Cóndor.ai. Hoy: Bárbara. Próximamente, más agentes especializados.",
+  ruta: "/productos/agentes/",
+}) + `
+<section class="cabecera"><div class="wrap">
+  <a class="volver" href="/productos/">Volver a productos</a>
+  <img src="/assets/productos/condor-agents.png" alt="" width="56" height="56" style="border-radius:14px;margin-bottom:22px" />
+  <h1>Cóndor Agents</h1>
+  <p class="bajada">La familia de agentes de inteligencia artificial de Cóndor.ai. Cada uno resuelve una tarea puntual dentro de su empresa, con su propia identidad y su propio modo de trabajar.</p>
+</div></section>
+
+<section style="padding-bottom:clamp(56px,7vw,96px)"><div class="wrap">
+  <div class="agentes-grid">
+    <a class="agente-card" href="/productos/barbara/">
+      <img src="/assets/barbara/lockup.jpg" alt="Bárbara" loading="lazy" />
+      <h3>Bárbara</h3>
+      <p>Crea el contenido de Instagram de su marca cada semana: carruseles, historias y video, con su paleta y su logo.</p>
+      <p class="aplica" style="margin-top:8px"><b>Desde <s>$36.990</s> $18.495/mes</b> — 50% hasta el 20 de octubre</p>
+      <span class="agente-cta">Conocer a Bárbara →</span>
+    </a>
+    <div class="agente-card agente-proximo">
+      <span class="agente-badge">Próximamente</span>
+      <div class="agente-blur">
+        ${icono("agente", "ico-agente-grande")}
+        <h3>Próximo agente</h3>
+        <p>Estamos construyendo el siguiente integrante de la familia Cóndor Agents.</p>
+      </div>
+    </div>
+    <div class="agente-card agente-proximo">
+      <span class="agente-badge">Próximamente</span>
+      <div class="agente-blur">
+        ${icono("agente", "ico-agente-grande")}
+        <h3>Próximo agente</h3>
+        <p>Estamos construyendo el siguiente integrante de la familia Cóndor Agents.</p>
+      </div>
+    </div>
+  </div>
+</div></section>
+` + cierre("¿Conversamos sobre agentes para su empresa?") + pie.replace("</body>", JS_COMUN + "</body>"));
+
+/* ── EQUIPO ─────────────────────────────────────────────────────────── */
+escribir("equipo/index.html", cab({
+  titulo: "Equipo — condor.ai",
+  desc: "Las personas responsables de su proyecto en condor.ai, con nombre, rol y responsabilidad.",
+  ruta: "/equipo/",
+}) + `
+<section class="cabecera"><div class="wrap">
+  <h1>Las personas responsables de su proyecto</h1>
+  <p class="bajada">Sabrá desde la primera reunión quién construye qué. No hay equipos rotativos ni recursos anónimos asignados por disponibilidad.</p>
+</div></section>
+
+<section class="seccion oscura" style="border-top:0"><div class="wrap">
+${OFICINA}
+  <div class="equipo-grid">
+${tarjetasEquipo}
+  </div>
+</div></section>
+` + cierre("¿Quiere conocerlos?") + pie.replace("</body>", JS_COMUN + "</body>"));
+
+for (const p of PERSONAS) {
+  escribir(`equipo/${p.slug}.html`, cab({
+    titulo: `${p.nombre} — condor.ai`,
+    desc: `${p.rol} en condor.ai. ${p.resumen}`,
+    ruta: `/equipo/${p.slug}.html`,
+  }) + `
+<section class="cabecera"><div class="wrap">
+  <a class="volver" href="/equipo/">Volver al equipo</a>
+  <div class="ficha-cab">
+    <div class="ficha-foto"><img src="/assets/${p.foto}" alt="${p.nombre}" /></div>
+    <div>
+      <div class="ficha-rol">${p.rol}</div>
+      <h1>${p.nombre}</h1>
+      <p class="bajada">${p.resumen}</p>
+      <div class="hero-cta">
+${p.contacto.map(([ic, txt, url]) => `        <a class="btn ${ic === "calendario" ? "btn-primario" : "btn-linea"}" href="${url}">${icono(ic, "ico-btn")}${txt}</a>`).join("\n")}
+      </div>
+    </div>
+  </div>
+</div></section>
+
+<section class="seccion"><div class="wrap">
+  <blockquote class="frase">${p.frase}</blockquote>
+  <div class="lista">
+${p.bloques.map(([ic, titulo, texto]) => `    <article class="fila">
+      <div class="marca-fila">${icono(ic)}</div>
+      <div><h3>${titulo}</h3><p class="desc">${texto}</p></div>
+    </article>`).join("\n")}
+  </div>
+</div></section>
+
+<section class="seccion oscura"><div class="wrap">
+  <h2 style="max-width:20ch">El resto del equipo</h2>
+  <div class="lista">
+${PERSONAS.filter((o) => o.slug !== p.slug).map((o) => `    <article class="fila-persona">
+      <div class="retrato-s"><img src="/assets/${o.foto}" alt="${o.nombre}" loading="lazy" /></div>
+      <div><h3>${o.nombre}</h3><div class="rol">${o.rol}</div>
+        <a class="ver" href="/equipo/${o.slug}.html">Ver ficha</a></div>
+    </article>`).join("\n")}
+  </div>
+</div></section>
+` + cierre(`¿Quiere conversar con ${p.nombre.split(" ")[0]}?`) + pie.replace("</body>", JS_COMUN + "</body>"));
+}
 
 /* ── CONTACTO ───────────────────────────────────────────────────────── */
 escribir("contacto/index.html", cab({

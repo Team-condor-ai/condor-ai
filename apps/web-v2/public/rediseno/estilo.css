@@ -182,10 +182,15 @@ img.logo{width:auto;flex:none;max-width:none}
   text-transform:uppercase;color:var(--ink-3);margin-bottom:22px}
 /* La pista lleva la lista DUPLICADA y avanza exactamente 50%: al terminar,
    el segundo juego está donde estaba el primero y el salto es invisible. */
-.pista{display:flex;width:max-content;animation:desfile 34s linear infinite}
+.pista{display:flex;width:max-content;align-items:center;animation:desfile 34s linear infinite}
 .clientes:hover .pista{animation-play-state:paused}
-.pista span{font-family:var(--display);font-weight:700;font-size:clamp(17px,2.2vw,24px);
-  letter-spacing:-.025em;color:var(--ink-3);padding-inline:clamp(24px,4vw,52px);white-space:nowrap;opacity:.72}
+.cliente-chip{display:flex;align-items:center;justify-content:center;height:60px;
+  padding-inline:clamp(20px,3vw,36px);flex:none}
+.cliente-chip img{height:36px;width:auto;max-width:150px;object-fit:contain;
+  filter:grayscale(1);opacity:.6;transition:filter .25s var(--ease),opacity .25s var(--ease)}
+.clientes:hover .cliente-chip img{filter:grayscale(0);opacity:1}
+.cliente-chip-texto{font-family:var(--display);font-weight:700;font-size:clamp(17px,2.2vw,24px);
+  letter-spacing:-.025em;color:var(--ink-3);white-space:nowrap;opacity:.72}
 @keyframes desfile{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 
 /* ── Bloques de contenido ───────────────────────────────────────────── */
@@ -587,6 +592,8 @@ img.logo{width:auto;flex:none;max-width:none}
 .marca-fila{display:flex;flex-direction:column;gap:12px;align-items:flex-start}
 .ico{width:clamp(26px,2.6vw,34px);height:clamp(26px,2.6vw,34px);color:var(--azul);
   flex:none;transition:transform .4s var(--ease)}
+.marca-logo{width:clamp(40px,4vw,48px);height:clamp(40px,4vw,48px);border-radius:11px;
+  flex:none;object-fit:cover}
 .oscura .ico{color:var(--on-navy-2)}
 .marca-fila .n{font-family:var(--display);font-size:clamp(30px,4.2vw,54px);font-weight:800;
   letter-spacing:-.05em;line-height:.9;color:transparent;
@@ -598,6 +605,49 @@ img.logo{width:auto;flex:none;max-width:none}
 @media(max-width:860px){
   .marca-fila{flex-direction:row;align-items:center;gap:14px}
 }
+
+/* ── Hub de Cóndor Agents ───────────────────────────────────────────── */
+.agentes-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:22px}
+.agente-card{display:block;padding:28px;border:1px solid var(--linea);border-radius:var(--r-lg);
+  background:var(--papel);position:relative;transition:box-shadow .25s var(--ease),transform .25s var(--ease)}
+a.agente-card:hover{box-shadow:0 16px 34px -14px rgba(11,20,55,.18);transform:translateY(-3px)}
+.agente-card img{width:48px;height:48px;border-radius:12px;object-fit:cover;margin-bottom:16px}
+.agente-card h3{font-family:var(--display);font-size:20px;font-weight:700}
+.agente-card p{color:var(--ink-2);font-size:14.5px;line-height:1.5;margin-top:8px}
+.agente-cta{display:inline-block;margin-top:16px;font-weight:600;font-size:14px;color:var(--azul)}
+.agente-badge{position:absolute;top:16px;right:16px;z-index:1;font-size:11px;font-weight:700;
+  letter-spacing:.05em;text-transform:uppercase;padding:5px 11px;border-radius:999px;
+  background:var(--papel-3);color:var(--ink-2)}
+.agente-proximo{cursor:default;overflow:hidden}
+.agente-blur{filter:blur(5px) grayscale(1);opacity:.5;user-select:none;pointer-events:none}
+.ico-agente-grande{width:44px;height:44px;color:var(--ink-3);margin-bottom:16px}
+
+/* ── Tarjeta de planes con tabs por país (Cóndor Sites) ─────────────── */
+.paises-tabs{display:flex;gap:10px;flex-wrap:wrap}
+.pais-tab{padding:10px 18px;border:1px solid var(--linea-2);border-radius:999px;background:var(--papel);
+  font:inherit;font-weight:600;font-size:14.5px;color:var(--ink-2);cursor:pointer;
+  transition:border-color .2s var(--ease),color .2s var(--ease),background .2s var(--ease)}
+.pais-tab:hover{border-color:var(--ink-3)}
+.pais-tab.activo{border-color:var(--azul);color:var(--ink);background:var(--papel-3)}
+.plan-card{max-width:440px;margin-top:26px;padding:clamp(26px,4vw,38px);border:1px solid var(--linea);
+  border-radius:var(--r-lg);background:var(--papel);box-shadow:0 20px 44px -22px rgba(11,20,55,.16)}
+.plan-icono{width:52px;height:52px;border-radius:13px;object-fit:cover;margin-bottom:18px}
+.plan-card h3{font-family:var(--display);font-size:19px;font-weight:700}
+.plan-precios{position:relative;display:grid;margin-top:22px;border-top:1px solid var(--linea);padding-top:22px}
+.plan-pais{grid-area:1/1;opacity:0;transform:translateY(4px);
+  transition:opacity .3s var(--ease),transform .3s var(--ease);pointer-events:none}
+.plan-pais.activo{opacity:1;transform:none;pointer-events:auto}
+.plan-precio{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.plan-precio .antes{font-size:16px;color:var(--ink-3);text-decoration:line-through;text-decoration-color:var(--rojo)}
+.plan-precio strong{font-family:var(--display);font-size:clamp(32px,4.4vw,42px);font-weight:800;
+  letter-spacing:-.03em;color:var(--ink)}
+.plan-precio .cada{font-size:15px;color:var(--ink-3)}
+.plan-moneda{font-size:13px;color:var(--ink-3);margin-top:4px}
+.plan-checklist{list-style:none;margin-top:20px;display:flex;flex-direction:column;gap:11px}
+.plan-checklist li{font-size:14.5px;color:var(--ink-2);padding-left:26px;position:relative}
+.plan-checklist li::before{content:"✓";position:absolute;left:0;top:0;width:18px;height:18px;
+  border-radius:999px;background:var(--grad);color:#fff;font-size:11px;line-height:18px;text-align:center}
+.plan-card .btn{margin-top:26px;width:100%;justify-content:center}
 
 /* La cifra que cuenta necesita ancho estable, o el bloque salta mientras
    sube el número. */
