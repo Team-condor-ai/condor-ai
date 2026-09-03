@@ -1,36 +1,76 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 
 /**
- * Enlaces del sitio.
- *  - "hash"  → sección del home (#id). Navega a "/" y baja a la sección.
- *  - "route" → sub-página reconstruida en v2 (react-router).
- *  - "ext"   → app/página aún en el sitio antiguo (.html) — enlace normal.
+ * Navegación pública de condor.ai (reorganizada 3-sept-2026, pedido de
+ * Joaquín): Inicio, Productos (desplegable con las 4 líneas reales:
+ * Sites/Ecommerce/Media/Track), Agentes IA, Contacto. Portal clientes y
+ * Agendar reunión se mantienen como siempre — el primero como enlace, el
+ * segundo como botón de acción.
+ *
+ * "Agentes IA" apunta directo a la landing de Bárbara (`/productos/
+ * barbara/`), que ya existe y es una pieza aparte con su propia identidad
+ * (negro/lima) a propósito — mezclarla con el sitio azul/sobrio "teñiría a
+ * los dos" (comentario original de esa página). No se reescribió nada ahí:
+ * Bárbara es hoy el único miembro de la familia Cóndor Agents, así que su
+ * propia landing ES la página de la categoría. Cuando exista un segundo
+ * agente, ahí sí conviene un hub que reparta entre ambos.
+ *
+ * Las secciones viejas (Compañía, Equipo, Clientes/Portafolio, Proceso,
+ * Blog) se retiraron del sitio completo, no solo del menú — pedido
+ * explícito de Joaquín.
  */
-type NavItem = { label: string; href: string; type: "hash" | "route" | "ext" };
-const LINKS: NavItem[] = [
-  { label: "Servicios", href: "/productos/", type: "ext" },
-  { label: "Portafolio", href: "/clientes/", type: "ext" },
-  { label: "Blog", href: "/blog/", type: "ext" },
-  { label: "Nosotros", href: "/inicio/", type: "ext" },
-  { label: "Acceso clientes", href: "/acceso", type: "ext" },
+type Producto = { label: string; href: string; logo: string };
+const PRODUCTOS: Producto[] = [
+  { label: "Cóndor Sites", href: "/productos/sites/", logo: "/assets/productos/condor-sites.png" },
+  { label: "Cóndor Ecommerce", href: "/productos/ecommerce/", logo: "/assets/productos/condor-ecommerce.png" },
+  { label: "Cóndor Media", href: "/productos/media/", logo: "/assets/productos/condor-media.png" },
+  { label: "Cóndor Track", href: "/productos/track/", logo: "/assets/productos/condor-track.png" },
 ];
 
-/** Renderiza un enlace según su tipo, con cierre opcional del drawer. */
-function NavLink({ l, onClick, className }: { l: NavItem; onClick?: () => void; className?: string }) {
-  if (l.type === "ext") {
-    return (
-      <a href={l.href} className={className} onClick={onClick}>
-        {l.label}
-      </a>
-    );
-  }
-  // hash → "/#id" para que funcione desde cualquier ruta; route → tal cual
-  const to = l.type === "hash" ? `/${l.href}` : l.href;
+/** Todo lo que no es "/" o "/acceso" vive en las páginas estáticas
+ *  generadas por `gen-sitio.mjs` (fuera del router de React) — de ahí que
+ *  todo use `<a>` normal, no `<Link>`. */
+function MenuProductos() {
+  const [abierto, setAbierto] = useState(false);
+  const cerrarRef = useRef<number | null>(null);
+
+  const abrir = () => {
+    if (cerrarRef.current) window.clearTimeout(cerrarRef.current);
+    setAbierto(true);
+  };
+  const cerrarConDemora = () => {
+    cerrarRef.current = window.setTimeout(() => setAbierto(false), 120);
+  };
+
   return (
-    <Link to={to} className={className} onClick={onClick}>
-      {l.label}
-    </Link>
+    <div
+      className="nav-drop"
+      onMouseEnter={abrir}
+      onMouseLeave={cerrarConDemora}
+    >
+      <button
+        className="nav-drop-boton"
+        aria-expanded={abierto}
+        aria-haspopup="true"
+        onClick={() => setAbierto((v) => !v)}
+      >
+        Productos
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="m6 9 6 6 6-6" />
+        </svg>
+      </button>
+      {abierto && (
+        <div className="nav-drop-panel" role="menu">
+          {PRODUCTOS.map((p) => (
+            <a key={p.href} href={p.href} className="nav-drop-item" role="menuitem">
+              <img src={p.logo} alt="" width={22} height={22} />
+              {p.label}
+            </a>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -58,9 +98,11 @@ export default function Nav() {
           </Link>
 
           <div className="nav-links">
-            {LINKS.map((l) => (
-              <NavLink key={l.href} l={l} />
-            ))}
+            <Link to="/">Inicio</Link>
+            <MenuProductos />
+            <a href="/productos/barbara/">Agentes IA</a>
+            <a href="/contacto/">Contacto</a>
+            <a href="/acceso">Portal clientes</a>
             <a className="cta-sm" href="/agendar/">
               Agendar reunión <span aria-hidden="true">→</span>
             </a>
@@ -80,10 +122,16 @@ export default function Nav() {
       <div className={open ? "drawer-ov on" : "drawer-ov"} onClick={() => setOpen(false)} />
       <aside className={open ? "drawer open" : "drawer"}>
         <Link to="/" onClick={() => setOpen(false)}>Inicio</Link>
-        {LINKS.map((l) => (
-          <NavLink key={l.href} l={l} onClick={() => setOpen(false)} />
+        <span className="drawer-grupo">Productos</span>
+        {PRODUCTOS.map((p) => (
+          <a key={p.href} href={p.href} className="drawer-sub" onClick={() => setOpen(false)}>
+            <img src={p.logo} alt="" width={18} height={18} />
+            {p.label}
+          </a>
         ))}
+        <a href="/productos/barbara/" onClick={() => setOpen(false)}>Agentes IA</a>
         <a href="/contacto/" onClick={() => setOpen(false)}>Contacto</a>
+        <a href="/acceso" onClick={() => setOpen(false)}>Portal clientes</a>
         <a className="btn-cta" href="/agendar/" onClick={() => setOpen(false)}>
           Agendar reunión <span aria-hidden="true">→</span>
         </a>

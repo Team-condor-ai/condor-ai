@@ -1,12 +1,17 @@
 /**
- * Genera el sitio corporativo de condor.ai: inicio + seis subpáginas + tres
- * fichas de equipo.
+ * Genera el sitio corporativo de condor.ai: inicio, hub de productos, las 4
+ * líneas reales (Sites/Ecommerce/Media/Track), contacto y agendar.
  *
- * POR QUÉ UN GENERADOR Y NO DIEZ ARCHIVOS A MANO
+ * Reorganizado el 3-sept-2026 (pedido de Joaquín): las secciones Compañía,
+ * Equipo, Proceso y Clientes se retiraron del sitio por completo — no solo
+ * del menú — junto con las páginas por persona y los "casos de uso" con
+ * fotos de banco de imágenes que tenían las categorías genéricas viejas.
+ *
+ * POR QUÉ UN GENERADOR Y NO UN ARCHIVO POR PÁGINA
  * ---------------------------------------------------------------------------
- * Las diez páginas comparten barra, pie, cierre y estilos. Con una copia por
+ * Todas las páginas comparten barra, pie, cierre y estilos. Con una copia por
  * archivo, a la tercera edición dejan de ser el mismo sitio: alguien cambia el
- * teléfono en el pie de una y no en las otras nueve. Acá el contenido son
+ * teléfono en el pie de una y no en las otras. Acá el contenido son
  * datos y la estructura es una sola plantilla.
  *
  *   node scripts/gen-sitio.mjs        (lo corre `npm run build` antes de vite)
@@ -52,24 +57,72 @@ const ICO = {
   calendario: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
   correo: '<rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>',
   whatsapp: '<path d="M3.5 20.5 5 16a8 8 0 1 1 3 3l-4.5 1.5Z"/>',
+  carrito: '<circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M3 4h2l2.2 11.2a2 2 0 0 0 2 1.6h7.6a2 2 0 0 0 2-1.6L21 8H6"/>',
+  panel: '<rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/>',
+  megafono: '<path d="M3 10v4a1 1 0 0 0 1 1h2l2 6h2l-1.5-6H11l7 4V5l-7 4H8a2 2 0 0 0-2 2Z"/><path d="M18 9a3 3 0 0 1 0 6"/>',
 };
 const icono = (n, clase = "ico") =>
   `<svg class="${clase}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICO[n]}</svg>`;
 
-/* "Inicio" apunta a la raíz, no a `/inicio/`.
-   `/inicio/` NUNCA fue la home: es la página "Quiénes somos" —el pie de
-   página siempre la enlazó con ese nombre— y estaba mal rotulada en el menú,
-   así que apretar "Inicio" te dejaba en una página distinta a condorai.cl.
-   Su dirección propia pasa a ser `/compania/`, que ya existía como copia. */
-const NAV = [
-  ["/", "Inicio"],
-  ["/compania/", "Compañía"],
-  ["/equipo/", "Equipo"],
-  ["/clientes/", "Clientes"],
-  ["/proceso/", "Proceso"],
-  ["/productos/", "Productos"],
-  ["/contacto/", "Contacto"],
+/* Las 4 líneas reales de producto (reorganización 3-sept-2026, pedido de
+   Joaquín). Mismos logos y mismo orden que usa el desplegable de React en
+   `src/components/Nav.tsx` — son dos sistemas de render distintos (este
+   archivo genera HTML plano, React genera el home), pero el contenido de
+   marca tiene que verse idéntico en los dos. */
+const LINEAS = [
+  { clave: "sites", href: "/productos/sites/", nombre: "Cóndor Sites", logo: "/assets/productos/condor-sites.png", ico: "codigo",
+    resumen: "Sitio web propio, con soporte y actualizaciones incluidas cada mes y sin costo de creación inicial.",
+    desde: "Desde $20.990/mes" },
+  { clave: "ecommerce", href: "/productos/ecommerce/", nombre: "Cóndor Ecommerce", logo: "/assets/productos/condor-ecommerce.png", ico: "carrito",
+    resumen: "Tienda en línea administrada de punta a punta: construcción, pasarela de pago, stock y, si corresponde, gestión de campañas.",
+    desde: "Desde $69.990/mes + comisión por venta" },
+  { clave: "media", href: "/productos/media/", nombre: "Cóndor Media", logo: "/assets/productos/condor-media.png", ico: "megafono",
+    // Sin modelo comercial público todavía (línea nueva, 2-sept-2026) —
+    // a diferencia de Sites/Ecommerce, "desde" acá es intencionalmente
+    // genérico. Ver aviso a Joaquín al cerrar esta tarea.
+    resumen: "Contenido para redes sociales de su marca, producido cada semana con apoyo de inteligencia artificial.",
+    desde: "Cotización según objetivos" },
+  { clave: "track", href: "/productos/track/", nombre: "Cóndor Track", logo: "/assets/productos/condor-track.png", ico: "panel",
+    resumen: "Software y paneles de operación a medida: ERPs, integraciones y automatizaciones para procesos que ya existen.",
+    desde: "Cotización a medida" },
 ];
+
+/* NAV ya no es una lista plana: "Productos" es un desplegable con las 4
+   líneas de arriba. `drop` marca esa entrada; el resto son enlaces
+   normales. "Agentes IA" apunta directo a la landing de Bárbara
+   (`/productos/barbara/`, página aparte con su propia identidad negro/
+   lima, no generada por este script) porque es hoy el único miembro de
+   la familia Cóndor Agents. */
+const NAV = [
+  { url: "/", nombre: "Inicio" },
+  { drop: "Productos", hijos: LINEAS },
+  { url: "/productos/barbara/", nombre: "Agentes IA" },
+  { url: "/contacto/", nombre: "Contacto" },
+];
+
+const navDesktop = (rutaActual) => NAV.map((e) => {
+  if (e.drop) {
+    const activo = LINEAS.some((h) => h.href === rutaActual);
+    return `    <div class="nav-drop">
+      <button class="nav-drop-boton" type="button" aria-haspopup="true" aria-expanded="false"${activo ? ' aria-current="page"' : ""}>
+        ${e.drop}
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+      <div class="nav-drop-panel" role="menu">
+${e.hijos.map((h) => `        <a href="${h.href}" class="nav-drop-item" role="menuitem"${rutaActual === h.href ? ' aria-current="page"' : ""}><img src="${h.logo}" alt="" width="22" height="22" />${h.nombre}</a>`).join("\n")}
+      </div>
+    </div>`;
+  }
+  return `    <a href="${e.url}"${rutaActual === e.url ? ' aria-current="page"' : ""}>${e.nombre}</a>`;
+}).join("\n");
+
+const navCajon = (rutaActual) => NAV.map((e) => {
+  if (e.drop) {
+    return `  <span class="cajon-grupo">${e.drop}</span>\n` +
+      e.hijos.map((h) => `  <a href="${h.href}" class="cajon-sub"${rutaActual === h.href ? ' aria-current="page"' : ""}><img src="${h.logo}" alt="" width="18" height="18" />${h.nombre}</a>`).join("\n");
+  }
+  return `  <a href="${e.url}"${rutaActual === e.url ? ' aria-current="page"' : ""}>${e.nombre}</a>`;
+}).join("\n");
 
 const cab = (t) => `<!DOCTYPE html>
 <html lang="es">
@@ -97,7 +150,7 @@ const cab = (t) => `<!DOCTYPE html>
   </button>
   <a class="marca-link" href="/"><img class="logo" src="/assets/logo.png" alt="condor.ai" /></a>
   <nav class="menu">
-${NAV.map(([u, n]) => `    <a href="${u}"${t.ruta === u ? ' aria-current="page"' : ""}>${n}</a>`).join("\n")}
+${navDesktop(t.ruta)}
   </nav>
   <a class="portal-acceso" href="/acceso">Portal clientes</a>
   <a class="btn btn-primario" href="/agendar">Agendar una reunión</a>
@@ -109,7 +162,7 @@ ${NAV.map(([u, n]) => `    <a href="${u}"${t.ruta === u ? ' aria-current="page"'
     <img class="logo" src="/assets/logo.png" alt="condor.ai" />
     <button class="cerrar" aria-label="Cerrar menú">&times;</button>
   </div>
-${NAV.map(([u, n]) => `  <a href="${u}"${t.ruta === u ? ' aria-current="page"' : ""}>${n}</a>`).join("\n")}
+${navCajon(t.ruta)}
   <a href="/acceso">Portal de clientes</a>
   <a class="btn btn-primario" href="/agendar">Agendar una reunión</a>
 </nav>
@@ -132,12 +185,10 @@ const pie = `
     <div>
       <img class="logo" src="/assets/logo.png" alt="condor.ai" />
       <p style="color:var(--on-navy-2);font-size:14.5px;margin-top:16px;max-width:34ch">
-        Desarrollo de software, agentes de inteligencia artificial y consultoría de IA para empresas.</p>
+        Sitios web, tiendas en línea, contenido para redes y software a medida para empresas.</p>
     </div>
     <div><h4>Productos</h4>
-      <a href="/productos/">Desarrollo de software</a><a href="/productos/">Asistentes y agentes de IA</a><a href="/productos/">Consultoría e implementación</a></div>
-    <div><h4>La empresa</h4>
-      <a href="/compania/">Quiénes somos</a><a href="/equipo/">Equipo</a><a href="/proceso/">Proceso</a><a href="/clientes/">Clientes</a></div>
+      ${LINEAS.map((l) => `<a href="${l.href}">${l.nombre}</a>`).join("")}<a href="/productos/barbara/">Agentes IA</a></div>
     <div><h4>Contacto</h4>
       <a href="/agendar">Agendar una reunión</a>
       <a href="mailto:${CORREO}">${CORREO}</a>
@@ -483,18 +534,18 @@ const carrusel = `
 `;
 
 
-/* Carrusel por producto, en coverflow.
+/* Carrusel de sitios entregados, en coverflow.
    La tarjeta del centro manda y las laterales se alejan en Z, se inclinan y
    se atenúan: la profundidad ordena la lectura sin necesidad de un marco que
    grite cuál es la activa.
 
-   DISTINCIÓN QUE IMPORTA Y NO ES ESTÉTICA:
-   · SITIOS son capturas de sitios REALES que entregamos y están en línea. Se
-     presentan como trabajo propio porque lo son.
-   · CASOS_AGENTES y CASOS_CONSULTORIA usan fotos de Unsplash (licencia libre
-     para uso comercial). NO son capturas de nuestro trabajo, así que se
-     presentan como CASOS DE USO, no como entregas. Poner una foto de banco
-     de imágenes bajo el rótulo "lo que hemos hecho" sería mentir. */
+   Son capturas de sitios REALES que entregamos y siguen en línea — se
+   presentan como trabajo propio porque lo son. (Hasta el 2-sept-2026 este
+   generador también mostraba "casos de uso" con fotos de banco de imágenes
+   para las líneas de agentes/consultoría; se retiraron junto con esas
+   categorías genéricas al reorganizar el menú en Sites/Ecommerce/Media/
+   Track — no correspondía inventar un carrusel equivalente para Media o
+   Track sin capturas reales que mostrar.) */
 /* `url` = el sitio EN VIVO. Cuando está, la tarjeta se vuelve un enlace que
    abre en pestaña nueva; cuando no, queda como tarjeta muerta igual que antes.
    Cada URL de acá se verificó respondiendo 200 el 17-ago-2026 — una tarjeta
@@ -516,42 +567,9 @@ const SITIOS = [
     desc: "La versión directa: quiénes son, qué hacen y cómo contactarlos." },
 ];
 
-const CASOS_AGENTES = [
-  { img: "/assets/casos/agentes-1.jpg", nombre: "Atención en WhatsApp",     tipo: "Caso de uso",
-    desc: "El agente responde consultas frecuentes a cualquier hora y deriva a una persona cuando hace falta." },
-  { img: "/assets/casos/agentes-2.jpg", nombre: "Clasificación de entrada", tipo: "Caso de uso",
-    desc: "Cada mensaje se etiqueta por tipo y urgencia antes de llegar al equipo, sin lectura manual." },
-  { img: "/assets/casos/agentes-3.jpg", nombre: "Seguimiento automático",   tipo: "Caso de uso",
-    desc: "El agente retoma conversaciones que quedaron sin respuesta y avisa cuando alguien vuelve a escribir." },
-  { img: "/assets/casos/agentes-4.jpg", nombre: "Agenda de reuniones",      tipo: "Caso de uso",
-    desc: "Propone horarios disponibles, confirma y deja la reunión creada en el calendario del equipo." },
-  { img: "/assets/casos/agentes-5.jpg", nombre: "Integración con sistemas", tipo: "Caso de uso",
-    desc: "Consulta el CRM o el ERP en la misma conversación para responder con datos reales, no genéricos." },
-];
-
-const CASOS_CONSULTORIA = [
-  { img: "/assets/casos/consul-1.jpg", nombre: "Levantamiento de procesos", tipo: "Etapa",
-    desc: "Sesiones con quienes ejecutan el proceso todos los días, no solo con la gerencia." },
-  { img: "/assets/casos/consul-2.jpg", nombre: "Priorización con el cliente", tipo: "Etapa",
-    desc: "Se ordenan los casos por impacto y esfuerzo, y se decide en conjunto por dónde partir." },
-  { img: "/assets/casos/consul-3.jpg", nombre: "Estimación de impacto",     tipo: "Etapa",
-    desc: "Cuánto tiempo o costo libera cada caso, calculado antes de escribir una línea de código." },
-  { img: "/assets/casos/consul-4.jpg", nombre: "Implementación",            tipo: "Etapa",
-    desc: "No entregamos un informe y nos retiramos: dejamos el caso funcionando en la operación." },
-  { img: "/assets/casos/consul-5.jpg", nombre: "Capacitación del equipo",   tipo: "Etapa",
-    desc: "Transferencia al equipo interno para que pueda operar y ajustar sin depender de nosotros." },
-];
-
-const CARRUSELES = { codigo: SITIOS, agente: CASOS_AGENTES, brujula: CASOS_CONSULTORIA };
-const ETIQUETA = {
-  codigo: "Sitios que hemos entregado",
-  agente: "Casos de uso de agentes de IA",
-  brujula: "Etapas de una consultoría",
-};
-
-const carruselProducto = (clave) => {
-  const datos = CARRUSELES[clave];
-  return '<div class="sitios" aria-label="' + ETIQUETA[clave] + '"><div class="sitios-pista">' +
+const carruselSitios = () => {
+  const datos = SITIOS;
+  return '<div class="sitios" aria-label="Sitios que hemos entregado"><div class="sitios-pista">' +
     datos.map((x, i) => {
       // Con `url` la tarjeta entera es el enlace (no solo el título): en el
       // teléfono, que es donde más se mira esto, apuntarle a un texto chico es
@@ -575,97 +593,20 @@ const carruselProducto = (clave) => {
     '</div></div>';
 };
 
-const PRODUCTOS = [
-  { n: "01", ico: "codigo", tit: "Desarrollo de software y sitios web",
-    intro: "Plataformas, portales y sitios corporativos desarrollados a medida, con foco en rendimiento, mantenibilidad y medición.",
-    puntos: ["Análisis funcional y definición de arquitectura", "Desarrollo, pruebas y puesta en producción",
-             "Dominio, código y accesos a nombre del cliente", "Instrumentación y métricas desde el primer día"],
-    aplica: "Empresas que necesitan un sistema propio, no una plantilla configurada." },
-  { n: "02", ico: "agente", tit: "Asistentes y agentes de IA",
-    intro: "Agentes conectados a los canales y sistemas que la empresa ya utiliza, capaces de atender, clasificar y ejecutar tareas de forma autónoma.",
-    puntos: ["Atención continua en WhatsApp y canales web", "Integración con CRM, bases de datos y ERP",
-             "Derivación a una persona cuando corresponde", "Registro auditable de cada interacción"],
-    aplica: "Operaciones con alto volumen de consultas repetitivas." },
-  { n: "03", ico: "brujula", tit: "Consultoría e implementación de IA",
-    intro: "Diagnóstico de procesos, definición de casos de uso con retorno medible e implementación efectiva. No entregamos un informe y nos retiramos.",
-    puntos: ["Levantamiento y priorización de procesos", "Estimación de impacto antes de desarrollar",
-             "Implementación y puesta en marcha", "Capacitación y transferencia al equipo interno"],
-    aplica: "Organizaciones que necesitan decidir dónde invertir en IA." },
-];
-
-/* Los productos se muestran ABIERTOS, no en acordeón.
-   Un acordeón esconde justo lo que la página vino a contar, y obliga a tres
-   clics para leer tres párrafos. Si el contenido cabe, se muestra. */
-const bloquesProducto = () => PRODUCTOS.map((p) => `
+/* Tarjeta de línea para el home y para el hub /productos/ — misma tarjeta en
+   los dos lugares, ABIERTA (sin acordeón): cuatro líneas caben sin esconder
+   nada detrás de un clic. */
+const tarjetaLinea = (l) => `
   <article class="fila">
-    <div class="marca-fila">${icono(p.ico)}<span class="n">${p.n}</span></div>
+    <div class="marca-fila">${icono(l.ico)}</div>
     <div>
-      <h3>${p.tit}</h3>
-      <p class="desc">${p.intro}</p>
-      <ul class="puntos-lista">${p.puntos.map((x) => `<li>${x}</li>`).join("")}</ul>
-      ${carruselProducto(p.ico)}
-      <p class="aplica"><b>Aplica a</b> ${p.aplica}</p>
+      <h3>${l.nombre}</h3>
+      <p class="desc">${l.resumen}</p>
+      <p class="aplica"><b>${l.desde}</b></p>
+      <a class="btn btn-linea" href="${l.href}" style="margin-top:12px">Ver ${l.nombre} →</a>
     </div>
-  </article>`).join("");
-
-const PERSONAS = [
-  { slug: "joaquin", nombre: "Joaquín Muñoz", rol: "Fundador", foto: "joaquin.jpg",
-    resumen: "Dirige la relación con cada cliente y participa en la definición de todos los proyectos. Responsable de la estrategia técnica y comercial de la compañía.",
-    frase: "Si un proceso todavía no conviene automatizar, prefiero decirlo antes de que el cliente invierta.",
-    bloques: [
-      ["lupa",     "Responsabilidad", "Conduce el levantamiento inicial de cada proyecto y define el alcance junto al cliente. Es la contraparte permanente durante toda la ejecución, no solo en la venta."],
-      ["brujula",  "Enfoque",         "Traducir un problema de operación a una solución acotada y medible. Antes de proponer un desarrollo, estima cuánto tiempo o costo libera."],
-      ["martillo", "En qué participa","Está en la primera reunión de todos los proyectos y en las revisiones de avance. Toma las decisiones de arquitectura de producto junto al equipo técnico."],
-      ["entrega",  "Alcance",         "Estrategia técnica, relación comercial y definición de producto."],
-    ],
-    contacto: [["calendario", "Agendar con Joaquín", "/agendar"], ["correo", CORREO, "mailto:" + CORREO]] },
-
-  { slug: "alejandro", nombre: "Alejandro Tobar", rol: "Backend e infraestructura", foto: "alejandro.jpg",
-    resumen: "A cargo de bases de datos, integraciones y despliegue. Responsable de que los sistemas se mantengan estables a medida que crece el volumen.",
-    frase: "Las decisiones de base de datos se toman pensando en el volumen del año siguiente, no en el de la demostración.",
-    bloques: [
-      ["codigo",   "Responsabilidad", "Diseño del modelo de datos, integraciones con sistemas externos y puesta en producción. Define cómo se migra un esquema sin detener la operación."],
-      ["brujula",  "Enfoque",         "Sistemas que aguantan crecimiento sin reescribirse. Prefiere una solución aburrida que lleva años funcionando antes que una novedad sin rodaje."],
-      ["martillo", "En qué participa","Toda integración con CRM, ERP o pasarelas de pago, y cada despliegue a producción. Es quien responde cuando algo falla fuera de horario."],
-      ["entrega",  "Alcance",         "Backend, bases de datos, integraciones, despliegue e infraestructura."],
-    ],
-    contacto: [["calendario", "Agendar una reunión", "/agendar"], ["correo", CORREO, "mailto:" + CORREO]] },
-
-  { slug: "maximiliano", nombre: "Maximiliano Pino", rol: "Frontend y producto", foto: "maximiliano.jpg",
-    resumen: "Responsable de las interfaces y de la experiencia de uso: que el sistema se entienda sin manual y funcione en cualquier dispositivo.",
-    frase: "Una interfaz que necesita capacitación para usarse está mal diseñada.",
-    bloques: [
-      ["codigo",   "Responsabilidad", "Construcción de las interfaces con las que trabaja el usuario final, y de que el sistema se comporte igual en escritorio y en teléfono."],
-      ["brujula",  "Enfoque",         "Que el equipo del cliente entienda el sistema el primer día. La capacitación debería confirmar lo que ya se intuye, no enseñarlo desde cero."],
-      ["martillo", "En qué participa","Diseño de interacción, desarrollo de la interfaz y las revisiones de avance donde el cliente ve el sistema real por primera vez."],
-      ["entrega",  "Alcance",         "Frontend, diseño de interacción y calidad de la experiencia de uso."],
-    ],
-    contacto: [["calendario", "Agendar una reunión", "/agendar"], ["correo", CORREO, "mailto:" + CORREO]] },
-];
-
-// Las dos fotos de oficina, cada una con su pie. Sin pie, dos imágenes
-// seguidas son decoración; con pie, cada una dice algo que el texto no dice.
-const OFICINA = `
-  <div class="oficina-dos">
-    <figure>
-      <div class="marco"><img src="/assets/oficina/equipo.webp" alt="El equipo de condor.ai trabajando en la oficina" loading="lazy" /></div>
-      <figcaption><b>El equipo, un martes cualquiera</b>Trabajamos en una sola sala y sobre una sola mesa. Las decisiones de un proyecto se toman entre quienes lo van a construir, sin capas intermedias.</figcaption>
-    </figure>
-    <figure>
-      <div class="marco"><img src="/assets/oficina/oficina.webp" alt="Oficina de condor.ai en Santiago" loading="lazy" /></div>
-      <figcaption><b>Nuestra oficina en Santiago</b>Aquí se hacen las reuniones de levantamiento y las revisiones de avance. Si prefiere una reunión presencial, es donde lo recibimos.</figcaption>
-    </figure>
-  </div>`;
-
-const tarjetasEquipo = PERSONAS.map((p) => `
-    <article class="persona">
-      <div class="retrato"><img src="/assets/${p.foto}" alt="${p.nombre}" loading="lazy" /></div>
-      <div class="txt"><h3>${p.nombre}</h3><div class="rol">${p.rol}</div>
-        <div class="mas"><div>
-          <p>${p.resumen}</p>
-          <a class="ver" href="/equipo/${p.slug}.html">Ver más</a>
-        </div></div></div>
-    </article>`).join("");
+  </article>`;
+const tarjetasLineas = () => LINEAS.map(tarjetaLinea).join("");
 
 const escribir = (ruta, html) => {
   const destino = join(PUB, ruta);
@@ -685,24 +626,28 @@ const verMas = (url, texto) =>
   `<a class="btn btn-linea" href="${url}">${texto}</a>`;
 
 escribir("rediseno/inicio.html", cab({
-  titulo: "condor.ai — Software, agentes de IA y consultoría para empresas",
-  desc: "Desarrollo de software a medida, asistentes y agentes de inteligencia artificial, y consultoría e implementación de IA para empresas en Chile y la región.",
+  titulo: "condor.ai — Sitios, tiendas en línea, contenido y software a medida",
+  desc: "Cóndor Sites, Cóndor Ecommerce, Cóndor Media y Cóndor Track: cuatro líneas de producto para la presencia digital y la operación de su empresa en Chile y la región.",
   ruta: "/",
 }) + `
 <section class="hero"><div class="wrap hero-grid">
   <div>
     <div class="slides" id="slides">
       <article class="slide on">
-        <h1>Soluciones inteligentes para tu empresa</h1>
-        <p class="bajada">Diseñamos, construimos y mantenemos sistemas de software que sostienen procesos críticos de empresas en Chile y la región.</p>
+        <h1>Un sitio web propio, siempre actualizado</h1>
+        <p class="bajada">Cóndor Sites: creación sin costo inicial, soporte 24/7 y mejoras continuas cada mes.</p>
       </article>
       <article class="slide">
-        <h1>Agentes de inteligencia artificial dentro de su operación</h1>
-        <p class="bajada">Asistentes conectados a sus sistemas y canales, que atienden, clasifican y hacen seguimiento sin intervención manual.</p>
+        <h1>Tiendas en línea que venden de verdad</h1>
+        <p class="bajada">Cóndor Ecommerce: construcción, pasarela de pago y gestión de campañas, administradas por nosotros.</p>
       </article>
       <article class="slide">
-        <h1>Consultoría de IA con responsabilidad sobre el resultado</h1>
-        <p class="bajada">Identificamos dónde la inteligencia artificial genera retorno medible, y la dejamos implementada y en operación.</p>
+        <h1>Contenido para redes, cada semana</h1>
+        <p class="bajada">Cóndor Media: carruseles, historias y video con la identidad de su marca, producidos con apoyo de inteligencia artificial.</p>
+      </article>
+      <article class="slide">
+        <h1>Software a medida para su operación</h1>
+        <p class="bajada">Cóndor Track: ERPs, paneles e integraciones para procesos que ya existen en su empresa.</p>
       </article>
     </div>
     <div class="hero-cta">
@@ -710,9 +655,10 @@ escribir("rediseno/inicio.html", cab({
       <a class="btn btn-linea" href="/productos/">Ver productos</a>
     </div>
     <div class="puntos" role="tablist" aria-label="Cambiar mensaje">
-      <button class="punto" role="tab" aria-selected="true" aria-label="Mensaje 1 de 3"></button>
-      <button class="punto" role="tab" aria-selected="false" aria-label="Mensaje 2 de 3"></button>
-      <button class="punto" role="tab" aria-selected="false" aria-label="Mensaje 3 de 3"></button>
+      <button class="punto" role="tab" aria-selected="true" aria-label="Mensaje 1 de 4"></button>
+      <button class="punto" role="tab" aria-selected="false" aria-label="Mensaje 2 de 4"></button>
+      <button class="punto" role="tab" aria-selected="false" aria-label="Mensaje 3 de 4"></button>
+      <button class="punto" role="tab" aria-selected="false" aria-label="Mensaje 4 de 4"></button>
     </div>
   </div>
   <div>
@@ -723,67 +669,17 @@ escribir("rediseno/inicio.html", cab({
 
 ${carrusel}
 
-<!-- COMPAÑÍA (resumen) -->
-<section class="seccion"><div class="wrap">
-  <div class="cab">
-    <div>
-      <h2 style="margin-top:20px">Optimizamos procesos de empresas con inteligencia artificial</h2></div>
-    ${verMas("/compania/", "Ver más")}
-  </div>
-  <p style="font-size:clamp(16px,1.6vw,19px);max-width:70ch">Ayudamos a empresas a automatizar sus procesos con inteligencia artificial: desde un emprendedor que quiere dejar de perder horas en tareas repetitivas, hasta compañías que ahorran miles de dólares al año en operación. Fundada en 2025, con operación en Chile, Perú y Colombia.</p>
-  </div>
-</div></section>
-
-<!-- EQUIPO (resumen, con las fotos y las personas) -->
-<section class="seccion oscura"><div class="wrap">
-  <div class="cab">
-    <div>
-      <h2 style="margin-top:20px">Las personas responsables de su proyecto</h2></div>
-    ${verMas("/equipo/", "Ver el equipo completo")}
-  </div>
-${OFICINA}
-  <div class="lista">
-${PERSONAS.map((p) => `    <article class="fila-persona">
-      <div class="retrato-s"><img src="/assets/${p.foto}" alt="${p.nombre}" loading="lazy" /></div>
-      <div><h3>${p.nombre}</h3><div class="rol">${p.rol}</div>
-        <p>${p.resumen}</p>
-        <a class="ver" href="/equipo/${p.slug}.html">Ver más</a></div>
-    </article>`).join("\n")}
-  </div>
-</div></section>
-
-
-
-<!-- PROCESO (resumen) -->
-<section class="seccion"><div class="wrap">
-  <div class="cab">
-    <div>
-      <h2 style="margin-top:20px">Un método definido, sin sorpresas de alcance</h2></div>
-    ${verMas("/proceso/", "Ver el proceso completo")}
-  </div>
-  <div class="lista">
-    <article class="fila"><div class="marca-fila">${icono("lupa")}<span class="n">01</span></div>
-      <div><h3>Levantamiento</h3><p class="desc">Una reunión inicial para entender el proceso y su contexto. Se entrega un alcance escrito con supuestos, plazos y costo antes de comenzar.</p></div></article>
-    <article class="fila"><div class="marca-fila">${icono("martillo")}<span class="n">02</span></div>
-      <div><h3>Desarrollo</h3><p class="desc">Avances revisables de forma periódica sobre el sistema real, no sobre maquetas. Las correcciones se incorporan antes de que sean costosas.</p></div></article>
-    <article class="fila"><div class="marca-fila">${icono("entrega")}<span class="n">03</span></div>
-      <div><h3>Entrega y soporte</h3><p class="desc">Puesta en producción, documentación y capacitación. La propiedad y los accesos quedan a nombre del cliente, con soporte posterior acordado.</p></div></article>
-  </div>
-</div></section>
-
 <!-- PRODUCTOS (resumen) -->
 <section class="seccion"><div class="wrap">
   <div class="cab">
     <div>
-      <h2 style="margin-top:20px">Tres líneas de servicio, cada una con equipo dedicado</h2></div>
+      <h2 style="margin-top:20px">Cuatro líneas de producto, cada una con equipo dedicado</h2></div>
     ${verMas("/productos/", "Ver todos los productos")}
   </div>
   <div class="lista">
-${PRODUCTOS.map((p) => `    <article class="fila">
-      <div class="marca-fila">${icono(p.ico)}<span class="n">${p.n}</span></div>
-      <div><h3>${p.tit}</h3><p class="desc">${p.intro}</p>${carruselProducto(p.ico)}</div>
-    </article>`).join("\n")}
+${tarjetasLineas()}
   </div>
+${carruselSitios()}
 </div></section>
 
 <!-- CONTACTO (resumen) -->
@@ -807,26 +703,30 @@ ${PRODUCTOS.map((p) => `    <article class="fila">
 </div></section>
 ` + cierre() + pie.replace("</body>", JS_COMUN + "</body>"));
 
-/* ── PRODUCTOS ──────────────────────────────────────────────────────── */
+/* ── PRODUCTOS (hub) ────────────────────────────────────────────────── */
 escribir("productos/index.html", cab({
   titulo: "Productos — condor.ai",
-  desc: "Desarrollo de software y sitios web, asistentes y agentes de IA, y consultoría e implementación de inteligencia artificial.",
+  desc: "Cóndor Sites, Cóndor Ecommerce, Cóndor Media y Cóndor Track: cuatro líneas de producto, cada una con equipo y proceso propio.",
   ruta: "/productos/",
 }) + `
 <section class="cabecera"><div class="wrap">
-  <h1>Tres líneas de servicio, cada una con equipo dedicado</h1>
+  <h1>Cuatro líneas de producto, cada una con equipo dedicado</h1>
   <p class="bajada">No trabajamos por horas ni revendemos licencias. Cada línea tiene un responsable técnico y un alcance escrito antes de comenzar.</p>
 </div></section>
 
-<!-- Bárbara va ARRIBA de las tres líneas: es el único producto empaquetado
-     —precio de lista, se instala igual para todos— y es lo que más se vende
-     solo. Dejarlo al final lo escondía debajo de tres bloques largos de
-     servicio a medida. Tiene su propia identidad (negro y lima) porque es una
-     marca aparte, no una cuarta línea de servicio. -->
-<section style="padding-bottom:clamp(40px,5vw,64px)"><div class="wrap">
+<section style="padding-bottom:clamp(56px,7vw,96px)"><div class="wrap">
+<div class="lista">${tarjetasLineas()}</div>
+${carruselSitios()}
+</div></section>
+
+<!-- Bárbara (Agentes IA) va aparte de las 4 líneas: es un producto
+     empaquetado —precio de lista, se instala igual para todos—, con
+     identidad propia (negro y lima) porque es una marca aparte, no una
+     quinta línea de servicio a medida. -->
+<section style="padding-bottom:clamp(56px,7vw,96px)"><div class="wrap">
   <a href="/productos/barbara/" class="barbara-tira">
     <div class="barbara-tira-txt">
-      <span class="mono-label">Producto · suscripción mensual</span>
+      <span class="mono-label">Agentes IA · suscripción mensual</span>
       <h2>Bárbara</h2>
       <p>Tu agente de IA que crea el contenido de Instagram de tu marca cada semana:
          carruseles, historias y video, con tu paleta y tu logo. Desde $36.990 al mes.</p>
@@ -834,10 +734,6 @@ escribir("productos/index.html", cab({
     </div>
     <img src="/assets/barbara/lockup.jpg" alt="Bárbara, agente de IA de contenido" loading="lazy" />
   </a>
-</div></section>
-
-<section style="padding-bottom:clamp(56px,7vw,96px)"><div class="wrap">
-<div class="lista">${bloquesProducto()}</div>
 </div></section>
 
 <section class="seccion oscura"><div class="wrap">
@@ -851,115 +747,159 @@ escribir("productos/index.html", cab({
       <p>Sesiones con su equipo y un período de soporte acordado por contrato, con tiempos de respuesta definidos.</p></div>
   </div>
 </div></section>
-` + cierre("¿Cuál de las tres necesita?") + pie.replace("</body>", JS_COMUN + "</body>"));
+` + cierre("¿Cuál de las cuatro necesita?") + pie.replace("</body>", JS_COMUN + "</body>"));
 
-/* ── COMPAÑÍA ───────────────────────────────────────────────────────── */
-/* La página se llama Compañía y su dirección es /compania/. Se sigue
-   escribiendo también en /inicio/, que era su dirección anterior, para que
-   cualquier enlace viejo —o alguien con la URL guardada— siga respondiendo
-   200 en vez de caer al 404. */
-const paginaInicio = cab({
-  titulo: "Compañía — condor.ai",
-  desc: "condor.ai es una empresa chilena de servicios de software con operación en Chile y Colombia.",
-  ruta: "/compania/",
+/* ── CÓNDOR SITES ───────────────────────────────────────────────────────
+   Pricing y proceso reales, sacados de las infografías oficiales del
+   2-sept-2026 (ver nota condor_sites_proceso_y_pricing_2026_09_02 en
+   memoria) — no son cifras de ejemplo. */
+escribir("productos/sites/index.html", cab({
+  titulo: "Cóndor Sites — condor.ai",
+  desc: "Sitio web propio con soporte 24/7 y mejoras continuas, sin costo de creación inicial. Desde $20.990/mes en Chile.",
+  ruta: "/productos/sites/",
 }) + `
 <section class="cabecera"><div class="wrap">
-  <h1>Optimizamos procesos de empresas con inteligencia artificial</h1>
-  <p class="bajada">condor.ai automatiza procesos de empresas con inteligencia artificial. Fundada en 2025, con operación en Chile, Perú y Colombia.</p>
-</div></section>
-
-<section style="padding-bottom:clamp(56px,7vw,96px)"><div class="wrap dos-col">
-  <div><h2>Cómo trabajamos</h2></div>
-  <div>
-    <p>Ayudamos a empresas a automatizar sus procesos con inteligencia artificial: desde un emprendedor que quiere dejar de perder horas en tareas repetitivas, hasta compañías que ahorran miles de dólares al año en operación. Fundada en 2025, con operación en Chile, Perú y Colombia.</p>
-    <p>Trabajamos con empresas que ya tienen operación y necesitan que la tecnología reduzca carga, no que agregue otro sistema sin uso. Antes de proponer un desarrollo estimamos su impacto; cuando un proceso todavía no conviene automatizar, lo decimos.</p>
-    <p>Cada proyecto se entrega documentado, con la propiedad intelectual y los accesos a nombre del cliente. No usamos la dependencia técnica como forma de retención.</p>
-      <div class="hecho"><b>Chile y Colombia</b><span>Operación regional</span></div>
-      <div class="hecho"><b>Equipo propio</b><span>Sin subcontratación</span></div>
-      <div class="hecho"><b>Soporte continuo</b><span>Posterior a la entrega</span></div>
-    </div>
-  </div>
-</div></section>
-
-${carrusel}
-` + cierre() + pie.replace("</body>", JS_COMUN + "</body>");
-escribir("inicio/index.html", paginaInicio);
-escribir("compania/index.html", paginaInicio);
-
-/* ── EQUIPO ─────────────────────────────────────────────────────────── */
-escribir("equipo/index.html", cab({
-  titulo: "Equipo — condor.ai",
-  desc: "Las personas responsables de su proyecto en condor.ai, con nombre, rol y responsabilidad.",
-  ruta: "/equipo/",
-}) + `
-<section class="cabecera"><div class="wrap">
-  <h1>Las personas responsables de su proyecto</h1>
-  <p class="bajada">Sabrá desde la primera reunión quién construye qué. No hay equipos rotativos ni recursos anónimos asignados por disponibilidad.</p>
-</div></section>
-
-<section class="seccion oscura" style="border-top:0"><div class="wrap">
-${OFICINA}
-  <div class="equipo-grid">
-${tarjetasEquipo}
-  </div>
-</div></section>
-` + cierre("¿Quiere conocerlos?") + pie.replace("</body>", JS_COMUN + "</body>"));
-
-/* ── PROCESO ────────────────────────────────────────────────────────── */
-escribir("proceso/index.html", cab({
-  titulo: "Proceso — condor.ai",
-  desc: "Un método definido en tres etapas, con alcance escrito antes de comenzar y sin sorpresas de presupuesto.",
-  ruta: "/proceso/",
-}) + `
-<section class="cabecera"><div class="wrap">
-  <h1>Un método definido, sin sorpresas de alcance</h1>
-  <p class="bajada">El costo y el plazo se acuerdan por escrito antes de escribir la primera línea de código. Si el alcance cambia, se vuelve a acordar.</p>
+  <a class="volver" href="/productos/">Volver a productos</a>
+  <h1>Cóndor Sites</h1>
+  <p class="bajada">Un sitio web propio, sin costo de creación inicial. Un solo plan mensual incluye soporte 24/7, administración y mejoras continuas.</p>
 </div></section>
 
 <section style="padding-bottom:clamp(56px,7vw,96px)"><div class="wrap">
-  <div class="pasos" style="margin-top:0">
-    <div class="paso"><div class="n">ETAPA 01</div><h3>Levantamiento</h3>
+  <h2>Un plan, un precio por país</h2>
+  <div class="pasos" style="margin-top:24px">
+    <div class="paso"><div class="n">CHILE</div><h3>$20.990/mes</h3>
+      <p>Precio de lista $28.990. Incluye IVA.</p></div>
+    <div class="paso"><div class="n">PERÚ</div><h3>S/79/mes</h3>
+      <p>Precio de lista S/109. Incluye IGV.</p></div>
+    <div class="paso"><div class="n">COLOMBIA</div><h3>$69.900/mes</h3>
+      <p>Precio de lista $89.900 COP. Incluye IVA.</p></div>
+  </div>
+  <p style="margin-top:20px;color:var(--ink-2)">Plan único "Página web + soporte 24/7 mensual": creación sin costo inicial, soporte y administración mensual, e innovación continua (cambios visuales, nuevos productos, mejoras a pedido).</p>
+</div></section>
+
+<section class="seccion oscura"><div class="wrap">
+  <h2 style="margin-top:20px">Cómo se construye</h2>
+  <div class="lista">
+    <article class="fila"><div class="marca-fila">${icono("lupa")}<span class="n">01</span></div>
+      <div><h3>Levantamiento</h3><p class="desc">Reunión inicial y luego recopilación de logo, textos, fotos y datos de su empresa.</p></div></article>
+    <article class="fila"><div class="marca-fila">${icono("martillo")}<span class="n">02</span></div>
+      <div><h3>Construcción y ajustes</h3><p class="desc">Diseño y desarrollo del sitio, con un enlace de borrador para revisar y pedir cambios antes de publicar.</p></div></article>
+    <article class="fila"><div class="marca-fila">${icono("entrega")}<span class="n">03</span></div>
+      <div><h3>Publicación y mantención</h3><p class="desc">Conexión del dominio, salida en vivo y actualizaciones mes a mes mientras dure la suscripción.</p></div></article>
+  </div>
+</div></section>
+` + cierre("¿Le construimos su sitio?") + pie.replace("</body>", JS_COMUN + "</body>"));
+
+/* ── CÓNDOR ECOMMERCE ───────────────────────────────────────────────────
+   Pricing, comisiones y proceso reales del modelo comercial cerrado el
+   2-sept-2026 (ver condor_ecommerce_modelo_comercial_2026_09_02 en
+   memoria). Perú/Colombia/Paraguay se cotizan aparte, ajustados por costo
+   de vida — no se listan cifras acá para no publicar un tipo de cambio
+   que puede quedar desactualizado. */
+escribir("productos/ecommerce/index.html", cab({
+  titulo: "Cóndor Ecommerce — condor.ai",
+  desc: "Tienda en línea administrada de punta a punta: construcción, pasarela de pago, stock y campañas. Desde $69.990/mes + comisión por venta.",
+  ruta: "/productos/ecommerce/",
+}) + `
+<section class="cabecera"><div class="wrap">
+  <a class="volver" href="/productos/">Volver a productos</a>
+  <h1>Cóndor Ecommerce</h1>
+  <p class="bajada">Construimos y administramos su tienda en línea: pasarela de pago, boleta, sincronización de stock y, si lo necesita, gestión de campañas.</p>
+</div></section>
+
+<section style="padding-bottom:clamp(56px,7vw,96px)"><div class="wrap">
+  <h2>Base mensual, según tamaño de tienda</h2>
+  <div class="pasos" style="margin-top:24px">
+    <div class="paso"><div class="n">SIMPLE</div><h3>$69.990/mes</h3>
+      <p>Menos de 100 SKU, sin integraciones ni gestión de Ads.</p></div>
+    <div class="paso"><div class="n">MEDIA</div><h3>$129.990/mes</h3>
+      <p>100 a 500 SKU, o una integración con bodega o ERP externo.</p></div>
+    <div class="paso"><div class="n">COMPLEJA</div><h3>$189.990/mes</h3>
+      <p>Más de 500 SKU, varias integraciones, o incluye gestión de Meta Ads.</p></div>
+  </div>
+  <h2 style="margin-top:48px">Más una comisión por venta neta mensual</h2>
+  <div class="lista" style="margin-top:12px">
+    <div class="hecho"><b>Hasta $5.000.000/mes</b><span>5% de comisión</span></div>
+    <div class="hecho"><b>$5.000.001 – $15.000.000/mes</b><span>7% de comisión</span></div>
+    <div class="hecho"><b>Sobre $15.000.000/mes</b><span>9% de comisión</span></div>
+  </div>
+  <p style="margin-top:20px;color:var(--ink-2)">Precios de Chile, con IVA. Perú, Colombia y Paraguay se cotizan según el mercado local — consúltenos en la reunión inicial.</p>
+</div></section>
+
+<section class="seccion oscura"><div class="wrap">
+  <h2 style="margin-top:20px">Cómo se construye</h2>
+  <div class="lista">
+    <article class="fila"><div class="marca-fila">${icono("lupa")}<span class="n">01</span></div>
+      <div><h3>Cotización</h3><p class="desc">Reunión de 30-45 minutos sobre su catálogo e integraciones. Propuesta escrita dentro de 24 horas.</p></div></article>
+    <article class="fila"><div class="marca-fila">${icono("martillo")}<span class="n">02</span></div>
+      <div><h3>Onboarding</h3><p class="desc">Legales, pasarela de pago, construcción de la tienda y sincronización de stock. Objetivo: 7 a 10 días hábiles hasta publicar.</p></div></article>
+    <article class="fila"><div class="marca-fila">${icono("entrega")}<span class="n">03</span></div>
+      <div><h3>Mantención</h3><p class="desc">Reporte mensual con el corte del mes anterior, reunión trimestral y canal directo por WhatsApp Business.</p></div></article>
+  </div>
+</div></section>
+` + cierre("¿Conversamos sobre su tienda?") + pie.replace("</body>", JS_COMUN + "</body>"));
+
+/* ── CÓNDOR MEDIA ───────────────────────────────────────────────────────
+   Línea nueva (agregada 2-sept-2026), todavía SIN modelo comercial
+   público definido — a diferencia de Sites/Ecommerce de arriba, esta
+   página es deliberadamente breve y sin tabla de precios. Avisar a
+   Joaquín al cerrar esta tarea para que la complete cuando el pricing de
+   Media esté cerrado, igual que se hizo con Sites y Ecommerce. */
+escribir("productos/media/index.html", cab({
+  titulo: "Cóndor Media — condor.ai",
+  desc: "Contenido para redes sociales de su marca, producido cada semana con apoyo de inteligencia artificial.",
+  ruta: "/productos/media/",
+}) + `
+<section class="cabecera"><div class="wrap">
+  <a class="volver" href="/productos/">Volver a productos</a>
+  <h1>Cóndor Media</h1>
+  <p class="bajada">Contenido para las redes sociales de su marca, producido cada semana con la identidad visual de su empresa y apoyo de inteligencia artificial.</p>
+</div></section>
+
+<section style="padding-bottom:clamp(56px,7vw,96px)"><div class="wrap dos-col">
+  <div><h2>Qué incluye</h2></div>
+  <div>
+    <p>Un calendario de contenido definido, publicación en sus redes y revisión de que cada pieza respete la paleta, el logo y el tono de su marca.</p>
+    <p>El alcance —cantidad de piezas, redes y frecuencia— se define según sus objetivos en la primera reunión, así que la propuesta y el costo se cotizan a medida.</p>
+  </div>
+</div></section>
+` + cierre("¿Conversamos sobre su contenido?") + pie.replace("</body>", JS_COMUN + "</body>"));
+
+/* ── CÓNDOR TRACK ───────────────────────────────────────────────────────
+   Software a medida (ERPs, paneles, integraciones). Sin nombrar clientes
+   ni proyectos internos concretos: son desarrollos confidenciales, y esta
+   página describe la línea de servicio, no casos puntuales. */
+escribir("productos/track/index.html", cab({
+  titulo: "Cóndor Track — condor.ai",
+  desc: "Software y paneles de operación a medida: ERPs, integraciones y automatizaciones para procesos que ya existen en su empresa.",
+  ruta: "/productos/track/",
+}) + `
+<section class="cabecera"><div class="wrap">
+  <a class="volver" href="/productos/">Volver a productos</a>
+  <h1>Cóndor Track</h1>
+  <p class="bajada">Sistemas propios para operar mejor: paneles de control, ERPs livianos e integraciones entre las herramientas que su empresa ya usa.</p>
+</div></section>
+
+<section style="padding-bottom:clamp(56px,7vw,96px)"><div class="wrap dos-col">
+  <div><h2>Para qué sirve</h2></div>
+  <div>
+    <p>Cuando una planilla o un proceso manual ya no aguanta el volumen del negocio, construimos el sistema que lo reemplaza: seguimiento de pedidos, control de stock, paneles de ventas o cualquier operación repetitiva que hoy consume horas de su equipo.</p>
+    <p>No es una plantilla configurada: cada Cóndor Track se diseña sobre el proceso real de la empresa, con acceso y datos que quedan a nombre del cliente.</p>
+  </div>
+</div></section>
+
+<section class="seccion oscura"><div class="wrap">
+  <h2 style="margin-top:20px">Cómo se construye</h2>
+  <div class="pasos" style="margin-top:24px;background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.1)">
+    <div class="paso" style="background:var(--navy-3)"><div class="n">ETAPA 01</div><h3>Levantamiento</h3>
       <p>Una reunión inicial para entender el proceso y su contexto. Se entrega un alcance escrito con supuestos, plazos y costo antes de comenzar.</p></div>
-    <div class="paso"><div class="n">ETAPA 02</div><h3>Desarrollo</h3>
+    <div class="paso" style="background:var(--navy-3)"><div class="n">ETAPA 02</div><h3>Desarrollo</h3>
       <p>Avances revisables de forma periódica sobre el sistema real, no sobre maquetas. Las correcciones se incorporan antes de que sean costosas.</p></div>
-    <div class="paso"><div class="n">ETAPA 03</div><h3>Entrega y soporte</h3>
+    <div class="paso" style="background:var(--navy-3)"><div class="n">ETAPA 03</div><h3>Entrega y soporte</h3>
       <p>Puesta en producción, documentación y capacitación. La propiedad y los accesos quedan a nombre del cliente, con soporte posterior acordado.</p></div>
   </div>
 </div></section>
-
-<section class="seccion"><div class="wrap dos-col">
-  <div><h2>Qué esperamos de su parte</h2></div>
-  <div>
-    <p>Una contraparte con capacidad de decidir. La mayoría de los atrasos en proyectos de software no son técnicos: son decisiones que quedan esperando aprobación.</p>
-    <p>Acceso a quien conoce el proceso de verdad. Normalmente no es la gerencia, sino quien lo ejecuta todos los días.</p>
-    <p>Disponibilidad para las revisiones de avance. Son cortas y espaciadas, pero es donde se corrige barato lo que después sale caro.</p>
-  </div>
-</div></section>
-` + cierre() + pie.replace("</body>", JS_COMUN + "</body>"));
-
-/* ── CLIENTES ───────────────────────────────────────────────────────── */
-escribir("clientes/index.html", cab({
-  titulo: "Clientes — condor.ai",
-  desc: "Empresas que han confiado en condor.ai para desarrollar software y automatizar procesos.",
-  ruta: "/clientes/",
-}) + `
-<section class="cabecera"><div class="wrap">
-  <h1>Empresas que han confiado en nosotros</h1>
-  <p class="bajada">Trabajamos con compañías de comercio, servicios y administración de propiedades en Chile y Colombia.</p>
-</div></section>
-
-${carrusel}
-
-<section class="seccion oscura" style="border-top:0"><div class="wrap">
-  <div class="cab"><div>
-    <h2 style="margin-top:20px">Empresas que trabajan con nosotros</h2></div></div>
-    <div class="testi"><p>“El sistema entró en producción en el plazo comprometido y la transferencia al equipo interno fue ordenada.”</p>
-      <div class="quien"><b>Dirección</b><span>Retail</span></div></div>
-    <div class="testi"><p>“Nos indicaron qué procesos no convenía automatizar todavía. Esa recomendación evitó una inversión innecesaria.”</p>
-      <div class="quien"><b>Administración</b><span>Servicios inmobiliarios</span></div></div>
-  </div>
-</div></section>
-` + cierre() + pie.replace("</body>", JS_COMUN + "</body>"));
+` + cierre("¿Cotizamos su sistema?") + pie.replace("</body>", JS_COMUN + "</body>"));
 
 /* ── CONTACTO ───────────────────────────────────────────────────────── */
 escribir("contacto/index.html", cab({
@@ -994,52 +934,6 @@ escribir("contacto/index.html", cab({
   </div>
 </div></section>
 ` + pie.replace("</body>", JS_COMUN + "</body>"));
-
-/* ── FICHAS DE EQUIPO ───────────────────────────────────────────────── */
-for (const p of PERSONAS) {
-  escribir(`equipo/${p.slug}.html`, cab({
-    titulo: `${p.nombre} — condor.ai`,
-    desc: `${p.rol} en condor.ai. ${p.resumen}`,
-    ruta: `/equipo/${p.slug}.html`,
-  }) + `
-<section class="cabecera"><div class="wrap">
-  <a class="volver" href="/equipo/">Volver al equipo</a>
-  <div class="ficha-cab">
-    <div class="ficha-foto"><img src="/assets/${p.foto}" alt="${p.nombre}" /></div>
-    <div>
-      <div class="ficha-rol">${p.rol}</div>
-      <h1>${p.nombre}</h1>
-      <p class="bajada">${p.resumen}</p>
-      <div class="hero-cta">
-${p.contacto.map(([ic, txt, url]) => `        <a class="btn ${ic === "calendario" ? "btn-primario" : "btn-linea"}" href="${url}">${icono(ic, "ico-btn")}${txt}</a>`).join("\n")}
-      </div>
-    </div>
-  </div>
-</div></section>
-
-<section class="seccion"><div class="wrap">
-  <blockquote class="frase">${p.frase}</blockquote>
-  <div class="lista">
-${p.bloques.map(([ic, titulo, texto]) => `    <article class="fila">
-      <div class="marca-fila">${icono(ic)}</div>
-      <div><h3>${titulo}</h3><p class="desc">${texto}</p></div>
-    </article>`).join("\n")}
-  </div>
-</div></section>
-
-<section class="seccion oscura"><div class="wrap">
-  <h2 style="max-width:20ch">El resto del equipo</h2>
-  <div class="lista">
-${PERSONAS.filter((o) => o.slug !== p.slug).map((o) => `    <article class="fila-persona">
-      <div class="retrato-s"><img src="/assets/${o.foto}" alt="${o.nombre}" loading="lazy" /></div>
-      <div><h3>${o.nombre}</h3><div class="rol">${o.rol}</div>
-        <a class="ver" href="/equipo/${o.slug}.html">Ver ficha</a></div>
-    </article>`).join("\n")}
-  </div>
-</div></section>
-` + cierre(`¿Quiere conversar con ${p.nombre.split(" ")[0]}?`) + pie.replace("</body>", JS_COMUN + "</body>"));
-}
-
 
 /* ── AGENDAR ────────────────────────────────────────────────────────────
    La página a la que apuntan TODOS los CTA del sitio. Se rehace con la
