@@ -5,6 +5,7 @@ import { Ico } from "../disenio/iconos";
 import {
   type ContenidoMarketing,
   type SeguimientoDiario,
+  type SeguidoresSnapshot,
   EQUIPO_CONDOR,
   TEMAS_CONTENIDO,
   CALENDARIO_CONTENIDO,
@@ -88,34 +89,40 @@ async function asegurarSemana() {
  * semana del 31-ago solo genera jueves y viernes; semanas futuras usan el
  * calendario completo automáticamente.
  *
- * EL CONTADOR DE SEGUIDOS ES REAL; EL DE SEGUIDORES QUEDA PENDIENTE DE LA API
+ * EL CONTADOR DE SEGUIDOS ES REAL; EL DE SEGUIDORES TAMBIÉN, DESDE EL 3-SEPT
  * ---------------------------------------------------------------------------
  * Cuántas cuentas se siguieron esta semana sale de sumar lo que cada
  * persona ya registra (no depende de ninguna API externa). Cuántos
- * seguidores nuevos ganó @condor.ai SÍ necesitaría la API oficial de
- * Instagram (Business Discovery, solo lectura) -- Blotato no tiene ese
- * dato hoy (confirmado, está en su roadmap). Se sacó el campo manual de
- * "anotar el total" (pedido de Joaquín, 2-sept): no tiene sentido pedirle
- * a alguien que lo escriba a mano una vez para reemplazarlo enseguida por
- * algo automático -- se deja el espacio listo (`marketing_seguidores_
- * snapshot`) para que un job lo llene solo apenas exista el token.
+ * seguidores nuevos ganó @condor.ai se conecta con la API oficial de
+ * Instagram (Instagram Login, `graph.instagram.com` -- NO
+ * `graph.facebook.com`, son flujos distintos) -- confirmado en vivo el
+ * 3-sept-2026 con la cuenta real. `services/marketing/sincronizar-
+ * seguidores-instagram.mjs` corre una vez al día (cron
+ * `instagram-seguidores.yml`) y guarda el total en
+ * `marketing_seguidores_snapshot`; acá solo se calcula el delta entre el
+ * snapshot más reciente y el de hace 7 días. El token es de corta
+ * duración -- si el cron empieza a fallar por auth, hay que renovarlo
+ * (ver el comentario del propio script de sincronización).
  */
 export function Marketing() {
   const [contenido, setContenido] = useState<ContenidoMarketing[]>([]);
   const [seguimiento, setSeguimiento] = useState<SeguimientoDiario[]>([]);
+  const [snapshots, setSnapshots] = useState<SeguidoresSnapshot[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
 
   async function cargar(silencioso = false) {
     if (!silencioso) setCargando(true);
-    const [{ data: co, error: eco }, { data: se }] = await Promise.all([
+    const [{ data: co, error: eco }, { data: se }, { data: sn }] = await Promise.all([
       sb.from("marketing_contenido").select("*").order("fecha"),
       sb.from("marketing_seguimiento_diario").select("*").order("fecha"),
+      sb.from("marketing_seguidores_snapshot").select("*").order("fecha", { ascending: false }).limit(14),
     ]);
     if (eco) setError(eco.message);
     else setError("");
     setContenido((co ?? []) as ContenidoMarketing[]);
     setSeguimiento((se ?? []) as SeguimientoDiario[]);
+    setSnapshots((sn ?? []) as SeguidoresSnapshot[]);
     if (!silencioso) setCargando(false);
   }
 
@@ -141,6 +148,21 @@ export function Marketing() {
   const totalSeguidosSemana = seguimientoSemana.reduce(
     (t, s) => t + (s.hecho ? (s.cantidad ?? META_SEGUIDOS_DIA) : 0), 0,
   );
+
+  // Delta de seguidores: el snapshot más reciente contra el de hace ~7
+  // días (el cron corre una vez al día, así que el snapshot de "hace una
+  // semana" es el primero con fecha <= hoy-7, no necesariamente exacto al
+  // día si el cron falló alguna corrida).
+  const seguidoresDelta = useMemo(() => {
+    if (snapshots.length === 0) return null;
+    const ultimo = snapshots[0];
+    const hace7 = new Date(ultimo.fecha + "T12:00:00");
+    hace7.setDate(hace7.getDate() - 7);
+    const hace7Iso = iso(hace7);
+    const referencia = snapshots.find((s) => s.fecha <= hace7Iso) ?? snapshots[snapshots.length - 1];
+    if (referencia.id === ultimo.id) return null; // no hay suficiente historial todavía
+    return { actual: ultimo.cantidad, nuevos: ultimo.cantidad - referencia.cantidad, desde: referencia.fecha };
+  }, [snapshots]);
 
   async function actualizarContenido(c: ContenidoMarketing, cambios: Partial<ContenidoMarketing>) {
     setContenido((ls) => ls.map((x) => (x.id === c.id ? { ...x, ...cambios } : x)));
@@ -195,8 +217,17 @@ export function Marketing() {
           </div>
           <div className="kpi">
             <div className="tile">{Ico.repetir({ t: 18 })}</div>
-            <div className="cifra"><b>—</b></div>
-            <p>Seguidores nuevos — meta {META_SEGUIDORES_NUEVOS_SEMANA}/semana, pendiente conectar la API de Instagram</p>
+            {seguidoresDelta ? (
+              <>
+                <div className="cifra"><b>{seguidoresDelta.nuevos >= 0 ? "+" : ""}{seguidoresDelta.nuevos}</b>/{META_SEGUIDORES_NUEVOS_SEMANA}</div>
+                <p>Seguidores nuevos desde el {seguidoresDelta.desde} · {seguidoresDelta.actual.toLocaleString("es-CL")} en total</p>
+              </>
+            ) : (
+              <>
+                <div className="cifra"><b>{snapshots[0]?.cantidad.toLocaleString("es-CL") ?? "—"}</b></div>
+                <p>Seguidores totales hoy — falta una semana de historial para calcular el delta</p>
+              </>
+            )}
           </div>
         </div>
 

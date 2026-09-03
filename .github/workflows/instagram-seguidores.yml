@@ -1,0 +1,36 @@
+name: Marketing — snapshot diario de seguidores de Instagram
+
+# Lee followers_count de @condor.ai vía la API oficial de Instagram
+# (Instagram Login, graph.instagram.com) y lo guarda en
+# marketing_seguidores_snapshot, para el contador de "seguidores nuevos"
+# del módulo Marketing del Portal Cóndor. Conectado el 3-sept-2026.
+#
+# ⚠️ El token es de corta duración (no se hizo todavía el exchange a 60
+# días con el App Secret) -- cuando venza, esta corrida va a fallar con
+# un error de autenticación. Hay que generar uno nuevo y actualizar
+# INSTAGRAM_ACCESS_TOKEN acá Y api_credenciales (proveedor 'instagram')
+# en Supabase -- las dos copias no se sincronizan solas.
+#
+# Corre una vez al día, 09:00 UTC = 05:00 Chile (antes de que el equipo
+# empiece a trabajar, para tener el número del día listo).
+
+on:
+  schedule:
+    - cron: "0 9 * * *"
+  workflow_dispatch:
+
+jobs:
+  sincronizar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Guardar snapshot de seguidores
+        run: node services/marketing/sincronizar-seguidores-instagram.mjs
+        env:
+          INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
