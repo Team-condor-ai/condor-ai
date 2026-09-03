@@ -13,12 +13,12 @@ import {
   CANALES_PROSPECTO,
   ESTADOS_PROSPECTO,
   EQUIPO_CONDOR,
-  METAS_SEMANALES_PROSPECCION,
   diasParaSeguimiento,
   textoEstadoProspecto,
   semanaLaboral,
   fraccionSemanaTranscurrida,
   esViernesLaboral,
+  metaEfectiva,
 } from "./tipos";
 
 const LINEA = "ecommerce";
@@ -429,8 +429,9 @@ function TarjetaCumplimiento({ persona, filas }: { persona: typeof EQUIPO_CONDOR
   const deLaPersona = filas.filter((p) => p.creado_por_email === persona.email);
   const hoy = deLaPersona.filter((p) => p.creado_en.slice(0, 10) === hoyIso).length;
   const semana = deLaPersona.filter((p) => new Date(p.creado_en) >= inicio).length;
-  const metaDiaria = Math.round(persona.metaSemanal / 5);
-  const esperadoAhora = Math.max(1, Math.round(persona.metaSemanal * fraccionSemanaTranscurrida(ahora)));
+  const meta = metaEfectiva(persona, ahora);
+  const metaDiaria = Math.round(meta / 5);
+  const esperadoAhora = Math.max(1, Math.round(meta * fraccionSemanaTranscurrida(ahora)));
   const pctSemana = Math.round((semana / esperadoAhora) * 100);
 
   return (
@@ -448,7 +449,7 @@ function TarjetaCumplimiento({ persona, filas }: { persona: typeof EQUIPO_CONDOR
           <p>Hoy</p>
         </div>
         <div>
-          <div className="cifra"><b>{semana}</b>/{persona.metaSemanal}</div>
+          <div className="cifra"><b>{semana}</b>/{meta}</div>
           <p>Esta semana</p>
         </div>
       </div>
@@ -478,12 +479,12 @@ function BandaViernes({ filas }: { filas: Prospecto[] }) {
 
   const faltantes = EQUIPO_CONDOR.map((persona) => {
     const semana = filas.filter((p) => p.creado_por_email === persona.email && new Date(p.creado_en) >= inicio).length;
-    return { nombre: persona.nombre, falta: Math.max(0, persona.metaSemanal - semana) };
+    return { nombre: persona.nombre, falta: Math.max(0, metaEfectiva(persona, ahora) - semana) };
   }).filter((f) => f.falta > 0);
 
   return (
     <div className="aviso" style={{ borderColor: "var(--mal-bd)", background: "var(--mal-bg)", color: "var(--mal-tx)", marginBottom: 14 }}>
-      <b>Quedan {horas}h {minutos}min para cerrar la semana de prospección</b> (hoy viernes, corte 19:00).
+      <b>Quedan {horas}h {minutos}min para cerrar la semana de prospección</b> (hoy viernes, corte 20:00).
       {faltantes.length > 0 ? (
         <> Todavía falta: {faltantes.map((f) => `${f.nombre} (${f.falta})`).join(" · ")}.</>
       ) : (
@@ -522,8 +523,10 @@ function DashboardProspeccion({ filas, cargando }: { filas: Prospecto[]; cargand
   const tasa = enRango.length ? Math.round((cerrados / enRango.length) * 100) : 0;
   const atrasadosAhora = filas.filter((p) => (diasParaSeguimiento(p) ?? 1) < 0).length;
 
-  const porPersona = METAS_SEMANALES_PROSPECCION.map((m) => ({
-    ...m,
+  const porPersona = EQUIPO_CONDOR.map((m) => ({
+    email: m.email,
+    nombre: m.nombre,
+    meta: metaEfectiva(m),
     contactados: enRango.filter((p) => p.creado_por_email === m.email).length,
   }));
 

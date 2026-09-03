@@ -368,14 +368,52 @@ export const EQUIPO_CONDOR: { email: string; nombre: string; rol: string; foto: 
   { email: "j.ignaciomunozsilva@gmail.com", nombre: "Joaquín", rol: "Cofundador & CEO", foto: "/assets/avatares/joaquin-mini.jpg", metaSemanal: 50 },
   { email: "maximilianopinocv@gmail.com", nombre: "Maximiliano", rol: "Cofundador · Ing. Comercial y Desarrollo", foto: "/assets/avatares/maximiliano-mini.jpg", metaSemanal: 50 },
   { email: "alejandrotobarq@gmail.com", nombre: "Alejandro", rol: "Cofundador & Backend", foto: "/assets/avatares/alejandro-mini.jpg", metaSemanal: 30 },
+  // Samuel se suma a prospección el 2-sept-2026 (pedido explícito de
+  // Joaquín). Sin foto real todavía -- placeholder anónimo genérico
+  // (mismo lenguaje visual que el "sin foto de perfil" de WhatsApp/otras
+  // apps, no es el asset real de ninguna). `metaSemanal: 10` es
+  // PROVISORIO: Joaquín solo dio un número para "esta semana" (ver
+  // METAS_SEMANA_ESPECIAL) y no una meta de régimen normal -- se usa el
+  // mismo valor acá hasta que confirme una meta de semana completa.
+  { email: "samuelisaacospitiaquintero@gmail.com", nombre: "Samuel", rol: "Arquitecto de Software", foto: "/assets/avatares/samuel-mini.jpg", metaSemanal: 10 },
 ];
 
 /** Compatibilidad: mismo contenido que se usaba antes bajo este nombre. */
 export const METAS_SEMANALES_PROSPECCION = EQUIPO_CONDOR.map((p) => ({ email: p.email, nombre: p.nombre, meta: p.metaSemanal }));
 
 /**
- * La semana laboral de prospección: lunes 00:00 a viernes 19:00 -- el
- * corte que Joaquín fijó para la reunión comercial de los viernes.
+ * Metas semanales EXCEPCIONALES, por semana (clave = lunes de esa semana,
+ * ISO). Pedido el 2-sept-2026 (miércoles): la semana ya iba a mitad de
+ * camino cuando se armó el CRM, así que Joaquín fijó una meta más baja
+ * SOLO para esa semana en vez de exigir la meta completa con medio plazo
+ * -- "para que el viernes revisemos" con un número que sí es alcanzable.
+ * `metaEfectiva()` usa esto si existe una entrada para la semana en
+ * curso; si no, cae al `metaSemanal` de régimen normal de EQUIPO_CONDOR.
+ */
+export const METAS_SEMANA_ESPECIAL: { lunes: string; metas: Record<string, number> }[] = [
+  {
+    lunes: "2026-08-31",
+    metas: {
+      "j.ignaciomunozsilva@gmail.com": 20,
+      "maximilianopinocv@gmail.com": 15,
+      "alejandrotobarq@gmail.com": 10,
+      "samuelisaacospitiaquintero@gmail.com": 10,
+    },
+  },
+];
+
+/** La meta que de verdad aplica esta semana: la excepción si existe, si no
+ *  la de régimen normal. */
+export function metaEfectiva(persona: { email: string; metaSemanal: number }, ahora: Date = new Date()): number {
+  const lunes = semanaLaboral(ahora).inicio.toISOString().slice(0, 10);
+  const especial = METAS_SEMANA_ESPECIAL.find((s) => s.lunes === lunes);
+  return especial?.metas[persona.email] ?? persona.metaSemanal;
+}
+
+/**
+ * La semana laboral de prospección: lunes 00:00 a viernes 20:00 -- el
+ * corte que Joaquín fijó para la reunión comercial de los viernes
+ * (ajustado de 19:00 a 20:00 el 2-sept-2026).
  */
 export function semanaLaboral(ahora: Date = new Date()) {
   const dia = ahora.getDay(); // 0=domingo ... 5=viernes ... 6=sábado
@@ -385,7 +423,7 @@ export function semanaLaboral(ahora: Date = new Date()) {
   inicio.setDate(inicio.getDate() - diasDesdeLunes);
   const fin = new Date(inicio);
   fin.setDate(inicio.getDate() + 4);
-  fin.setHours(19, 0, 0, 0);
+  fin.setHours(20, 0, 0, 0);
   return { inicio, fin };
 }
 
@@ -405,3 +443,116 @@ export function fraccionSemanaTranscurrida(ahora: Date = new Date()): number {
 }
 
 export const esViernesLaboral = (ahora: Date = new Date()) => ahora.getDay() === 5 && ahora < semanaLaboral(ahora).fin;
+
+/* ══════════════════════════════════════════════════════════════════════
+   MARKETING — calendario de contenido + seguimiento diario en Instagram
+   (2-sept-2026, pedido de Joaquín)
+
+   DOS TAREAS DISTINTAS, DOS TABLAS DISTINTAS
+   ---------------------------------------------------------------------
+   1. Contenido: 4 días de la semana (lun/mar/jue/vie) tienen un tema fijo
+      y un responsable fijo -- se publica en Instagram, LinkedIn, TikTok y
+      Facebook, y hay que poder marcar cada red por separado (no solo
+      "publicado sí/no": puede quedar publicado en 3 de 4).
+   2. Seguimiento: TODOS los días de la semana hay que seguir a 200
+      cuentas desde @condor.ai (para que varias devuelvan el follow).
+      Samuel lunes a jueves, Alejandro viernes a domingo.
+
+   Por qué no se "crean" filas a mano como en Prospección: acá el
+   calendario es fijo y se repite cada semana -- el frontend genera
+   (upsert, sin pisar lo que ya existe) las filas de la semana en curso
+   al entrar al módulo, y de ahí en más solo se marcan casilleros.
+
+   EL CONTADOR "EN TIEMPO REAL" DE SEGUIDORES -- LO QUE SE INVESTIGÓ
+   ---------------------------------------------------------------------
+   Blotato NO tiene ningún endpoint de analíticas/seguidores hoy (está en
+   su roadmap, confirmado en su propia documentación) -- no hay nada que
+   conectar ahí todavía. La API oficial de Instagram (Graph API, cuentas
+   Business/Creator) SÍ expone `followers_count` y `follows_count` de
+   solo lectura con un token válido -- es el camino correcto el día que
+   se quiera automatizar esto de verdad, pero necesita que la cuenta de
+   Instagram de Cóndor.ai sea Business/Creator y un token de Meta, que
+   Joaquín tiene que generar (no es algo que se pueda inventar acá).
+   AUTOMATIZAR LA ACCIÓN DE SEGUIR SÍ está descartada: viola los términos
+   de servicio de Instagram, mismo tipo de riesgo que ya se descartó con
+   el scraping de Facebook para prospección.
+
+   Mientras tanto, el conteo de "cuántas cuentas seguimos esta semana" SÍ
+   es 100% real sin depender de ninguna API externa -- sale de sumar
+   `cantidad` en `marketing_seguimiento_diario`, que es la propia acción
+   que la persona ya registra. Lo único que queda manual por ahora es el
+   snapshot semanal de seguidores ganados (`marketing_seguidores_snapshot`,
+   alguien anota el número una vez por semana), hasta que exista el token
+   de Meta para automatizarlo. */
+
+export type TemaContenido = "noticias_ia" | "carrusel_educativo" | "frase_motivacional" | "digitalizar_nicho";
+
+export const TEMAS_CONTENIDO: Record<TemaContenido, string> = {
+  noticias_ia: "Últimas 7 noticias de IA en el mundo",
+  carrusel_educativo: "Carrusel educativo",
+  frase_motivacional: "Frase motivacional",
+  digitalizar_nicho: "Digitalizar algún nicho",
+};
+
+/** El calendario fijo de contenido: día de la semana (JS: 1=lunes...5=viernes) → tema + responsable. */
+export const CALENDARIO_CONTENIDO: { dow: number; tema: TemaContenido; email: string }[] = [
+  { dow: 1, tema: "noticias_ia", email: "maximilianopinocv@gmail.com" },
+  { dow: 2, tema: "carrusel_educativo", email: "j.ignaciomunozsilva@gmail.com" },
+  { dow: 4, tema: "frase_motivacional", email: "j.ignaciomunozsilva@gmail.com" },
+  { dow: 5, tema: "digitalizar_nicho", email: "maximilianopinocv@gmail.com" },
+];
+
+export const CUENTAS_MARKETING = [
+  { id: "instagram", texto: "Instagram" },
+  { id: "linkedin", texto: "LinkedIn" },
+  { id: "tiktok", texto: "TikTok" },
+  { id: "facebook", texto: "Facebook" },
+] as const;
+
+/** Quién sigue cuentas hoy: Samuel lunes-jueves (1-4), Alejandro viernes-domingo (5,6,0). */
+export function responsableSeguimiento(fecha: Date): string {
+  const dow = fecha.getDay();
+  return dow >= 1 && dow <= 4
+    ? "samuelisaacospitiaquintero@gmail.com"
+    : "alejandrotobarq@gmail.com";
+}
+
+export const META_SEGUIDOS_DIA = 200;
+export const META_SEGUIDOS_SEMANA = 1200;
+export const META_SEGUIDORES_NUEVOS_SEMANA = 150;
+
+/** Filas de `public.marketing_contenido`. */
+export type ContenidoMarketing = {
+  id: string;
+  fecha: string; // YYYY-MM-DD
+  tema: TemaContenido;
+  responsable_email: string;
+  hecho: boolean;
+  publicado_instagram: boolean;
+  publicado_linkedin: boolean;
+  publicado_tiktok: boolean;
+  publicado_facebook: boolean;
+  actualizado_en: string;
+};
+
+export const publicadoEnTodas = (c: Pick<ContenidoMarketing, "publicado_instagram" | "publicado_linkedin" | "publicado_tiktok" | "publicado_facebook">) =>
+  c.publicado_instagram && c.publicado_linkedin && c.publicado_tiktok && c.publicado_facebook;
+
+/** Filas de `public.marketing_seguimiento_diario`. */
+export type SeguimientoDiario = {
+  id: string;
+  fecha: string;
+  responsable_email: string;
+  hecho: boolean;
+  cantidad: number | null;
+  actualizado_en: string;
+};
+
+/** Filas de `public.marketing_seguidores_snapshot`. */
+export type SeguidoresSnapshot = {
+  id: string;
+  fecha: string;
+  cantidad: number;
+  creado_por: string | null;
+  creado_en: string;
+};

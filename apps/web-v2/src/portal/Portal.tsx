@@ -21,6 +21,7 @@ import { ConfirmacionProvider } from "./disenio/Confirmacion";
 import { Productos } from "./staff/Productos";
 import { EQUIPO_CONDOR } from "./staff/tipos";
 import { Prospeccion } from "./staff/Prospeccion";
+import { Marketing } from "./staff/Marketing";
 import { Dashboard } from "./staff/Dashboard";
 import { Contabilidad } from "./staff/contabilidad/Contabilidad";
 import { Organizacion } from "./staff/organizacion/Organizacion";
@@ -76,6 +77,21 @@ const MENU_STAFF: Grupo[] = [
     entradas: [{ a: "/acceso/dashboard", texto: "Panel", icono: "panel" }],
   },
   {
+    // Movida arriba, justo bajo Panel (2-sept-2026, pedido de Joaquín):
+    // Prospección y el nuevo Marketing viven acá. "Comercial" se retira
+    // como categoría propia -- Prospección era su única entrada, y
+    // dejarla como grupo de uno solo no aportaba nada frente a agruparla
+    // con el resto de la operación diaria del equipo.
+    titulo: "Operación",
+    clave: "operacion",
+    icono: "reuniones",
+    entradas: [
+      { a: "/acceso/prospeccion", texto: "Prospección", icono: "buscar" },
+      { a: "/acceso/marketing", texto: "Marketing", icono: "chat" },
+      { a: "/acceso/biblioteca", texto: "Biblioteca", icono: "biblioteca" },
+    ],
+  },
+  {
     titulo: "Productos",
     clave: "productos",
     icono: "clientes",
@@ -91,14 +107,6 @@ const MENU_STAFF: Grupo[] = [
       // definido -- Productos.tsx la muestra con la cartera vacía, mismo
       // comportamiento que Sites/Track antes de tener clientes reales.
       { a: "/acceso/productos/media", texto: "Media", icono: "sitesProducto", imagen: "/assets/productos/condor-media.png" },
-    ],
-  },
-  {
-    titulo: "Comercial",
-    clave: "comercial",
-    icono: "buscar",
-    entradas: [
-      { a: "/acceso/prospeccion", texto: "Prospección", icono: "buscar" },
     ],
   },
   {
@@ -136,14 +144,6 @@ const MENU_STAFF: Grupo[] = [
       // Sin bajada: en 71 px "LO QUE SABE" se corta en "LO QUE S…", y una
       // etiqueta cortada comunica menos que ninguna.
       { a: "/acceso/memoria", texto: "Memoria", icono: "memoria", agente: "memoria" },
-    ],
-  },
-  {
-    titulo: "Operación",
-    clave: "operacion",
-    icono: "reuniones",
-    entradas: [
-      { a: "/acceso/biblioteca", texto: "Biblioteca", icono: "biblioteca" },
     ],
   },
   {
@@ -286,6 +286,7 @@ function PortalContenido() {
           <Route path="clientes" element={<Productos />} />
           <Route path="productos/:linea" element={<Productos />} />
           <Route path="prospeccion" element={<Prospeccion />} />
+          <Route path="marketing" element={<Marketing />} />
           <Route path="contabilidad" element={<Contabilidad />} />
           <Route path="organizacion/:vista" element={<Organizacion />} />
           <Route path="reuniones" element={<Navigate to="/acceso/organizacion/calendario" replace />} />
