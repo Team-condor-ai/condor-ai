@@ -1,0 +1,32 @@
+name: Marketing — generar calendario de la semana
+
+# Pedido de Joaquín (2-sept-2026): el calendario de contenido + seguimiento
+# de Instagram de @condor.ai tiene que existir SIEMPRE, no solo cuando
+# alguien abre el módulo Marketing del Portal. `Marketing.tsx` también hace
+# esta generación al abrirse (upsert sin pisar lo existente), pero este cron
+# es la red de seguridad: si nadie entra al portal un lunes, la semana igual
+# queda creada.
+#
+# Corre lunes temprano, hora Chile. 10:00 UTC = 06:00 Chile (invierno, sin
+# horario de verano) -- suficiente margen antes de que alguien empiece a
+# trabajar el lunes.
+
+on:
+  schedule:
+    - cron: "0 10 * * 1"
+  workflow_dispatch:
+
+jobs:
+  generar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Generar la semana de Marketing
+        run: node services/marketing/generar-semana.mjs
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}

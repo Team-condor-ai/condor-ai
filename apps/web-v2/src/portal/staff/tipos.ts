@@ -480,10 +480,12 @@ export const esViernesLaboral = (ahora: Date = new Date()) => ahora.getDay() ===
    Mientras tanto, el conteo de "cuántas cuentas seguimos esta semana" SÍ
    es 100% real sin depender de ninguna API externa -- sale de sumar
    `cantidad` en `marketing_seguimiento_diario`, que es la propia acción
-   que la persona ya registra. Lo único que queda manual por ahora es el
-   snapshot semanal de seguidores ganados (`marketing_seguidores_snapshot`,
-   alguien anota el número una vez por semana), hasta que exista el token
-   de Meta para automatizarlo. */
+   que la persona ya registra. El total de seguidores de la cuenta
+   (`marketing_seguidores_snapshot`) queda SIN un campo manual en la UI
+   (se sacó el 2-sept-2026 a pedido de Joaquín): la tabla se deja lista
+   para que, el día que exista el token de Meta, un job la llene solo
+   -- no tiene sentido pedirle a alguien que lo anote a mano una sola vez
+   para después reemplazarlo por algo automático. */
 
 export type TemaContenido = "noticias_ia" | "carrusel_educativo" | "frase_motivacional" | "digitalizar_nicho";
 
@@ -494,13 +496,37 @@ export const TEMAS_CONTENIDO: Record<TemaContenido, string> = {
   digitalizar_nicho: "Digitalizar algún nicho",
 };
 
-/** El calendario fijo de contenido: día de la semana (JS: 1=lunes...5=viernes) → tema + responsable. */
+/** El calendario fijo de contenido, PARA SIEMPRE: día de la semana (JS:
+ *  1=lunes...5=viernes) → tema + responsable. No es "de esta semana", es
+ *  la regla permanente -- `generar-semana.mjs` (cron semanal, ver
+ *  .github/workflows/marketing-generar-semana.yml) y `asegurarSemana()`
+ *  en Marketing.tsx la leen para crear las filas de cada semana nueva. */
 export const CALENDARIO_CONTENIDO: { dow: number; tema: TemaContenido; email: string }[] = [
   { dow: 1, tema: "noticias_ia", email: "maximilianopinocv@gmail.com" },
   { dow: 2, tema: "carrusel_educativo", email: "j.ignaciomunozsilva@gmail.com" },
   { dow: 4, tema: "frase_motivacional", email: "j.ignaciomunozsilva@gmail.com" },
   { dow: 5, tema: "digitalizar_nicho", email: "maximilianopinocv@gmail.com" },
 ];
+
+/**
+ * Excepciones puntuales al calendario de arriba, por semana (clave =
+ * lunes ISO). Hoy solo tiene una: la semana del 31-ago-2026 arrancó
+ * mitad de camino (el módulo se armó un miércoles en la noche), así que
+ * lunes y martes de ESA semana no cuentan -- ya habían pasado sin que el
+ * módulo existiera, y sería injusto marcarlos como incumplidos. Solo
+ * jueves y viernes de esa semana generan tarea. Semanas futuras usan el
+ * calendario completo salvo que se agregue una excepción nueva acá.
+ */
+export const EXCEPCIONES_CONTENIDO_SEMANA: { lunes: string; diasValidos: number[] }[] = [
+  { lunes: "2026-08-31", diasValidos: [4, 5] },
+];
+
+/** Los `dow` de CALENDARIO_CONTENIDO que de verdad generan tarea para la
+ *  semana cuyo lunes es `lunesIso` -- todos, salvo que haya una excepción. */
+export function diasContenidoDeLaSemana(lunesIso: string): number[] {
+  const excepcion = EXCEPCIONES_CONTENIDO_SEMANA.find((e) => e.lunes === lunesIso);
+  return excepcion?.diasValidos ?? CALENDARIO_CONTENIDO.map((c) => c.dow);
+}
 
 export const CUENTAS_MARKETING = [
   { id: "instagram", texto: "Instagram" },

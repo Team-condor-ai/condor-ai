@@ -1,15 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { sb } from "../lib/supabase";
 import { Ico } from "../disenio/iconos";
 import {
   type ContenidoMarketing,
   type SeguimientoDiario,
-  type SeguidoresSnapshot,
   EQUIPO_CONDOR,
   TEMAS_CONTENIDO,
   CALENDARIO_CONTENIDO,
   CUENTAS_MARKETING,
   responsableSeguimiento,
+  diasContenidoDeLaSemana,
   publicadoEnTodas,
   META_SEGUIDOS_DIA,
   META_SEGUIDOS_SEMANA,
@@ -35,72 +36,87 @@ function diasDeLaSemana(ahora: Date): Date[] {
 
 const iso = (d: Date) => d.toISOString().slice(0, 10);
 
+/** Genera (sin pisar lo existente) las filas de contenido + seguimiento de
+ *  la semana en curso. La usan tanto el módulo completo como el resumen
+ *  del Panel, para que cualquiera de los dos que se abra primero deje la
+ *  semana lista -- no depende de que alguien entre justo a Marketing. */
+async function asegurarSemana() {
+  const ahora = new Date();
+  const dias = diasDeLaSemana(ahora);
+  const lunesIso = iso(dias[0]);
+  const diasValidos = new Set(diasContenidoDeLaSemana(lunesIso));
+
+  const filasContenido = dias
+    .map((d) => ({ fecha: iso(d), dow: d.getDay() === 0 ? 7 : d.getDay() }))
+    .flatMap(({ fecha, dow }) => {
+      if (!diasValidos.has(dow)) return [];
+      const cfg = CALENDARIO_CONTENIDO.find((c) => c.dow === dow);
+      return cfg ? [{ fecha, tema: cfg.tema, responsable_email: cfg.email }] : [];
+    });
+  const filasSeguimiento = dias.map((d) => ({
+    fecha: iso(d),
+    responsable_email: responsableSeguimiento(d),
+  }));
+
+  await Promise.all([
+    sb.from("marketing_contenido").upsert(filasContenido, { onConflict: "fecha", ignoreDuplicates: true }),
+    sb.from("marketing_seguimiento_diario").upsert(filasSeguimiento, { onConflict: "fecha", ignoreDuplicates: true }),
+  ]);
+}
+
 /**
  * Marketing — calendario de contenido + seguimiento diario de Instagram
  * (2-sept-2026, pedido de Joaquín).
  *
- * POR QUÉ LAS FILAS DE LA SEMANA SE GENERAN SOLAS
+ * POR QUÉ LAS FILAS DE LA SEMANA SE GENERAN SOLAS, Y POR QUÉ TAMBIÉN HAY
+ * UN CRON (no solo esto)
  * ---------------------------------------------------------------------------
  * El calendario es fijo y se repite cada semana (mismo tema, mismo
  * responsable, cada lunes/martes/jueves/viernes; seguimiento todos los
- * días). Pedirle a alguien que "cree la tarea del lunes" cada semana es
- * trabajo de más que nadie pidió — al entrar al módulo se hace upsert
- * (sin pisar lo que ya existe, `ignoreDuplicates`) de la semana en curso,
- * y de ahí en más solo se marcan casilleros.
+ * días) -- pedido explícito: "quede en el calendario para siempre".
+ * `asegurarSemana()` corre al entrar al módulo (upsert sin pisar lo que ya
+ * existe), pero eso solo genera la semana si ALGUIEN abre el módulo esa
+ * semana. Por las dudas de que nadie entre, `.github/workflows/
+ * marketing-generar-semana.yml` corre lo mismo cada lunes temprano -- así
+ * la semana existe se abra o no se abra el portal.
  *
- * EL CONTADOR DE SEGUIDOS ES REAL, EL DE SEGUIDORES ES MANUAL POR AHORA
+ * ESTA SEMANA ES DISTINTA (2-sept-2026, miércoles en la noche)
+ * ---------------------------------------------------------------------------
+ * El módulo se armó a mitad de semana. Lunes y martes ya habían pasado
+ * sin que existiera nada que marcar -- contarlos como incumplidos sería
+ * injusto. `EXCEPCIONES_CONTENIDO_SEMANA` en tipos.ts declara que la
+ * semana del 31-ago solo genera jueves y viernes; semanas futuras usan el
+ * calendario completo automáticamente.
+ *
+ * EL CONTADOR DE SEGUIDOS ES REAL; EL DE SEGUIDORES QUEDA PENDIENTE DE LA API
  * ---------------------------------------------------------------------------
  * Cuántas cuentas se siguieron esta semana sale de sumar lo que cada
  * persona ya registra (no depende de ninguna API externa). Cuántos
- * seguidores nuevos ganó @condor.ai SÍ necesitaría una fuente externa —
- * Blotato no tiene ese dato hoy (confirmado, no es un endpoint que
- * exista), y la API oficial de Instagram sí lo tiene pero requiere un
- * token de Meta que todavía no existe. Mientras tanto es un número que
- * alguien anota a mano una vez por semana (`marketing_seguidores_snapshot`).
+ * seguidores nuevos ganó @condor.ai SÍ necesitaría la API oficial de
+ * Instagram (Business Discovery, solo lectura) -- Blotato no tiene ese
+ * dato hoy (confirmado, está en su roadmap). Se sacó el campo manual de
+ * "anotar el total" (pedido de Joaquín, 2-sept): no tiene sentido pedirle
+ * a alguien que lo escriba a mano una vez para reemplazarlo enseguida por
+ * algo automático -- se deja el espacio listo (`marketing_seguidores_
+ * snapshot`) para que un job lo llene solo apenas exista el token.
  */
 export function Marketing() {
   const [contenido, setContenido] = useState<ContenidoMarketing[]>([]);
   const [seguimiento, setSeguimiento] = useState<SeguimientoDiario[]>([]);
-  const [snapshots, setSnapshots] = useState<SeguidoresSnapshot[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
-  const [nuevoSnapshot, setNuevoSnapshot] = useState("");
 
   async function cargar(silencioso = false) {
     if (!silencioso) setCargando(true);
-    const [{ data: co, error: eco }, { data: se }, { data: sn }] = await Promise.all([
+    const [{ data: co, error: eco }, { data: se }] = await Promise.all([
       sb.from("marketing_contenido").select("*").order("fecha"),
       sb.from("marketing_seguimiento_diario").select("*").order("fecha"),
-      sb.from("marketing_seguidores_snapshot").select("*").order("fecha", { ascending: false }).limit(8),
     ]);
     if (eco) setError(eco.message);
     else setError("");
     setContenido((co ?? []) as ContenidoMarketing[]);
     setSeguimiento((se ?? []) as SeguimientoDiario[]);
-    setSnapshots((sn ?? []) as SeguidoresSnapshot[]);
     if (!silencioso) setCargando(false);
-  }
-
-  // Genera (sin pisar lo existente) las filas de la semana en curso.
-  async function asegurarSemana() {
-    const ahora = new Date();
-    const dias = diasDeLaSemana(ahora);
-
-    const filasContenido = dias
-      .map((d) => ({ fecha: iso(d), dow: d.getDay() === 0 ? 7 : d.getDay() }))
-      .flatMap(({ fecha, dow }) => {
-        const cfg = CALENDARIO_CONTENIDO.find((c) => c.dow === dow);
-        return cfg ? [{ fecha, tema: cfg.tema, responsable_email: cfg.email }] : [];
-      });
-    const filasSeguimiento = dias.map((d) => ({
-      fecha: iso(d),
-      responsable_email: responsableSeguimiento(d),
-    }));
-
-    await Promise.all([
-      sb.from("marketing_contenido").upsert(filasContenido, { onConflict: "fecha", ignoreDuplicates: true }),
-      sb.from("marketing_seguimiento_diario").upsert(filasSeguimiento, { onConflict: "fecha", ignoreDuplicates: true }),
-    ]);
   }
 
   useEffect(() => {
@@ -126,10 +142,6 @@ export function Marketing() {
     (t, s) => t + (s.hecho ? (s.cantidad ?? META_SEGUIDOS_DIA) : 0), 0,
   );
 
-  const ultimoSnapshot = snapshots[0];
-  const penultimoSnapshot = snapshots[1];
-  const seguidoresNuevos = ultimoSnapshot && penultimoSnapshot ? ultimoSnapshot.cantidad - penultimoSnapshot.cantidad : null;
-
   async function actualizarContenido(c: ContenidoMarketing, cambios: Partial<ContenidoMarketing>) {
     setContenido((ls) => ls.map((x) => (x.id === c.id ? { ...x, ...cambios } : x)));
     const { error } = await sb.from("marketing_contenido").update(cambios).eq("id", c.id);
@@ -140,16 +152,6 @@ export function Marketing() {
     setSeguimiento((ls) => ls.map((x) => (x.id === s.id ? { ...x, ...cambios } : x)));
     const { error } = await sb.from("marketing_seguimiento_diario").update(cambios).eq("id", s.id);
     if (error) { setError(error.message); void cargar(true); }
-  }
-
-  async function guardarSnapshot() {
-    const cantidad = Number(nuevoSnapshot);
-    if (!cantidad || cantidad <= 0) return;
-    const { error } = await sb.from("marketing_seguidores_snapshot").insert({
-      fecha: iso(new Date()), cantidad,
-    });
-    if (error) setError(error.message);
-    else { setNuevoSnapshot(""); void cargar(true); }
   }
 
   // Cumplimiento de Joaquín/Max en contenido, para el resumen de fin de semana.
@@ -193,8 +195,8 @@ export function Marketing() {
           </div>
           <div className="kpi">
             <div className="tile">{Ico.repetir({ t: 18 })}</div>
-            <div className="cifra"><b>{seguidoresNuevos ?? "—"}</b>/{META_SEGUIDORES_NUEVOS_SEMANA}</div>
-            <p>Seguidores nuevos (última semana registrada)</p>
+            <div className="cifra"><b>—</b></div>
+            <p>Seguidores nuevos — meta {META_SEGUIDORES_NUEVOS_SEMANA}/semana, pendiente conectar la API de Instagram</p>
           </div>
         </div>
 
@@ -243,6 +245,9 @@ export function Marketing() {
               })}
             </tbody>
           </table>
+          {contenidoSemana.length === 0 && (
+            <p className="vacio">Sin tareas de contenido esta semana (semana parcial, ver nota arriba).</p>
+          )}
         </div>
 
         <h3>Seguimiento diario — seguir {META_SEGUIDOS_DIA} cuentas desde @condor.ai</h3>
@@ -250,7 +255,7 @@ export function Marketing() {
           Samuel de lunes a jueves, Alejandro de viernes a domingo. Meta: {META_SEGUIDOS_SEMANA} seguidos/semana,
           {" "}{META_SEGUIDORES_NUEVOS_SEMANA} seguidores nuevos/semana.
         </p>
-        <div className="tabla-caja" style={{ marginBottom: 20 }}>
+        <div className="tabla-caja">
           <table>
             <thead><tr><th>Día</th><th>Responsable</th><th>Hecho</th><th className="num">Cantidad</th></tr></thead>
             <tbody>
@@ -290,33 +295,88 @@ export function Marketing() {
             </tbody>
           </table>
         </div>
-
-        <h3>Seguidores de @condor.ai</h3>
-        <p className="conteo" style={{ marginBottom: 8 }}>
-          Manual por ahora: Blotato todavía no tiene un endpoint de seguidores (confirmado, está en su roadmap).
-          La API oficial de Instagram sí lo tiene de forma segura y de solo lectura, pero requiere un token de Meta
-          que hay que generar — mientras tanto, se anota el total una vez por semana.
-        </p>
-        <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 10 }}>
-          <input
-            className="campo" type="number" placeholder="Total de seguidores hoy" style={{ width: 220 }}
-            value={nuevoSnapshot} onChange={(e) => setNuevoSnapshot(e.target.value)}
-          />
-          <button className="btn chico" onClick={() => void guardarSnapshot()}>Guardar</button>
-        </div>
-        {snapshots.length > 0 && (
-          <div className="tabla-caja">
-            <table>
-              <thead><tr><th>Fecha</th><th className="num">Seguidores</th></tr></thead>
-              <tbody>
-                {snapshots.map((s) => (
-                  <tr key={s.id}><td>{s.fecha}</td><td className="num">{s.cantidad.toLocaleString("es-CL")}</td></tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
       </div>
     </>
+  );
+}
+
+/** Versión compacta para el Panel general (pedido de Joaquín, 2-sept):
+ *  cumplimiento de contenido (Joaquín/Max) + seguimiento diario de
+ *  Instagram (Alejandro/Samuel), con link al módulo completo. Mismo
+ *  criterio que ResumenProspeccion() en Prospeccion.tsx. */
+export function ResumenMarketing() {
+  const [contenido, setContenido] = useState<ContenidoMarketing[]>([]);
+  const [seguimiento, setSeguimiento] = useState<SeguimientoDiario[]>([]);
+  const [cargando, setCargando] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      await asegurarSemana();
+      const [{ data: co }, { data: se }] = await Promise.all([
+        sb.from("marketing_contenido").select("*"),
+        sb.from("marketing_seguimiento_diario").select("*"),
+      ]);
+      setContenido((co ?? []) as ContenidoMarketing[]);
+      setSeguimiento((se ?? []) as SeguimientoDiario[]);
+      setCargando(false);
+    })();
+  }, []);
+
+  const semanaIso = useMemo(() => new Set(diasDeLaSemana(new Date()).map(iso)), []);
+  const contenidoSemana = useMemo(() => contenido.filter((c) => semanaIso.has(c.fecha)), [contenido, semanaIso]);
+  const seguimientoSemana = useMemo(() => seguimiento.filter((s) => semanaIso.has(s.fecha)), [seguimiento, semanaIso]);
+
+  const porPersonaContenido = useMemo(() => {
+    const personas = [...new Set(CALENDARIO_CONTENIDO.map((c) => c.email))];
+    return personas.map((email) => {
+      const suyos = contenidoSemana.filter((c) => c.responsable_email === email);
+      return { persona: fotoDe(email), total: suyos.length, hechos: suyos.filter((c) => c.hecho).length };
+    });
+  }, [contenidoSemana]);
+
+  const porPersonaSeguimiento = useMemo(() => {
+    const personas = [...new Set(seguimientoSemana.map((s) => s.responsable_email))];
+    return personas.map((email) => {
+      const suyos = seguimientoSemana.filter((s) => s.responsable_email === email);
+      const hechos = suyos.filter((s) => s.hecho).length;
+      const seguidos = suyos.reduce((t, s) => t + (s.hecho ? (s.cantidad ?? META_SEGUIDOS_DIA) : 0), 0);
+      return { persona: fotoDe(email), diasHechos: hechos, diasTotal: suyos.length, seguidos };
+    });
+  }, [seguimientoSemana]);
+
+  if (cargando) return null;
+
+  return (
+    <section className="bloque">
+      <div className="cabecera-bloque">
+        <div>
+          <h3>Marketing — @condor.ai</h3>
+          <p>Contenido de la semana y seguimiento diario en Instagram</p>
+        </div>
+        <Link className="btn chico" to="/acceso/marketing">Ver módulo completo</Link>
+      </div>
+      <div className="kpis" style={{ marginTop: 10 }}>
+        {porPersonaContenido.map(({ persona, total, hechos }) => persona && (
+          <div className="kpi" key={"c-" + persona.email}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+              <img src={persona.foto} alt="" width={26} height={26} style={{ width: 26, height: 26, borderRadius: "50%", objectFit: "cover" }} />
+              <b style={{ fontSize: 12.5 }}>{persona.nombre}</b>
+            </div>
+            <div className="cifra"><b>{hechos}</b>/{total}</div>
+            <p>Contenido creado</p>
+          </div>
+        ))}
+        {porPersonaSeguimiento.map(({ persona, diasHechos, diasTotal, seguidos }) => persona && (
+          <div className="kpi" key={"s-" + persona.email}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+              <img src={persona.foto} alt="" width={26} height={26} style={{ width: 26, height: 26, borderRadius: "50%", objectFit: "cover" }} />
+              <b style={{ fontSize: 12.5 }}>{persona.nombre}</b>
+            </div>
+            <div className="cifra"><b>{diasHechos}</b>/{diasTotal} días</div>
+            <p>{seguidos} cuentas seguidas</p>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
