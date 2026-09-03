@@ -9,12 +9,13 @@ import { IngresoEcommerce, CLIENTES_ECOMMERCE, LogoShopify } from "./contabilida
 import type { Cliente, Cobro } from "./tipos";
 import type { IngresoCliente } from "./contabilidad/tipos";
 
-type Linea = "sites" | "ecommerce" | "track";
+type Linea = "sites" | "ecommerce" | "track" | "media";
 
-const LINEAS: { id: Linea; texto: string; icono: "sitesProducto" | "ecommerceProducto" | "trackProducto" }[] = [
-  { id: "sites", texto: "Cóndor Sites", icono: "sitesProducto" },
-  { id: "ecommerce", texto: "Cóndor Ecommerce", icono: "ecommerceProducto" },
-  { id: "track", texto: "Cóndor Track", icono: "trackProducto" },
+const LINEAS: { id: Linea; texto: string; logo: string }[] = [
+  { id: "sites", texto: "Cóndor Sites", logo: "/assets/productos/condor-sites.png" },
+  { id: "ecommerce", texto: "Cóndor Ecommerce", logo: "/assets/productos/condor-ecommerce.png" },
+  { id: "track", texto: "Cóndor Track", logo: "/assets/productos/condor-track.png" },
+  { id: "media", texto: "Cóndor Media", logo: "/assets/productos/condor-media.png" },
 ];
 
 /**
@@ -89,8 +90,6 @@ export function Productos() {
     () => (l: Linea) => clientes.filter((c) => c.linea === l && !c.archivado),
     [clientes],
   );
-  const sites = deLinea("sites");
-  const track = deLinea("track");
 
   const idsDe = (lista: Cliente[]) => new Set(lista.map((c) => c.id));
   const cobrosDe = (lista: Cliente[]) => { const ids = idsDe(lista); return cobros.filter((c) => ids.has(c.cliente_id)); };
@@ -99,12 +98,19 @@ export function Productos() {
   const recibidoDe = (clienteId: string) =>
     pagos.filter((p) => p.cliente_id === clienteId && p.estado === "pagado").reduce((t, p) => t + (p.monto ?? 0), 0);
 
-  const tituloLinea = LINEAS.find((l) => l.id === linea)?.texto ?? "Productos";
+  const infoLinea = LINEAS.find((l) => l.id === linea);
+  const tituloLinea = infoLinea?.texto ?? "Productos";
 
   return (
     <>
       <div className="barra">
-        <h1>{tituloLinea}</h1>
+        <h1 style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          {infoLinea && (
+            <img src={infoLinea.logo} alt="" width={28} height={28}
+              style={{ width: 28, height: 28, borderRadius: 7, objectFit: "cover" }} />
+          )}
+          {tituloLinea}
+        </h1>
         {linea !== "ecommerce" && (
           <button className="btn solido" onClick={() => setEditando("nuevo")}>
             {Ico.mas({ t: 15 })} Nuevo cliente
@@ -149,13 +155,13 @@ export function Productos() {
         ) : (
           <>
             {(() => {
-              const lista = linea === "sites" ? sites : track;
+              const lista = deLinea(linea);
               return (
                 <>
                   {lista.length > 0 && <Resumen clientes={lista} cobros={cobrosDe(lista)} pagos={pagosDe(lista)} />}
                   {lista.length === 0 ? (
                     <p className="vacio">
-                      Todavía no hay clientes de {linea === "sites" ? "Cóndor Sites" : "Cóndor Track"} clasificados
+                      Todavía no hay clientes de {tituloLinea} clasificados
                       acá. Ábrelos y asígnales la línea desde "Configurar cliente".
                     </p>
                   ) : (

@@ -8,6 +8,11 @@ export type Entrada = {
   a: string;
   texto: string;
   icono: NombreIcono;
+  /** Logo real de marca (2-sept-2026: Sites/Ecommerce/Track/Agents/Media
+   *  tienen isotipo propio). Cuando viene, se dibuja este `<img>` en vez
+   *  de `Ico[icono]` — `icono` igual queda seteado como respaldo por si
+   *  la imagen no carga y para no romper el tipo en otras entradas. */
+  imagen?: string;
   pronto?: boolean;
   /** Esta entrada cambia de "mundo" visual (hoy: Bárbara) — navega con la
    * transición Slide direccional en vez del salto instantáneo normal. Ver
@@ -91,6 +96,18 @@ function TarjetaAgente({ entrada, activa }: { entrada: Entrada; activa: boolean 
       </span>
     </>
   );
+}
+
+/** El logo real de marca si la entrada trae `imagen`, si no el ícono SVG
+ *  monocromo de siempre. */
+function IconoEntrada({ entrada }: { entrada: Entrada }) {
+  if (entrada.imagen) {
+    return (
+      <img src={entrada.imagen} alt="" width={17} height={17}
+        style={{ width: 17, height: 17, borderRadius: 4, objectFit: "cover", flex: "none" }} />
+    );
+  }
+  return <>{Ico[entrada.icono]()}</>;
 }
 
 function iniciales(t: string) {
@@ -231,7 +248,7 @@ export function Lateral({ grupos, nombre, detalle, foto, onSalir, abierto, cerra
                       style={{ opacity: 0.5, cursor: "default" }}
                       title="Todavía no está disponible"
                     >
-                      {Ico[e.icono]()}
+                      <IconoEntrada entrada={e} />
                       <span>{e.texto}</span>
                     </button>
                   ) : (
@@ -251,7 +268,7 @@ export function Lateral({ grupos, nombre, detalle, foto, onSalir, abierto, cerra
                     >
                       {({ isActive }) => e.agente
                         ? <TarjetaAgente entrada={e} activa={isActive} />
-                        : <>{Ico[e.icono]()}<span>{e.texto}</span></>}
+                        : <><IconoEntrada entrada={e} /><span>{e.texto}</span></>}
                     </NavLink>
                   ),
                 )}

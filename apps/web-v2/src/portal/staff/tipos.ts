@@ -10,9 +10,10 @@ export type Cliente = {
   telefono: string | null;
   negocio: string | null;
   plan: string | null;
-  /** "sites" | "track" | null (sin clasificar). Ver 20260902_clientes_linea.sql.
-   *  Ecommerce NO es un valor válido acá: esos clientes viven aparte, ligados
-   *  a Shopify (ver contabilidad/IngresoEcommerce.tsx), no en esta tabla. */
+  /** "sites" | "track" | "media" | null (sin clasificar). Ver
+   *  20260902_clientes_linea.sql. Ecommerce NO es un valor válido acá:
+   *  esos clientes viven aparte, ligados a Shopify (ver
+   *  contabilidad/IngresoEcommerce.tsx), no en esta tabla. */
   linea: string | null;
   concepto: string | null;
   setup_monto: number | null;

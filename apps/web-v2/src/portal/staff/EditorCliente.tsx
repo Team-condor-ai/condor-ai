@@ -179,6 +179,7 @@ export function EditorCliente({ cliente, cerrar, guardado }: Props) {
               <option value="">Sin clasificar</option>
               <option value="sites">Cóndor Sites</option>
               <option value="track">Cóndor Track</option>
+              <option value="media">Cóndor Media</option>
             </select>
             {/* Cóndor Ecommerce no está acá a propósito: Tecnobox y Silver
                 and Co no son filas de `clientes` -- se administran aparte,

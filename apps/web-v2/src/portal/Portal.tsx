@@ -79,10 +79,18 @@ const MENU_STAFF: Grupo[] = [
     titulo: "Productos",
     clave: "productos",
     icono: "clientes",
+    // Logos reales de marca (2-sept-2026, llegaron por WhatsApp — ver
+    // memoria de Cóndor.ai, carpeta branding-2026-09-02). Reemplazan los
+    // íconos monocromos genéricos que tenía cada línea antes de tener el
+    // isotipo oficial.
     entradas: [
-      { a: "/acceso/productos/sites", texto: "Sites", icono: "sitesProducto" },
-      { a: "/acceso/productos/ecommerce", texto: "Ecommerce", icono: "ecommerceProducto" },
-      { a: "/acceso/productos/track", texto: "Track", icono: "trackProducto" },
+      { a: "/acceso/productos/sites", texto: "Sites", icono: "sitesProducto", imagen: "/assets/productos/condor-sites.png" },
+      { a: "/acceso/productos/ecommerce", texto: "Ecommerce", icono: "ecommerceProducto", imagen: "/assets/productos/condor-ecommerce.png" },
+      { a: "/acceso/productos/track", texto: "Track", icono: "trackProducto", imagen: "/assets/productos/condor-track.png" },
+      // Media es nueva (2-sept-2026): todavía no tiene modelo comercial
+      // definido -- Productos.tsx la muestra con la cartera vacía, mismo
+      // comportamiento que Sites/Track antes de tener clientes reales.
+      { a: "/acceso/productos/media", texto: "Media", icono: "sitesProducto", imagen: "/assets/productos/condor-media.png" },
     ],
   },
   {
