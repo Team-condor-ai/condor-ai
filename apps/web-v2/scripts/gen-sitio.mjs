@@ -528,14 +528,11 @@ const JS_AGENDA = `
    cargado en el repo, que se muestran como texto con el mismo trato
    visual — la tira no distingue entre los dos tipos de tarjeta. */
 const CLIENTES = [
-  { nombre: "Tecnobox", logo: "/assets/clientes/tecnobox.webp" },
+  { nombre: "Tecnobox", logo: "/assets/clientes/tecnobox.png" },
   { nombre: "Neisstech", logo: "/assets/clientes/neisstech.png" },
   { nombre: "Delta Force", logo: "/assets/clientes/delta-force.png" },
-  { nombre: "Bafles Viva", logo: "/assets/clientes/bafles-viva.jpg" },
-  { nombre: "Ebi Foods", logo: "/assets/clientes/ebi-foods.jpg" },
-  { nombre: "PlanetaShop" },
-  { nombre: "Veci" },
-  { nombre: "Rat.IA" },
+  { nombre: "Bafles Viva", logo: "/assets/clientes/bafles-viva.png" },
+  { nombre: "Ebi Foods", logo: "/assets/clientes/ebi-foods.png" },
 ];
 const chipCliente = (c) => c.logo
   ? `<span class="cliente-chip"><img src="${c.logo}" alt="${c.nombre}" loading="lazy" /></span>`

@@ -184,10 +184,10 @@ img.logo{width:auto;flex:none;max-width:none}
    el segundo juego está donde estaba el primero y el salto es invisible. */
 .pista{display:flex;width:max-content;align-items:center;animation:desfile 34s linear infinite}
 .clientes:hover .pista{animation-play-state:paused}
-.cliente-chip{display:flex;align-items:center;justify-content:center;height:60px;
-  padding-inline:clamp(20px,3vw,36px);flex:none}
-.cliente-chip img{height:36px;width:auto;max-width:150px;object-fit:contain;
-  filter:grayscale(1);opacity:.6;transition:filter .25s var(--ease),opacity .25s var(--ease)}
+.cliente-chip{display:flex;align-items:center;justify-content:center;height:88px;
+  padding-inline:clamp(26px,3.6vw,44px);flex:none}
+.cliente-chip img{height:56px;width:auto;max-width:220px;object-fit:contain;
+  filter:grayscale(1);opacity:.65;transition:filter .25s var(--ease),opacity .25s var(--ease)}
 .clientes:hover .cliente-chip img{filter:grayscale(0);opacity:1}
 .cliente-chip-texto{font-family:var(--display);font-weight:700;font-size:clamp(17px,2.2vw,24px);
   letter-spacing:-.025em;color:var(--ink-3);white-space:nowrap;opacity:.72}
