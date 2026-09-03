@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useParams, useSearchParams } from "react-router-dom";
 import { sb, plata } from "../lib/supabase";
 import { Ico } from "../disenio/iconos";
 import { EditorCliente } from "./EditorCliente";
@@ -18,9 +19,19 @@ const LINEAS: { id: Linea; texto: string; icono: "sitesProducto" | "ecommercePro
 
 /**
  * "Clientes" pasó a ser "Productos" (2-sept-2026, pedido de Joaquín): una
- * pestaña por línea de negocio (Sites/Ecommerce/Track), cada una con su
+ * pantalla por línea de negocio (Sites/Ecommerce/Track), cada una con su
  * propio resumen arriba y la cartera de esa línea abajo — en vez de una
  * sola lista mezclando todo.
+ *
+ * "PRODUCTOS" ES SOLO LA CATEGORÍA DEL MENÚ, NO UNA PANTALLA PROPIA
+ * ---------------------------------------------------------------------------
+ * Corrección el mismo 2-sept, mismo día del pedido original: Sites,
+ * Ecommerce y Track son 3 entradas del menú lateral, cada una con su ruta
+ * (`/acceso/productos/sites`, etc.) — no pestañas internas de un módulo
+ * "Productos" que además apareciera como cuarta entrada redundante. Este
+ * componente ya no guarda la línea activa en estado propio: la lee de la
+ * URL (`useParams`), así que el link del menú y lo que se ve nunca pueden
+ * desincronizarse.
  *
  * POR QUÉ ECOMMERCE NO USA `clientes` COMO LAS OTRAS DOS
  * ---------------------------------------------------------------------------
@@ -36,14 +47,20 @@ const LINEAS: { id: Linea; texto: string; icono: "sitesProducto" | "ecommercePro
  * cartera de suscriptores en Organización/Metas, que también se retiró.
  */
 export function Productos() {
-  const [linea, setLinea] = useState<Linea>("sites");
+  const { linea: lineaUrl } = useParams<{ linea: string }>();
+  const linea: Linea = LINEAS.some((l) => l.id === lineaUrl) ? (lineaUrl as Linea) : "sites";
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [cobros, setCobros] = useState<Cobro[]>([]);
   const [pagos, setPagos] = useState<PagoResumen[]>([]);
   const [ingresos, setIngresos] = useState<IngresoCliente[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
-  const [viendo, setViendo] = useState<string | null>(null);
+  // Enlaces viejos de Cobros/Panel/Mapa siguen apuntando a
+  // `/acceso/clientes?ver=<id>` sin saber a qué línea pertenece ese
+  // cliente -- por eso esto se lee sin importar la línea activa, y abre el
+  // panel igual (PanelCliente solo necesita el id, no la línea).
+  const [params] = useSearchParams();
+  const [viendo, setViendo] = useState<string | null>(() => params.get("ver"));
   const [editando, setEditando] = useState<Cliente | "nuevo" | null>(null);
 
   async function cargar(silencioso = false) {
@@ -82,10 +99,12 @@ export function Productos() {
   const recibidoDe = (clienteId: string) =>
     pagos.filter((p) => p.cliente_id === clienteId && p.estado === "pagado").reduce((t, p) => t + (p.monto ?? 0), 0);
 
+  const tituloLinea = LINEAS.find((l) => l.id === linea)?.texto ?? "Productos";
+
   return (
     <>
       <div className="barra">
-        <h1>Productos</h1>
+        <h1>{tituloLinea}</h1>
         {linea !== "ecommerce" && (
           <button className="btn solido" onClick={() => setEditando("nuevo")}>
             {Ico.mas({ t: 15 })} Nuevo cliente
@@ -95,14 +114,6 @@ export function Productos() {
 
       <div className="cuerpo">
         {error && <p className="error">{error}</p>}
-
-        <div className="subnav-organizacion">
-          {LINEAS.map((l) => (
-            <button key={l.id} className={linea === l.id ? "on" : ""} onClick={() => setLinea(l.id)}>
-              {Ico[l.icono]({ t: 15 })} {l.texto}
-            </button>
-          ))}
-        </div>
 
         {cargando ? (
           <p className="vacio">Cargando…</p>

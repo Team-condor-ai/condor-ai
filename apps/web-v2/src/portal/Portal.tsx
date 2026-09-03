@@ -19,6 +19,7 @@ import { Lateral, type Entrada, type Grupo } from "./disenio/Lateral";
 import { Ico } from "./disenio/iconos";
 import { ConfirmacionProvider } from "./disenio/Confirmacion";
 import { Productos } from "./staff/Productos";
+import { EQUIPO_CONDOR } from "./staff/tipos";
 import { Prospeccion } from "./staff/Prospeccion";
 import { Dashboard } from "./staff/Dashboard";
 import { Contabilidad } from "./staff/contabilidad/Contabilidad";
@@ -79,7 +80,9 @@ const MENU_STAFF: Grupo[] = [
     clave: "productos",
     icono: "clientes",
     entradas: [
-      { a: "/acceso/clientes", texto: "Productos", icono: "clientes" },
+      { a: "/acceso/productos/sites", texto: "Sites", icono: "sitesProducto" },
+      { a: "/acceso/productos/ecommerce", texto: "Ecommerce", icono: "ecommerceProducto" },
+      { a: "/acceso/productos/track", texto: "Track", icono: "trackProducto" },
     ],
   },
   {
@@ -159,11 +162,13 @@ function Marco({
   menu,
   nombre,
   detalle,
+  foto,
   children,
 }: {
   menu: Grupo[];
   nombre: string;
   detalle: string;
+  foto?: string;
   children: React.ReactNode;
 }) {
   const [abierto, setAbierto] = useState(false);
@@ -175,6 +180,7 @@ function Marco({
         grupos={menu}
         nombre={nombre}
         detalle={detalle}
+        foto={foto}
         abierto={abierto}
         cerrar={() => setAbierto(false)}
         onSalir={async () => {
@@ -235,7 +241,14 @@ function PortalContenido() {
   if (!s.email) return envolver(<Login />);
 
   const correo = s.email;
-  const nombre = correo.split("@")[0];
+  // Nombre, rol y foto reales cuando el correo es de alguien del equipo
+  // (2-sept-2026, pedido de Joaquín: "donde sale j.ignaciomunozsilva pon
+  // ahi la foto de cada uno... y donde dice equipo condor pon el rol").
+  // Sin match (un cliente, o un admin fuera de los 3 que aparecen acá) cae
+  // al correo crudo de siempre -- no se inventa un rol para alguien que no
+  // está en la lista.
+  const miembro = EQUIPO_CONDOR.find((m) => m.email === correo);
+  const nombre = miembro?.nombre ?? correo.split("@")[0];
 
   // BÁRBARA ES SU PROPIA APP DENTRO DEL PORTAL, NO UNA PÁGINA MÁS.
   // ---------------------------------------------------------------------------
@@ -256,10 +269,14 @@ function PortalContenido() {
 
   if (s.rol === "staff")
     return envolver(
-      <Marco menu={MENU_STAFF} nombre={nombre} detalle="Equipo Cóndor">
+      <Marco menu={MENU_STAFF} nombre={nombre} detalle={miembro?.rol ?? "Equipo Cóndor"} foto={miembro?.foto}>
         <Routes>
           <Route path="dashboard" element={<Dashboard />} />
+          {/* "clientes" (sin línea) sigue viva por los links viejos que
+              traen `?ver=<id>` desde Cobros/Panel/Mapa -- Productos lee ese
+              query param sin importar qué línea muestre. */}
           <Route path="clientes" element={<Productos />} />
+          <Route path="productos/:linea" element={<Productos />} />
           <Route path="prospeccion" element={<Prospeccion />} />
           <Route path="contabilidad" element={<Contabilidad />} />
           <Route path="organizacion/:vista" element={<Organizacion />} />

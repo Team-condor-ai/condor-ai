@@ -37,6 +37,9 @@ type Props = {
   grupos: Grupo[];
   nombre: string;
   detalle: string;
+  /** Foto real de quien está usando el portal, si es del equipo (ver
+   *  `EQUIPO_CONDOR` en staff/tipos.ts). Sin foto, cae a las iniciales. */
+  foto?: string;
   onSalir: () => void;
   abierto: boolean;
   cerrar: () => void;
@@ -108,7 +111,7 @@ function iniciales(t: string) {
  *
  * Cada categoría se pliega si estorba, y esa elección se recuerda por persona.
  */
-export function Lateral({ grupos, nombre, detalle, onSalir, abierto, cerrar }: Props) {
+export function Lateral({ grupos, nombre, detalle, foto, onSalir, abierto, cerrar }: Props) {
   const menuRef = useRef<HTMLElement>(null);
   const marcaRef = useRef<HTMLSpanElement>(null);
   const sitio = useLocation();
@@ -260,7 +263,12 @@ export function Lateral({ grupos, nombre, detalle, onSalir, abierto, cerrar }: P
       </nav>
 
       <button className="tarjeta-user" onClick={onSalir} title="Cerrar sesión">
-        <span className="ini">{iniciales(nombre)}</span>
+        {foto ? (
+          <img src={foto} alt="" width={32} height={32}
+            style={{ width: 32, height: 32, borderRadius: 9, objectFit: "cover", flex: "none" }} />
+        ) : (
+          <span className="ini">{iniciales(nombre)}</span>
+        )}
         <div>
           <b>{nombre}</b>
           <small>{detalle}</small>

@@ -29,6 +29,7 @@ import type {
   IngresoCliente,
 } from "./contabilidad/tipos";
 import { IngresoEcommerce } from "./contabilidad/IngresoEcommerce";
+import { ResumenProspeccion } from "./Prospeccion";
 
 type PagoLite = {
   cliente_id: string;
@@ -559,6 +560,8 @@ export function Dashboard() {
         </div>
 
         <IngresoEcommerce ingresos={ingresosClientes} />
+
+        <ResumenProspeccion />
 
         <section className="bloque dashboard-egresos">
           <header className="dashboard-seccion-cab">

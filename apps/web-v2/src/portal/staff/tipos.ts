@@ -284,13 +284,19 @@ export const MONEDAS = ["CLP", "COP", "PEN", "USD"];
 export const ESTADOS_SETUP = ["pendiente", "pagado"];
 export const ESTADOS_MENSUAL = ["pendiente", "al_dia", "vencido"];
 
+/** Un canal donde se encontró al prospecto, con cómo ubicarlo ahí (2-sept:
+ *  Joaquín pidió guardar el @/usuario/nombre exacto, no solo marcar el
+ *  canal — sin eso, "está en Instagram" no le sirve a nadie que necesite
+ *  volver a escribirle). Un prospecto puede tener varios. */
+export type CanalProspecto = { canal: string; handle: string };
+
 /** Filas de `public.prospectos` — CRM de prospección (ver prospectos.sql). */
 export type Prospecto = {
   id: string;
   linea: string;
   negocio: string;
   contacto: string | null;
-  canales: string[];
+  canales: CanalProspecto[];
   estado: string;
   notas: string | null;
   cerrado: boolean;
@@ -347,12 +353,54 @@ export function diasParaSeguimiento(p: Pick<Prospecto, "estado" | "ultima_activi
 }
 
 /**
- * Meta semanal de contactos por persona (2-sept-2026, pedido explícito de
- * Joaquín). Corrige la cifra inicial de "70 entre Joaquín y Max": Alejandro
- * también prospecta, con su propia meta.
+ * El equipo real de Cóndor.ai: correo, nombre, rol (igual al que muestra
+ * condorai.cl en "Nosotros"), foto (recortada de esa misma web pública, ver
+ * `public/assets/avatares/`) y meta semanal de prospección (2-sept-2026,
+ * pedido explícito de Joaquín — corrige la cifra inicial de "70 entre
+ * Joaquín y Max": Alejandro también prospecta, con su propia meta).
+ *
+ * Se reusa en tres lugares: la tarjeta de usuario del menú lateral (foto +
+ * rol en vez del correo crudo), la columna/carpeta de responsable en
+ * Prospección, y el cálculo de cumplimiento diario/semanal.
  */
-export const METAS_SEMANALES_PROSPECCION: { email: string; nombre: string; meta: number }[] = [
-  { email: "j.ignaciomunozsilva@gmail.com", nombre: "Joaquín", meta: 50 },
-  { email: "maximilianopinocv@gmail.com", nombre: "Maximiliano", meta: 50 },
-  { email: "alejandrotobarq@gmail.com", nombre: "Alejandro", meta: 30 },
+export const EQUIPO_CONDOR: { email: string; nombre: string; rol: string; foto: string; metaSemanal: number }[] = [
+  { email: "j.ignaciomunozsilva@gmail.com", nombre: "Joaquín", rol: "Cofundador & CEO", foto: "/assets/avatares/joaquin-mini.jpg", metaSemanal: 50 },
+  { email: "maximilianopinocv@gmail.com", nombre: "Maximiliano", rol: "Cofundador · Ing. Comercial y Desarrollo", foto: "/assets/avatares/maximiliano-mini.jpg", metaSemanal: 50 },
+  { email: "alejandrotobarq@gmail.com", nombre: "Alejandro", rol: "Cofundador & Backend", foto: "/assets/avatares/alejandro-mini.jpg", metaSemanal: 30 },
 ];
+
+/** Compatibilidad: mismo contenido que se usaba antes bajo este nombre. */
+export const METAS_SEMANALES_PROSPECCION = EQUIPO_CONDOR.map((p) => ({ email: p.email, nombre: p.nombre, meta: p.metaSemanal }));
+
+/**
+ * La semana laboral de prospección: lunes 00:00 a viernes 19:00 -- el
+ * corte que Joaquín fijó para la reunión comercial de los viernes.
+ */
+export function semanaLaboral(ahora: Date = new Date()) {
+  const dia = ahora.getDay(); // 0=domingo ... 5=viernes ... 6=sábado
+  const diasDesdeLunes = (dia + 6) % 7;
+  const inicio = new Date(ahora);
+  inicio.setHours(0, 0, 0, 0);
+  inicio.setDate(inicio.getDate() - diasDesdeLunes);
+  const fin = new Date(inicio);
+  fin.setDate(inicio.getDate() + 4);
+  fin.setHours(19, 0, 0, 0);
+  return { inicio, fin };
+}
+
+/**
+ * Qué fracción de la semana laboral ya pasó (0 a 1). Sirve para no exigirle
+ * a alguien el 100% de la meta semanal un miércoles a mitad de tarde --el
+ * caso real que motivó esto, 2-sept-2026: el CRM recién se construyó un
+ * miércoles, así que la primera semana ya arrancaba con menos de la mitad
+ * del tiempo disponible.
+ */
+export function fraccionSemanaTranscurrida(ahora: Date = new Date()): number {
+  const { inicio, fin } = semanaLaboral(ahora);
+  const t = ahora.getTime();
+  if (t <= inicio.getTime()) return 0;
+  if (t >= fin.getTime()) return 1;
+  return (t - inicio.getTime()) / (fin.getTime() - inicio.getTime());
+}
+
+export const esViernesLaboral = (ahora: Date = new Date()) => ahora.getDay() === 5 && ahora < semanaLaboral(ahora).fin;

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { sb } from "../lib/supabase";
 import { useSesion } from "../auth/sesion";
 import { useNombreUsuario } from "../auth/nombreUsuario";
@@ -8,34 +9,46 @@ import { BarraLista } from "./BarraLista";
 import { Barras } from "./graficos";
 import {
   type Prospecto,
+  type CanalProspecto,
   CANALES_PROSPECTO,
   ESTADOS_PROSPECTO,
+  EQUIPO_CONDOR,
   METAS_SEMANALES_PROSPECCION,
   diasParaSeguimiento,
   textoEstadoProspecto,
+  semanaLaboral,
+  fraccionSemanaTranscurrida,
+  esViernesLaboral,
 } from "./tipos";
 
 const LINEA = "ecommerce";
 
 /**
- * CRM de prospección de Cóndor Ecommerce (2-sept-2026).
+ * CRM de prospección de Cóndor Ecommerce (2-sept-2026, ampliado el mismo
+ * día tras el primer uso real).
  *
  * POR QUÉ SE EDITA EN LA TABLA Y NO EN UN PANEL APARTE
  * ---------------------------------------------------------------------------
- * Joaquín lo pidió explícito: "como un excel". `Clientes.tsx` abre un panel
- * para cada ficha porque un cliente tiene cobros, pagos e historial — mucho
- * para una fila. Un prospecto es una fila de verdad: negocio, contacto,
- * canal, estado, nota. Cabe entera en la tabla, así que se edita ahí mismo,
- * celda por celda, igual que `CampoVivo` pero pensado para una grilla en vez
- * de un formulario.
+ * Joaquín lo pidió explícito: "como un excel". Un prospecto es una fila de
+ * verdad: negocio, contacto, canal, estado, nota. Cabe entera en la tabla,
+ * así que se edita ahí mismo, celda por celda.
  *
  * POR QUÉ EL ESTADO RESETEA EL RELOJ EN LA BASE, NO ACÁ
  * ---------------------------------------------------------------------------
  * `ultima_actividad_en` la actualiza un trigger de Postgres cuando cambia el
  * estado (ver prospectos.sql). Si esta pantalla tuviera que acordarse de
  * mandar la fecha en cada PATCH, un día alguien agrega un tercer lugar que
- * también edita el estado (un script, otra pantalla) y se le olvida — el
- * reloj de la alerta quedaría mintiendo sin que nadie lo note.
+ * también edita el estado y se le olvida — el reloj de la alerta quedaría
+ * mintiendo sin que nadie lo note.
+ *
+ * POR QUÉ LA LISTA SE SUBCARPETEA POR PERSONA
+ * ---------------------------------------------------------------------------
+ * Pedido explícito, mismo día: "el modulo completo debe estar todo
+ * subcarpeteado/categorizado si son de alejandro, joaquin o max". Cada
+ * carpeta lleva su propia tarjeta de cumplimiento (hoy y esta semana)
+ * arriba, con foto real — se reusa la misma lista `EQUIPO_CONDOR` que
+ * define metas, fotos y roles, para que cambiar un dato ahí lo actualice
+ * en todos lados a la vez.
  */
 export function Prospeccion() {
   const sesion = useSesion();
@@ -84,7 +97,8 @@ export function Prospeccion() {
       if (filtro === "cerrados" && p.estado !== "cerrado") return false;
       if (filtro === "nunca" && p.estado !== "nunca_contesto") return false;
       if (!q) return true;
-      return [p.negocio, p.contacto, p.notas, p.creado_por_nombre]
+      const handles = p.canales.map((c) => c.handle).filter(Boolean);
+      return [p.negocio, p.contacto, p.notas, p.creado_por_nombre, ...handles]
         .filter(Boolean)
         .some((t) => String(t).toLowerCase().includes(q));
     });
@@ -104,6 +118,24 @@ export function Prospeccion() {
     });
     return r;
   }, [visibles, orden]);
+
+  // Una carpeta por persona del equipo + "Otros" para lo que no calce
+  // (prospectos cargados antes de tener este dato, o por alguien fuera de
+  // los 3 que prospectan hoy) -- nunca se descarta una fila en silencio.
+  const carpetas = useMemo(() => {
+    const grupos = new Map<string, Prospecto[]>();
+    for (const p of ordenados) {
+      const clave = EQUIPO_CONDOR.some((m) => m.email === p.creado_por_email) ? p.creado_por_email! : "otros";
+      (grupos.get(clave) ?? grupos.set(clave, []).get(clave)!).push(p);
+    }
+    const orden2 = [...EQUIPO_CONDOR.map((m) => m.email), "otros"];
+    return orden2
+      .filter((k) => grupos.has(k))
+      .map((k) => ({
+        persona: EQUIPO_CONDOR.find((m) => m.email === k) ?? null,
+        prospectos: grupos.get(k)!,
+      }));
+  }, [ordenados]);
 
   const cuenta = useMemo(() => {
     const n = { todos: 0, atrasados: 0, activos: 0, cerrados: 0, nunca: 0 };
@@ -139,8 +171,15 @@ export function Prospeccion() {
   }
 
   function toggleCanal(p: Prospecto, canalId: string) {
-    const tiene = p.canales.includes(canalId);
-    const nuevos = tiene ? p.canales.filter((c) => c !== canalId) : [...p.canales, canalId];
+    const tiene = p.canales.some((c) => c.canal === canalId);
+    const nuevos: CanalProspecto[] = tiene
+      ? p.canales.filter((c) => c.canal !== canalId)
+      : [...p.canales, { canal: canalId, handle: "" }];
+    void actualizar(p, { canales: nuevos });
+  }
+
+  function actualizarHandle(p: Prospecto, canalId: string, handle: string) {
+    const nuevos = p.canales.map((c) => (c.canal === canalId ? { ...c, handle } : c));
     void actualizar(p, { canales: nuevos });
   }
 
@@ -178,6 +217,14 @@ export function Prospeccion() {
 
         {vista === "lista" ? (
           <>
+            <BandaViernes filas={filas} />
+
+            <div className="kpis" style={{ marginBottom: 14 }}>
+              {EQUIPO_CONDOR.map((persona) => (
+                <TarjetaCumplimiento key={persona.email} persona={persona} filas={filas} />
+              ))}
+            </div>
+
             {atrasados.length > 0 && (
               <div className="aviso">
                 <b>{atrasados.length}</b> prospecto{atrasados.length === 1 ? "" : "s"} necesita
@@ -189,7 +236,7 @@ export function Prospeccion() {
             <BarraLista
               busca={busca}
               setBusca={setBusca}
-              marcador="Buscar por negocio, contacto o nota…"
+              marcador="Buscar por negocio, contacto, @ o nota…"
               orden={orden}
               setOrden={setOrden}
               ordenes={[
@@ -223,115 +270,226 @@ export function Prospeccion() {
               </p>
             )}
 
-            {!cargando && ordenados.length > 0 && (
-              <div className="tabla-caja">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Negocio</th>
-                      <th>Contacto</th>
-                      <th>Canales</th>
-                      <th>Estado</th>
-                      <th>Seguimiento</th>
-                      <th>Responsable</th>
-                      <th>Notas</th>
-                      <th></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {ordenados.map((p) => {
-                      const dias = diasParaSeguimiento(p);
-                      return (
-                        <tr key={p.id}>
-                          <td>
-                            <input
-                              className="campo-vivo"
-                              defaultValue={p.negocio}
-                              onBlur={(e) => e.target.value.trim() && e.target.value !== p.negocio && actualizar(p, { negocio: e.target.value.trim() })}
-                              style={{ minWidth: 130 }}
-                            />
-                          </td>
-                          <td>
-                            <input
-                              className="campo-vivo"
-                              defaultValue={p.contacto ?? ""}
-                              placeholder="tel / usuario"
-                              onBlur={(e) => e.target.value !== (p.contacto ?? "") && actualizar(p, { contacto: e.target.value.trim() || null })}
-                              style={{ minWidth: 110 }}
-                            />
-                          </td>
-                          <td>
-                            <div style={{ display: "flex", gap: 4 }}>
-                              {CANALES_PROSPECTO.map((c) => {
-                                const on = p.canales.includes(c.id);
-                                return (
-                                  <button
-                                    key={c.id}
-                                    className="icono-btn"
-                                    title={c.texto}
-                                    aria-label={c.texto}
-                                    onClick={() => toggleCanal(p, c.id)}
-                                    style={{
-                                      width: 26, height: 26, border: "1px solid " + (on ? c.color : "var(--borde)"),
-                                      color: on ? c.color : "var(--texto-3)",
-                                      background: on ? c.color + "1a" : "transparent",
-                                    }}
-                                  >
-                                    {Ico[c.id as "instagram" | "facebook" | "maps" | "linkedin"]({ t: 14 })}
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          </td>
-                          <td>
-                            <select
-                              className="campo"
-                              value={p.estado}
-                              onChange={(e) => actualizar(p, { estado: e.target.value })}
-                              style={{ minWidth: 150 }}
-                            >
-                              {ESTADOS_PROSPECTO.map((e) => (
-                                <option key={e.id} value={e.id}>{e.texto}</option>
-                              ))}
-                            </select>
-                          </td>
-                          <td>
-                            {dias == null ? (
-                              <span className="conteo">—</span>
-                            ) : dias < 0 ? (
-                              <span className="pill mal">atrasado {Math.abs(dias)}d</span>
-                            ) : (
-                              <span className="pill gris">en {dias}d</span>
-                            )}
-                          </td>
-                          <td><small>{p.creado_por_nombre || "—"}</small></td>
-                          <td>
-                            <input
-                              className="campo-vivo"
-                              defaultValue={p.notas ?? ""}
-                              placeholder="—"
-                              onBlur={(e) => e.target.value !== (p.notas ?? "") && actualizar(p, { notas: e.target.value.trim() || null })}
-                              style={{ minWidth: 130 }}
-                            />
-                          </td>
-                          <td className="acciones">
-                            <button className="icono-btn" title="Eliminar" aria-label="Eliminar" onClick={() => void eliminar(p)}>
-                              {Ico.eliminar({ t: 15 })}
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
+            {!cargando && carpetas.map(({ persona, prospectos }) => (
+              <details key={persona?.email ?? "otros"} className="bloque" open style={{ marginBottom: 14 }}>
+                <summary style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontWeight: 600 }}>
+                  {persona ? <FotoPersona persona={persona} t={22} /> : <span className="ini" style={{ width: 22, height: 22, fontSize: 10 }}>?</span>}
+                  {persona?.nombre ?? "Otros / sin asignar"}
+                  <span className="conteo">{prospectos.length}</span>
+                </summary>
+                <div className="tabla-caja" style={{ marginTop: 10 }}>
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Negocio</th>
+                        <th>Contacto</th>
+                        <th>Canales</th>
+                        <th>Estado</th>
+                        <th>Seguimiento</th>
+                        <th>Notas</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {prospectos.map((p) => {
+                        const dias = diasParaSeguimiento(p);
+                        return (
+                          <tr key={p.id}>
+                            <td>
+                              <input
+                                className="campo-vivo"
+                                defaultValue={p.negocio}
+                                onBlur={(e) => e.target.value.trim() && e.target.value !== p.negocio && actualizar(p, { negocio: e.target.value.trim() })}
+                                style={{ minWidth: 130 }}
+                              />
+                            </td>
+                            <td>
+                              <input
+                                className="campo-vivo"
+                                defaultValue={p.contacto ?? ""}
+                                placeholder="tel / usuario"
+                                onBlur={(e) => e.target.value !== (p.contacto ?? "") && actualizar(p, { contacto: e.target.value.trim() || null })}
+                                style={{ minWidth: 110 }}
+                              />
+                            </td>
+                            <td>
+                              <div style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 160 }}>
+                                <div style={{ display: "flex", gap: 4 }}>
+                                  {CANALES_PROSPECTO.map((c) => {
+                                    const on = p.canales.some((x) => x.canal === c.id);
+                                    return (
+                                      <button
+                                        key={c.id}
+                                        className="icono-btn"
+                                        title={c.texto}
+                                        aria-label={c.texto}
+                                        onClick={() => toggleCanal(p, c.id)}
+                                        style={{
+                                          width: 24, height: 24, border: "1px solid " + (on ? c.color : "var(--borde)"),
+                                          color: on ? c.color : "var(--texto-3)",
+                                          background: on ? c.color + "1a" : "transparent",
+                                        }}
+                                      >
+                                        {Ico[c.id as "instagram" | "facebook" | "maps" | "linkedin"]({ t: 13 })}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                                {p.canales.map((c) => {
+                                  const cfg = CANALES_PROSPECTO.find((x) => x.id === c.canal);
+                                  return (
+                                    <div key={c.canal} style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                                      <span style={{ color: cfg?.color, flex: "none" }}>
+                                        {Ico[c.canal as "instagram" | "facebook" | "maps" | "linkedin"]({ t: 12 })}
+                                      </span>
+                                      <input
+                                        className="campo-vivo"
+                                        defaultValue={c.handle}
+                                        placeholder={c.canal === "maps" ? "nombre del local" : "@usuario"}
+                                        onBlur={(e) => e.target.value !== c.handle && actualizarHandle(p, c.canal, e.target.value.trim())}
+                                        style={{ fontSize: 11.5, padding: "2px 6px" }}
+                                      />
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </td>
+                            <td>
+                              <select
+                                className="campo"
+                                value={p.estado}
+                                onChange={(e) => actualizar(p, { estado: e.target.value })}
+                                style={{ minWidth: 150 }}
+                              >
+                                {ESTADOS_PROSPECTO.map((e) => (
+                                  <option key={e.id} value={e.id}>{e.texto}</option>
+                                ))}
+                              </select>
+                            </td>
+                            <td>
+                              {dias == null ? (
+                                <span className="conteo">—</span>
+                              ) : dias < 0 ? (
+                                <span className="pill mal">atrasado {Math.abs(dias)}d</span>
+                              ) : (
+                                <span className="pill gris">en {dias}d</span>
+                              )}
+                            </td>
+                            <td>
+                              <input
+                                className="campo-vivo"
+                                defaultValue={p.notas ?? ""}
+                                placeholder="—"
+                                onBlur={(e) => e.target.value !== (p.notas ?? "") && actualizar(p, { notas: e.target.value.trim() || null })}
+                                style={{ minWidth: 130 }}
+                              />
+                            </td>
+                            <td className="acciones">
+                              <button className="icono-btn" title="Eliminar" aria-label="Eliminar" onClick={() => void eliminar(p)}>
+                                {Ico.eliminar({ t: 15 })}
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </details>
+            ))}
           </>
         ) : (
           <DashboardProspeccion filas={filas} cargando={cargando} />
         )}
       </div>
     </>
+  );
+}
+
+function FotoPersona({ persona, t = 28 }: { persona: { nombre: string; foto: string }; t?: number }) {
+  return (
+    <img
+      src={persona.foto}
+      alt={persona.nombre}
+      width={t}
+      height={t}
+      style={{ width: t, height: t, borderRadius: "50%", objectFit: "cover", flex: "none" }}
+    />
+  );
+}
+
+/** Cuántos contactó hoy y esta semana, contra su meta -- con el ritmo
+ *  esperado A ESTA HORA de la semana, no solo el total. Ver
+ *  `fraccionSemanaTranscurrida` en tipos.ts: es lo que evita exigirle a
+ *  alguien el 100% de la meta un miércoles a media tarde. */
+function TarjetaCumplimiento({ persona, filas }: { persona: typeof EQUIPO_CONDOR[number]; filas: Prospecto[] }) {
+  const ahora = new Date();
+  const hoyIso = ahora.toISOString().slice(0, 10);
+  const { inicio } = semanaLaboral(ahora);
+  const deLaPersona = filas.filter((p) => p.creado_por_email === persona.email);
+  const hoy = deLaPersona.filter((p) => p.creado_en.slice(0, 10) === hoyIso).length;
+  const semana = deLaPersona.filter((p) => new Date(p.creado_en) >= inicio).length;
+  const metaDiaria = Math.round(persona.metaSemanal / 5);
+  const esperadoAhora = Math.max(1, Math.round(persona.metaSemanal * fraccionSemanaTranscurrida(ahora)));
+  const pctSemana = Math.round((semana / esperadoAhora) * 100);
+
+  return (
+    <div className="kpi">
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+        <FotoPersona persona={persona} />
+        <div>
+          <b style={{ fontSize: 13 }}>{persona.nombre}</b>
+          <small style={{ display: "block", color: "var(--texto-3)" }}>{persona.rol}</small>
+        </div>
+      </div>
+      <div style={{ display: "flex", gap: 14 }}>
+        <div>
+          <div className="cifra"><b>{hoy}</b>/{metaDiaria}</div>
+          <p>Hoy</p>
+        </div>
+        <div>
+          <div className="cifra"><b>{semana}</b>/{persona.metaSemanal}</div>
+          <p>Esta semana</p>
+        </div>
+      </div>
+      <span className={"pill " + (pctSemana >= 100 ? "ok" : pctSemana >= 70 ? "warn" : "mal")} style={{ marginTop: 6, display: "inline-block" }}>
+        {pctSemana}% del ritmo esperado a esta hora ({esperadoAhora})
+      </span>
+    </div>
+  );
+}
+
+/** Cuenta regresiva de presión, solo visible los viernes hasta las 19:00 --
+ *  pedido explícito de Joaquín: "que se active todos los viernes... donde
+ *  se ponga presion en el portal para completar la prospeccion". */
+function BandaViernes({ filas }: { filas: Prospecto[] }) {
+  const [ahora, setAhora] = useState(new Date());
+  useEffect(() => {
+    const t = window.setInterval(() => setAhora(new Date()), 30000);
+    return () => window.clearInterval(t);
+  }, []);
+
+  if (!esViernesLaboral(ahora)) return null;
+
+  const { inicio, fin } = semanaLaboral(ahora);
+  const msRestante = fin.getTime() - ahora.getTime();
+  const horas = Math.floor(msRestante / 3600000);
+  const minutos = Math.floor((msRestante % 3600000) / 60000);
+
+  const faltantes = EQUIPO_CONDOR.map((persona) => {
+    const semana = filas.filter((p) => p.creado_por_email === persona.email && new Date(p.creado_en) >= inicio).length;
+    return { nombre: persona.nombre, falta: Math.max(0, persona.metaSemanal - semana) };
+  }).filter((f) => f.falta > 0);
+
+  return (
+    <div className="aviso" style={{ borderColor: "var(--mal-bd)", background: "var(--mal-bg)", color: "var(--mal-tx)", marginBottom: 14 }}>
+      <b>Quedan {horas}h {minutos}min para cerrar la semana de prospección</b> (hoy viernes, corte 19:00).
+      {faltantes.length > 0 ? (
+        <> Todavía falta: {faltantes.map((f) => `${f.nombre} (${f.falta})`).join(" · ")}.</>
+      ) : (
+        <> Los tres ya cumplieron su meta semanal.</>
+      )}
+    </div>
   );
 }
 
@@ -371,12 +529,13 @@ function DashboardProspeccion({ filas, cargando }: { filas: Prospecto[]; cargand
 
   const porCanal = CANALES_PROSPECTO.map((c) => ({
     et: c.texto,
-    valor: enRango.filter((p) => p.canales.includes(c.id)).length,
+    valor: enRango.filter((p) => p.canales.some((x) => x.canal === c.id)).length,
   }));
 
   function exportarCsv() {
     const filas2 = enRango.map((p) => [
-      p.creado_en.slice(0, 10), p.negocio, p.contacto ?? "", p.canales.join("|"),
+      p.creado_en.slice(0, 10), p.negocio, p.contacto ?? "",
+      p.canales.map((c) => `${c.canal}:${c.handle}`).join("|"),
       textoEstadoProspecto(p.estado), p.creado_por_nombre ?? "", (p.notas ?? "").replace(/[\n,]/g, " "),
     ].map((v) => `"${String(v).replace(/"/g, '""')}"`).join(","));
     const csv = ["fecha,negocio,contacto,canales,estado,responsable,notas", ...filas2].join("\n");
@@ -453,5 +612,44 @@ function DashboardProspeccion({ filas, cargando }: { filas: Prospecto[]; cargand
       <h3 style={{ marginTop: 22 }}>De dónde vienen los prospectos</h3>
       <Barras datos={porCanal} formato={(n) => String(n)} />
     </>
+  );
+}
+
+/**
+ * Versión compacta para el Panel general (2-sept-2026, pedido de Joaquín:
+ * "el dashboard general debe estar conectado a panel"). Se fetchea sus
+ * propios datos porque el Panel no cargaba `prospectos` para nada más —
+ * pedirle a `Dashboard.tsx` que lo hiciera solo para esta tarjeta habría
+ * acoplado dos pantallas que hoy no se necesitan la una a la otra.
+ */
+export function ResumenProspeccion() {
+  const [filas, setFilas] = useState<Prospecto[]>([]);
+  const [cargando, setCargando] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await sb.from("prospectos").select("*").eq("linea", LINEA);
+      setFilas((data ?? []) as Prospecto[]);
+      setCargando(false);
+    })();
+  }, []);
+
+  if (cargando) return null;
+
+  return (
+    <section className="bloque">
+      <div className="cabecera-bloque">
+        <div>
+          <h3>Prospección — Cóndor Ecommerce</h3>
+          <p>Cumplimiento de la semana, equipo comercial</p>
+        </div>
+        <Link className="btn chico" to="/acceso/prospeccion">Ver módulo completo</Link>
+      </div>
+      <div className="kpis" style={{ marginTop: 10 }}>
+        {EQUIPO_CONDOR.map((persona) => (
+          <TarjetaCumplimiento key={persona.email} persona={persona} filas={filas} />
+        ))}
+      </div>
+    </section>
   );
 }
