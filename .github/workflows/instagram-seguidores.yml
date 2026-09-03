@@ -5,11 +5,13 @@ name: Marketing — snapshot diario de seguidores de Instagram
 # marketing_seguidores_snapshot, para el contador de "seguidores nuevos"
 # del módulo Marketing del Portal Cóndor. Conectado el 3-sept-2026.
 #
-# ⚠️ El token es de corta duración (no se hizo todavía el exchange a 60
-# días con el App Secret) -- cuando venza, esta corrida va a fallar con
-# un error de autenticación. Hay que generar uno nuevo y actualizar
-# INSTAGRAM_ACCESS_TOKEN acá Y api_credenciales (proveedor 'instagram')
-# en Supabase -- las dos copias no se sincronizan solas.
+# El token se generó directo desde el panel de la app de Meta (no del
+# Explorer genérico), lo que parece darle mayor duración -- ver el
+# comentario extenso en sincronizar-seguidores-instagram.mjs. Si esta
+# corrida empieza a fallar con un error de autenticación, generar uno
+# nuevo desde ahí y actualizar INSTAGRAM_ACCESS_TOKEN acá Y
+# api_credenciales (proveedor 'instagram') en Supabase -- las dos copias
+# no se sincronizan solas.
 #
 # Corre una vez al día, 09:00 UTC = 05:00 Chile (antes de que el equipo
 # empiece a trabajar, para tener el número del día listo).

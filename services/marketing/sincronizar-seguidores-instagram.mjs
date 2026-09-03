@@ -16,16 +16,24 @@
  * ID de la cuenta verificado en vivo: 27061666863509883 (@condor.ai,
  * Business). 308 seguidores / 1351 seguidos al momento de conectar esto.
  *
- * ⚠️ EL TOKEN ES DE CORTA DURACIÓN
+ * SOBRE LA DURACIÓN DEL TOKEN (probado en vivo, 3-sept-2026)
  * ---------------------------------------------------------------------------
- * Sin intercambiarlo por uno de larga duración (60 días, requiere el App
- * Secret de la app de Meta), este token vence pronto. Cuando eso pase,
- * este job va a empezar a fallar con un error de autenticación -- hay que
- * generar uno nuevo (o hacer el exchange a largo plazo) y actualizar
- * `INSTAGRAM_ACCESS_TOKEN` acá y en `api_credenciales` (proveedor
- * 'instagram') del Portal Cóndor. Las dos copias no se sincronizan solas,
- * mismo patrón ya documentado para el resto de credenciales de
- * api_creditos (ver `agregar-credito-api`).
+ * El primer token (del Graph API Explorer genérico) SÍ era de corta
+ * duración. El token actual se generó directo desde el panel de la app
+ * de Meta ("Panel de marketing de Condor-IG" → Instagram → API setup
+ * with Instagram login → Generar token) y se intentó pasar por el
+ * intercambio a 60 días (`grant_type=ig_exchange_token`) -- ese
+ * intercambio falló con "Session key invalid" pese a tener el formato
+ * exacto de la documentación. Todo indica que un token generado así
+ * (para el propio Tester/Admin de la app) YA viene de larga duración y
+ * no es candidato a ese endpoint, no que algo esté mal configurado.
+ *
+ * Si este job empieza a fallar con un error de autenticación de todos
+ * modos: generar uno nuevo desde el mismo panel (Instagram → API setup
+ * with Instagram login) y actualizar `INSTAGRAM_ACCESS_TOKEN` acá Y en
+ * `api_credenciales` (proveedor 'instagram') del Portal Cóndor. Las dos
+ * copias no se sincronizan solas, mismo patrón ya documentado para el
+ * resto de credenciales de api_creditos (ver `agregar-credito-api`).
  *
  * Variables requeridas:
  *   INSTAGRAM_ACCESS_TOKEN, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
