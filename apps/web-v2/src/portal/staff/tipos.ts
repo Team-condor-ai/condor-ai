@@ -578,7 +578,8 @@ export type SeguimientoDiario = {
 export type SeguidoresSnapshot = {
   id: string;
   fecha: string;
-  cantidad: number;
+  cantidad: number; // seguidores (followers_count)
+  siguiendo: number | null; // a cuántas cuentas seguimos (follows_count) -- null en snapshots de antes del 3-sept
   creado_por: string | null;
   creado_en: string;
 };

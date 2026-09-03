@@ -68,7 +68,7 @@ async function leerSeguidores(token, fetchImpl) {
   return datos;
 }
 
-async function guardarSnapshot(supabaseUrl, serviceKey, fecha, cantidad, fetchImpl) {
+async function guardarSnapshot(supabaseUrl, serviceKey, fecha, cantidad, siguiendo, fetchImpl) {
   const r = await fetchImpl(`${supabaseUrl.replace(/\/$/, "")}/rest/v1/marketing_seguidores_snapshot`, {
     method: "POST",
     headers: {
@@ -77,7 +77,7 @@ async function guardarSnapshot(supabaseUrl, serviceKey, fecha, cantidad, fetchIm
       "Content-Type": "application/json",
       Prefer: "return=minimal",
     },
-    body: JSON.stringify([{ fecha, cantidad, creado_por: "cron:instagram" }]),
+    body: JSON.stringify([{ fecha, cantidad, siguiendo, creado_por: "cron:instagram" }]),
   });
   if (!r.ok) throw new Error(`Supabase: ${r.status} ${await r.text()}`);
 }
@@ -94,7 +94,7 @@ export async function ejecutar({ env = process.env, argv = process.argv.slice(2)
   const fecha = ahora.toISOString().slice(0, 10);
 
   if (!dryRun) {
-    await guardarSnapshot(supabaseUrl, serviceKey, fecha, datos.followers_count, fetchImpl);
+    await guardarSnapshot(supabaseUrl, serviceKey, fecha, datos.followers_count, datos.follows_count, fetchImpl);
   }
   return { fecha, ...datos };
 }

@@ -37,6 +37,28 @@ function diasDeLaSemana(ahora: Date): Date[] {
 
 const iso = (d: Date) => d.toISOString().slice(0, 10);
 
+/** Delta de un campo del snapshot de Instagram (seguidores o seguidos):
+ *  el más reciente contra el de hace ~7 días. El cron corre una vez al
+ *  día, así que el snapshot de "hace una semana" es el primero con fecha
+ *  <= hoy-7 que tenga ese campo cargado (los anteriores al 3-sept no
+ *  tienen `siguiendo`) -- no necesariamente exacto al día si el cron
+ *  falló alguna corrida. */
+function deltaSnapshot(
+  snapshots: SeguidoresSnapshot[],
+  campo: "cantidad" | "siguiendo",
+): { actual: number; nuevos: number; desde: string } | null {
+  if (snapshots.length === 0) return null;
+  const ultimo = snapshots[0];
+  const actual = ultimo[campo];
+  if (actual == null) return null;
+  const hace7 = new Date(ultimo.fecha + "T12:00:00");
+  hace7.setDate(hace7.getDate() - 7);
+  const hace7Iso = iso(hace7);
+  const referencia = snapshots.find((s) => s.fecha <= hace7Iso && s[campo] != null) ?? snapshots[snapshots.length - 1];
+  if (referencia.id === ultimo.id || referencia[campo] == null) return null; // no hay suficiente historial todavía
+  return { actual, nuevos: actual - (referencia[campo] as number), desde: referencia.fecha };
+}
+
 /** Genera (sin pisar lo existente) las filas de contenido + seguimiento de
  *  la semana en curso. La usan tanto el módulo completo como el resumen
  *  del Panel, para que cualquiera de los dos que se abra primero deje la
@@ -149,20 +171,8 @@ export function Marketing() {
     (t, s) => t + (s.hecho ? (s.cantidad ?? META_SEGUIDOS_DIA) : 0), 0,
   );
 
-  // Delta de seguidores: el snapshot más reciente contra el de hace ~7
-  // días (el cron corre una vez al día, así que el snapshot de "hace una
-  // semana" es el primero con fecha <= hoy-7, no necesariamente exacto al
-  // día si el cron falló alguna corrida).
-  const seguidoresDelta = useMemo(() => {
-    if (snapshots.length === 0) return null;
-    const ultimo = snapshots[0];
-    const hace7 = new Date(ultimo.fecha + "T12:00:00");
-    hace7.setDate(hace7.getDate() - 7);
-    const hace7Iso = iso(hace7);
-    const referencia = snapshots.find((s) => s.fecha <= hace7Iso) ?? snapshots[snapshots.length - 1];
-    if (referencia.id === ultimo.id) return null; // no hay suficiente historial todavía
-    return { actual: ultimo.cantidad, nuevos: ultimo.cantidad - referencia.cantidad, desde: referencia.fecha };
-  }, [snapshots]);
+  const seguidoresDelta = useMemo(() => deltaSnapshot(snapshots, "cantidad"), [snapshots]);
+  const siguiendoDelta = useMemo(() => deltaSnapshot(snapshots, "siguiendo"), [snapshots]);
 
   async function actualizarContenido(c: ContenidoMarketing, cambios: Partial<ContenidoMarketing>) {
     setContenido((ls) => ls.map((x) => (x.id === c.id ? { ...x, ...cambios } : x)));
@@ -213,7 +223,7 @@ export function Marketing() {
           <div className="kpi">
             <div className="tile">{Ico.chat({ t: 18 })}</div>
             <div className="cifra"><b>{totalSeguidosSemana}</b>/{META_SEGUIDOS_SEMANA}</div>
-            <p>Cuentas seguidas esta semana</p>
+            <p>Cuentas seguidas esta semana (marcado a mano por Samuel/Alejandro)</p>
           </div>
           <div className="kpi">
             <div className="tile">{Ico.repetir({ t: 18 })}</div>
@@ -225,7 +235,21 @@ export function Marketing() {
             ) : (
               <>
                 <div className="cifra"><b>{snapshots[0]?.cantidad.toLocaleString("es-CL") ?? "—"}</b></div>
-                <p>Seguidores totales hoy — falta una semana de historial para calcular el delta</p>
+                <p>Seguidores totales hoy (real, Instagram) — falta una semana de historial para calcular el delta</p>
+              </>
+            )}
+          </div>
+          <div className="kpi">
+            <div className="tile">{Ico.grafo({ t: 18 })}</div>
+            {siguiendoDelta ? (
+              <>
+                <div className="cifra"><b>{siguiendoDelta.nuevos >= 0 ? "+" : ""}{siguiendoDelta.nuevos}</b></div>
+                <p>Cuentas seguidas nuevas, real (Instagram) desde el {siguiendoDelta.desde} · {siguiendoDelta.actual.toLocaleString("es-CL")} en total</p>
+              </>
+            ) : (
+              <>
+                <div className="cifra"><b>{snapshots[0]?.siguiendo?.toLocaleString("es-CL") ?? "—"}</b></div>
+                <p>Total de cuentas que seguimos hoy (real, Instagram) — falta una semana de historial para el delta</p>
               </>
             )}
           </div>
