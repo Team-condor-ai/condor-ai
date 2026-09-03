@@ -35,6 +35,25 @@
  * copias no se sincronizan solas, mismo patrón ya documentado para el
  * resto de credenciales de api_creditos (ver `agregar-credito-api`).
  *
+ * VERIFICACIÓN REAL DE LA META DIARIA (agregado 3-sept-2026)
+ * ---------------------------------------------------------------------------
+ * Pedido de Joaquín: que el casillero de "seguí 200 hoy" en
+ * `marketing_seguimiento_diario` se marque solo cuando el número REAL de
+ * Instagram lo respalda, no solo porque Samuel o Alejandro lo tildaron.
+ *
+ * Cómo se calcula: cada corrida compara el `siguiendo` de hoy contra el
+ * de la última fila con fecha ANTERIOR a hoy (el estado justo antes de
+ * que empezara el día) -- esa diferencia es el crecimiento real desde
+ * que arrancó el día. Con el cron corriendo cada 2 horas (ver
+ * `instagram-seguidores.yml`), ese número se acerca a "en vivo" sin
+ * exponer el token al navegador ni construir un endpoint aparte.
+ *
+ * El resultado SOBRESCRIBE `cantidad` de la fila de hoy en
+ * `marketing_seguimiento_diario` en cada corrida. `hecho` solo pasa a
+ * `true` cuando el delta llega a la meta -- y una vez en `true` no
+ * vuelve a `false` aunque el número baje después (alguien podría dejar
+ * de seguir cuentas spam más tarde y no hay que penalizar eso).
+ *
  * Variables requeridas:
  *   INSTAGRAM_ACCESS_TOKEN, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
  *
@@ -82,6 +101,58 @@ async function guardarSnapshot(supabaseUrl, serviceKey, fecha, cantidad, siguien
   if (!r.ok) throw new Error(`Supabase: ${r.status} ${await r.text()}`);
 }
 
+const META_SEGUIDOS_DIA = 200; // mismo valor que META_SEGUIDOS_DIA en tipos.ts
+
+/** El `siguiendo` de la última fila con fecha ANTERIOR a `fecha` -- el
+ *  estado justo antes de que empezara el día que se quiere verificar. */
+async function siguiendoAlEmpezarElDia(supabaseUrl, serviceKey, fecha, fetchImpl) {
+  const qs = new URLSearchParams({
+    select: "siguiendo", "fecha": `lt.${fecha}`, "siguiendo": "not.is.null",
+    order: "fecha.desc,creado_en.desc", limit: "1",
+  });
+  const r = await fetchImpl(`${supabaseUrl.replace(/\/$/, "")}/rest/v1/marketing_seguidores_snapshot?${qs}`, {
+    headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` },
+  });
+  if (!r.ok) throw new Error(`Supabase (referencia): ${r.status} ${await r.text()}`);
+  const filas = await r.json();
+  return filas[0]?.siguiendo ?? null;
+}
+
+/** Marca en `marketing_seguimiento_diario` cuánto se siguió REALMENTE hoy
+ *  (delta real desde el inicio del día) y si con eso se cumplió la meta.
+ *  No hace nada si no hay fila para hoy (no debería pasar: la genera
+ *  `generar-semana.mjs`/`asegurarSemana()` de antemano) ni si todavía no
+ *  hay un snapshot de referencia (primer día que corre esto). */
+async function verificarMetaDeHoy(supabaseUrl, serviceKey, fecha, siguiendoHoy, fetchImpl) {
+  const referencia = await siguiendoAlEmpezarElDia(supabaseUrl, serviceKey, fecha, fetchImpl);
+  if (referencia == null) return null; // sin historial todavía, no se puede calcular un delta real
+
+  const deltaReal = siguiendoHoy - referencia;
+
+  const rGet = await fetchImpl(
+    `${supabaseUrl.replace(/\/$/, "")}/rest/v1/marketing_seguimiento_diario?fecha=eq.${fecha}&select=id,hecho`,
+    { headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` } },
+  );
+  if (!rGet.ok) throw new Error(`Supabase (fila de hoy): ${rGet.status} ${await rGet.text()}`);
+  const [fila] = await rGet.json();
+  if (!fila) return null; // no existe la fila de hoy todavía
+
+  const hecho = Boolean(fila.hecho) || deltaReal >= META_SEGUIDOS_DIA;
+  const rPatch = await fetchImpl(
+    `${supabaseUrl.replace(/\/$/, "")}/rest/v1/marketing_seguimiento_diario?id=eq.${fila.id}`,
+    {
+      method: "PATCH",
+      headers: {
+        apikey: serviceKey, Authorization: `Bearer ${serviceKey}`,
+        "Content-Type": "application/json", Prefer: "return=minimal",
+      },
+      body: JSON.stringify({ cantidad: deltaReal, hecho }),
+    },
+  );
+  if (!rPatch.ok) throw new Error(`Supabase (marcar hoy): ${rPatch.status} ${await rPatch.text()}`);
+  return { deltaReal, hecho };
+}
+
 export async function ejecutar({ env = process.env, argv = process.argv.slice(2), ahora = new Date(), fetchImpl = globalThis.fetch } = {}) {
   const token = String(env.INSTAGRAM_ACCESS_TOKEN || "").trim();
   const supabaseUrl = String(env.SUPABASE_URL || "").trim();
@@ -93,16 +164,23 @@ export async function ejecutar({ env = process.env, argv = process.argv.slice(2)
   const datos = await leerSeguidores(token, fetchImpl);
   const fecha = ahora.toISOString().slice(0, 10);
 
+  let verificacion = null;
   if (!dryRun) {
     await guardarSnapshot(supabaseUrl, serviceKey, fecha, datos.followers_count, datos.follows_count, fetchImpl);
+    verificacion = await verificarMetaDeHoy(supabaseUrl, serviceKey, fecha, datos.follows_count, fetchImpl);
   }
-  return { fecha, ...datos };
+  return { fecha, ...datos, verificacion };
 }
 
 async function main() {
   cargarEnv();
   const r = await ejecutar();
   console.log(`@${r.username}: ${r.followers_count} seguidores, sigue a ${r.follows_count} (${r.fecha})`);
+  if (r.verificacion) {
+    console.log(`  Seguidas hoy (real): ${r.verificacion.deltaReal} · meta cumplida: ${r.verificacion.hecho ? "sí" : "no"}`);
+  } else {
+    console.log("  Sin snapshot de referencia todavía para verificar la meta de hoy.");
+  }
 }
 
 const esPrincipal = process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href;

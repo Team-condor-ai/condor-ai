@@ -309,10 +309,12 @@ export function Marketing() {
         <p className="conteo" style={{ marginBottom: 8 }}>
           Samuel de lunes a jueves, Alejandro de viernes a domingo. Meta: {META_SEGUIDOS_SEMANA} seguidos/semana,
           {" "}{META_SEGUIDORES_NUEVOS_SEMANA} seguidores nuevos/semana.
+          {" "}"Hecho" y "Cantidad" se verifican solos contra el contador real de Instagram cada 2 horas — no hace
+          falta marcarlos a mano, aunque el casillero sigue disponible por si la conexión falla algún día.
         </p>
         <div className="tabla-caja">
           <table>
-            <thead><tr><th>Día</th><th>Responsable</th><th>Hecho</th><th className="num">Cantidad</th></tr></thead>
+            <thead><tr><th>Día</th><th>Responsable</th><th>Hecho</th><th className="num">Cantidad (real)</th></tr></thead>
             <tbody>
               {seguimientoSemana.map((s) => {
                 const persona = fotoDe(s.responsable_email);

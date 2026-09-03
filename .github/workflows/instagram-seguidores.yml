@@ -1,9 +1,18 @@
-name: Marketing — snapshot diario de seguidores de Instagram
+name: Marketing — snapshot de seguidores de Instagram (cada 2 horas)
 
-# Lee followers_count de @condor.ai vía la API oficial de Instagram
-# (Instagram Login, graph.instagram.com) y lo guarda en
-# marketing_seguidores_snapshot, para el contador de "seguidores nuevos"
-# del módulo Marketing del Portal Cóndor. Conectado el 3-sept-2026.
+# Lee followers_count/follows_count de @condor.ai vía la API oficial de
+# Instagram (Instagram Login, graph.instagram.com), los guarda en
+# marketing_seguidores_snapshot, y verifica en cada corrida si la meta
+# diaria de "seguir 200 cuentas" ya se cumplió de verdad (comparando el
+# número real contra el de ayer) -- ver el comentario extenso en
+# sincronizar-seguidores-instagram.mjs. Conectado el 3-sept-2026.
+#
+# CADA 2 HORAS, NO UNA VEZ AL DÍA (ajustado el mismo 3-sept)
+# ---------------------------------------------------------------------------
+# Pedido de Joaquín: que el casillero de la meta diaria se marque solo
+# cuando el número real ya la alcanzó -- eso exige mirar el contador
+# seguido durante el día, no una sola vez a las 5 AM antes de que nadie
+# haya empezado a seguir cuentas todavía.
 #
 # El token se generó directo desde el panel de la app de Meta (no del
 # Explorer genérico), lo que parece darle mayor duración -- ver el
@@ -12,13 +21,10 @@ name: Marketing — snapshot diario de seguidores de Instagram
 # nuevo desde ahí y actualizar INSTAGRAM_ACCESS_TOKEN acá Y
 # api_credenciales (proveedor 'instagram') en Supabase -- las dos copias
 # no se sincronizan solas.
-#
-# Corre una vez al día, 09:00 UTC = 05:00 Chile (antes de que el equipo
-# empiece a trabajar, para tener el número del día listo).
 
 on:
   schedule:
-    - cron: "0 9 * * *"
+    - cron: "0 */2 * * *"
   workflow_dispatch:
 
 jobs:
