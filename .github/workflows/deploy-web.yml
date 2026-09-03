@@ -73,7 +73,7 @@ jobs:
           test -f dist/404.html || { echo "::error::Falta dist/404.html — las rutas del router responderían 404."; exit 1; }
           grep -q "root" dist/404.html || { echo "::error::dist/404.html no es la cáscara del SPA — el router nunca montaría."; exit 1; }
           grep -q "rediseno/estilo.css" dist/index.html || { echo "::error::dist/index.html no es el sitio corporativo."; exit 1; }
-          for r in inicio compania productos equipo proceso clientes contacto agendar; do
+          for r in productos productos/sites productos/ecommerce productos/media productos/track contacto agendar; do
             test -f "dist/$r/index.html" || { echo "::error::Falta dist/$r/index.html"; exit 1; }
           done
 
