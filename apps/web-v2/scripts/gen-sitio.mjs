@@ -92,13 +92,13 @@ const heroLinea = ({ logo, nombre, gradiente, bajada }) => `
    quedaba fija siempre en la foto de oficina, sin relación con lo que
    decía el titular en ese momento.
 
-   `imagen` hoy apunta a `/assets/hero/hero-<linea>.webp`, encargadas a
-   Codex el 3-sept-2026 (brief completo en
-   `Descargas/Cóndor - Imágenes Hero (para Codex)/INSTRUCCIONES.md`) —
-   mientras no estén listas, las 4 rutas apuntan a la misma foto de
-   oficina de siempre como placeholder, así el sitio no se ve roto. Basta
-   con reemplazar esos 4 archivos cuando Codex las entregue, sin tocar
-   este código.
+   `imagen` apunta a `/assets/hero/hero-<linea>.webp`, encargadas a Codex
+   el 3-sept-2026 (brief en `Descargas/Cóndor - Imágenes Hero (para
+   Codex)/INSTRUCCIONES.md`) y entregadas el mismo día. La de Sites es un
+   mockup regenerado por Codex (marca ficticia "HABITAT"), no la captura
+   real incrustada como pedía el brief — por eso su `alt` dice
+   "construido con", no "real entregado". Las otras 3 (Ecommerce, Media,
+   Track) sí son genéricas/ficticias a propósito, como se pidió.
 
    Las cifras de `datos` son hechos verificables — nada de números
    inventados ni de nombres de clientes de Track (confidenciales). */
@@ -107,7 +107,7 @@ const HERO_SLIDES = [
     titulo: "Un sitio web propio, siempre actualizado",
     bajada: "Cóndor Sites: creación sin costo inicial, soporte 24/7 y mejoras continuas cada mes.",
     imagen: "/assets/hero/hero-sites.webp",
-    alt: "Sitio web real entregado por Cóndor Sites",
+    alt: "Sitio web construido con Cóndor Sites",
     datos: [
       { n: "5", etiqueta: "sitios reales en línea hoy" },
       { n: "3 países", etiqueta: "Chile, Perú y Colombia" },
