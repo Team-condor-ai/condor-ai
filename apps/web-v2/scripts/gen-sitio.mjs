@@ -86,11 +86,12 @@ const heroLinea = ({ logo, nombre, gradiente, bajada }) => `
   <p class="bajada">${bajada}</p>
 </div></section>`;
 
-/* Hero del HOME: mensaje, imagen y las 3 cifras de abajo rotan juntos,
-   uno por línea (mismo índice en los tres arreglos que arma cada
-   `mostrar(i)` de JS_COMUN). Antes solo rotaba el texto — la imagen
-   quedaba fija siempre en la foto de oficina, sin relación con lo que
-   decía el titular en ese momento.
+/* Hero del HOME: mensaje e imagen rotan juntos, uno por línea (mismo
+   índice en los dos arreglos que arma cada `mostrar(i)` de JS_COMUN).
+   Antes solo rotaba el texto — la imagen quedaba fija siempre en la foto
+   de oficina, sin relación con lo que decía el titular en ese momento.
+   (La tarjeta de 3 cifras bajo la imagen que hubo brevemente se retiró
+   a pedido de Joaquín — recuadro de más.)
 
    `imagen` apunta a `/assets/hero/hero-<linea>.webp`, encargadas a Codex
    el 3-sept-2026 (brief en `Descargas/Cóndor - Imágenes Hero (para
@@ -100,52 +101,33 @@ const heroLinea = ({ logo, nombre, gradiente, bajada }) => `
    "construido con", no "real entregado". Las otras 3 (Ecommerce, Media,
    Track) sí son genéricas/ficticias a propósito, como se pidió.
 
-   Las cifras de `datos` son hechos verificables — nada de números
-   inventados ni de nombres de clientes de Track (confidenciales). */
+   Cóndor Media NO incluye carruseles (eso es específico de Bárbara, un
+   producto aparte dentro de Cóndor Agents) — corregido el 3-sept tras
+   aviso explícito de Joaquín. */
 const HERO_SLIDES = [
   {
     titulo: "Un sitio web propio, siempre actualizado",
     bajada: "Cóndor Sites: creación sin costo inicial, soporte 24/7 y mejoras continuas cada mes.",
     imagen: "/assets/hero/hero-sites.webp",
     alt: "Sitio web construido con Cóndor Sites",
-    datos: [
-      { n: "5", etiqueta: "sitios reales en línea hoy" },
-      { n: "3 países", etiqueta: "Chile, Perú y Colombia" },
-      { n: "$20.990", etiqueta: "desde, con soporte 24/7" },
-    ],
   },
   {
     titulo: "Tiendas en línea que venden de verdad",
     bajada: "Cóndor Ecommerce: construcción, pasarela de pago y gestión de campañas, administradas por nosotros.",
     imagen: "/assets/hero/hero-ecommerce.webp",
     alt: "Tienda en línea de Cóndor Ecommerce",
-    datos: [
-      { n: "Mercado Pago", etiqueta: "pasarela integrada" },
-      { n: "SII", etiqueta: "boleta electrónica automática" },
-      { n: "5%-9%", etiqueta: "comisión según volumen" },
-    ],
   },
   {
     titulo: "Contenido para redes, cada semana",
-    bajada: "Cóndor Media: carruseles, historias y video con la identidad de su marca, producidos con apoyo de inteligencia artificial.",
+    bajada: "Cóndor Media: fotos, historias y video con la identidad de su marca, producidos con apoyo de inteligencia artificial.",
     imagen: "/assets/hero/hero-media.webp",
     alt: "Contenido de redes producido por Cóndor Media",
-    datos: [
-      { n: "Semanal", etiqueta: "cadencia de contenido fija" },
-      { n: "IA + revisión humana", etiqueta: "cada pieza se revisa antes de publicar" },
-      { n: "-50%", etiqueta: "de lanzamiento, hasta el 20-oct" },
-    ],
   },
   {
     titulo: "Software a medida para su operación",
     bajada: "Cóndor Track: ERPs, paneles e integraciones para procesos que ya existen en su empresa.",
     imagen: "/assets/hero/hero-track.webp",
     alt: "Panel de operación de Cóndor Track",
-    datos: [
-      { n: "A medida", etiqueta: "sobre su proceso real" },
-      { n: "100%", etiqueta: "propiedad del código y los datos" },
-      { n: "ERP + integraciones", etiqueta: "conectado a lo que ya usa" },
-    ],
   },
 ];
 
@@ -528,21 +510,19 @@ const JS_COMUN = `
 
   // Hero rotativo (solo en el inicio). Se detiene al pasar el ratón y al
   // enfocar con teclado: un titular que cambia mientras alguien lo lee es una
-  // molestia, no una gracia. La imagen y las 3 cifras de abajo rotan con el
-  // mismo índice que el texto — mismo orden en el HTML, así que basta con
-  // togglear el "on" del k-ésimo elemento de cada lista a la vez.
+  // molestia, no una gracia. La imagen rota con el mismo índice que el
+  // texto — mismo orden en el HTML, así que basta con togglear el "on"
+  // del k-ésimo elemento de cada lista a la vez.
   const slides = [...document.querySelectorAll("#slides .slide")];
   if (slides.length) {
     const puntos = [...document.querySelectorAll(".punto")];
     const heroImgs = [...document.querySelectorAll(".hero-img")];
-    const datoSets = [...document.querySelectorAll(".hero-dato-set")];
     let i = 0, timer = 0;
     const mostrar = (n) => {
       i = (n + slides.length) % slides.length;
       slides.forEach((s, k) => s.classList.toggle("on", k === i));
       puntos.forEach((p, k) => p.setAttribute("aria-selected", String(k === i)));
       heroImgs.forEach((im, k) => im.classList.toggle("on", k === i));
-      datoSets.forEach((d, k) => d.classList.toggle("on", k === i));
     };
     const arrancar = () => { if (!quieto) { clearInterval(timer); timer = setInterval(() => mostrar(i + 1), 6500); } };
     const parar = () => clearInterval(timer);
@@ -817,11 +797,6 @@ ${HERO_SLIDES.map((s, i) => `      <button class="punto" role="tab" aria-selecte
   <div>
     <div class="hero-marco">
 ${HERO_SLIDES.map((s, i) => `      <img class="hero-img${i === 0 ? " on" : ""}" src="${s.imagen}" alt="${s.alt}" />`).join("\n")}
-    </div>
-    <div class="hero-datos">
-${HERO_SLIDES.map((s, i) => `      <div class="hero-dato-set${i === 0 ? " on" : ""}">
-${s.datos.map((d) => `        <div class="hero-dato"><b>${d.n}</b><span>${d.etiqueta}</span></div>`).join("\n")}
-      </div>`).join("\n")}
     </div>
   </div>
 </div></section>
