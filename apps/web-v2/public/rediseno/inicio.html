@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://api.fontshare.com" />
 <link rel="preconnect" href="https://cdn.fontshare.com" crossorigin />
 <link href="https://api.fontshare.com/v2/css?f[]=switzer@400,500,600,700,800&f[]=satoshi@400,500,700&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="/rediseno/estilo.css?v=f0afa120" />
+<link rel="stylesheet" href="/rediseno/estilo.css?v=788e7581" />
 </head>
 <body>
 <header class="topbar"><div class="wrap">
@@ -96,8 +96,34 @@
     </div>
   </div>
   <div>
-    <div class="hero-marco"><img src="/assets/oficina/oficina.webp" alt="Oficina de condor.ai" /></div>
-
+    <div class="hero-marco">
+      <img class="hero-img on" src="/assets/hero/hero-sites.webp" alt="Sitio web real entregado por Cóndor Sites" />
+      <img class="hero-img" src="/assets/hero/hero-ecommerce.webp" alt="Tienda en línea de Cóndor Ecommerce" />
+      <img class="hero-img" src="/assets/hero/hero-media.webp" alt="Contenido de redes producido por Cóndor Media" />
+      <img class="hero-img" src="/assets/hero/hero-track.webp" alt="Panel de operación de Cóndor Track" />
+    </div>
+    <div class="hero-datos">
+      <div class="hero-dato-set on">
+        <div class="hero-dato"><b>5</b><span>sitios reales en línea hoy</span></div>
+        <div class="hero-dato"><b>3 países</b><span>Chile, Perú y Colombia</span></div>
+        <div class="hero-dato"><b>$20.990</b><span>desde, con soporte 24/7</span></div>
+      </div>
+      <div class="hero-dato-set">
+        <div class="hero-dato"><b>Mercado Pago</b><span>pasarela integrada</span></div>
+        <div class="hero-dato"><b>SII</b><span>boleta electrónica automática</span></div>
+        <div class="hero-dato"><b>5%-9%</b><span>comisión según volumen</span></div>
+      </div>
+      <div class="hero-dato-set">
+        <div class="hero-dato"><b>Semanal</b><span>cadencia de contenido fija</span></div>
+        <div class="hero-dato"><b>IA + revisión humana</b><span>cada pieza se revisa antes de publicar</span></div>
+        <div class="hero-dato"><b>-50%</b><span>de lanzamiento, hasta el 20-oct</span></div>
+      </div>
+      <div class="hero-dato-set">
+        <div class="hero-dato"><b>A medida</b><span>sobre su proceso real</span></div>
+        <div class="hero-dato"><b>100%</b><span>propiedad del código y los datos</span></div>
+        <div class="hero-dato"><b>ERP + integraciones</b><span>conectado a lo que ya usa</span></div>
+      </div>
+    </div>
   </div>
 </div></section>
 
@@ -485,15 +511,21 @@
 
   // Hero rotativo (solo en el inicio). Se detiene al pasar el ratón y al
   // enfocar con teclado: un titular que cambia mientras alguien lo lee es una
-  // molestia, no una gracia.
+  // molestia, no una gracia. La imagen y las 3 cifras de abajo rotan con el
+  // mismo índice que el texto — mismo orden en el HTML, así que basta con
+  // togglear el "on" del k-ésimo elemento de cada lista a la vez.
   const slides = [...document.querySelectorAll("#slides .slide")];
   if (slides.length) {
     const puntos = [...document.querySelectorAll(".punto")];
+    const heroImgs = [...document.querySelectorAll(".hero-img")];
+    const datoSets = [...document.querySelectorAll(".hero-dato-set")];
     let i = 0, timer = 0;
     const mostrar = (n) => {
       i = (n + slides.length) % slides.length;
       slides.forEach((s, k) => s.classList.toggle("on", k === i));
       puntos.forEach((p, k) => p.setAttribute("aria-selected", String(k === i)));
+      heroImgs.forEach((im, k) => im.classList.toggle("on", k === i));
+      datoSets.forEach((d, k) => d.classList.toggle("on", k === i));
     };
     const arrancar = () => { if (!quieto) { clearInterval(timer); timer = setInterval(() => mostrar(i + 1), 6500); } };
     const parar = () => clearInterval(timer);

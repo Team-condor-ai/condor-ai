@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://api.fontshare.com" />
 <link rel="preconnect" href="https://cdn.fontshare.com" crossorigin />
 <link href="https://api.fontshare.com/v2/css?f[]=switzer@400,500,600,700,800&f[]=satoshi@400,500,700&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="/rediseno/estilo.css?v=f0afa120" />
+<link rel="stylesheet" href="/rediseno/estilo.css?v=788e7581" />
 </head>
 <body>
 <header class="topbar"><div class="wrap">
@@ -403,15 +403,21 @@
 
   // Hero rotativo (solo en el inicio). Se detiene al pasar el ratón y al
   // enfocar con teclado: un titular que cambia mientras alguien lo lee es una
-  // molestia, no una gracia.
+  // molestia, no una gracia. La imagen y las 3 cifras de abajo rotan con el
+  // mismo índice que el texto — mismo orden en el HTML, así que basta con
+  // togglear el "on" del k-ésimo elemento de cada lista a la vez.
   const slides = [...document.querySelectorAll("#slides .slide")];
   if (slides.length) {
     const puntos = [...document.querySelectorAll(".punto")];
+    const heroImgs = [...document.querySelectorAll(".hero-img")];
+    const datoSets = [...document.querySelectorAll(".hero-dato-set")];
     let i = 0, timer = 0;
     const mostrar = (n) => {
       i = (n + slides.length) % slides.length;
       slides.forEach((s, k) => s.classList.toggle("on", k === i));
       puntos.forEach((p, k) => p.setAttribute("aria-selected", String(k === i)));
+      heroImgs.forEach((im, k) => im.classList.toggle("on", k === i));
+      datoSets.forEach((d, k) => d.classList.toggle("on", k === i));
     };
     const arrancar = () => { if (!quieto) { clearInterval(timer); timer = setInterval(() => mostrar(i + 1), 6500); } };
     const parar = () => clearInterval(timer);
