@@ -1,0 +1,40 @@
+name: Sincronizar ingreso de Silver & Co
+
+# Mismo script que Tecnobox, con `--cliente silver`: la clave decide de qué
+# secrets lee (SILVER_SHOPIFY_*) y contra qué fila de `comision_tramos`
+# calcula. Se deja como workflow aparte y no como una matriz del de
+# Tecnobox porque así una tienda caída no arrastra a la otra: cada cliente
+# falla y se reintenta por su cuenta.
+#
+# Silver & Co factura en GUARANÍES. El script lee la moneda de las propias
+# órdenes de Shopify y el RPC la convierte a CLP con la tasa del día — no
+# hay nada que configurar acá para eso.
+
+on:
+  schedule:
+    # 09:10 UTC, diez minutos después de Tecnobox: si las dos corrieran a
+    # la misma hora, competirían por el mismo runner y por el rate limit
+    # de Supabase sin necesidad.
+    - cron: "10 9 * * *"
+  workflow_dispatch:
+    inputs:
+      meses:
+        description: Cuántos meses hacia atrás recalcular
+        required: false
+        default: "2"
+
+jobs:
+  sincronizar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Registrar comisión de Silver & Co en Contabilidad
+        run: node services/ingresos-clientes/sincronizar-ingreso-tecnobox.mjs --cliente silver --meses "${{ inputs.meses || '2' }}"
+        env:
+          SILVER_SHOPIFY_TIENDA: ${{ secrets.SILVER_SHOPIFY_TIENDA }}
+          SILVER_SHOPIFY_TOKEN: ${{ secrets.SILVER_SHOPIFY_TOKEN }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}

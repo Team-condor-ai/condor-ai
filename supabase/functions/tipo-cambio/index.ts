@@ -16,7 +16,11 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // Una unidad de USD en cada moneda. Gratis, sin llave, se actualiza a diario.
 const FUENTE = "https://open.er-api.com/v6/latest/USD";
-const MONEDAS = ["CLP", "COP", "PEN", "USD"];
+// PYG se sumó el 3-sept-2026 con Silver & Co, la joyería paraguaya: su
+// comisión se calcula en guaraníes y se contabiliza en pesos, así que si
+// la tasa no se refresca queda congelada mientras las otras avanzan — y
+// el PYG/CLP se movió 15,3% en el último año.
+const MONEDAS = ["CLP", "COP", "PEN", "PYG", "USD"];
 // Doce horas: el dato de origen cambia una vez al día, así que pedirlo más
 // seguido solo gasta. Y si la fuente se cae, se sigue sirviendo lo último
 // bueno en vez de dejar el CRM sin números.

@@ -1,7 +1,22 @@
 /**
- * Sincroniza la comisión de Tecnobox con la contabilidad, leyendo las
- * ventas reales directo de la API de Shopify (no de la base de Tecnobox
- * Track — se pidió explícitamente "con la API de Shopify en tiempo real").
+ * Sincroniza la comisión de un cliente de ecommerce con la contabilidad,
+ * leyendo las ventas reales directo de la API de Shopify (no de la base
+ * de Tecnobox Track — se pidió explícitamente "con la API de Shopify en
+ * tiempo real").
+ *
+ * Sirve para CUALQUIER cliente con tienda Shopify, no solo Tecnobox: se
+ * elige con `--cliente <clave>`, y esa clave es la misma que usa
+ * `comision_tramos.cliente` en la base. De ahí salen también los nombres
+ * de las variables de entorno (`SILVER_SHOPIFY_TIENDA`, etc.). El nombre
+ * del archivo dice "tecnobox" por historia; se generalizó el 3-sept-2026
+ * al sumar Silver & Co y no se renombró para no romper el workflow que ya
+ * lo llama.
+ *
+ * ⚠️ MONEDA: la venta se toma tal cual la reporta Shopify, en la moneda
+ * de la tienda. Tecnobox factura en CLP y Silver & Co en la suya, así que
+ * `ingresos_clientes.venta_neta_mes` NO es comparable entre clientes sin
+ * convertir. Los tramos de cada cliente están definidos en su propia
+ * moneda, que es lo que hace que el cálculo por cliente sí sea correcto.
  *
  * El % y el piso mínimo NO se calculan acá: los resuelve el RPC
  * `contabilizar_comision_cliente` mirando la tabla `comision_tramos`. Este
@@ -16,15 +31,15 @@
  *
  * Se excluyen las canceladas (cancelled_at != null): la plata no entró.
  *
- * Variables requeridas:
- *   TECNOBOX_SHOPIFY_TIENDA (ej: veivfr-21)
- *   TECNOBOX_SHOPIFY_TOKEN
+ * Variables requeridas (el prefijo sale de `--cliente`, en MAYÚSCULAS):
+ *   <CLIENTE>_SHOPIFY_TIENDA   ej: TECNOBOX_SHOPIFY_TIENDA=veivfr-21
+ *   <CLIENTE>_SHOPIFY_TOKEN                SILVER_SHOPIFY_TIENDA=1rqhy0-yt
  *   SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY   (las de condor-ai/Bárbara)
  *
  * Uso:
  *   node services/ingresos-clientes/sincronizar-ingreso-tecnobox.mjs
- *   node services/ingresos-clientes/sincronizar-ingreso-tecnobox.mjs --meses 3
- *   node services/ingresos-clientes/sincronizar-ingreso-tecnobox.mjs --dry-run
+ *   node .../sincronizar-ingreso-tecnobox.mjs --cliente silver --meses 3
+ *   node .../sincronizar-ingreso-tecnobox.mjs --cliente silver --dry-run
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -69,7 +84,21 @@ export function parsearOpciones(argv) {
   // Por defecto, 2 meses: el actual (que sigue subiendo) y el anterior
   // (por si Shopify todavía estaba ajustando algo al primer corte).
   const meses = Math.max(1, Number(valorDe("--meses")) || 2);
-  return { meses, dryRun: argv.includes("--dry-run") };
+  // `--cliente` se agregó al sumar Silver & Co (3-sept-2026). Por defecto
+  // sigue siendo tecnobox, así el workflow que ya existe no cambia: la
+  // clave del cliente es la misma que usa `comision_tramos.cliente`, y de
+  // ahí salen los nombres de las variables de entorno.
+  const cliente = (valorDe("--cliente") || "tecnobox").trim().toLowerCase();
+  if (!/^[a-z][a-z0-9_]*$/.test(cliente)) {
+    throw new Error(`--cliente inválido: "${cliente}"`);
+  }
+  return { meses, cliente, dryRun: argv.includes("--dry-run") };
+}
+
+/** tecnobox → TECNOBOX_SHOPIFY_TIENDA / TECNOBOX_SHOPIFY_TOKEN */
+export function variablesDe(cliente) {
+  const p = cliente.toUpperCase();
+  return { tienda: `${p}_SHOPIFY_TIENDA`, token: `${p}_SHOPIFY_TOKEN` };
 }
 
 async function leerJson(respuesta, etiqueta) {
@@ -144,14 +173,15 @@ export async function ejecutar({
   ahora = new Date(),
   fetchImpl = globalThis.fetch,
 } = {}) {
-  const tienda = limpio(env.TECNOBOX_SHOPIFY_TIENDA);
-  const token = limpio(env.TECNOBOX_SHOPIFY_TOKEN);
+  const opciones = parsearOpciones(argv);
+  const nombres = variablesDe(opciones.cliente);
+  const tienda = limpio(env[nombres.tienda]);
+  const token = limpio(env[nombres.token]);
   const supabaseUrl = limpio(env.SUPABASE_URL);
   const serviceKey = limpio(env.SUPABASE_SERVICE_ROLE_KEY);
-  const opciones = parsearOpciones(argv);
 
   if (!tienda || !token) {
-    throw new Error("Faltan TECNOBOX_SHOPIFY_TIENDA o TECNOBOX_SHOPIFY_TOKEN");
+    throw new Error(`Faltan ${nombres.tienda} o ${nombres.token}`);
   }
   if (!opciones.dryRun && (!supabaseUrl || !serviceKey)) {
     throw new Error("Faltan SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY");
@@ -163,20 +193,42 @@ export async function ejecutar({
     const canceladas = ordenes.filter((o) => o.cancelled_at).length;
     const ventaNetaMes = ordenes.reduce((suma, o) => suma + ventaNeta(o), 0);
 
+    // La moneda la dice SHOPIFY, no está escrita acá: Silver & Co factura
+    // en guaraníes y Tecnobox en pesos, y si alguna vez una tienda cambia
+    // de moneda el número seguiría siendo correcto sin tocar código. El
+    // RPC la usa para convertir a CLP con la tasa del día.
+    // Sin órdenes en el mes no hay de dónde sacarla; ahí da lo mismo,
+    // porque la venta es 0.
+    const monedas = new Set(
+      ordenes.map((o) => limpio(o.currency)).filter(Boolean),
+    );
+    if (monedas.size > 1) {
+      // Nunca debería pasar en una tienda con una sola moneda de
+      // liquidación, pero si pasa el total sería una suma de peras con
+      // manzanas: mejor detenerse que contabilizar un número falso.
+      throw new Error(
+        `${mes}: la tienda devolvió varias monedas (${[...monedas].join(", ")}). ` +
+          "Revisar antes de contabilizar.",
+      );
+    }
+    const moneda = [...monedas][0] || "CLP";
+
     let comision = null;
     if (!opciones.dryRun) {
       comision = await contabilizar(
         supabaseUrl,
         serviceKey,
         {
-          p_cliente: "tecnobox",
+          p_cliente: opciones.cliente,
           p_mes: mes,
           p_venta_neta: ventaNetaMes,
+          p_moneda: moneda,
           p_datos: {
             plataforma: "shopify",
             tienda,
             ordenes: ordenes.length,
             canceladas,
+            moneda,
           },
         },
         fetchImpl,
@@ -184,21 +236,21 @@ export async function ejecutar({
     }
 
     resultados.push({
-      mes, ordenes: ordenes.length, canceladas, ventaNetaMes,
+      mes, ordenes: ordenes.length, canceladas, ventaNetaMes, moneda,
       comisionId: comision,
     });
   }
-  return { dryRun: opciones.dryRun, resultados };
+  return { dryRun: opciones.dryRun, cliente: opciones.cliente, resultados };
 }
 
 async function main() {
   cargarEnv();
-  const { dryRun, resultados } = await ejecutar();
+  const { dryRun, cliente, resultados } = await ejecutar();
   for (const r of resultados) {
     const accion = dryRun ? "(simulado)" : "";
     console.log(
-      `${r.mes}: ${r.ordenes} órdenes (${r.canceladas} canceladas) · ` +
-        `venta neta $${r.ventaNetaMes.toLocaleString("es-CL")} ${accion}`,
+      `[${cliente}] ${r.mes}: ${r.ordenes} órdenes (${r.canceladas} canceladas) · ` +
+        `venta neta ${r.moneda} ${r.ventaNetaMes.toLocaleString("es-CL")} ${accion}`,
     );
   }
 }

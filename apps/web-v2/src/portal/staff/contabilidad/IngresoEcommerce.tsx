@@ -36,9 +36,12 @@ export function LogoShopify() {
  * apretarlo" tiene que aparecer ahí mismo.
  *
  * CLIENTES CONOCIDOS DE ANTEMANO, aunque no tengan datos todavía.
- * Silver and Co no tiene nada conectado aún (1-sept-2026): se declara
- * igual acá, con monto en $0 y un aviso explícito, para que la tarjeta
- * no cambie de forma el día que se conecte — solo deja de estar vacía.
+ *
+ * `clave` tiene que ser IDÉNTICA a `ingresos_clientes.cliente` y a
+ * `comision_tramos.cliente` en la base — si no calzan, la fila sale en $0
+ * para siempre sin que nada falle a la vista. Silver quedó como `silver`
+ * (no `silver_and_co`, como decía este archivo antes de conectarlo el
+ * 3-sept-2026).
  */
 export const CLIENTES_ECOMMERCE: {
   clave: string;
@@ -46,7 +49,7 @@ export const CLIENTES_ECOMMERCE: {
   plataforma?: "shopify";
 }[] = [
   { clave: "tecnobox", nombre: "Tecnobox", plataforma: "shopify" },
-  { clave: "silver_and_co", nombre: "Silver and Co" },
+  { clave: "silver", nombre: "Silver & Co", plataforma: "shopify" },
 ];
 
 type Plazo = "mes" | "trimestre" | "anio";
@@ -81,17 +84,32 @@ export function IngresoEcommerce({
 
     const enPlazo = ingresos.filter((i) => mesesDelPlazo.has(i.mes));
 
+    // TODO lo que se suma o se muestra va en CLP. `comision_calculada` y
+    // `venta_neta_mes` están en la moneda del cliente (guaraníes para
+    // Silver), así que sumarlas entre clientes daría un número inventado.
+    // Las filas viejas de Tecnobox no traen `_clp`; ahí la moneda ya era
+    // CLP, así que el propio valor sirve de respaldo.
+    const enClp = (f: IngresoCliente, campo: "comision" | "venta") =>
+      campo === "comision"
+        ? (f.comision_clp ?? f.comision_calculada ?? 0)
+        : (f.venta_neta_clp ?? f.venta_neta_mes ?? 0);
+
     const porCliente = CLIENTES_ECOMMERCE.map((c) => {
       const filas = enPlazo.filter((i) => i.cliente === c.clave);
-      const comision = filas.reduce((s, f) => s + (f.comision_calculada ?? 0), 0);
-      const ventaNeta = filas.reduce((s, f) => s + (f.venta_neta_mes ?? 0), 0);
+      const comision = filas.reduce((s, f) => s + enClp(f, "comision"), 0);
+      const ventaNeta = filas.reduce((s, f) => s + enClp(f, "venta"), 0);
       const delMesActual = ingresos.find(
         (i) => i.cliente === c.clave && i.mes === mesActual,
       );
+      // La moneda original se muestra al lado del monto en CLP: sin eso,
+      // ver "$2.305.500" de una tienda que factura en guaraníes hace
+      // dudar del número.
+      const monedaOrigen = (delMesActual ?? filas[0])?.moneda;
       return {
         ...c,
         comision,
         ventaNeta,
+        monedaOrigen: monedaOrigen && monedaOrigen !== "CLP" ? monedaOrigen : null,
         tieneDatos: filas.length > 0,
         borrador: delMesActual?.borrador ?? filas[0]?.borrador ?? false,
       };
@@ -100,6 +118,13 @@ export function IngresoEcommerce({
     const totalComision = porCliente.reduce((s, c) => s + c.comision, 0);
     const totalVentaNeta = porCliente.reduce((s, c) => s + c.ventaNeta, 0);
     const algunoEsBorrador = porCliente.some((c) => c.tieneDatos && c.borrador);
+    // Se nombran los clientes en borrador en vez de decir "Tecnobox" fijo:
+    // desde que Silver también entró, el aviso mentía cuando el
+    // provisional era el otro.
+    const enBorrador = porCliente
+      .filter((c) => c.tieneDatos && c.borrador)
+      .map((c) => c.nombre)
+      .join(" y ");
 
     // La serie del gráfico siempre es de los 12 meses del año en curso,
     // combinando todos los clientes — el plazo de arriba filtra la cifra
@@ -107,7 +132,8 @@ export function IngresoEcommerce({
     const porMes = new Map<string, number>();
     for (const i of ingresos) {
       if (!i.mes.startsWith(String(anioActual))) continue;
-      porMes.set(i.mes, (porMes.get(i.mes) ?? 0) + (i.comision_calculada ?? 0));
+      // En CLP, por lo mismo que arriba: el gráfico combina clientes.
+      porMes.set(i.mes, (porMes.get(i.mes) ?? 0) + enClp(i, "comision"));
     }
     const serie = mesesDelAnio(anioActual).map((m) => ({
       et: m.et,
@@ -116,7 +142,7 @@ export function IngresoEcommerce({
       esHoy: m.esHoy,
     }));
 
-    return { porCliente, totalComision, totalVentaNeta, algunoEsBorrador, serie };
+    return { porCliente, totalComision, totalVentaNeta, algunoEsBorrador, enBorrador, serie };
   }, [ingresos, plazo]);
 
   return (
@@ -169,7 +195,10 @@ export function IngresoEcommerce({
                 {c.tieneDatos ? (
                   <>
                     <strong>{plata(c.comision)}</strong>
-                    <small>sobre {plata(c.ventaNeta)} de venta neta</small>
+                    <small>
+                      sobre {plata(c.ventaNeta)} de venta neta
+                      {c.monedaOrigen && ` · convertido de ${c.monedaOrigen}`}
+                    </small>
                   </>
                 ) : (
                   <p className="ingreso-ecommerce-sin-datos">
@@ -182,9 +211,9 @@ export function IngresoEcommerce({
 
           {d.algunoEsBorrador && (
             <p className="ingreso-ecommerce-aviso">
-              Los tramos de comisión de Tecnobox son un borrador — todavía no
-              los confirmó el cliente. Este monto es una proyección, no un
-              cobro cerrado.
+              Los tramos de {d.enBorrador} son un borrador — todavía no los
+              confirmó el cliente. Este monto es una proyección, no un cobro
+              cerrado.
             </p>
           )}
 

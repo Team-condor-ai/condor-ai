@@ -110,14 +110,28 @@ export type IngresoCliente = {
   id: string;
   cliente: string;
   mes: string; // 'YYYY-MM'
+  /** En la moneda del cliente (ver `moneda`), NO siempre en pesos. */
   venta_neta_mes: number;
   tramo_pct: number | null;
+  /** Ídem: en la moneda del cliente. Para sumar entre clientes, usar `_clp`. */
   comision_calculada: number;
   aplico_piso: boolean;
   borrador: boolean;
   asiento_id: string | null;
   datos: Record<string, unknown> | null;
   sincronizado_en: string;
+  /* ── Moneda (3-sept-2026, al conectar Silver & Co) ──────────────────
+     Silver factura en guaraníes y Tecnobox en pesos, así que sumar
+     `comision_calculada` entre clientes daba un número sin sentido. La
+     conversión se hace AL SINCRONIZAR y queda congelada acá: el
+     PYG/CLP se movió 15,3% en un año, y una comisión ya devengada no
+     puede cambiar de monto cada vez que alguien abre el Portal.
+     Opcionales porque las filas anteriores a esa fecha no las tienen
+     (la migración las rellenó, pero el tipo tolera datos viejos). */
+  moneda?: string;
+  tasa_a_clp?: number | null;
+  venta_neta_clp?: number | null;
+  comision_clp?: number | null;
 };
 
 /**
