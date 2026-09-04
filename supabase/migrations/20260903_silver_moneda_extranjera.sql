@@ -51,20 +51,34 @@ on conflict (moneda) do update
       actualizado_en = now();
 
 -- ── Tramos de Silver & Co, en GUARANÍES ──────────────────────────────
--- Propuesta del 3-sept-2026, calibrada al ticket real de joyería en
--- plata en Paraguay (₲110.000-300.000 según el mercado local; se tomó
--- ₲180.000 de promedio). El 6% que pidió Joaquín queda como tramo de
--- ENTRADA y escala hasta 7,5%, mismo criterio que el resto de Cóndor
--- Ecommerce: más venta = más carga operativa.
+-- Calibrados al ticket real de joyería en plata en Paraguay
+-- (₲110.000-300.000 según el mercado local; se tomó ₲180.000 de
+-- promedio). El 6% que pidió Joaquín es el tramo de ENTRADA y de ahí
+-- escala, mismo criterio que el resto de Cóndor Ecommerce: más venta =
+-- más carga operativa, no un descuento por volumen.
+--
+-- POR QUÉ EL TECHO ES 9% Y NO MÁS (revisado el mismo 3-sept, a pedido
+-- de subir los porcentajes): la joyería en plata deja ~55% de margen
+-- bruto, así que la comisión se mide contra ESO, no contra la venta.
+--   ·  9% de la venta = 16,4% del margen del cliente
+--   · 10% de la venta = 18,2% — ya empieza a doler en el tramo alto,
+--     que es justo cuando más conviene que el cliente siga creciendo.
+-- Además el estándar de Cóndor Ecommerce llega a 9% PERO con mensualidad
+-- aparte; Silver no paga mensualidad, así que 9% a todo evento es el
+-- techo coherente con el resto de la cartera.
+--
+-- Se agregó un quinto tramo (8,5%) para que el salto de 8% a 9% no
+-- ocurra de golpe: sin él, cruzar ₲45M subía un punto entero de una vez.
 --
 -- `borrador = true` hasta que el cliente lo firme: mientras tanto, cada
 -- asiento sale con la glosa "(provisional, tramos sin confirmar)".
 insert into public.comision_tramos (cliente, minimo, maximo, porcentaje, piso_minimo, borrador)
 select * from (values
-  ('silver', 0::bigint,          15000000::bigint, 0.060, 350000::bigint, true),
-  ('silver', 15000001::bigint,   35000000::bigint, 0.065, 350000::bigint, true),
-  ('silver', 35000001::bigint,   60000000::bigint, 0.070, 350000::bigint, true),
-  ('silver', 60000001::bigint,   null,             0.075, 350000::bigint, true)
+  ('silver', 0::bigint,          12000000::bigint, 0.060, 350000::bigint, true),
+  ('silver', 12000001::bigint,   25000000::bigint, 0.070, 350000::bigint, true),
+  ('silver', 25000001::bigint,   45000000::bigint, 0.080, 350000::bigint, true),
+  ('silver', 45000001::bigint,   75000000::bigint, 0.085, 350000::bigint, true),
+  ('silver', 75000001::bigint,   null,             0.090, 350000::bigint, true)
 ) as t(cliente, minimo, maximo, porcentaje, piso_minimo, borrador)
 where not exists (select 1 from public.comision_tramos where cliente = 'silver');
 
