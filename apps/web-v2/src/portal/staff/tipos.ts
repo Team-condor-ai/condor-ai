@@ -156,6 +156,7 @@ export type ModuloCuenta = {
   nombre: string;
   descripcion: string | null;
   cliente_id: string | null;
+  parent_id?: string | null;
   color: "azul" | "violeta" | "verde" | "naranjo" | "gris";
   orden: number;
   creado_en: string;
