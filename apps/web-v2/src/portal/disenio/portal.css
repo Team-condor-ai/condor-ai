@@ -1293,3 +1293,4 @@ textarea.campo{resize:vertical;min-height:56px}
 .portal-app .ingreso-ecommerce-aviso{margin:0 0 14px;padding:9px 11px;background:var(--warn-bg);color:var(--warn-tx);border:1px solid var(--warn-bd);border-radius:9px;font-size:11.5px}
 .portal-app .ingreso-ecommerce-detalle h3{margin:0 0 6px;font-size:13px}
 @media(max-width:620px){.portal-app .ingreso-ecommerce-resumen .cifra b{font-size:22px}}
+.modulo-fila{display:grid;grid-template-columns:minmax(0,1fr) 28px;gap:4px;align-items:center}.modulo-fila>.modulo{min-width:0}.modulo-editar{display:grid;place-items:center;width:28px;height:30px;padding:0;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--texto-3);cursor:pointer;opacity:.45;transition:.18s}.modulo-editar:hover,.modulo-fila:focus-within .modulo-editar,.modulo-fila:hover .modulo-editar{opacity:1;background:var(--hover);color:var(--texto)}.ficha-mover .campo{min-height:32px}
