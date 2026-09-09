@@ -4,17 +4,20 @@
 @media(max-width:380px){.topbar>.wrap{gap:8px;padding-left:16px;padding-right:16px}.topbar .logo{width:88px}.topbar .btn{font-size:12px;padding:10px 12px}}
 .brand-socials a{font-size:12px!important;line-height:1.4;color:inherit;text-decoration:none;min-height:30px;display:inline-flex;align-items:center;padding:5px 0}
 .brand-socials a:hover{color:#014cfd;text-decoration:underline;text-underline-offset:4px}
-.topbar>.brand-socials{border-top:1px solid #eef0f4;background:#fff;color:#454851}
+.topbar>.brand-socials{border-bottom:1px solid #eef0f4;background:#f7f8fa;color:#454851;justify-content:flex-end;padding:0 max(20px,calc((100vw - 1100px)/2));gap:18px}.topbar>.brand-socials a{width:30px;justify-content:center}.brand-socials svg{flex-shrink:0}.brand-socials a:focus-visible{outline:2px solid #014cfd;outline-offset:2px}
 .pie .brand-socials{justify-content:flex-start;margin:24px 0}
 .public-editorial .section-banner{padding:70px 0!important;overflow:hidden;background:#071c44;color:#fff}
 .public-editorial .section-banner h1{color:inherit;max-width:820px;font-size:clamp(40px,5vw,72px)}
 .public-editorial .section-banner .bajada{color:#d6e2fa;max-width:650px}
 .public-editorial .section-banner .wrap{position:relative}
-.public-editorial .banner-team{background:#edf3fc;color:#131722}
-.public-editorial .banner-team .bajada{color:#515e72}
+.public-editorial .banner-team{background:linear-gradient(90deg,#06101cdf,#06101c30),url('/assets/hero/banner-team.webp') center/cover;color:#fff}
+.public-editorial .banner-team .bajada{color:#edf3fc}
 .banner-faces{display:flex;gap:12px;margin-top:30px}.banner-faces img{width:90px;height:110px;object-fit:cover;border-radius:8px;filter:grayscale(1);transition:filter .4s}
-.public-editorial .banner-agents{background:#07172a}.banner-agents .banner-app{float:right;width:170px;height:170px;margin:12px 0 20px 40px;object-fit:contain}
-.public-editorial .banner-contact{background:linear-gradient(90deg,rgba(3,15,34,.92),rgba(3,15,34,.62)),url('/assets/hero/hero-office-panorama.webp') center 60%/cover}
+.public-editorial .banner-agents{background:linear-gradient(90deg,#06101ce8,#06101c30),url('/assets/hero/banner-agents.webp') center/cover}
+.public-editorial .banner-contact{background:linear-gradient(90deg,#06101cdf,#06101c30),url('/assets/hero/banner-contact.webp') center/cover}
+.public-editorial .section-banner{min-height:360px;display:flex;align-items:center}.public-editorial .section-banner>.wrap{width:100%}.public-editorial .section-banner h1{max-width:720px}.public-editorial .section-banner .bajada{max-width:580px}
+.agents-coming{padding:70px 0;background:#f7f9fc}.agents-coming h2{font-size:clamp(28px,4vw,48px)}.agents-slots{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:32px}.agents-slots article{min-height:220px;border:1px dashed #bec9d8;border-radius:18px;padding:30px;display:flex;flex-direction:column;justify-content:flex-end}.agents-slots span{color:#8794a6;margin-bottom:auto}.agents-slots h3{font-size:14px;letter-spacing:.12em}.agents-slots p{font-size:15px;color:#6a7584}
+@media(max-width:760px){.public-editorial .section-banner{min-height:260px;background-position:60% center}.public-editorial .section-banner h1{font-size:32px!important}.public-editorial .section-banner .bajada{font-size:14px;line-height:1.5;max-width:360px}.agents-coming{padding:38px 0}.agents-slots{grid-template-columns:1fr;gap:16px}.agents-slots article{min-height:160px}.topbar>.brand-socials{justify-content:center}}
 .public-editorial .persona .retrato img,.public-editorial .ficha-foto img,.public-editorial .retrato-s img,.home-page .hm-people img{filter:grayscale(1);transition:filter .45s ease}
 .public-editorial .persona:hover .retrato img,.public-editorial .persona:focus-within .retrato img,.public-editorial .ficha-foto:hover img,.public-editorial .fila-persona:hover img,.home-page .hm-people figure:hover img,.home-page .hm-people figure:focus-within img,.banner-faces img:hover{filter:grayscale(0)}
 .bb-showcase{background:#080908;color:#faf9f2;padding:70px 0}.bb-intro{display:grid;grid-template-columns:1fr 1fr;gap:44px;align-items:center}.bb-intro img{width:100%;height:auto;border-radius:18px}.bb-intro h2{font-family:Georgia,serif!important;font-size:64px!important;color:#faf9f2!important}.bb-intro h2 span{font-family:inherit;font-size:34px;line-height:1.2;display:block;color:#d4ed49!important;margin-top:18px}.bb-intro p{line-height:1.65;color:#d4d6ca}.bb-label{font-size:12px;letter-spacing:.07em;color:#d4ed49}.bb-intro .bb-cta{margin-top:20px}

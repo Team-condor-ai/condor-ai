@@ -236,7 +236,7 @@ ${t.ruta === "/productos/sites/" ? "" : EDITORIAL_LINK}
 ${BRAND_LINK}
 </head>
 ${t.ruta === "/productos/sites/" ? "<body>" : '<body class="public-editorial">'}
-<header class="topbar"><div class="wrap">
+<header class="topbar">${socialLinks}<div class="wrap">
   <button class="burger" aria-label="Abrir menú" aria-expanded="false" aria-controls="cajon">
     <span></span><span></span><span></span>
   </button>
@@ -246,7 +246,7 @@ ${navDesktop(t.ruta)}
   </nav>
   <a class="portal-acceso" href="/acceso">Portal clientes</a>
   <a class="btn btn-primario" href="/agendar">Agendar una reunión</a>
-</div>${socialLinks}</header>
+</div></header>
 
 <div class="cortina" hidden></div>
 <nav class="cajon" id="cajon" aria-label="Menú" hidden>
@@ -1121,12 +1121,13 @@ escribir("productos/agentes/index.html", cab({
   ruta: "/productos/agentes/",
 }) + `
 <section class="cabecera section-banner banner-agents"><div class="wrap">
-  <img class="banner-app" src="/assets/productos/condor-agents.png" alt="Cóndor Agents" width="170" height="170" />
   <h1>Cóndor Agents</h1>
   <p class="bajada">La familia de agentes de inteligencia artificial de Cóndor.ai. Cada uno resuelve una tarea puntual dentro de su empresa, con su propia identidad y su propio modo de trabajar.</p>
 </div></section>
 
 ${barbaraShowcase}
+<section class="agents-coming"><div class="wrap"><p class="kicker">LA FAMILIA SIGUE CRECIENDO</p><h2>Lo próximo está en camino.</h2><div class="agents-slots"><article><span aria-hidden="true">01</span><h3>PRÓXIMAMENTE</h3><p>Un nuevo agente de Cóndor.</p></article><article><span aria-hidden="true">02</span><h3>PRÓXIMAMENTE</h3><p>Un nuevo agente de Cóndor.</p></article></div></div></section>
+<script src="/rediseno/barbara-currency.js?v=20260909" defer></script>
 ` + cierre("¿Conversamos sobre agentes para su empresa?") + pie.replace("</body>", JS_COMUN + "</body>"));
 
 /* ── EQUIPO ─────────────────────────────────────────────────────────── */
@@ -1138,7 +1139,6 @@ escribir("equipo/index.html", cab({
 <section class="cabecera section-banner banner-team"><div class="wrap">
   <h1>Las personas detrás de lo que construimos.</h1>
   <p class="bajada">Tres miradas, un mismo compromiso. Conversas con quienes toman las decisiones y hacen avanzar tu proyecto.</p>
-  <div class="banner-faces">${PERSONAS.map(p=>`<img src="/assets/${p.foto}" alt="${p.nombre}" width="90" height="110" />`).join('')}</div>
 </div></section>
 
 <section class="seccion oscura" style="border-top:0"><div class="wrap">
