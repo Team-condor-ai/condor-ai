@@ -28,7 +28,6 @@ export function inicioLanding({ cab, pie, jsComun, personas, wsp }) {
         <p class="hm-welcome-intro">Creemos en lo que estás construyendo.<br>Hagamos que tome forma.</p>
         <a class="hm-button" href="#soluciones">Descubre tu próximo paso <span aria-hidden="true">↓</span></a>
       </div>
-      <span class="hm-welcome-disclaimer">Visualización conceptual</span>
     </div>
   </section>
 

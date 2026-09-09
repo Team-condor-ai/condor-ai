@@ -24,6 +24,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { sitiosLanding } from "./sitios-landing.mjs";
 import { inicioLanding } from "./inicio-landing.mjs";
+import { socialLinks, barbaraShowcase } from './brand-refresh.mjs';
 
 const raiz = join(dirname(fileURLToPath(import.meta.url)), "..");
 const PUB = join(raiz, "public");
@@ -48,6 +49,7 @@ const EDITORIAL_LINK = `<link rel="preload" href="/assets/fuentes/GeneralSans-Re
 <link rel="stylesheet" href="/rediseno/editorial.css?v=${VER_EDITORIAL}" />`;
 const WSP_VISIBLE = "+56 9 8898 9824";
 const CORREO = "contacto@teamcondorcl.com";
+const BRAND_LINK = `<link rel="stylesheet" href="/rediseno/brand-refresh.css?v=${createHash('sha1').update(readFileSync(join(PUB,'rediseno/brand-refresh.css'))).digest('hex').slice(0,10)}" />`;
 
 
 /* Iconos de línea, en el propio archivo. Trazo de 1.5 y esquinas redondas:
@@ -231,6 +233,7 @@ const cab = (t) => `<!DOCTYPE html>
 <link rel="icon" type="image/png" href="/assets/favicon.png" />
 <link rel="stylesheet" href="/rediseno/estilo.css?v=${VER}" />
 ${t.ruta === "/productos/sites/" ? "" : EDITORIAL_LINK}
+${BRAND_LINK}
 </head>
 ${t.ruta === "/productos/sites/" ? "<body>" : '<body class="public-editorial">'}
 <header class="topbar"><div class="wrap">
@@ -243,7 +246,7 @@ ${navDesktop(t.ruta)}
   </nav>
   <a class="portal-acceso" href="/acceso">Portal clientes</a>
   <a class="btn btn-primario" href="/agendar">Agendar una reunión</a>
-</div></header>
+</div>${socialLinks}</header>
 
 <div class="cortina" hidden></div>
 <nav class="cajon" id="cajon" aria-label="Menú" hidden>
@@ -284,6 +287,7 @@ const pie = `
       <a href="https://wa.me/${WSP}" target="_blank" rel="noopener">WhatsApp ${WSP_VISIBLE}</a>
       <a href="/acceso">Portal de clientes</a></div>
   </div>
+  ${socialLinks}
   <div class="legal"><span>© 2026 condor.ai · Santiago, Chile</span><span>Todos los derechos reservados</span></div>
 </div></footer>
 </body>
@@ -720,7 +724,7 @@ const tarjetasLineas = () => LINEAS.map(tarjetaLinea).join("");
    tenían un tono demasiado informal ("un martes cualquiera") para el
    resto del sitio. */
 const PERSONAS = [
-  { slug: "joaquin", nombre: "Joaquín Muñoz", rol: "Fundador", foto: "joaquin.jpg",
+  { slug: "joaquin", nombre: "Joaquín Muñoz", rol: "CEO, Co-Fundador", foto: "joaquin.jpg",
     resumen: "Dirige la relación con cada cliente y participa en la definición de todos los proyectos. Responsable de la estrategia técnica y comercial de la compañía.",
     frase: "Si un proceso todavía no conviene automatizar, prefiero decirlo antes de que el cliente invierta.",
     bloques: [
@@ -731,7 +735,7 @@ const PERSONAS = [
     ],
     contacto: [["calendario", "Agendar con Joaquín", "/agendar"], ["correo", CORREO, "mailto:" + CORREO]] },
 
-  { slug: "alejandro", nombre: "Alejandro Tobar", rol: "Backend e infraestructura", foto: "alejandro.jpg",
+  { slug: "alejandro", nombre: "Alejandro Tobar", rol: "CTO, Co-Fundador", foto: "alejandro.jpg",
     resumen: "A cargo de bases de datos, integraciones y despliegue. Responsable de que los sistemas se mantengan estables a medida que crece el volumen.",
     frase: "Las decisiones de base de datos se toman pensando en el volumen del año siguiente, no en el de la demostración.",
     bloques: [
@@ -742,7 +746,7 @@ const PERSONAS = [
     ],
     contacto: [["calendario", "Agendar una reunión", "/agendar"], ["correo", CORREO, "mailto:" + CORREO]] },
 
-  { slug: "maximiliano", nombre: "Maximiliano Pino", rol: "Frontend y producto", foto: "maximiliano.jpg",
+  { slug: "maximiliano", nombre: "Maximiliano Pino", rol: "COO y CMO, Co-Fundador", foto: "maximiliano.jpg",
     resumen: "Responsable de las interfaces y de la experiencia de uso: que el sistema se entienda sin manual y funcione en cualquier dispositivo.",
     frase: "Una interfaz que necesita capacitación para usarse está mal diseñada.",
     bloques: [
@@ -777,6 +781,7 @@ const tarjetasEquipo = PERSONAS.map((p) => `
     </article>`).join("");
 
 const escribir = (ruta, html) => {
+  for (const product of ['ecommerce','media','track','agents']) html = html.replaceAll(`/assets/productos/condor-${product}.png`, `/assets/productos/condor-${product}-app.png`);
   const destino = join(PUB, ruta);
   mkdirSync(dirname(destino), { recursive: true });
   // Authored blog HTML is also an input: normalize previous build wrappers.
@@ -1115,40 +1120,13 @@ escribir("productos/agentes/index.html", cab({
   desc: "La familia de agentes de inteligencia artificial de Cóndor.ai. Hoy: Bárbara. Próximamente, más agentes especializados.",
   ruta: "/productos/agentes/",
 }) + `
-<section class="cabecera"><div class="wrap">
-  <a class="volver" href="/productos/">Volver a productos</a>
-  <img src="/assets/productos/condor-agents.png" alt="" width="56" height="56" style="border-radius:14px;margin-bottom:22px" />
+<section class="cabecera section-banner banner-agents"><div class="wrap">
+  <img class="banner-app" src="/assets/productos/condor-agents.png" alt="Cóndor Agents" width="170" height="170" />
   <h1>Cóndor Agents</h1>
   <p class="bajada">La familia de agentes de inteligencia artificial de Cóndor.ai. Cada uno resuelve una tarea puntual dentro de su empresa, con su propia identidad y su propio modo de trabajar.</p>
 </div></section>
 
-<section style="padding-bottom:clamp(56px,7vw,96px)"><div class="wrap">
-  <div class="agentes-grid">
-    <a class="agente-card" href="/productos/barbara/">
-      <img src="/assets/barbara/lockup.jpg" alt="Bárbara" loading="lazy" />
-      <h3>Bárbara</h3>
-      <p>Crea el contenido de Instagram de su marca cada semana: carruseles, historias y video, con su paleta y su logo.</p>
-      <p class="aplica" style="margin-top:8px"><b>Desde <s>$36.990</s> $18.495/mes</b> — 50% hasta el 20 de octubre</p>
-      <span class="agente-cta">Conocer a Bárbara →</span>
-    </a>
-    <div class="agente-card agente-proximo">
-      <span class="agente-badge">Próximamente</span>
-      <div class="agente-blur">
-        ${icono("agente", "ico-agente-grande")}
-        <h3>Próximo agente</h3>
-        <p>Estamos construyendo el siguiente integrante de la familia Cóndor Agents.</p>
-      </div>
-    </div>
-    <div class="agente-card agente-proximo">
-      <span class="agente-badge">Próximamente</span>
-      <div class="agente-blur">
-        ${icono("agente", "ico-agente-grande")}
-        <h3>Próximo agente</h3>
-        <p>Estamos construyendo el siguiente integrante de la familia Cóndor Agents.</p>
-      </div>
-    </div>
-  </div>
-</div></section>
+${barbaraShowcase}
 ` + cierre("¿Conversamos sobre agentes para su empresa?") + pie.replace("</body>", JS_COMUN + "</body>"));
 
 /* ── EQUIPO ─────────────────────────────────────────────────────────── */
@@ -1157,9 +1135,10 @@ escribir("equipo/index.html", cab({
   desc: "Las personas responsables de su proyecto en condor.ai, con nombre, rol y responsabilidad.",
   ruta: "/equipo/",
 }) + `
-<section class="cabecera"><div class="wrap">
-  <h1>Las personas responsables de su proyecto</h1>
-  <p class="bajada">Sabrá desde la primera reunión quién construye qué. No hay equipos rotativos ni recursos anónimos asignados por disponibilidad.</p>
+<section class="cabecera section-banner banner-team"><div class="wrap">
+  <h1>Las personas detrás de lo que construimos.</h1>
+  <p class="bajada">Tres miradas, un mismo compromiso. Conversas con quienes toman las decisiones y hacen avanzar tu proyecto.</p>
+  <div class="banner-faces">${PERSONAS.map(p=>`<img src="/assets/${p.foto}" alt="${p.nombre}" width="90" height="110" />`).join('')}</div>
 </div></section>
 
 <section class="seccion oscura" style="border-top:0"><div class="wrap">
@@ -1220,8 +1199,8 @@ escribir("contacto/index.html", cab({
   desc: `Agende una reunión, escríbanos a ${CORREO} o por WhatsApp al ${WSP_VISIBLE}.`,
   ruta: "/contacto/",
 }) + `
-<section class="cabecera"><div class="wrap">
-  <h1>Conversemos sobre su proyecto</h1>
+<section class="cabecera section-banner banner-contact"><div class="wrap">
+  <h1>Las buenas ideas empiezan conversando.</h1>
   <p class="bajada">La vía más directa es agendar una reunión de treinta minutos. Al terminar tendrá un diagnóstico del problema y una propuesta de alcance, sin compromiso.</p>
 </div></section>
 
