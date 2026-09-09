@@ -3,6 +3,12 @@ import { readFileSync } from 'node:fs';
 import { PRECIOS_SITES } from './sitios-landing.mjs';
 
 const arrow = '<span aria-hidden="true">↗</span>';
+const heroSlides = [
+  { id:'sites', image:'hero-sites.webp', alt:'Ejemplo de web inmobiliaria en un portátil', caption:'De tu idea a una web propia.', name:'Sites' },
+  { id:'ecommerce', image:'hero-ecommerce-generated.webp', alt:'Mockup ilustrativo de una tienda online en un portátil', caption:'Tus productos, listos para descubrir.', name:'Ecommerce' },
+  { id:'media', image:'hero-media-generated.webp', alt:'Mockup ilustrativo de producción de contenido para una marca', caption:'Contenido a la altura de tu marca.', name:'Media' },
+  { id:'track', image:'hero-track-generated.webp', alt:'Mockup ilustrativo de software para organizar una empresa', caption:'Tu operación, en un mismo lugar.', name:'Track' },
+];
 const solutions = [
   { id: 'sites', need: 'Quiero una web\nque me represente.', name: 'Cóndor Sites', text: 'Un lugar propio para mostrar lo que haces y hacer más fácil que te contacten. Nosotros lo diseñamos, publicamos y mantenemos.', includes: 'Diseño personalizado · hosting · soporte', cta: 'Ver el plan de Sites' },
   { id: 'ecommerce', need: 'Quiero vender\npor internet.', name: 'Cóndor Ecommerce', text: 'Tu catálogo, tus productos y una experiencia de compra pensada para tus clientes. Te ayudamos a llevar tu negocio a una tienda online.', includes: 'Tienda online · catálogo · integración de pagos', cta: 'Conocer Ecommerce' },
@@ -28,10 +34,13 @@ export function inicioLanding({ cab, pie, jsComun, personas, wsp }) {
       <div class="hm-actions"><a class="hm-button" href="#soluciones">Encuentra lo que necesitas <span aria-hidden="true">↓</span></a><a class="hm-text-link" href="${whatsapp}" target="_blank" rel="noopener">Conversemos por WhatsApp ${arrow}</a></div>
       <p class="hm-note">No necesitas saber de tecnología. Para eso estamos.</p>
     </div>
-    <figure class="hm-hero-visual">
-      <img src="/assets/hero/hero-sites.webp" alt="Ejemplo de una web inmobiliaria presentada en un computador portátil" width="1024" height="1024" fetchpriority="high" />
-      <figcaption><span>De tu idea a una web propia.</span><a href="/productos/sites/">Conoce Sites ${arrow}</a></figcaption>
-    </figure>
+    <div class="hm-hero-visual hm-carousel" role="region" aria-roledescription="carrusel" aria-label="Servicios de Cóndor AI">
+      <div class="hm-slide-stack">${heroSlides.map((s,i)=>`<figure class="hm-service-slide${i===0?' is-active':''}" data-service="${s.id}" role="group" aria-roledescription="diapositiva" aria-label="${i+1} de 4: ${s.name}"${i?' inert aria-hidden="true"':''}>
+        <img src="/assets/hero/${s.image}" alt="${s.alt}" width="1024" height="1024" ${i?'loading="lazy"':'fetchpriority="high"'} />
+        <figcaption><span>${s.caption}</span><a href="/productos/${s.id}/">Conoce ${s.name} ${arrow}</a></figcaption>
+      </figure>`).join('')}</div>
+      <div class="hm-carousel-controls" hidden><div class="hm-slide-selectors">${heroSlides.map((s,i)=>`<button type="button" data-slide="${i}" aria-label="Mostrar ${s.name}" aria-pressed="${!i}">${i+1}</button>`).join('')}</div><button type="button" class="hm-carousel-pause">Pausar</button></div>
+    </div>
   </div></section>
 
   <section class="hm-trust" aria-label="Empresas que han confiado en Cóndor"><div class="hm-wrap">
@@ -79,5 +88,5 @@ export function inicioLanding({ cab, pie, jsComun, personas, wsp }) {
     <div class="hm-actions"><a class="hm-button hm-button-light" href="${whatsapp}" target="_blank" rel="noopener">Hablemos por WhatsApp ${arrow}</a><a class="hm-text-link" href="/agendar">Agendar una reunión ${arrow}</a></div>
   </div></section>
 </main>
-` + pie.replace('</body>', jsComun + '</body>');
+` + pie.replace('</body>', jsComun + '<script src="/rediseno/inicio.js?v=' + createHash('sha1').update(readFileSync(new URL('../public/rediseno/inicio.js', import.meta.url))).digest('hex').slice(0,10) + '"></script></body>');
 }

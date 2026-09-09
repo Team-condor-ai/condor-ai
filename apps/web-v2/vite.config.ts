@@ -1,5 +1,7 @@
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
+import { existsSync } from 'node:fs'
+import { resolve } from 'node:path'
 // @ts-expect-error — plugin de desarrollo en JS puro, sin tipos.
 import { pluginPortalDemo } from './dev/plugin-demo.mjs'
 
@@ -17,6 +19,25 @@ export default defineConfig(({ command, mode }) => {
   const demo = command === 'serve' && env.VITE_PORTAL_DEMO === '1'
 
   return {
-    plugins: [react(), ...(demo ? [pluginPortalDemo()] : [])],
+    plugins: [react(), {
+      name: 'corporate-static-routes',
+      configureServer(server) {
+        server.middlewares.use((req, _res, next) => {
+          // Match Pages directory-index routing in local previews too.
+          const url = new URL(req.url || '/', 'http://localhost')
+          if (req.method !== 'GET' && req.method !== 'HEAD') return next()
+          if (url.pathname === '/') req.url = '/rediseno/inicio.html' + url.search
+          else if (!url.pathname.split('/').pop()?.includes('.')) {
+            const candidate = url.pathname.replace(/\/$/, '') + '/index.html'
+            const publicRoot = resolve(server.config.root, 'public')
+            const file = resolve(publicRoot, '.' + candidate)
+            if (file.startsWith(publicRoot + '/') || file.startsWith(publicRoot + '\\')) {
+              if (existsSync(file)) req.url = candidate + url.search
+            }
+          }
+          next()
+        })
+      },
+    }, ...(demo ? [pluginPortalDemo()] : [])],
   }
 })

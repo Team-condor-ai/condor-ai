@@ -277,7 +277,7 @@ const pie = `
         Sitios web, tiendas en línea, contenido para redes y software a medida para empresas.</p>
     </div>
     <div><h4>Productos</h4>
-      ${LINEAS.map((l) => `<a href="${l.href}">${l.nombre}</a>`).join("")}<a href="/productos/barbara/">Agentes IA</a></div>
+      ${LINEAS.map((l) => `<a href="${l.href}">${l.nombre}</a>`).join("")}<a href="/productos/agentes/">Agentes IA</a></div>
     <div><h4>Contacto</h4>
       <a href="/agendar">Agendar una reunión</a>
       <a href="mailto:${CORREO}">${CORREO}</a>
@@ -779,6 +779,10 @@ const tarjetasEquipo = PERSONAS.map((p) => `
 const escribir = (ruta, html) => {
   const destino = join(PUB, ruta);
   mkdirSync(dirname(destino), { recursive: true });
+  // Decorations remain on desktop but never occupy mobile text. Leave code,
+  // attributes, SVG geometry and functional control labels untouched.
+  html = html.replace(/<script\b[^>]*>[\s\S]*?<\/script>|<style\b[^>]*>[\s\S]*?<\/style>|<[^>]*>|[^<]+/gi, part => part.startsWith('<') ? part : part.replace(/(?:[\p{Extended_Pictographic}\u2190-\u21ff\u2713\u2714]\uFE0F?)/gu, symbol => `<span class="mobile-decoration" aria-hidden="true">${symbol}</span>`));
+  html = html.replace('</head>', '<style>@media(max-width:760px){.mobile-decoration{display:none!important}}</style></head>');
   writeFileSync(destino, html, "utf8");
   console.log("  " + ruta);
 };
