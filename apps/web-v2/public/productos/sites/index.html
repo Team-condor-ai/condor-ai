@@ -14,7 +14,7 @@
 <link rel="icon" type="image/png" href="/assets/favicon.png" />
 <link rel="stylesheet" href="/rediseno/estilo.css?v=d3a4e902" />
 <link rel="preload" href="/assets/fuentes/GeneralSans-Regular.ttf" as="font" type="font/ttf" crossorigin />
-<link rel="stylesheet" href="/rediseno/sites.css?v=b7a4ed817f" />
+<link rel="stylesheet" href="/rediseno/sites.css?v=262e193587" />
 <script defer src="/rediseno/sites.js?v=55dcac535b"></script>
 </head>
 <body class="sites-page">
@@ -22,7 +22,7 @@
   <button class="burger" aria-label="Abrir menú" aria-expanded="false" aria-controls="cajon">
     <span></span><span></span><span></span>
   </button>
-  <a class="marca-link" href="/"><img class="logo" src="/assets/logo.png" alt="condor.ai" /></a>
+  <a class="marca-link cs-brand" href="/productos/sites/" aria-label="Cóndor Sites — inicio"><img src="/assets/productos/condor-sites.png" alt="" width="36" height="36" /><span>Cóndor Sites</span></a>
   <nav class="menu">
     <a href="/">Inicio</a>
     <div class="nav-drop">
@@ -68,7 +68,7 @@
 <main id="cs-main">
   <section class="cs-hero">
     <div class="cs-wrap">
-      <div class="cs-overline"><a href="/productos/">Productos / <span>Cóndor Sites</span></a><span>Diseño + cuidado web</span></div>
+      <div class="cs-overline"><div class="cs-brand cs-brand-hero"><img src="/assets/productos/condor-sites.png" alt="" width="44" height="44" /><span>Cóndor Sites</span></div><a href="/productos/">Ver productos ↗</a></div>
       <h1>Una web a la altura<br />de tu negocio<span class="cs-dot">.</span></h1>
       <div class="cs-hero-bottom">
         <div><p class="cs-hero-intro">Tú construiste un buen negocio.<br />Hagamos que se note desde el primer clic.</p><a class="cs-button" href="#planes-sites">Encuentra tu plan <span aria-hidden="true">↗</span></a></div>
@@ -113,16 +113,9 @@
     </div>
   </section>
 
-  <section class="cs-section cs-team">
-    <div class="cs-wrap cs-split">
-      <div data-cs-reveal><p class="cs-eyebrow">04 / Del otro lado</p><h2>Tecnología ágil.<br /><span class="cs-muted">Trato humano.</span></h2><p class="cs-team-copy">Usamos tecnología e inteligencia artificial para agilizar el trabajo. El criterio de diseño, la revisión y el acompañamiento siguen en manos de personas.</p><a class="cs-link" href="/equipo/">Conoce a Cóndor <span aria-hidden="true">↗</span></a></div>
-      <div class="cs-people" data-cs-reveal><a href="/equipo/joaquin.html" class="cs-person"><img src="/assets/joaquin.jpg" alt="Joaquín Muñoz" width="400" height="400" loading="lazy" /><h3>Joaquín Muñoz</h3><p>Fundador</p></a><a href="/equipo/alejandro.html" class="cs-person"><img src="/assets/alejandro.jpg" alt="Alejandro Tobar" width="400" height="400" loading="lazy" /><h3>Alejandro Tobar</h3><p>Backend e infraestructura</p></a><a href="/equipo/maximiliano.html" class="cs-person"><img src="/assets/maximiliano.jpg" alt="Maximiliano Pino" width="400" height="400" loading="lazy" /><h3>Maximiliano Pino</h3><p>Frontend y producto</p></a></div>
-    </div>
-  </section>
-
   <section class="cs-section cs-pricing" id="planes-sites">
     <div class="cs-wrap">
-      <div class="cs-section-head" data-cs-reveal><div><p class="cs-eyebrow">05 / Un siguiente paso posible</p><h2>Tu web resuelta.<br />Tu inversión, clara.</h2></div><p>Mismo servicio, dos formas de pagar. Elige tu país para comparar el valor mensual con el ahorro de contratar todo el año.</p></div>
+      <div class="cs-section-head" data-cs-reveal><div><p class="cs-eyebrow">04 / Un siguiente paso posible</p><h2>Tu web resuelta.<br />Tu inversión, clara.</h2></div><p>Mismo servicio, dos formas de pagar. Elige tu país para comparar el valor mensual con el ahorro de contratar todo el año.</p></div>
       <fieldset class="cs-countries"><legend>País y moneda</legend><div><label><input type="radio" name="cs-country" value="cl" aria-controls="cs-price-cl" checked /><span>Chile<small>CLP</small></span></label><label><input type="radio" name="cs-country" value="pe" aria-controls="cs-price-pe" /><span>Perú<small>PEN</small></span></label><label><input type="radio" name="cs-country" value="co" aria-controls="cs-price-co" /><span>Colombia<small>COP</small></span></label></div></fieldset>
       <p class="cs-selection" id="cs-price-status" aria-live="polite" aria-atomic="true">Precios para Chile en CLP · IVA incluido</p>
       <div id="cs-price-panels"><div class="cs-price-panel" id="cs-price-cl" data-price-country="cl">
@@ -135,31 +128,31 @@
       <p class="cs-payment-note">Se cobra $34.990 CLP cada mes.</p>
     </article>
     <article class="cs-price-card cs-price-annual">
-      <div class="cs-plan-top"><h3>Todo el año</h3><span>Ahorro anual</span></div>
+      <div class="cs-plan-top"><h3>Todo el año</h3><span>Ahorras 25%</span></div>
       <p class="cs-plan-description">Resuelve doce meses de web con un solo pago y una tarifa fija.</p>
-      <div class="cs-amount"><strong>$409.990</strong><span>CLP / año</span></div>
+      <div class="cs-amount"><strong>$314.910</strong><span>CLP / año</span></div>
       <p class="cs-tax">IVA incluido · un pago por 12 meses</p>
-      <a class="cs-button cs-button-light" data-plan-link="anual" href="https://wa.me/56988989824?text=Hola%2C%20me%20interesa%20C%C3%B3ndor%20Sites%20en%20Chile.%20Quiero%20conocer%20el%20plan%20anual%20de%20%24409.990%20CLP%20(iva%20incluido)." target="_blank" rel="noopener">Elegir plan anual <span aria-hidden="true">↗</span></a>
-      <p class="cs-payment-note">Equivale a $34.166 CLP al mes.</p>
-      <div class="cs-saving"><div><span>12 pagos mensuales</span><s>$419.880</s></div><div><span>Ahorras al pagar anual</span><strong>$9.890 CLP</strong></div></div>
+      <a class="cs-button cs-button-light" data-plan-link="anual" href="https://wa.me/56988989824?text=Hola%2C%20me%20interesa%20C%C3%B3ndor%20Sites%20en%20Chile.%20Quiero%20conocer%20el%20plan%20anual%20de%20%24314.910%20CLP%20(iva%20incluido)." target="_blank" rel="noopener">Elegir plan anual <span aria-hidden="true">↗</span></a>
+      <p class="cs-payment-note">Equivale a aprox. $26.243 CLP al mes.</p>
+      <div class="cs-saving"><div><span>12 pagos mensuales</span><s>$419.880</s></div><div><span>Ahorras 25% al pagar anual</span><strong>$104.970 CLP</strong></div></div>
     </article>
   </div><div class="cs-price-panel" id="cs-price-pe" data-price-country="pe" hidden>
     <article class="cs-price-card">
       <div class="cs-plan-top"><h3>Mes a mes</h3><span>Pago mensual</span></div>
       <p class="cs-plan-description">Empieza con una mensualidad y acompaña el ritmo de tu negocio.</p>
-      <div class="cs-amount"><strong>S/124,90</strong><span>PEN / mes</span></div>
+      <div class="cs-amount"><strong>S/99,00</strong><span>PEN / mes</span></div>
       <p class="cs-tax">IGV incluido · creación sin costo adicional</p>
-      <a class="cs-button " data-plan-link="mensual" href="https://wa.me/56988989824?text=Hola%2C%20me%20interesa%20C%C3%B3ndor%20Sites%20en%20Per%C3%BA.%20Quiero%20conocer%20el%20plan%20mensual%20de%20S%2F124%2C90%20PEN%20(igv%20incluido)." target="_blank" rel="noopener">Elegir plan mensual <span aria-hidden="true">↗</span></a>
-      <p class="cs-payment-note">Se cobra S/124,90 PEN cada mes.</p>
+      <a class="cs-button " data-plan-link="mensual" href="https://wa.me/56988989824?text=Hola%2C%20me%20interesa%20C%C3%B3ndor%20Sites%20en%20Per%C3%BA.%20Quiero%20conocer%20el%20plan%20mensual%20de%20S%2F99%2C00%20PEN%20(igv%20incluido)." target="_blank" rel="noopener">Elegir plan mensual <span aria-hidden="true">↗</span></a>
+      <p class="cs-payment-note">Se cobra S/99,00 PEN cada mes.</p>
     </article>
     <article class="cs-price-card cs-price-annual">
-      <div class="cs-plan-top"><h3>Todo el año</h3><span>Ahorro anual</span></div>
+      <div class="cs-plan-top"><h3>Todo el año</h3><span>Ahorras 25%</span></div>
       <p class="cs-plan-description">Resuelve doce meses de web con un solo pago y una tarifa fija.</p>
-      <div class="cs-amount"><strong>S/1.469,00</strong><span>PEN / año</span></div>
+      <div class="cs-amount"><strong>S/891,00</strong><span>PEN / año</span></div>
       <p class="cs-tax">IGV incluido · un pago por 12 meses</p>
-      <a class="cs-button cs-button-light" data-plan-link="anual" href="https://wa.me/56988989824?text=Hola%2C%20me%20interesa%20C%C3%B3ndor%20Sites%20en%20Per%C3%BA.%20Quiero%20conocer%20el%20plan%20anual%20de%20S%2F1.469%2C00%20PEN%20(igv%20incluido)." target="_blank" rel="noopener">Elegir plan anual <span aria-hidden="true">↗</span></a>
-      <p class="cs-payment-note">Equivale a S/122,42 PEN al mes.</p>
-      <div class="cs-saving"><div><span>12 pagos mensuales</span><s>S/1.498,80</s></div><div><span>Ahorras al pagar anual</span><strong>S/29,80 PEN</strong></div></div>
+      <a class="cs-button cs-button-light" data-plan-link="anual" href="https://wa.me/56988989824?text=Hola%2C%20me%20interesa%20C%C3%B3ndor%20Sites%20en%20Per%C3%BA.%20Quiero%20conocer%20el%20plan%20anual%20de%20S%2F891%2C00%20PEN%20(igv%20incluido)." target="_blank" rel="noopener">Elegir plan anual <span aria-hidden="true">↗</span></a>
+      <p class="cs-payment-note">Equivale a aprox. S/74,25 PEN al mes.</p>
+      <div class="cs-saving"><div><span>12 pagos mensuales</span><s>S/1.188,00</s></div><div><span>Ahorras 25% al pagar anual</span><strong>S/297,00 PEN</strong></div></div>
     </article>
   </div><div class="cs-price-panel" id="cs-price-co" data-price-country="co" hidden>
     <article class="cs-price-card">
@@ -171,13 +164,13 @@
       <p class="cs-payment-note">Se cobra $116.900 COP cada mes.</p>
     </article>
     <article class="cs-price-card cs-price-annual">
-      <div class="cs-plan-top"><h3>Todo el año</h3><span>Ahorro anual</span></div>
+      <div class="cs-plan-top"><h3>Todo el año</h3><span>Ahorras 25%</span></div>
       <p class="cs-plan-description">Resuelve doce meses de web con un solo pago y una tarifa fija.</p>
-      <div class="cs-amount"><strong>$1.379.900</strong><span>COP / año</span></div>
+      <div class="cs-amount"><strong>$1.052.100</strong><span>COP / año</span></div>
       <p class="cs-tax">IVA incluido · un pago por 12 meses</p>
-      <a class="cs-button cs-button-light" data-plan-link="anual" href="https://wa.me/56988989824?text=Hola%2C%20me%20interesa%20C%C3%B3ndor%20Sites%20en%20Colombia.%20Quiero%20conocer%20el%20plan%20anual%20de%20%241.379.900%20COP%20(iva%20incluido)." target="_blank" rel="noopener">Elegir plan anual <span aria-hidden="true">↗</span></a>
-      <p class="cs-payment-note">Equivale a $114.992 COP al mes.</p>
-      <div class="cs-saving"><div><span>12 pagos mensuales</span><s>$1.402.800</s></div><div><span>Ahorras al pagar anual</span><strong>$22.900 COP</strong></div></div>
+      <a class="cs-button cs-button-light" data-plan-link="anual" href="https://wa.me/56988989824?text=Hola%2C%20me%20interesa%20C%C3%B3ndor%20Sites%20en%20Colombia.%20Quiero%20conocer%20el%20plan%20anual%20de%20%241.052.100%20COP%20(iva%20incluido)." target="_blank" rel="noopener">Elegir plan anual <span aria-hidden="true">↗</span></a>
+      <p class="cs-payment-note">Equivale a aprox. $87.675 COP al mes.</p>
+      <div class="cs-saving"><div><span>12 pagos mensuales</span><s>$1.402.800</s></div><div><span>Ahorras 25% al pagar anual</span><strong>$350.700 COP</strong></div></div>
     </article>
   </div></div>
       <div class="cs-included"><h3>En ambos planes</h3><ul><li>Diseño y creación del sitio</li><li>Versión móvil y escritorio</li><li>Hosting y certificado SSL</li><li>Conexión de dominio propio</li><li>Cambios menores de contenido</li><li>Soporte y administración</li></ul></div>
@@ -187,12 +180,12 @@
   </section>
 
   <section class="cs-section cs-start">
-    <div class="cs-wrap"><div class="cs-section-head" data-cs-reveal><div><p class="cs-eyebrow">06 / Nos encargamos juntos</p><h2>De “lo tengo pendiente”<br />a “ya está en línea”.</h2></div><a class="cs-link" href="https://wa.me/56988989824?text=Hola%2C%20quiero%20una%20web%20para%20mi%20negocio.%20Me%20interesa%20C%C3%B3ndor%20Sites." target="_blank" rel="noopener">Cuéntanos tu idea <span aria-hidden="true">↗</span></a></div>
+    <div class="cs-wrap"><div class="cs-section-head" data-cs-reveal><div><p class="cs-eyebrow">05 / Nos encargamos juntos</p><h2>De “lo tengo pendiente”<br />a “ya está en línea”.</h2></div><a class="cs-link" href="https://wa.me/56988989824?text=Hola%2C%20quiero%20una%20web%20para%20mi%20negocio.%20Me%20interesa%20C%C3%B3ndor%20Sites." target="_blank" rel="noopener">Cuéntanos tu idea <span aria-hidden="true">↗</span></a></div>
       <div class="cs-steps"><article data-cs-reveal><span>01</span><h3>Conversemos.</h3><p>Nos cuentas qué haces, qué necesitas y qué material tienes. Definimos el alcance y el plazo.</p></article><article data-cs-reveal><span>02</span><h3>Lo ves antes.</h3><p>Preparamos tu sitio y te mostramos un borrador. Lo revisamos contigo y hacemos los ajustes acordados.</p></article><article data-cs-reveal><span>03</span><h3>Seguimos contigo.</h3><p>Publicamos bajo tu dominio. Tu plan mantiene el soporte, la administración y los cambios de contenido.</p></article></div>
     </div>
   </section>
 
-  <section class="cs-section cs-faq"><div class="cs-wrap cs-split"><div data-cs-reveal><p class="cs-eyebrow">Antes de decidir</p><h2>Hablemos claro.</h2><p class="cs-faq-intro">Tu web debería darte tranquilidad desde el primer día.</p></div><div><details><summary>¿Tengo que saber de tecnología?<span aria-hidden="true">+</span></summary><p>No. Tú nos cuentas qué hace tu negocio y qué quieres comunicar. Nosotros diseñamos, publicamos y administramos el sitio. Para pedir un ajuste, nos escribes.</p></details><details><summary>¿Qué necesito para empezar?<span aria-hidden="true">+</span></summary><p>Tu logo, datos de contacto, información de tus servicios y las fotos que quieras usar. En la primera conversación definimos el contenido y el alcance; luego ves un borrador antes de publicar.</p></details><details><summary>¿Qué cambios cubre el plan?<span aria-hidden="true">+</span></summary><p>Ajustes menores sobre el sitio existente: textos, imágenes, horarios, datos de contacto y contenido. Nuevas funcionalidades, integraciones, tiendas en línea o rediseños completos se cotizan por separado, antes de trabajar.</p></details><details><summary>¿Qué pasa con mi dominio?<span aria-hidden="true">+</span></summary><p>Si ya tienes uno, lo conectamos. Si necesitas registrar uno, te ayudamos a elegirlo y confirmamos su costo de registro y renovación. El dominio y sus accesos quedan a nombre de tu empresa.</p></details><details><summary>¿Cuándo estará lista mi web?<span aria-hidden="true">+</span></summary><p>En la primera conversación acordamos un plazo según el contenido y el alcance. Te mostramos una versión para revisar y publicamos cuando los ajustes estén aprobados.</p></details><details><summary>¿Cómo funciona el pago anual?<span aria-hidden="true">+</span></summary><p>Pagas por adelantado los 12 meses que aparecen en la tarjeta del plan. El total incluye el descuento mostrado y mantiene esa tarifa durante el período. El servicio incluido es el mismo del plan mensual.</p></details><details><summary>¿Puedo vender productos o agregar un sistema?<span aria-hidden="true">+</span></summary><p>Sí, podemos ayudarte a crecer. Una tienda con carrito y pagos corresponde a Cóndor Ecommerce; las funciones e integraciones a medida se cotizan según su alcance. El plan Sites está pensado para presentar tu negocio y facilitar el contacto.</p></details></div></div></section>
+  <section class="cs-section cs-faq"><div class="cs-wrap cs-split"><div data-cs-reveal><p class="cs-eyebrow">Antes de decidir</p><h2>Hablemos claro.</h2><p class="cs-faq-intro">Tu web debería darte tranquilidad desde el primer día.</p></div><div><details><summary>¿Tengo que saber de tecnología?<span aria-hidden="true">+</span></summary><p>No. Tú nos cuentas qué hace tu negocio y qué quieres comunicar. Nosotros diseñamos, publicamos y administramos el sitio. Para pedir un ajuste, nos escribes.</p></details><details><summary>¿Qué necesito para empezar?<span aria-hidden="true">+</span></summary><p>Tu logo, datos de contacto, información de tus servicios y las fotos que quieras usar. En la primera conversación definimos el contenido y el alcance; luego ves un borrador antes de publicar.</p></details><details><summary>¿Qué cambios cubre el plan?<span aria-hidden="true">+</span></summary><p>Ajustes menores sobre el sitio existente: textos, imágenes, horarios, datos de contacto y contenido. Nuevas funcionalidades, integraciones, tiendas en línea o rediseños completos se cotizan por separado, antes de trabajar.</p></details><details><summary>¿Qué pasa con mi dominio?<span aria-hidden="true">+</span></summary><p>Si ya tienes uno, lo conectamos. Si necesitas registrar uno, te ayudamos a elegirlo y confirmamos su costo de registro y renovación. El dominio y sus accesos quedan a nombre de tu empresa.</p></details><details><summary>¿Cuándo estará lista mi web?<span aria-hidden="true">+</span></summary><p>En la primera conversación acordamos un plazo según el contenido y el alcance. Te mostramos una versión para revisar y publicamos cuando los ajustes estén aprobados.</p></details><details><summary>¿Cómo funciona el pago anual?<span aria-hidden="true">+</span></summary><p>Pagas por adelantado los 12 meses que aparecen en la tarjeta del plan. Ahorras un 25% frente a pagar 12 mensualidades. El total incluye ese descuento y mantiene esa tarifa durante el período. El servicio incluido es el mismo del plan mensual.</p></details><details><summary>¿Puedo vender productos o agregar un sistema?<span aria-hidden="true">+</span></summary><p>Sí, podemos ayudarte a crecer. Una tienda con carrito y pagos corresponde a Cóndor Ecommerce; las funciones e integraciones a medida se cotizan según su alcance. El plan Sites está pensado para presentar tu negocio y facilitar el contacto.</p></details></div></div></section>
 
   <section class="cs-final"><div class="cs-wrap" data-cs-reveal><p class="cs-eyebrow">Cóndor Sites</p><h2>Tu negocio está listo.<br /><span>Hagamos que se vea.</span></h2><div><a class="cs-button cs-button-light" href="https://wa.me/56988989824?text=Hola%2C%20quiero%20una%20web%20para%20mi%20negocio.%20Me%20interesa%20C%C3%B3ndor%20Sites." target="_blank" rel="noopener">Hablemos de tu web <span aria-hidden="true">↗</span></a><a class="cs-link" href="/agendar">Prefiero agendar una reunión <span aria-hidden="true">↗</span></a></div><p>Una primera conversación para conocerte y definir el siguiente paso. Sin compromiso.</p></div></section>
 </main>

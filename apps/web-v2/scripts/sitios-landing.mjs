@@ -3,11 +3,12 @@ import { readFileSync } from 'node:fs';
 
 // Una fuente de precios; la comparación anual es contra doce mensualidades
 // reales. No se presentan tarifas inventadas como precios anteriores.
+export const DESCUENTO_ANUAL_SITES = 0.25;
 export const PRECIOS_SITES = [
-  { id: 'cl', pais: 'Chile', moneda: 'CLP', mensual: 34990, anual: 409990, impuesto: 'IVA incluido' },
-  { id: 'pe', pais: 'Perú', moneda: 'PEN', mensual: 124.9, anual: 1469, impuesto: 'IGV incluido' },
-  { id: 'co', pais: 'Colombia', moneda: 'COP', mensual: 116900, anual: 1379900, impuesto: 'IVA incluido' },
-];
+  { id: 'cl', pais: 'Chile', moneda: 'CLP', mensual: 34990, impuesto: 'IVA incluido' },
+  { id: 'pe', pais: 'Perú', moneda: 'PEN', mensual: 99, impuesto: 'IGV incluido' },
+  { id: 'co', pais: 'Colombia', moneda: 'COP', mensual: 116900, impuesto: 'IVA incluido' },
+].map(p => ({ ...p, anual: Math.round(p.mensual * 12 * (1 - DESCUENTO_ANUAL_SITES) * 100) / 100 }));
 
 function dinero(valor, moneda, decimales = moneda === 'PEN' ? 2 : 0) {
   const [entero, decimal] = valor.toFixed(decimales).split('.');
@@ -31,18 +32,18 @@ function planes(p, wsp) {
       <p class="cs-payment-note">Se cobra ${dinero(p.mensual, p.moneda)} ${p.moneda} cada mes.</p>
     </article>
     <article class="cs-price-card cs-price-annual">
-      <div class="cs-plan-top"><h3>Todo el año</h3><span>Ahorro anual</span></div>
+      <div class="cs-plan-top"><h3>Todo el año</h3><span>Ahorras ${DESCUENTO_ANUAL_SITES * 100}%</span></div>
       <p class="cs-plan-description">Resuelve doce meses de web con un solo pago y una tarifa fija.</p>
       <div class="cs-amount"><strong>${dinero(p.anual, p.moneda)}</strong><span>${p.moneda} / año</span></div>
       <p class="cs-tax">${p.impuesto} · un pago por 12 meses</p>
       ${boton(true)}
-      <p class="cs-payment-note">Equivale a ${dinero(p.anual / 12, p.moneda)} ${p.moneda} al mes.</p>
-      <div class="cs-saving"><div><span>12 pagos mensuales</span><s>${dinero(totalMensual, p.moneda)}</s></div><div><span>Ahorras al pagar anual</span><strong>${dinero(ahorro, p.moneda)} ${p.moneda}</strong></div></div>
+      <p class="cs-payment-note">Equivale a aprox. ${dinero(p.anual / 12, p.moneda)} ${p.moneda} al mes.</p>
+      <div class="cs-saving"><div><span>12 pagos mensuales</span><s>${dinero(totalMensual, p.moneda)}</s></div><div><span>Ahorras ${DESCUENTO_ANUAL_SITES * 100}% al pagar anual</span><strong>${dinero(ahorro, p.moneda)} ${p.moneda}</strong></div></div>
     </article>
   </div>`;
 }
 
-export function sitiosLanding({ cab, pie, jsComun, personas, wsp }) {
+export function sitiosLanding({ cab, pie, jsComun, wsp }) {
   const contacto = enlaceWsp(wsp, 'Hola, quiero una web para mi negocio. Me interesa Cóndor Sites.');
   const demos = [
     { id: 'servicios', nombre: 'Servicios y profesionales', tipo: 'Una primera impresión que da confianza.', texto: 'Presenta lo que haces, responde las dudas importantes y acerca a tu próximo cliente al contacto.', url: '/demos/servicios/', imagen: '/assets/sitios/servicios.webp', alt: 'Demo Vértice: página de servicios de una clínica dental' },
@@ -54,11 +55,12 @@ export function sitiosLanding({ cab, pie, jsComun, personas, wsp }) {
     ['¿Qué cambios cubre el plan?', 'Ajustes menores sobre el sitio existente: textos, imágenes, horarios, datos de contacto y contenido. Nuevas funcionalidades, integraciones, tiendas en línea o rediseños completos se cotizan por separado, antes de trabajar.'],
     ['¿Qué pasa con mi dominio?', 'Si ya tienes uno, lo conectamos. Si necesitas registrar uno, te ayudamos a elegirlo y confirmamos su costo de registro y renovación. El dominio y sus accesos quedan a nombre de tu empresa.'],
     ['¿Cuándo estará lista mi web?', 'En la primera conversación acordamos un plazo según el contenido y el alcance. Te mostramos una versión para revisar y publicamos cuando los ajustes estén aprobados.'],
-    ['¿Cómo funciona el pago anual?', 'Pagas por adelantado los 12 meses que aparecen en la tarjeta del plan. El total incluye el descuento mostrado y mantiene esa tarifa durante el período. El servicio incluido es el mismo del plan mensual.'],
+    ['¿Cómo funciona el pago anual?', 'Pagas por adelantado los 12 meses que aparecen en la tarjeta del plan. Ahorras un 25% frente a pagar 12 mensualidades. El total incluye ese descuento y mantiene esa tarifa durante el período. El servicio incluido es el mismo del plan mensual.'],
     ['¿Puedo vender productos o agregar un sistema?', 'Sí, podemos ayudarte a crecer. Una tienda con carrito y pagos corresponde a Cóndor Ecommerce; las funciones e integraciones a medida se cotizan según su alcance. El plan Sites está pensado para presentar tu negocio y facilitar el contacto.'],
   ];
   const head = cab({ titulo: 'Cóndor Sites — Una web a la altura de tu negocio', desc: 'Diseñamos, publicamos y cuidamos la web de tu negocio. Sin costo de creación. Plan mensual o anual en Chile, Perú y Colombia.', ruta: '/productos/sites/' })
     .replace('<body>', '<body class="sites-page">')
+    .replace('<a class="marca-link" href="/"><img class="logo" src="/assets/logo.png" alt="condor.ai" /></a>', '<a class="marca-link cs-brand" href="/productos/sites/" aria-label="Cóndor Sites — inicio"><img src="/assets/productos/condor-sites.png" alt="" width="36" height="36" /><span>Cóndor Sites</span></a>')
     .replace(/<link[^>]+(?:api|cdn)\.fontshare\.com[^>]*>\s*/g, '')
     .replace('</head>', `<link rel="preload" href="/assets/fuentes/GeneralSans-Regular.ttf" as="font" type="font/ttf" crossorigin />\n<link rel="stylesheet" href="/rediseno/sites.css?v=${assetVersion('sites.css')}" />\n<script defer src="/rediseno/sites.js?v=${assetVersion('sites.js')}"></script>\n</head>`);
   return head + `
@@ -66,7 +68,7 @@ export function sitiosLanding({ cab, pie, jsComun, personas, wsp }) {
 <main id="cs-main">
   <section class="cs-hero">
     <div class="cs-wrap">
-      <div class="cs-overline"><a href="/productos/">Productos / <span>Cóndor Sites</span></a><span>Diseño + cuidado web</span></div>
+      <div class="cs-overline"><div class="cs-brand cs-brand-hero"><img src="/assets/productos/condor-sites.png" alt="" width="44" height="44" /><span>Cóndor Sites</span></div><a href="/productos/">Ver productos ↗</a></div>
       <h1>Una web a la altura<br />de tu negocio<span class="cs-dot">.</span></h1>
       <div class="cs-hero-bottom">
         <div><p class="cs-hero-intro">Tú construiste un buen negocio.<br />Hagamos que se note desde el primer clic.</p><a class="cs-button" href="#planes-sites">Encuentra tu plan ${flecha}</a></div>
@@ -108,16 +110,9 @@ export function sitiosLanding({ cab, pie, jsComun, personas, wsp }) {
     </div>
   </section>
 
-  <section class="cs-section cs-team">
-    <div class="cs-wrap cs-split">
-      <div data-cs-reveal><p class="cs-eyebrow">04 / Del otro lado</p><h2>Tecnología ágil.<br /><span class="cs-muted">Trato humano.</span></h2><p class="cs-team-copy">Usamos tecnología e inteligencia artificial para agilizar el trabajo. El criterio de diseño, la revisión y el acompañamiento siguen en manos de personas.</p><a class="cs-link" href="/equipo/">Conoce a Cóndor ${flecha}</a></div>
-      <div class="cs-people" data-cs-reveal>${personas.map(p => `<a href="/equipo/${p.slug}.html" class="cs-person"><img src="/assets/${p.foto}" alt="${p.nombre}" width="400" height="400" loading="lazy" /><h3>${p.nombre}</h3><p>${p.rol}</p></a>`).join('')}</div>
-    </div>
-  </section>
-
   <section class="cs-section cs-pricing" id="planes-sites">
     <div class="cs-wrap">
-      <div class="cs-section-head" data-cs-reveal><div><p class="cs-eyebrow">05 / Un siguiente paso posible</p><h2>Tu web resuelta.<br />Tu inversión, clara.</h2></div><p>Mismo servicio, dos formas de pagar. Elige tu país para comparar el valor mensual con el ahorro de contratar todo el año.</p></div>
+      <div class="cs-section-head" data-cs-reveal><div><p class="cs-eyebrow">04 / Un siguiente paso posible</p><h2>Tu web resuelta.<br />Tu inversión, clara.</h2></div><p>Mismo servicio, dos formas de pagar. Elige tu país para comparar el valor mensual con el ahorro de contratar todo el año.</p></div>
       <fieldset class="cs-countries"><legend>País y moneda</legend><div>${PRECIOS_SITES.map(p => `<label><input type="radio" name="cs-country" value="${p.id}" aria-controls="cs-price-${p.id}"${p.id === 'cl' ? ' checked' : ''} /><span>${p.pais}<small>${p.moneda}</small></span></label>`).join('')}</div></fieldset>
       <p class="cs-selection" id="cs-price-status" aria-live="polite" aria-atomic="true">Precios para Chile en CLP · IVA incluido</p>
       <div id="cs-price-panels">${PRECIOS_SITES.map(p => planes(p, wsp)).join('')}</div>
@@ -128,7 +123,7 @@ export function sitiosLanding({ cab, pie, jsComun, personas, wsp }) {
   </section>
 
   <section class="cs-section cs-start">
-    <div class="cs-wrap"><div class="cs-section-head" data-cs-reveal><div><p class="cs-eyebrow">06 / Nos encargamos juntos</p><h2>De “lo tengo pendiente”<br />a “ya está en línea”.</h2></div><a class="cs-link" href="${contacto}" target="_blank" rel="noopener">Cuéntanos tu idea ${flecha}</a></div>
+    <div class="cs-wrap"><div class="cs-section-head" data-cs-reveal><div><p class="cs-eyebrow">05 / Nos encargamos juntos</p><h2>De “lo tengo pendiente”<br />a “ya está en línea”.</h2></div><a class="cs-link" href="${contacto}" target="_blank" rel="noopener">Cuéntanos tu idea ${flecha}</a></div>
       <div class="cs-steps"><article data-cs-reveal><span>01</span><h3>Conversemos.</h3><p>Nos cuentas qué haces, qué necesitas y qué material tienes. Definimos el alcance y el plazo.</p></article><article data-cs-reveal><span>02</span><h3>Lo ves antes.</h3><p>Preparamos tu sitio y te mostramos un borrador. Lo revisamos contigo y hacemos los ajustes acordados.</p></article><article data-cs-reveal><span>03</span><h3>Seguimos contigo.</h3><p>Publicamos bajo tu dominio. Tu plan mantiene el soporte, la administración y los cambios de contenido.</p></article></div>
     </div>
   </section>
