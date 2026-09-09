@@ -22,6 +22,7 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { sitiosLanding } from "./sitios-landing.mjs";
 
 const raiz = join(dirname(fileURLToPath(import.meta.url)), "..");
 const PUB = join(raiz, "public");
@@ -916,134 +917,8 @@ ${carruselSitios()}
 </div></section>
 ` + cierre("¿Cuál de las cuatro necesita?") + pie.replace("</body>", JS_COMUN + "</body>"));
 
-/* ── CÓNDOR SITES ───────────────────────────────────────────────────────
-   Pricing y proceso reales, sacados de las infografías oficiales del
-   2-sept-2026 (ver nota condor_sites_proceso_y_pricing_2026_09_02 en
-   memoria) — no son cifras de ejemplo. La tarjeta de planes reproduce, en
-   el lenguaje visual serio del sitio, la pantalla real de la app Cóndor
-   Sites (capturas recibidas el 3-sept-2026): mismo ícono, mismo precio
-   tachado y el mismo checklist. Corrección del 3-sept (segunda ronda):
-   el país ya NO viene preseleccionado — hasta que el visitante elige uno
-   no se muestra ningún precio, para que no lo confunda con el de otro
-   país; antes de la tarjeta va una sección de "qué es" con las mismas
-   tres ventajas explicadas en prosa. */
-const JS_PLANES_SITES = `
-<script>
-(() => {
-  const tabs = document.querySelectorAll(".pais-tab");
-  const cobros = document.querySelectorAll(".cobro-tab");
-  const cta = document.getElementById("planSitesCta");
-  const marcador = document.getElementById("planSitesPlaceholder");
-  const notaAnual = document.getElementById("notaAnualSites");
-  if (!tabs.length || !cta) return;
-  const NOMBRE = { cl: "Chile", pe: "Perú", co: "Colombia" };
-  let paisActivo = "";
-  let cobroActivo = "mensual";
-  const pintar = () => {
-    document.querySelectorAll(".plan-pais").forEach((p) => p.classList.toggle("activo", p.dataset.pais === paisActivo));
-    document.querySelectorAll("[data-cobro]").forEach((p) => p.hidden = p.dataset.cobro !== cobroActivo);
-    if (marcador) marcador.classList.toggle("oculto", Boolean(paisActivo));
-    if (notaAnual) notaAnual.hidden = cobroActivo !== "anual";
-    cta.hidden = !paisActivo;
-    if (paisActivo) cta.textContent = cobroActivo === "anual" ? "Contratar anual en " + NOMBRE[paisActivo] + " →" : "Empezar en " + NOMBRE[paisActivo] + " →";
-  };
-  tabs.forEach((t) => t.addEventListener("click", () => {
-    paisActivo = t.dataset.pais;
-    tabs.forEach((o) => { o.classList.toggle("activo", o === t); o.setAttribute("aria-selected", String(o === t)); });
-    pintar();
-  }));
-  cobros.forEach((t) => t.addEventListener("click", () => {
-    cobroActivo = t.dataset.cobro;
-    cobros.forEach((o) => { o.classList.toggle("activo", o === t); o.setAttribute("aria-selected", String(o === t)); });
-    pintar();
-  }));
-})();
-</script>
-`;
-escribir("productos/sites/index.html", cab({
-  titulo: "Cóndor Sites — condor.ai",
-  desc: "Su sitio web profesional, creado y administrado por un equipo real. Soporte, cambios y publicación incluidos desde $34.990 al mes.",
-  ruta: "/productos/sites/",
-}) + `
-<section class="sites-hero"><div class="wrap sites-hero-grid">
-  <div class="sites-hero-copy">
-    <a class="volver" href="/productos/">Volver a productos</a>
-    <div class="sites-eyebrow"><img src="/assets/productos/condor-sites.png" alt="" /> CÓNDOR SITES</div>
-    <h1>Su negocio merece una web que <em>sí trabaja</em> por usted.</h1>
-    <p class="bajada">La diseñamos, publicamos y mantenemos. Usted se enfoca en atender clientes; nosotros hacemos que su negocio se vea profesional y sea fácil de contactar.</p>
-    <div class="sites-hero-actions"><a class="btn btn-claro" href="#planes-sites">Ver plan y precio</a><a class="sites-text-link" href="/agendar">Hablar con el equipo <span>→</span></a></div>
-    <div class="sites-hero-proof"><span>Sin costo de creación</span><i></i><span>Dominio propio</span><i></i><span>Soporte incluido</span></div>
-  </div>
-  <div class="sites-hero-visual" aria-hidden="true"><div class="sites-orbita"></div><img src="/assets/hero/hero-sites.webp" alt="" /><div class="sites-float sites-float-top">Su marca, lista para encontrarse</div><div class="sites-float sites-float-bottom"><b>✓</b> Publicación y ajustes incluidos</div></div>
-</div></section>
-
-<section class="seccion sites-intro"><div class="wrap sites-intro-grid">
-  <div><span class="seccion-kicker">HECHO PARA NEGOCIOS REALES</span><h2>Una web que no le deja solo frente a un editor.</h2></div>
-  <div><p class="sites-lead">Cóndor Sites no es una plantilla ni un curso. Es un equipo que deja su página en línea y la mantiene viva con usted.</p><div class="sites-beneficios">
-    <div><span>01</span><h3>Se ve bien donde importa</h3><p>Diseño pensado primero para celular, WhatsApp y búsquedas en Google.</p></div>
-    <div><span>02</span><h3>Alguien se hace cargo</h3><p>Nos escribe sus cambios y los gestionamos; no necesita aprender una plataforma.</p></div>
-    <div><span>03</span><h3>Es realmente suya</h3><p>Su dominio, sus accesos y una presencia digital que puede seguir creciendo.</p></div>
-  </div></div>
-</div></section>
-
-<section class="sites-precio seccion" id="planes-sites"><div class="wrap planes-centro">
-  <span class="seccion-kicker">PRECIO SIMPLE, SIN SORPRESAS</span>
-  <h2>Un sitio profesional. Un valor mensual claro.</h2>
-  <p class="sites-subtitulo">Elija su país y prefiera el pago anual para asegurar su precio durante doce meses.</p>
-  <div class="paises-tabs" role="tablist" aria-label="Elegir país" style="margin-top:22px">
-    <button class="pais-tab" data-pais="cl" role="tab" aria-selected="false">${BANDERA.cl} Chile</button>
-    <button class="pais-tab" data-pais="pe" role="tab" aria-selected="false">${BANDERA.pe} Perú</button>
-    <button class="pais-tab" data-pais="co" role="tab" aria-selected="false">${BANDERA.co} Colombia</button>
-  </div>
-  <div class="cobro-tabs" role="tablist" aria-label="Forma de pago">
-    <button class="cobro-tab activo" data-cobro="mensual" role="tab" aria-selected="true">Mensual</button>
-    <button class="cobro-tab" data-cobro="anual" role="tab" aria-selected="false">Anual <b>mejor valor</b></button>
-  </div>
-  <div class="plan-card sites-plan-card">
-    <div class="plan-topline"><img class="plan-icono" src="/assets/productos/condor-sites.png" alt="" /><span>PLAN TODO INCLUIDO</span></div>
-    <h3>Su página web, administrada por nosotros.</h3>
-    <ul class="plan-checklist">
-      <li>Creamos su página web sin costo inicial</li>
-      <li>Hosting, publicación, SSL y administración incluidos</li>
-      <li>Soporte y solicitudes menores de contenido cada mes</li>
-      <li>Dominio propio y accesos a nombre de su empresa</li>
-    </ul>
-    <div class="plan-precios">
-      <p class="plan-placeholder" id="planSitesPlaceholder">Elija un país arriba para ver el precio y la moneda.</p>
-      <div class="plan-pais" data-pais="cl">
-        <div data-cobro="mensual"><div class="plan-oferta">Oferta de lanzamiento <span>Antes $49.990</span></div><div class="plan-precio"><strong>$34.990</strong><span class="cada">/mes</span></div><p class="plan-moneda">IVA incluido · sin costo de creación</p></div>
-        <div data-cobro="anual" hidden><div class="plan-oferta">Precio anual protegido <span>Antes $419.880</span></div><div class="plan-precio"><strong>$409.990</strong><span class="cada">/año</span></div><p class="plan-moneda">IVA incluido · ahorra $9.890 al año</p></div>
-      </div>
-      <div class="plan-pais" data-pais="pe">
-        <div data-cobro="mensual"><div class="plan-oferta">Oferta de lanzamiento <span>Antes S/149,90</span></div><div class="plan-precio"><strong>S/124,90</strong><span class="cada">/mes</span></div><p class="plan-moneda">IGV incluido · sin costo de creación</p></div>
-        <div data-cobro="anual" hidden><div class="plan-oferta">Precio anual protegido <span>Antes S/1.498,80</span></div><div class="plan-precio"><strong>S/1.469</strong><span class="cada">/año</span></div><p class="plan-moneda">IGV incluido · ahorra S/29,80 al año</p></div>
-      </div>
-      <div class="plan-pais" data-pais="co">
-        <div data-cobro="mensual"><div class="plan-oferta">Oferta de lanzamiento <span>Antes $149.900 COP</span></div><div class="plan-precio"><strong>$116.900</strong><span class="cada">COP /mes</span></div><p class="plan-moneda">IVA incluido · sin costo de creación</p></div>
-        <div data-cobro="anual" hidden><div class="plan-oferta">Precio anual protegido <span>Antes $1.402.800 COP</span></div><div class="plan-precio"><strong>$1.379.900</strong><span class="cada">COP /año</span></div><p class="plan-moneda">IVA incluido · ahorra $22.900 COP al año</p></div>
-      </div>
-    </div>
-    <a class="btn btn-primario" href="/agendar" id="planSitesCta" hidden>Empezar →</a>
-    <p class="plan-garantia" id="notaAnualSites" hidden>El pago anual mantiene su tarifa sin reajustes durante 12 meses.</p>
-  </div>
-</div></section>
-
-<section class="seccion sites-muestra"><div class="wrap">
-  <span class="seccion-kicker">NO PARTIMOS DE CERO</span><h2>Diseños que se adaptan a cómo vende su negocio.</h2>
-  <p class="sites-subtitulo">Una página de servicios, restaurante, inmobiliaria o catálogo no debería verse ni funcionar igual. Por eso la construimos alrededor de su cliente.</p>
-  <div style="margin-top:28px">${carruselSitios()}</div>
-</div></section>
-
-<section class="sites-proceso"><div class="wrap">
-  <div class="sites-proceso-head"><span class="seccion-kicker">ASÍ DE SIMPLE</span><h2>De su idea a una web que recibe consultas.</h2></div>
-  <div class="sites-pasos">
-    <article><span>01</span><h3>Nos cuenta lo esencial</h3><p>Rubro, servicios, datos de contacto y el material que ya tiene.</p></article>
-    <article><span>02</span><h3>Construimos su propuesta</h3><p>Le mostramos un borrador real para revisarlo antes de publicar.</p></article>
-    <article><span>03</span><h3>La dejamos activa</h3><p>Conectamos su dominio, hacemos los ajustes finales y seguimos disponibles.</p></article>
-  </div>
-</div></section>
-` + cierre("¿Listo para que su negocio se vea tan profesional como es?") + pie.replace("</body>", JS_COMUN + JS_PLANES_SITES + "</body>"));
-
+/* Cóndor Sites: landing editorial y precios aislados de las otras líneas. */
+escribir("productos/sites/index.html", sitiosLanding({ cab, pie, jsComun: JS_COMUN, personas: PERSONAS, wsp: WSP }));
 /* ── CÓNDOR ECOMMERCE ───────────────────────────────────────────────────
    Pricing, comisiones y proceso reales del modelo comercial cerrado el
    2-sept-2026 (ver condor_ecommerce_modelo_comercial_2026_09_02 en
