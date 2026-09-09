@@ -14,7 +14,7 @@
 @media(max-height:600px){.home-page .hm-welcome{min-height:0}.home-page .hm-welcome-intro{display:none}.home-page .hm-welcome h1{font-size:32px!important}.home-page .hm-welcome .hm-button{margin-top:16px}.home-page .hm-welcome-content{padding-bottom:32px!important}}
 @media(max-width:760px){
  .home-page .hm-welcome{height:calc(100svh - var(--hm-first-screen-chrome,198px));min-height:360px;max-height:800px}
- .home-page .hm-welcome-office{object-position:50% center}
+ .home-page .hm-welcome-office{object-position:61% center}
  .home-page .hm-welcome::before{background:linear-gradient(0deg,rgba(3,12,25,.97),rgba(3,12,25,.72) 40%,rgba(3,12,25,.08) 80%)}
  .home-page .hm-welcome-content{padding-top:24px!important;padding-bottom:40px!important}
  .home-page .hm-welcome h1{font-size:clamp(32px,8.6vw,48px);line-height:1.05}

@@ -21,7 +21,7 @@ export function inicioLanding({ cab, pie, jsComun, personas, wsp }) {
 <a class="hm-skip" href="#home-main">Saltar al contenido</a>
 <main id="home-main">
   <section class="hm-welcome" aria-label="Bienvenido a Cóndor AI">
-    <img class="hm-welcome-office" src="/assets/hero/hero-industrial.webp" alt="Visualización conceptual de dos pisos de oficinas Cóndor AI, con vidrio ahumado, acero oscuro, hormigón y el logo integrado en el interior" width="1672" height="941" fetchpriority="high" />
+    <img class="hm-welcome-office" src="/assets/hero/hero-office-panorama.webp" alt="Visualización conceptual panorámica de una oficina Cóndor AI, con iluminación cálida, logo interior y reflejos del atardecer en el vidrio" width="1983" height="793" fetchpriority="high" />
     <div class="hm-wrap hm-welcome-content">
       <div class="hm-welcome-message"><p class="hm-welcome-kicker">Bienvenido a Cóndor</p>
         <h1>Lo que imaginas<br>merece existir.</h1>
