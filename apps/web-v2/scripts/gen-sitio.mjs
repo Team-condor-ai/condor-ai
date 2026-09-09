@@ -927,7 +927,7 @@ escribir("productos/sites/index.html", sitiosLanding({ cab, pie, jsComun: JS_COM
    cotizar por cada nivel — antes solo mostraba números sueltos. */
 escribir("productos/ecommerce/index.html", cab({
   titulo: "Cóndor Ecommerce — condor.ai",
-  desc: "Tienda online administrada por $54.990 CLP al mes, IVA incluido, más 6,7% por venta facturada. Paid media opcional cotizado por separado.",
+  desc: "Tienda online administrada por $54.990 CLP al mes, IVA incluido, más 6,7% por venta facturada. La comisión del 6,7% incluye la gestión de paid media.",
   ruta: "/productos/ecommerce/",
 }) + heroLinea({
   logo: "/assets/productos/condor-ecommerce.png",
@@ -944,7 +944,7 @@ escribir("productos/ecommerce/index.html", cab({
       <div class="hecho"><b>Boleta electrónica</b><span>Emisión automática, cumple SII</span></div>
       <div class="hecho"><b>Stock sincronizado</b><span>Con su bodega o ERP, sin planillas paralelas</span></div>
       <div class="hecho"><b>Reporte mensual</b><span>Ventas facturadas y comisión desglosadas</span></div>
-      <div class="hecho"><b>Paid media opcional</b><span>Gestión de campañas y publicidad para tu ecommerce. Alcance y presupuesto publicitario acordados por separado.</span></div>
+      <div class="hecho"><b>Paid media opcional</b><span>La gestión de campañas está cubierta por la comisión del 6,7% por venta facturada, sin honorarios de gestión adicionales. El presupuesto de anuncios se acuerda contigo antes de activar campañas.</span></div>
     </div>
   </div>
 </div></section>
@@ -956,9 +956,9 @@ escribir("productos/ecommerce/index.html", cab({
       <p>CLP · IVA incluido. Construcción y administración de tu ecommerce, con alcance acordado antes de comenzar.</p>
       <a class="btn btn-linea" href="/agendar" style="margin-top:18px">Conversemos sobre tu tienda →</a></div>
     <div class="paso"><div class="n">POR VENTA</div><h3>6,7%</h3>
-      <p>Comisión por cada venta facturada, desglosada en tu reporte.</p></div>
-    <div class="paso"><div class="n">OPCIONAL</div><h3>Paid media</h3>
-      <p>Gestión de campañas para tu ecommerce. Servicio y presupuesto publicitario cotizados por separado.</p></div>
+      <p>Comisión por cada venta facturada. Incluye la gestión de paid media y se desglosa en tu reporte.</p></div>
+    <div class="paso"><div class="n">GESTIÓN INCLUIDA</div><h3>Paid media</h3>
+      <p>Gestión incluida en la comisión del 6,7%, sin cotización separada por este servicio. Definimos contigo los objetivos, canales y presupuesto de anuncios.</p></div>
   </div>
   <p style="margin-top:20px;color:var(--ink-2)">Precios de Chile, con IVA. Perú, Colombia y Paraguay se cotizan según el mercado local — consúltenos en la reunión inicial.</p>
 </div></section>
