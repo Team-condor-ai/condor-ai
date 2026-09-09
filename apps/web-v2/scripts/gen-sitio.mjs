@@ -23,6 +23,7 @@ import { createHash } from "node:crypto";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { sitiosLanding } from "./sitios-landing.mjs";
+import { inicioLanding } from "./inicio-landing.mjs";
 
 const raiz = join(dirname(fileURLToPath(import.meta.url)), "..");
 const PUB = join(raiz, "public");
@@ -792,86 +793,7 @@ console.log("Generando el sitio:");
 const verMas = (url, texto) =>
   `<a class="btn btn-linea" href="${url}">${texto}</a>`;
 
-escribir("rediseno/inicio.html", cab({
-  titulo: "condor.ai — Sitios, tiendas en línea, contenido y software a medida",
-  desc: "Cóndor Sites, Cóndor Ecommerce, Cóndor Media y Cóndor Track: cuatro líneas de producto para la presencia digital y la operación de su empresa en Chile y la región.",
-  ruta: "/",
-}) + `
-<section class="hero"><div class="wrap hero-grid">
-  <div>
-    <div class="slides" id="slides">
-${HERO_SLIDES.map((s, i) => `      <article class="slide${i === 0 ? " on" : ""}">
-        <h1>${s.titulo}</h1>
-        <p class="bajada">${s.bajada}</p>
-      </article>`).join("\n")}
-    </div>
-    <div class="hero-cta">
-      <a class="btn btn-primario" href="/agendar">Agendar una reunión</a>
-      <a class="btn btn-linea" href="/productos/">Ver productos</a>
-    </div>
-    <div class="puntos" role="tablist" aria-label="Cambiar mensaje">
-${HERO_SLIDES.map((s, i) => `      <button class="punto" role="tab" aria-selected="${i === 0}" aria-label="Mensaje ${i + 1} de ${HERO_SLIDES.length}"></button>`).join("\n")}
-    </div>
-  </div>
-  <div>
-    <div class="hero-marco">
-${HERO_SLIDES.map((s, i) => `      <img class="hero-img${i === 0 ? " on" : ""}" src="${s.imagen}" alt="${s.alt}" />`).join("\n")}
-    </div>
-  </div>
-</div></section>
-
-${carrusel}
-
-<!-- EQUIPO (resumen) -->
-<section class="seccion oscura"><div class="wrap">
-  <div class="cab">
-    <div>
-      <h2 style="margin-top:20px">Las personas responsables de su proyecto</h2></div>
-    ${verMas("/equipo/", "Ver el equipo completo")}
-  </div>
-${OFICINA}
-  <div class="lista">
-${PERSONAS.map((p) => `    <article class="fila-persona">
-      <div class="retrato-s"><img src="/assets/${p.foto}" alt="${p.nombre}" loading="lazy" /></div>
-      <div><h3>${p.nombre}</h3><div class="rol">${p.rol}</div>
-        <p>${p.resumen}</p>
-        <a class="ver" href="/equipo/${p.slug}.html">Ver más</a></div>
-    </article>`).join("\n")}
-  </div>
-</div></section>
-
-<!-- PRODUCTOS (resumen) -->
-<section class="seccion"><div class="wrap">
-  <div class="cab">
-    <div>
-      <h2 style="margin-top:20px">Cuatro líneas de producto, cada una con equipo dedicado</h2></div>
-    ${verMas("/productos/", "Ver todos los productos")}
-  </div>
-  <div class="lista">
-${tarjetasLineas()}
-  </div>
-</div></section>
-
-<!-- CONTACTO (resumen) -->
-<section class="seccion"><div class="wrap">
-  <div class="cab">
-    <div>
-      <h2 style="margin-top:20px">Tres formas de llegar a nosotros</h2></div>
-    ${verMas("/contacto/", "Ver todas las vías")}
-  </div>
-  <div class="lista">
-    <article class="fila"><div class="marca-fila">${icono("calendario")}<span class="n">01</span></div>
-      <div><h3>Reunión</h3><p class="desc">Treinta minutos, por videollamada o presencial en nuestra oficina en Santiago. Es la forma más rápida de saber si podemos ayudar.</p>
-      <a class="btn btn-primario" href="/agendar" style="margin-top:16px">Agendar una reunión</a></div></article>
-    <article class="fila"><div class="marca-fila">${icono("correo")}<span class="n">02</span></div>
-      <div><h3>Correo</h3><p class="desc">Para propuestas formales, bases de licitación o consultas que requieran adjuntos. Respondemos el mismo día hábil.</p>
-      <a class="valor" href="mailto:${CORREO}">${CORREO}</a></div></article>
-    <article class="fila"><div class="marca-fila">${icono("whatsapp")}<span class="n">03</span></div>
-      <div><h3>WhatsApp</h3><p class="desc">Para consultas breves. Es el mismo número de atención comercial que usamos en nuestras campañas.</p>
-      <a class="valor" href="https://wa.me/${WSP}" target="_blank" rel="noopener">${WSP_VISIBLE}</a></div></article>
-  </div>
-</div></section>
-` + cierre() + pie.replace("</body>", JS_COMUN + "</body>"));
+escribir("rediseno/inicio.html", inicioLanding({ cab, pie, jsComun: JS_COMUN, personas: PERSONAS, wsp: WSP }));
 
 /* ── PRODUCTOS (hub) ────────────────────────────────────────────────── */
 escribir("productos/index.html", cab({
