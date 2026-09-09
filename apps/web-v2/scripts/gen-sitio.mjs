@@ -779,6 +779,11 @@ const tarjetasEquipo = PERSONAS.map((p) => `
 const escribir = (ruta, html) => {
   const destino = join(PUB, ruta);
   mkdirSync(dirname(destino), { recursive: true });
+  // Authored blog HTML is also an input: normalize previous build wrappers.
+  while (/<span class="mobile-decoration" aria-hidden="true">[^<]*<\/span>/.test(html)) {
+    html = html.replace(/<span class="mobile-decoration" aria-hidden="true">([^<]*)<\/span>/g, '$1');
+  }
+  html = html.replaceAll('<style>@media(max-width:760px){.mobile-decoration{display:none!important}}</style>', '');
   // Decorations remain on desktop but never occupy mobile text. Leave code,
   // attributes, SVG geometry and functional control labels untouched.
   html = html.replace(/<script\b[^>]*>[\s\S]*?<\/script>|<style\b[^>]*>[\s\S]*?<\/style>|<[^>]*>|[^<]+/gi, part => part.startsWith('<') ? part : part.replace(/(?:[\p{Extended_Pictographic}\u2190-\u21ff\u2713\u2714]\uFE0F?)/gu, symbol => `<span class="mobile-decoration" aria-hidden="true">${symbol}</span>`));

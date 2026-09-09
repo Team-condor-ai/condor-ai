@@ -5,9 +5,9 @@ import { PRECIOS_SITES } from './sitios-landing.mjs';
 const arrow = '<span aria-hidden="true">↗</span>';
 const heroSlides = [
   { id:'sites', image:'hero-sites.webp', alt:'Ejemplo de web inmobiliaria en un portátil', caption:'De tu idea a una web propia.', name:'Sites' },
-  { id:'ecommerce', image:'hero-ecommerce-generated.webp', alt:'Mockup ilustrativo de una tienda online en un portátil', caption:'Tus productos, listos para descubrir.', name:'Ecommerce' },
-  { id:'media', image:'hero-media-generated.webp', alt:'Mockup ilustrativo de producción de contenido para una marca', caption:'Contenido a la altura de tu marca.', name:'Media' },
-  { id:'track', image:'hero-track-generated.webp', alt:'Mockup ilustrativo de software para organizar una empresa', caption:'Tu operación, en un mismo lugar.', name:'Track' },
+  { id:'ecommerce', image:'../sitios/ecommerce.webp', alt:'Vista de la tienda de demostración Cumbre Café', caption:'Tus productos, listos para descubrir.', name:'Ecommerce' },
+  { id:'media', image:'hero-media.webp', alt:'Mockup ilustrativo de producción de contenido para una marca', caption:'Contenido a la altura de tu marca.', name:'Media' },
+  { id:'track', image:'hero-track.webp', alt:'Mockup ilustrativo de software para organizar una empresa', caption:'Tu operación, en un mismo lugar.', name:'Track' },
 ];
 const solutions = [
   { id: 'sites', need: 'Quiero una web\nque me represente.', name: 'Cóndor Sites', text: 'Un lugar propio para mostrar lo que haces y hacer más fácil que te contacten. Nosotros lo diseñamos, publicamos y mantenemos.', includes: 'Diseño personalizado · hosting · soporte', cta: 'Ver el plan de Sites' },
@@ -29,31 +29,30 @@ export function inicioLanding({ cab, pie, jsComun, personas, wsp }) {
   <section class="hm-hero"><div class="hm-wrap hm-hero-grid">
     <div class="hm-hero-copy">
       <p class="hm-eyebrow">Tecnología para tu negocio</p>
-      <h1>Tú haces crecer<br>tu negocio.<br><span>Nosotros nos encargamos de la tecnología.</span></h1>
-      <p class="hm-intro">Creamos tu web, tu tienda online y las herramientas que necesitas para operar. Un equipo que lo construye contigo y te acompaña después.</p>
+      <h1><span class="hm-desktop-copy">Tú haces crecer<br>tu negocio.<br><span>Nosotros nos encargamos de la tecnología.</span></span><span class="hm-mobile-copy">Tu negocio crece.<br><span>La tecnología,<br>con nosotros.</span></span></h1>
+      <p class="hm-intro"><span class="hm-desktop-copy">Creamos tu web, tu tienda online y las herramientas que necesitas para operar. Un equipo que lo construye contigo y te acompaña después.</span><span class="hm-mobile-copy">Web, tienda online y software. Lo creamos y cuidamos por ti.</span></p>
       <div class="hm-actions"><a class="hm-button" href="#soluciones">Encuentra lo que necesitas <span aria-hidden="true">↓</span></a><a class="hm-text-link" href="${whatsapp}" target="_blank" rel="noopener">Conversemos por WhatsApp ${arrow}</a></div>
       <p class="hm-note">No necesitas saber de tecnología. Para eso estamos.</p>
     </div>
     <div class="hm-hero-visual hm-carousel" role="region" aria-roledescription="carrusel" aria-label="Servicios de Cóndor AI">
       <div class="hm-slide-stack">${heroSlides.map((s,i)=>`<figure class="hm-service-slide${i===0?' is-active':''}" data-service="${s.id}" role="group" aria-roledescription="diapositiva" aria-label="${i+1} de 4: ${s.name}"${i?' inert aria-hidden="true"':''}>
         <img src="/assets/hero/${s.image}" alt="${s.alt}" width="1024" height="1024" ${i?'loading="lazy"':'fetchpriority="high"'} />
-        <figcaption><span>${s.caption}</span><a href="/productos/${s.id}/">Conoce ${s.name} ${arrow}</a></figcaption>
+        <figcaption><span>Cóndor ${s.name}</span><span class="hm-visual-note">Vista ilustrativa</span></figcaption>
       </figure>`).join('')}</div>
-      <div class="hm-carousel-controls" hidden><div class="hm-slide-selectors">${heroSlides.map((s,i)=>`<button type="button" data-slide="${i}" aria-label="Mostrar ${s.name}" aria-pressed="${!i}">${i+1}</button>`).join('')}</div><button type="button" class="hm-carousel-pause">Pausar</button></div>
     </div>
   </div></section>
 
   <section class="hm-trust" aria-label="Empresas que han confiado en Cóndor"><div class="hm-wrap">
     <p>Empresas que han confiado en nosotros</p>
-    <div class="hm-logos">${[['tecnobox','Tecnobox'],['neisstech','Neisstech'],['delta-force','Delta Force'],['bafles-viva','Bafles Viva'],['ebi-foods','Ebi Foods']].map(([file,name])=>`<img src="/assets/clientes/${file}.png" alt="${name}" width="140" height="60" loading="lazy" />`).join('')}</div>
+    <div class="hm-logo-window"><div class="hm-logos">${[['tecnobox','Tecnobox'],['neisstech','Neisstech'],['delta-force','Delta Force'],['bafles-viva','Bafles Viva'],['ebi-foods','Ebi Foods']].map(([file,name])=>`<img src="/assets/clientes/${file}.png" alt="${name}" width="140" height="60" loading="lazy" />`).join('')}</div></div>
   </div></section>
 
   <section class="hm-section" id="soluciones"><div class="hm-wrap">
     <div class="hm-heading"><div><p class="hm-eyebrow">01 / Encuentra tu punto de partida</p><h2>¿Qué necesita<br><span>hoy tu negocio?</span></h2></div><p>No tienes que elegir una tecnología.<br>Empieza por lo que quieres resolver.</p></div>
     <div class="hm-solutions">${solutions.map(s=>`<article class="hm-solution">
       <div class="hm-product"><img src="/assets/productos/condor-${s.id}.png" alt="" width="40" height="40" loading="lazy" /><span>${s.name}</span></div>
-      <h3>${s.need.replace('\n','<br>')}</h3><p>${s.text}</p><p class="hm-includes">${s.includes}</p>
-      ${s.id === 'sites' ? `<p class="hm-price">$${price} <span>CLP / mes · IVA incluido</span></p><p class="hm-price-note">También en Perú y Colombia. Ahorra 25% con pago anual.</p>` : '<p class="hm-quote">Conoce el alcance y las opciones para tu negocio.</p>'}
+      <h3>${s.need.replace('\n','<br>')}</h3><p class="hm-desktop-copy">${s.text}</p><p class="hm-includes">${s.includes}</p>
+      ${s.id === 'sites' ? `<p class="hm-price">$${price} <span>CLP / mes · IVA incluido</span></p><p class="hm-price-note"><span class="hm-desktop-copy">También en Perú y Colombia. </span>Ahorra 25% con pago anual.</p>` : '<p class="hm-quote">Conoce el alcance y las opciones para tu negocio.</p>'}
       <a class="hm-text-link" href="/productos/${s.id}/">${s.cta} ${arrow}</a>
     </article>`).join('')}</div>
     <p class="hm-barbara">¿Buscas un agente de IA para el contenido de tu Instagram? <a href="/productos/barbara/">Conoce Bárbara ${arrow}</a></p>
