@@ -1,4 +1,13 @@
 (() => {
+  // Reserve the complete trust strip inside the initial viewport, including
+  // changes caused by responsive navigation, fonts, or browser text scaling.
+  const header = document.querySelector('.topbar');
+  const trust = document.querySelector('.hm-trust');
+  if (header && trust) {
+    const fitWelcome = () => document.documentElement.style.setProperty('--hm-first-screen-chrome', `${Math.ceil(header.getBoundingClientRect().height + trust.getBoundingClientRect().height + 2)}px`);
+    const sizing = new ResizeObserver(fitWelcome);
+    sizing.observe(header); sizing.observe(trust); fitWelcome();
+  }
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
   const carousel = document.querySelector('.hm-carousel');
   const slides = [...document.querySelectorAll('.hm-service-slide')];

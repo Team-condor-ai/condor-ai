@@ -1,26 +1,25 @@
 /* Home editorial: styles deliberately isolated from products, Bárbara and portal. */
-.home-page .hm-welcome{position:relative;isolation:isolate;background:#101a29;color:white;min-height:640px;height:calc(100svh - 82px);max-height:960px;padding:0;overflow:hidden}
+.home-page .hm-welcome{position:relative;isolation:isolate;background:#101a29;color:white;min-height:360px;height:calc(100svh - var(--hm-first-screen-chrome,214px));max-height:960px;padding:0;overflow:hidden}
 .home-page .hm-welcome-office{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 45%;z-index:-2;animation:hm-office-reveal 1.4s ease-out both}
 .home-page .hm-welcome::before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,rgba(5,15,29,.78),rgba(5,15,29,.12) 65%),linear-gradient(0deg,rgba(5,15,29,.65),transparent 65%)}
-.home-page .hm-welcome-content{height:100%;display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;position:relative;padding-top:36px!important;padding-bottom:62px!important}
-.home-page .hm-welcome-brand{background:white;border-radius:4px;padding:8px 16px}
-.home-page .hm-welcome-brand img{display:block;width:156px;height:46px;object-fit:contain}
+.home-page .hm-welcome-content{height:100%;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-end;position:relative;padding-top:24px!important;padding-bottom:42px!important}
 .home-page .hm-welcome-kicker{font-size:14px;letter-spacing:.12em;text-transform:uppercase;color:#fff;margin:0 0 22px}
-.home-page .hm-welcome h1{font-size:clamp(48px,6.5vw,96px);font-weight:400;line-height:1.02;letter-spacing:-.05em;color:white;margin:0;max-width:850px;text-wrap:balance}
+.home-page .hm-welcome h1{font-size:clamp(44px,5.2vw,76px);font-weight:400;line-height:1.02;letter-spacing:-.05em;color:white;margin:0;max-width:700px;text-wrap:balance}
 .home-page .hm-welcome-intro{font-size:18px;line-height:1.5;color:#f1f4fa;margin:24px 0 28px}
 .home-page .hm-welcome .hm-button{background:#014cfd;color:#fff}
 .home-page .hm-welcome .hm-button:hover{background:#003dce}
 .home-page .hm-welcome-disclaimer{position:absolute;right:32px;bottom:22px;color:#eef2fa;font-size:12px}
 @keyframes hm-office-reveal{from{transform:scale(1.025);opacity:.6}to{transform:scale(1);opacity:1}}
+@media(max-height:700px){.home-page .hm-welcome-kicker{display:none}}
+@media(max-height:600px){.home-page .hm-welcome{min-height:0}.home-page .hm-welcome-intro{display:none}.home-page .hm-welcome h1{font-size:32px!important}.home-page .hm-welcome .hm-button{margin-top:16px}.home-page .hm-welcome-content{padding-bottom:32px!important}}
 @media(max-width:760px){
- .home-page .hm-welcome{height:calc(100svh - 68px);min-height:570px;max-height:800px}
- .home-page .hm-welcome-office{object-position:49% center}
+ .home-page .hm-welcome{height:calc(100svh - var(--hm-first-screen-chrome,198px));min-height:360px;max-height:800px}
+ .home-page .hm-welcome-office{object-position:60% center}
  .home-page .hm-welcome::before{background:linear-gradient(0deg,rgba(3,12,25,.97),rgba(3,12,25,.72) 40%,rgba(3,12,25,.08) 80%)}
- .home-page .hm-welcome-content{padding-top:24px!important;padding-bottom:56px!important}
- .home-page .hm-welcome-brand{padding:4px 12px}.home-page .hm-welcome-brand img{width:124px;height:38px}
- .home-page .hm-welcome h1{font-size:clamp(38px,10.4vw,64px);line-height:1.05}
- .home-page .hm-welcome-kicker{font-size:12px;margin-bottom:16px}
- .home-page .hm-welcome-intro{font-size:16px;margin:18px 0 22px}
+ .home-page .hm-welcome-content{padding-top:24px!important;padding-bottom:40px!important}
+ .home-page .hm-welcome h1{font-size:clamp(32px,8.6vw,48px);line-height:1.05}
+ .home-page .hm-welcome-kicker{font-size:12px;margin-bottom:12px}
+ .home-page .hm-welcome-intro{font-size:16px;margin:14px 0 18px}
  .home-page .hm-welcome-disclaimer{right:24px;bottom:16px}
 }
 .home-page .hm-wrap{width:100%;max-width:1440px;margin:0 auto;padding:0 clamp(24px,5vw,80px)}
