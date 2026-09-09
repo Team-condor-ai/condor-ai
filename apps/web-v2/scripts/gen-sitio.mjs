@@ -869,17 +869,18 @@ escribir("productos/ecommerce/index.html", cab({
   logo: "/assets/productos/condor-ecommerce.png",
   nombre: "Cóndor Ecommerce",
   gradiente: "linear-gradient(135deg,#122fc9 0%,#6f2fd6 55%,#e0266b 100%)",
-  bajada: "Construimos y administramos su tienda en línea: pasarela de pago, boleta, sincronización de stock y, si lo necesita, gestión de campañas.",
+  bajada: "Tu negocio no termina en el local. Creamos y administramos tu tienda online; si lo necesitas, también gestionamos paid media y publicidad para tu ecommerce.",
 }) + `
 <section style="padding-bottom:clamp(40px,5vw,56px)"><div class="wrap dos-col">
   <div><h2>Qué incluye</h2></div>
   <div>
-    <p>Una tienda propia, no un plan genérico de Shopify configurado a medias: nuestro equipo la construye, la conecta a su stock real y la mantiene funcionando mes a mes.</p>
+    <p>Tus productos tienen una historia y una forma de llegar a las personas. Construimos una tienda que los presente con claridad y acordamos contigo las conexiones que necesita tu operación.</p>
     <div class="hechos" style="margin-top:24px">
       <div class="hecho"><b>Pasarela de pago</b><span>Mercado Pago, configurada y probada</span></div>
       <div class="hecho"><b>Boleta electrónica</b><span>Emisión automática, cumple SII</span></div>
       <div class="hecho"><b>Stock sincronizado</b><span>Con su bodega o ERP, sin planillas paralelas</span></div>
-      <div class="hecho"><b>Reporte mensual</b><span>Venta real y comisión, sin sorpresas</span></div>
+      <div class="hecho"><b>Reporte mensual</b><span>Ventas facturadas y comisión desglosadas</span></div>
+      <div class="hecho"><b>Paid media opcional</b><span>Gestión de campañas y publicidad para tu ecommerce. Alcance y presupuesto publicitario acordados por separado.</span></div>
     </div>
   </div>
 </div></section>
@@ -961,18 +962,19 @@ escribir("productos/media/index.html", cab({
   logo: "/assets/productos/condor-media.png",
   nombre: "Cóndor Media",
   gradiente: "linear-gradient(135deg,#0b1437 0%,#16224d 100%)",
-  bajada: "Contenido para las redes sociales de su marca, producido con la identidad visual de su empresa y apoyo de inteligencia artificial.",
+  bajada: "Tu marca tiene algo propio que decir. Partimos de esa idea para crear contenido, con una intención y una identidad detrás de cada pieza.",
 }) + `
 <section style="padding-bottom:clamp(40px,5vw,56px)"><div class="wrap dos-col">
   <div><h2>Qué incluye</h2></div>
   <div>
     <p>Un calendario de contenido definido, publicación en sus redes y revisión de que cada pieza respete la paleta, el logo y el tono de su marca.</p>
-    <p>El alcance —cantidad de piezas, redes y frecuencia— se define según sus objetivos en la primera reunión, así que la propuesta final se cotiza a medida.</p>
+    <p>El alcance —cantidad de piezas, redes y frecuencia— se define según tus objetivos en la primera reunión. La propuesta final se cotiza a medida.</p>
+    <a class="btn btn-primario" href="#calculadora" style="margin-top:18px">Ver calculadora de precios</a>
   </div>
 </div></section>
 
 <section style="padding-bottom:clamp(56px,7vw,96px)"><div class="wrap">
-  <h2>Estime el valor de un video</h2>
+  <h2 id="calculadora" style="scroll-margin-top:110px">Estima el valor de un video</h2>
   <p style="color:var(--ink-2);margin-top:10px;max-width:56ch">Cálculo referencial según duración, nivel de producción y plazo de entrega. La cotización final se confirma en la reunión, según el brief real.</p>
   <div class="calculadora" style="margin-top:26px">
     <div class="calc-campo">
@@ -1066,7 +1068,7 @@ escribir("productos/track/index.html", cab({
   logo: "/assets/productos/condor-track.png",
   nombre: "Cóndor Track",
   gradiente: "linear-gradient(135deg,#0f1f6b 0%,#2747ff 100%)",
-  bajada: "Sistemas propios para operar mejor: paneles de control, ERPs livianos e integraciones entre las herramientas que su empresa ya usa.",
+  bajada: "El tiempo de tu equipo merece estar en lo que aporta. Primero entendemos cómo trabajan; después diseñamos el software que tiene sentido construir.",
 }) + `
 <section style="padding-bottom:clamp(40px,5vw,56px)"><div class="wrap dos-col">
   <div><h2>Para qué sirve</h2></div>
