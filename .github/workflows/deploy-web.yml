@@ -52,14 +52,13 @@ jobs:
           VITE_LEADS_API: ${{ secrets.VITE_LEADS_API }}
         run: npm run build
 
-      # Aviso temprano: sin estas dos la landing publica igual, pero no mide
-      # conversiones ni guarda un solo lead. Mejor verlo en el log del deploy
-      # que descubrirlo cuando la campaña ya gastó.
-      - name: Revisar configuración de la campaña
+      # Retired campaign: keep the legacy URL as a redirect, without its offer.
+      - name: Verificar retiro de campaña Colombia
         run: |
-          [ -n "${{ secrets.VITE_META_PIXEL_ID }}" ] || echo "::warning::VITE_META_PIXEL_ID vacío — /colombia se publica SIN Meta Pixel."
-          [ -n "${{ secrets.VITE_LEADS_API }}" ] || echo "::warning::VITE_LEADS_API vacío — el formulario de /colombia fallará y no guardará leads."
-          test -f dist/colombia/index.html || { echo "::error::No se generó dist/colombia/index.html — /colombia volvería a responder 404."; exit 1; }
+          test -f dist/colombia/index.html
+          grep -q 'noindex,follow' dist/colombia/index.html
+          grep -q 'window.location.replace' dist/colombia/index.html
+          ! grep -q '390.000' dist/colombia/index.html
 
       # El 404.html lo escribe `scripts/prerender.mjs`, NO este paso.
       #

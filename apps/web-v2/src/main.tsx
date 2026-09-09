@@ -5,7 +5,6 @@ import "./index.css";
 import "./App.css";
 import Layout from "./Layout";
 import Home from "./pages/Home";
-import Colombia from "./pages/Colombia";
 import RatiaOferta from "./pages/RatiaOferta";
 import { Perdido, Cargando, Salvavidas } from "./Perdido";
 // En diferido a propósito: así Vite deja el portal y el CSS del ERP en un
@@ -43,9 +42,6 @@ createRoot(document.getElementById("root")!).render(
             </Salvavidas>
           }
         />
-
-        {/* Landing de campaña — standalone, sin el chrome del sitio */}
-        <Route path="colombia" element={<Colombia />} />
 
         {/* Donde cae el link del DM de Rat.IA (ManyChat) -- pide correo +
             consentimiento antes de entregar el link real. Ver

@@ -1,0 +1,94 @@
+/* Cóndor Sites visual language, adapted to the existing public-page layouts.
+   No grid, order, visibility, form behavior or section structure is changed.
+   Opt-in scope excludes Sites itself, the portal and customer demos. */
+@font-face{font-family:'Condor Editorial';src:url('/assets/fuentes/GeneralSans-Regular.ttf') format('truetype');font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:'Condor Editorial';src:url('/assets/fuentes/GeneralSans-Semibold.ttf') format('truetype');font-weight:600 800;font-style:normal;font-display:swap}
+.public-editorial{
+  --display:'Condor Editorial',Arial,sans-serif;--body:'Condor Editorial',Arial,sans-serif;
+  --papel:#fff;--papel-2:#f5f7fa;--papel-3:#edf2fa;
+  --navy:#151517;--navy-2:#121214;--navy-3:#26282d;
+  --azul:#014cfd;--grad:linear-gradient(90deg,#014cfd,#014cfd);
+  --ink:#151517;--ink-2:#636368;--ink-3:#606f86;
+  --linea:#dddddf;--linea-2:#d1d9e8;
+  --on-navy:#fff;--on-navy-2:#b4bdcc;--on-navy-3:#a3adbf;
+  --r:10px;--r-lg:16px;--sombra-suave:none;
+  font-family:var(--body);color:var(--ink);background:#fff;
+}
+.public-editorial :is(h1,h2,h3,h4){font-family:var(--display);font-weight:400}
+.public-editorial h1{letter-spacing:-.055em;line-height:1.06}
+.public-editorial h2{letter-spacing:-.05em;line-height:1.08}
+.public-editorial h3{letter-spacing:-.03em;line-height:1.2}
+.public-editorial h4{letter-spacing:-.015em}
+.public-editorial :is(.prod .tit,.dato b,.hecho b,.cifra b,.plan-precio strong,.calc-resultado strong,.precio-pack,.frase){font-weight:400}
+.public-editorial :is(.hero h1,.cabecera h1){font-size:clamp(40px,5.5vw,72px)}
+.public-editorial :is(.cab h2,.dos-col h2,.cierre h2){font-size:clamp(36px,4.3vw,60px);letter-spacing:-.05em}
+.public-editorial :is(.hero .bajada,.cabecera .bajada){line-height:1.6}
+.public-editorial :is(.rotulo,.clientes .titulo,.ficha-rol){
+  background:none;border-color:transparent;border-radius:0;box-shadow:none;
+  font-weight:400;font-size:12px;letter-spacing:.08em;color:var(--azul);
+}
+.public-editorial .rotulo{padding:0}
+.public-editorial .rotulo::before{background:var(--azul);height:1px}
+.public-editorial :is(.fila .n,.paso .n,.via .n,.marca-fila .n,.ag-pasos b){
+  font-weight:400;color:var(--azul);background:none;-webkit-text-fill-color:currentColor;opacity:1;
+}
+.public-editorial .topbar{background:rgba(255,255,255,.96);backdrop-filter:blur(12px)}
+.public-editorial .topbar::before,.public-editorial .topbar::after{background:none}
+.public-editorial .topbar>.wrap{border-bottom:1px solid #eeeeef}
+.public-editorial :is(.menu a,.nav-drop-boton,.portal-acceso,.cajon a){font-weight:400}
+.public-editorial .btn{
+  font-weight:400;border-radius:999px;box-shadow:none;line-height:1.3;
+  transition:background .2s,color .2s,border-color .2s,transform .2s;
+}
+.public-editorial .btn-primario{background:#151517;color:white}
+.public-editorial .btn-primario:hover{background:#353538}
+.public-editorial .btn-linea{background:transparent;color:var(--ink);border-color:var(--linea-2)}
+.public-editorial .btn-linea:hover{background:#f5f7fa;border-color:#151517}
+.public-editorial .oscura{background:#121214;color:white}
+.public-editorial .oscura :is(.rotulo,.fila .n,.paso .n,.via .n,.marca-fila .n){color:white}
+.public-editorial .oscura .btn-primario{background:white;color:#151517}
+.public-editorial .oscura .btn-primario:hover{background:#e4ecff}
+.public-editorial .oscura .btn-linea{color:white;border-color:#727b8b}
+.public-editorial .oscura .btn-linea:hover{background:#26282d;border-color:white}
+/* Product heroes keep their content and logo, replacing multicolour fills. */
+.public-editorial .hero-linea{background:#fafbfc!important;color:var(--ink)}
+.public-editorial .hero-linea h1{color:var(--ink)}
+.public-editorial .hero-linea .bajada{color:var(--ink-2)}
+.public-editorial .hero-linea .volver{color:var(--azul)}
+.public-editorial .hero-linea-logo{box-shadow:none}
+.public-editorial :is(.agente-card,.plan-card,.calculadora,.pack-media,.ag-ok,.sitio,.ficha-foto){box-shadow:none;border-color:var(--linea)}
+.public-editorial :is(.agente-card,.plan-card,.calculadora,.pack-media){background:#fafbfc}
+.public-editorial .agente-card:hover{box-shadow:none;border-color:#9baed0}
+.public-editorial .oscura .sitio{background:#202329;border-color:#343a45}
+.public-editorial .sitio-tipo{background:#edf2fa;color:var(--azul)}
+.public-editorial .pie{background:#121214;border-top:1px solid #303642}
+.public-editorial .pie h4{font-weight:400;color:#fff;letter-spacing:.08em}
+.public-editorial .pie a{color:#b4bdcc}
+.public-editorial .pie a:hover{color:white}
+.public-editorial .legal{color:#a3adbf}
+.public-editorial :is(.ag-form input,.ag-form select,.ag-form textarea,.calc-campo select){font-family:var(--body);border-width:1px;box-shadow:none}
+.public-editorial :is(.ag-form input,.ag-form select,.ag-form textarea):focus{border-color:var(--azul);box-shadow:0 0 0 3px rgba(1,76,253,.13)}
+.public-editorial :focus-visible{outline:3px solid var(--azul);outline-offset:4px}
+.public-editorial ::selection{background:var(--azul);color:white}
+/* Blog retains its article grid, navigation and reading widths. */
+.public-editorial-blog{
+  --base:#fff;--base-2:#f5f7fa;--night:#121214;--night-2:#151517;
+  --vio:#014cfd;--on-night:#fff;--on-night-2:#b4bdcc;--on-night-3:#a3adbf;
+  --mono:var(--body);--glass:#fff;--glass-bd:#dddddf;--sombra:none;--sombra-s:none;
+}
+.public-editorial-blog .sky{background:#fff}
+.public-editorial-blog .sky::before,.public-editorial-blog .sky::after{background:none}
+.public-editorial-blog .nav{background:rgba(255,255,255,.96);border-color:#eeeeef;backdrop-filter:blur(12px)}
+.public-editorial-blog :is(.cta-sm,.band){background:#151517;box-shadow:none}
+.public-editorial-blog .cta-sm{color:white;font-weight:400;border-radius:999px}
+.public-editorial-blog .grad-tx{background:none;color:var(--azul);-webkit-text-fill-color:var(--azul)}
+.public-editorial-blog :is(.post,.article>img){box-shadow:none;border-color:var(--linea)}
+.public-editorial-blog .post:hover{box-shadow:none;border-color:#9baed0}
+.public-editorial-blog .btn-light{background:white;color:#151517}
+.public-editorial-blog .btn-ghost{background:transparent;color:white}
+.public-editorial-blog :is(.eyebrow,.mono-label){font-family:var(--body);font-weight:400;letter-spacing:.08em}
+@media(max-width:700px){
+  .public-editorial :is(.hero h1,.cabecera h1){font-size:clamp(36px,7.8vw,54px);letter-spacing:-.05em}
+  .public-editorial :is(.cab h2,.dos-col h2,.cierre h2){font-size:clamp(32px,7vw,46px)}
+}
+@media(prefers-reduced-motion:reduce){.public-editorial .btn{transition:none}}

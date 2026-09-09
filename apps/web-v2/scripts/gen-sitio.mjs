@@ -40,6 +40,11 @@ const VER = createHash("sha1")
   .slice(0, 8);
 
 const WSP = "56988989824";                     // WhatsApp Business de las campañas
+const VER_EDITORIAL = createHash("sha1")
+  .update(readFileSync(join(PUB, "rediseno", "editorial.css")))
+  .digest("hex").slice(0, 10);
+const EDITORIAL_LINK = `<link rel="preload" href="/assets/fuentes/GeneralSans-Regular.ttf" as="font" type="font/ttf" crossorigin />
+<link rel="stylesheet" href="/rediseno/editorial.css?v=${VER_EDITORIAL}" />`;
 const WSP_VISIBLE = "+56 9 8898 9824";
 const CORREO = "contacto@teamcondorcl.com";
 
@@ -223,12 +228,10 @@ const cab = (t) => `<!DOCTYPE html>
 <meta property="og:locale" content="es_CL" />
 <link rel="canonical" href="https://condorai.cl${t.ruta}" />
 <link rel="icon" type="image/png" href="/assets/favicon.png" />
-<link rel="preconnect" href="https://api.fontshare.com" />
-<link rel="preconnect" href="https://cdn.fontshare.com" crossorigin />
-<link href="https://api.fontshare.com/v2/css?f[]=switzer@400,500,600,700,800&f[]=satoshi@400,500,700&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="/rediseno/estilo.css?v=${VER}" />
+${t.ruta === "/productos/sites/" ? "" : EDITORIAL_LINK}
 </head>
-<body>
+${t.ruta === "/productos/sites/" ? "<body>" : '<body class="public-editorial">'}
 <header class="topbar"><div class="wrap">
   <button class="burger" aria-label="Abrir menú" aria-expanded="false" aria-controls="cajon">
     <span></span><span></span><span></span>
@@ -1390,4 +1393,14 @@ escribir("agendar/index.html", cab({
 ` + pie.replace("</body>", JS_COMUN + JS_AGENDA + "</body>"));
 
 
+// The blog is authored HTML. Only its font/style links and opt-in body class
+// are adapted; article content, navigation and scripts remain untouched.
+for (const ruta of ["blog/index.html", "blog/web-profesional-2026/index.html", "blog/videos-ia/index.html", "blog/google-maps/index.html"]) {
+  const html = readFileSync(join(PUB, ruta), "utf8")
+    .replace(/<link[^>]+(?:api\.fontshare\.com|fonts\.googleapis\.com|fonts\.gstatic\.com)[^>]*>\s*/g, "")
+    .replace(/<link[^>]+(?:rediseno\/editorial\.css|GeneralSans-Regular\.ttf)[^>]*>\s*/g, "")
+    .replace("</head>", EDITORIAL_LINK + "\n</head>")
+    .replace("<body>", '<body class="public-editorial public-editorial-blog">');
+  escribir(ruta, html);
+}
 console.log("Listo.");
