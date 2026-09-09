@@ -164,7 +164,7 @@ const LINEAS = [
     desde: "Desde $34.990/mes" },
   { clave: "ecommerce", href: "/productos/ecommerce/", nombre: "Cóndor Ecommerce", logo: "/assets/productos/condor-ecommerce.png", ico: "carrito",
     resumen: "Tienda en línea administrada de punta a punta: construcción, pasarela de pago, stock y, si corresponde, gestión de campañas.",
-    desde: "Desde $69.990/mes + comisión por venta" },
+    desde: "$54.990/mes · IVA incluido + 6,7% por venta facturada" },
   { clave: "media", href: "/productos/media/", nombre: "Cóndor Media", logo: "/assets/productos/condor-media.png", ico: "megafono",
     // Sin modelo comercial público todavía (línea nueva, 2-sept-2026) —
     // a diferencia de Sites/Ecommerce, "desde" acá es intencionalmente
@@ -173,7 +173,7 @@ const LINEAS = [
     desde: "Cotización según objetivos" },
   { clave: "track", href: "/productos/track/", nombre: "Cóndor Track", logo: "/assets/productos/condor-track.png", ico: "panel",
     resumen: "Software y paneles de operación a medida: ERPs, integraciones y automatizaciones para procesos que ya existen.",
-    desde: "Cotización a medida" },
+    desde: "Desde $84.990 CLP · cotización a medida" },
 ];
 
 /* NAV ya no es una lista plana: "Productos" es un desplegable con las 4
@@ -863,7 +863,7 @@ escribir("productos/sites/index.html", sitiosLanding({ cab, pie, jsComun: JS_COM
    cotizar por cada nivel — antes solo mostraba números sueltos. */
 escribir("productos/ecommerce/index.html", cab({
   titulo: "Cóndor Ecommerce — condor.ai",
-  desc: "Tienda en línea administrada de punta a punta: construcción, pasarela de pago, stock y campañas. Desde $69.990/mes + comisión por venta.",
+  desc: "Tienda online administrada por $54.990 CLP al mes, IVA incluido, más 6,7% por venta facturada. Paid media opcional cotizado por separado.",
   ruta: "/productos/ecommerce/",
 }) + heroLinea({
   logo: "/assets/productos/condor-ecommerce.png",
@@ -886,23 +886,15 @@ escribir("productos/ecommerce/index.html", cab({
 </div></section>
 
 <section style="padding-bottom:clamp(56px,7vw,96px)"><div class="wrap">
-  <h2>Base mensual, según tamaño de tienda</h2>
+  <h2>Tu tienda, con un precio claro</h2>
   <div class="pasos" style="margin-top:24px">
-    <div class="paso"><div class="n">SIMPLE</div><h3>$69.990/mes</h3>
-      <p>Menos de 100 SKU, sin integraciones ni gestión de Ads.</p>
-      <a class="btn btn-linea" href="/agendar" style="margin-top:18px">Cotizar plan Simple →</a></div>
-    <div class="paso"><div class="n">MEDIA</div><h3>$129.990/mes</h3>
-      <p>100 a 500 SKU, o una integración con bodega o ERP externo.</p>
-      <a class="btn btn-linea" href="/agendar" style="margin-top:18px">Cotizar plan Media →</a></div>
-    <div class="paso"><div class="n">COMPLEJA</div><h3>$189.990/mes</h3>
-      <p>Más de 500 SKU, varias integraciones, o incluye gestión de Meta Ads.</p>
-      <a class="btn btn-linea" href="/agendar" style="margin-top:18px">Cotizar plan Compleja →</a></div>
-  </div>
-  <h2 style="margin-top:48px">Más una comisión por venta neta mensual</h2>
-  <div class="lista" style="margin-top:12px">
-    <div class="hecho"><b>Hasta $5.000.000/mes</b><span>5% de comisión</span></div>
-    <div class="hecho"><b>$5.000.001 – $15.000.000/mes</b><span>7% de comisión</span></div>
-    <div class="hecho"><b>Sobre $15.000.000/mes</b><span>9% de comisión</span></div>
+    <div class="paso"><div class="n">BASE MENSUAL</div><h3>$54.990/mes</h3>
+      <p>CLP · IVA incluido. Construcción y administración de tu ecommerce, con alcance acordado antes de comenzar.</p>
+      <a class="btn btn-linea" href="/agendar" style="margin-top:18px">Conversemos sobre tu tienda →</a></div>
+    <div class="paso"><div class="n">POR VENTA</div><h3>6,7%</h3>
+      <p>Comisión por cada venta facturada, desglosada en tu reporte.</p></div>
+    <div class="paso"><div class="n">OPCIONAL</div><h3>Paid media</h3>
+      <p>Gestión de campañas para tu ecommerce. Servicio y presupuesto publicitario cotizados por separado.</p></div>
   </div>
   <p style="margin-top:20px;color:var(--ink-2)">Precios de Chile, con IVA. Perú, Colombia y Paraguay se cotizan según el mercado local — consúltenos en la reunión inicial.</p>
 </div></section>
@@ -1068,7 +1060,7 @@ escribir("productos/track/index.html", cab({
   logo: "/assets/productos/condor-track.png",
   nombre: "Cóndor Track",
   gradiente: "linear-gradient(135deg,#0f1f6b 0%,#2747ff 100%)",
-  bajada: "El tiempo de tu equipo merece estar en lo que aporta. Primero entendemos cómo trabajan; después diseñamos el software que tiene sentido construir.",
+  bajada: "El tiempo de tu equipo merece estar en lo que aporta. Primero entendemos cómo trabajan; después diseñamos el software que tiene sentido construir. Desde $84.990 CLP: valor inicial referencial sujeto a alcance, impuestos y forma de pago acordados en la cotización.",
 }) + `
 <section style="padding-bottom:clamp(40px,5vw,56px)"><div class="wrap dos-col">
   <div><h2>Para qué sirve</h2></div>

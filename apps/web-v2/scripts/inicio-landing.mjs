@@ -3,13 +3,6 @@ import { readFileSync } from 'node:fs';
 import { PRECIOS_SITES } from './sitios-landing.mjs';
 
 const arrow = '<span aria-hidden="true">↗</span>';
-const heroSlides = [
-  { id:'office', image:'hero-office.webp', alt:'Visualización conceptual de una oficina de vidrio con señalética Cóndor AI al atardecer', name:'AI', note:'Visualización conceptual', width:1600, height:900 },
-  { id:'sites', image:'hero-sites.webp', alt:'Ejemplo de web inmobiliaria en un portátil', caption:'De tu idea a una web propia.', name:'Sites' },
-  { id:'ecommerce', image:'../sitios/ecommerce.webp', alt:'Vista de la tienda de demostración Cumbre Café', caption:'Tus productos, listos para descubrir.', name:'Ecommerce' },
-  { id:'media', image:'hero-media.webp', alt:'Mockup ilustrativo de producción de contenido para una marca', caption:'Contenido a la altura de tu marca.', name:'Media' },
-  { id:'track', image:'hero-track.webp', alt:'Mockup ilustrativo de software para organizar una empresa', caption:'Tu operación, en un mismo lugar.', name:'Track' },
-];
 const solutions = [
   { id: 'sites', need: 'Quiero una web\nque me represente.', name: 'Cóndor Sites', text: 'Un lugar propio para mostrar lo que haces y hacer más fácil que te contacten. Nosotros lo diseñamos, publicamos y mantenemos.', includes: 'Diseño personalizado · hosting · soporte', cta: 'Ver el plan de Sites' },
   { id: 'ecommerce', need: 'Quiero vender\npor internet.', name: 'Cóndor Ecommerce', text: 'Una tienda para que tus productos encuentren a sus próximos clientes. Si quieres acompañarla con publicidad, también podemos gestionar campañas de paid media de forma opcional.', includes: 'Tienda online · pagos · publicidad opcional', cta: 'Conocer Ecommerce' },
@@ -27,21 +20,18 @@ export function inicioLanding({ cab, pie, jsComun, personas, wsp }) {
   return head + `
 <a class="hm-skip" href="#home-main">Saltar al contenido</a>
 <main id="home-main">
-  <section class="hm-hero"><div class="hm-wrap hm-hero-grid">
-    <div class="hm-hero-copy">
-      <p class="hm-eyebrow">Lo que nos mueve</p>
-      <h1><span class="hm-desktop-copy">Nos importa<br>lo que estás<br><span>construyendo.</span></span><span class="hm-mobile-copy">Nos importa<br><span>lo que estás<br>construyendo.</span></span></h1>
-      <p class="hm-intro"><span class="hm-desktop-copy">Detrás de un negocio hay decisiones, esfuerzo y una forma propia de hacer las cosas. Nos mueve ayudar a que eso crezca, con tecnología que tenga sentido para ti.</span><span class="hm-mobile-copy">Tu negocio tiene una forma propia de hacer las cosas. La tecnología debería respetarla.</span></p>
-      <div class="hm-actions"><a class="hm-button" href="#soluciones">Encuentra lo que necesitas <span aria-hidden="true">↓</span></a><a class="hm-text-link" href="${whatsapp}" target="_blank" rel="noopener">Conversemos por WhatsApp ${arrow}</a></div>
-      <p class="hm-note">Webs, tiendas, contenido y software. Primero el propósito; después, la herramienta.</p>
+  <section class="hm-welcome" aria-label="Bienvenido a Cóndor AI">
+    <img class="hm-welcome-office" src="/assets/hero/hero-office.webp" alt="Visualización conceptual de una oficina de vidrio de Cóndor AI frente a la cordillera al atardecer" width="1600" height="900" fetchpriority="high" />
+    <div class="hm-wrap hm-welcome-content">
+      <div class="hm-welcome-brand"><img src="/assets/logo.png" alt="Cóndor AI" width="180" height="60" /></div>
+      <div class="hm-welcome-message"><p class="hm-welcome-kicker">Bienvenido a Cóndor</p>
+        <h1>Lo que imaginas<br>merece existir.</h1>
+        <p class="hm-welcome-intro">Creemos en lo que estás construyendo.<br>Hagamos que tome forma.</p>
+        <a class="hm-button" href="#soluciones">Descubre tu próximo paso <span aria-hidden="true">↓</span></a>
+      </div>
+      <span class="hm-welcome-disclaimer">Visualización conceptual</span>
     </div>
-    <div class="hm-hero-visual hm-carousel" role="region" aria-roledescription="carrusel" aria-label="Servicios de Cóndor AI">
-      <div class="hm-slide-stack">${heroSlides.map((s,i)=>`<figure class="hm-service-slide${i===0?' is-active':''}" data-service="${s.id}" role="group" aria-roledescription="diapositiva" aria-label="${i+1} de ${heroSlides.length}: ${s.name}"${i?' inert aria-hidden="true"':''}>
-        <img src="/assets/hero/${s.image}" alt="${s.alt}" width="${s.width || 1024}" height="${s.height || 1024}" ${s.id === 'office' ? 'srcset="/assets/hero/hero-office-mobile.webp 800w, /assets/hero/hero-office.webp 1600w" sizes="(max-width: 760px) calc(100vw - 48px), 1024px"' : ''} ${i?'loading="lazy"':'fetchpriority="high"'} />
-        <figcaption><span>Cóndor ${s.name}</span><span class="hm-visual-note">${s.note || 'Vista ilustrativa'}</span></figcaption>
-      </figure>`).join('')}</div>
-    </div>
-  </div></section>
+  </section>
 
   <section class="hm-trust" aria-label="Empresas que han confiado en Cóndor"><div class="hm-wrap">
     <p>Empresas que han confiado en nosotros</p>
@@ -53,7 +43,7 @@ export function inicioLanding({ cab, pie, jsComun, personas, wsp }) {
     <div class="hm-solutions">${solutions.map(s=>`<article class="hm-solution">
       <div class="hm-product"><img src="/assets/productos/condor-${s.id}.png" alt="" width="40" height="40" loading="lazy" /><span>${s.name}</span></div>
       <h3>${s.need.replace('\n','<br>')}</h3><p class="hm-desktop-copy">${s.text}</p><p class="hm-includes">${s.includes}</p>
-      ${s.id === 'sites' ? `<p class="hm-price">$${price} <span>CLP / mes · IVA incluido</span></p><p class="hm-price-note"><span class="hm-desktop-copy">También en Perú y Colombia. </span>Ahorra 25% con pago anual.</p>` : '<p class="hm-quote">Conoce el alcance y las opciones para tu negocio.</p>'}
+      ${s.id === 'sites' ? `<p class="hm-price">$${price} <span>CLP / mes · IVA incluido</span></p><p class="hm-price-note"><span class="hm-desktop-copy">También en Perú y Colombia. </span>Ahorra 25% con pago anual.</p>` : s.id === 'ecommerce' ? '<p class="hm-price">$54.990 <span>CLP / mes · IVA incluido</span></p><p class="hm-price-note">+ 6,7% por venta facturada.<br>Paid media opcional, cotizado por separado.</p>' : s.id === 'media' ? '<p class="hm-price">$68.000 <span>CLP + IVA / video de referencia</span></p><p class="hm-price-note">30 segundos · nivel profesional · entrega estándar.<br>Calcula el valor de tu producción.</p>' : '<p class="hm-price">Desde $84.990 <span>CLP · a medida</span></p><p class="hm-price-note">Valor inicial referencial. El total, impuestos y forma de pago se definen según alcance.</p>'}
       <a class="hm-text-link" href="/productos/${s.id}/${s.id === 'media' ? '#calculadora' : ''}">${s.cta} ${arrow}</a>
     </article>`).join('')}</div>
     <p class="hm-barbara">¿Buscas un agente de IA para el contenido de tu Instagram? <a href="/productos/barbara/">Conoce Bárbara ${arrow}</a></p>
