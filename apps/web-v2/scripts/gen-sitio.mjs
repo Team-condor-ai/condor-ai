@@ -25,6 +25,7 @@ import { fileURLToPath } from "node:url";
 import { sitiosLanding } from "./sitios-landing.mjs";
 import { inicioLanding } from "./inicio-landing.mjs";
 import { socialLinks, barbaraShowcase } from './brand-refresh.mjs';
+import { trackLanding } from './track-landing.mjs';
 
 const raiz = join(dirname(fileURLToPath(import.meta.url)), "..");
 const PUB = join(raiz, "public");
@@ -174,7 +175,7 @@ const LINEAS = [
     resumen: "Contenido para redes sociales de su marca, producido cada semana con apoyo de inteligencia artificial.",
     desde: "Cotización según objetivos" },
   { clave: "track", href: "/productos/track/", nombre: "Cóndor Track", logo: "/assets/productos/condor-track.png", ico: "panel",
-    resumen: "Software y paneles de operación a medida: ERPs, integraciones y automatizaciones para procesos que ya existen.",
+    resumen: "Un CRM a medida de tu proceso comercial: clientes, oportunidades, tareas y seguimiento en un solo lugar.",
     desde: "Desde $84.990 CLP · cotización a medida" },
 ];
 
@@ -724,39 +725,97 @@ const tarjetasLineas = () => LINEAS.map(tarjetaLinea).join("");
    tenían un tono demasiado informal ("un martes cualquiera") para el
    resto del sitio. */
 const PERSONAS = [
-  { slug: "joaquin", nombre: "Joaquín Muñoz", rol: "CEO, Co-Fundador", foto: "joaquin.jpg",
-    resumen: "Dirige la relación con cada cliente y participa en la definición de todos los proyectos. Responsable de la estrategia técnica y comercial de la compañía.",
-    frase: "Si un proceso todavía no conviene automatizar, prefiero decirlo antes de que el cliente invierta.",
-    bloques: [
-      ["lupa",     "Responsabilidad", "Conduce el levantamiento inicial de cada proyecto y define el alcance junto al cliente. Es la contraparte permanente durante toda la ejecución, no solo en la venta."],
-      ["brujula",  "Enfoque",         "Traducir un problema de operación a una solución acotada y medible. Antes de proponer un desarrollo, estima cuánto tiempo o costo libera."],
-      ["martillo", "En qué participa","Está en la primera reunión de todos los proyectos y en las revisiones de avance. Toma las decisiones de arquitectura de producto junto al equipo técnico."],
-      ["entrega",  "Alcance",         "Estrategia técnica, relación comercial y definición de producto."],
-    ],
-    contacto: [["calendario", "Agendar con Joaquín", "/agendar"], ["correo", CORREO, "mailto:" + CORREO]] },
-
-  { slug: "alejandro", nombre: "Alejandro Tobar", rol: "CTO, Co-Fundador", foto: "alejandro.jpg",
-    resumen: "A cargo de bases de datos, integraciones y despliegue. Responsable de que los sistemas se mantengan estables a medida que crece el volumen.",
-    frase: "Las decisiones de base de datos se toman pensando en el volumen del año siguiente, no en el de la demostración.",
-    bloques: [
-      ["codigo",   "Responsabilidad", "Diseño del modelo de datos, integraciones con sistemas externos y puesta en producción. Define cómo se migra un esquema sin detener la operación."],
-      ["brujula",  "Enfoque",         "Sistemas que aguantan crecimiento sin reescribirse. Prefiere una solución aburrida que lleva años funcionando antes que una novedad sin rodaje."],
-      ["martillo", "En qué participa","Toda integración con CRM, ERP o pasarelas de pago, y cada despliegue a producción. Es quien responde cuando algo falla fuera de horario."],
-      ["entrega",  "Alcance",         "Backend, bases de datos, integraciones, despliegue e infraestructura."],
-    ],
-    contacto: [["calendario", "Agendar una reunión", "/agendar"], ["correo", CORREO, "mailto:" + CORREO]] },
-
-  { slug: "maximiliano", nombre: "Maximiliano Pino", rol: "COO y CMO, Co-Fundador", foto: "maximiliano.jpg",
-    resumen: "Responsable de las interfaces y de la experiencia de uso: que el sistema se entienda sin manual y funcione en cualquier dispositivo.",
-    frase: "Una interfaz que necesita capacitación para usarse está mal diseñada.",
-    bloques: [
-      ["codigo",   "Responsabilidad", "Construcción de las interfaces con las que trabaja el usuario final, y de que el sistema se comporte igual en escritorio y en teléfono."],
-      ["brujula",  "Enfoque",         "Que el equipo del cliente entienda el sistema el primer día. La capacitación debería confirmar lo que ya se intuye, no enseñarlo desde cero."],
-      ["martillo", "En qué participa","Diseño de interacción, desarrollo de la interfaz y las revisiones de avance donde el cliente ve el sistema real por primera vez."],
-      ["entrega",  "Alcance",         "Frontend, diseño de interacción y calidad de la experiencia de uso."],
-    ],
-    contacto: [["calendario", "Agendar una reunión", "/agendar"], ["correo", CORREO, "mailto:" + CORREO]] },
-];
+  {
+    "slug": "joaquin",
+    "nombre": "Joaquín Muñoz",
+    "rol": "CEO, Co-Fundador",
+    "foto": "joaquin.jpg",
+    "resumen": "Alegre, optimista y apasionado por su trabajo. Como CEO, Joaquín marca la dirección de Cóndor: conecta lo que quiere construir el cliente con las prioridades y el rumbo del equipo.",
+    "frase": "Entusiasmo para imaginar lo que viene. Dirección para convertirlo en un siguiente paso.",
+    "bloques": [
+      [
+        "brujula",
+        "Su responsabilidad",
+        "Liderar la visión de la empresa, las prioridades de negocio y la relación estratégica con los clientes. Dar dirección sin perder de vista para quién estamos construyendo."
+      ],
+      [
+        "lupa",
+        "Cómo trabaja",
+        "Escucha la idea, pregunta por el objetivo y ayuda a elegir qué vale la pena hacer primero. El entusiasmo abre posibilidades; el foco permite llevarlas a la práctica."
+      ],
+      [
+        "martillo",
+        "Como persona",
+        "Joaco disfruta su trabajo y transmite ese ánimo al equipo. Su mirada optimista ayuda a encontrar una salida y a mantener clara la dirección cuando aparecen decisiones difíciles."
+      ],
+      [
+        "entrega",
+        "Su lugar en el equipo",
+        "Visión y estrategia junto a Alejandro en tecnología y Maximiliano en operación y marketing. Tres responsabilidades que se complementan."
+      ]
+    ]
+  },
+  {
+    "slug": "alejandro",
+    "nombre": "Alejandro Tobar",
+    "rol": "CTO, Co-Fundador",
+    "foto": "alejandro.jpg",
+    "resumen": "La cabeza lógica que mantiene al equipo en balance. Como CTO, Alejandro pone criterio técnico a las ideas: arquitectura, datos e integraciones con una mirada clara sobre su viabilidad.",
+    "frase": "Cada buena idea merece preguntas que la hagan más sólida.",
+    "bloques": [
+      [
+        "codigo",
+        "Su responsabilidad",
+        "Liderar las decisiones técnicas: arquitectura, datos, integraciones e infraestructura. Evaluar las dependencias y los riesgos antes de convertir una idea en un sistema."
+      ],
+      [
+        "brujula",
+        "Cómo trabaja",
+        "Descompone los problemas, revisa los supuestos y busca una solución que tenga sentido mantener. Su mirada aterriza la ambición del proyecto en decisiones concretas."
+      ],
+      [
+        "lupa",
+        "Como persona",
+        "Alejandro aporta lógica y equilibrio. Es la voz que invita a detenerse, mirar los detalles y contrastar una intuición con lo que realmente sabemos."
+      ],
+      [
+        "entrega",
+        "Su lugar en el equipo",
+        "Conecta la dirección de negocio con la implementación técnica y acompaña al equipo en las decisiones que sostienen cada desarrollo."
+      ]
+    ]
+  },
+  {
+    "slug": "maximiliano",
+    "nombre": "Maximiliano Pino",
+    "rol": "COO y CMO, Co-Fundador",
+    "foto": "maximiliano.jpg",
+    "resumen": "Le encanta lo que hace y lo lleva a la ejecución. Como COO y CMO, Maximiliano conecta la operación con el marketing: cómo nos organizamos, cómo comunicamos y cómo acompañamos el crecimiento de Cóndor.",
+    "frase": "Una idea cobra valor cuando logramos organizarla, comunicarla y hacerla avanzar.",
+    "bloques": [
+      [
+        "brujula",
+        "Su responsabilidad",
+        "Coordinar la operación, las prioridades de ejecución y la estrategia de marketing. Conectar lo que prometemos con la forma en que el equipo se organiza para entregarlo."
+      ],
+      [
+        "martillo",
+        "Cómo trabaja",
+        "Une procesos y comunicación: dar claridad al siguiente paso, alinear al equipo y hacer que la propuesta de Cóndor sea entendible para quienes la necesitan."
+      ],
+      [
+        "lupa",
+        "Como persona",
+        "Max comparte con Joaco el gusto genuino por su trabajo. Esa energía se expresa en las ganas de involucrarse, construir y seguir mejorando lo que hacemos."
+      ],
+      [
+        "entrega",
+        "Su lugar en el equipo",
+        "Operación y marketing en coordinación con la dirección de Joaquín y el criterio técnico de Alejandro."
+      ]
+    ]
+  }
+].map(p => ({...p, contacto: [["calendario", "Agendar una reunión", "/agendar"], ["correo", CORREO, "mailto:" + CORREO]]}));
 
 const OFICINA = `
   <div class="oficina-dos">
@@ -781,7 +840,7 @@ const tarjetasEquipo = PERSONAS.map((p) => `
     </article>`).join("");
 
 const escribir = (ruta, html) => {
-  for (const product of ['ecommerce','media','track','agents']) html = html.replaceAll(`/assets/productos/condor-${product}.png`, `/assets/productos/condor-${product}-app.png`);
+  for (const product of ['ecommerce','media','track','agents']) html = html.replaceAll(`/assets/productos/condor-${product}.png`, `/assets/productos/condor-${product}${['media','track'].includes(product)?'-v3':'-app'}.png`);
   const destino = join(PUB, ruta);
   mkdirSync(dirname(destino), { recursive: true });
   // Authored blog HTML is also an input: normalize previous build wrappers.
@@ -1057,57 +1116,7 @@ escribir("productos/media/index.html", cab({
    página describe la línea de servicio, no casos puntuales. Ampliada el
    3-sept (segunda ronda) con hero de marca, ejemplos concretos de uso y
    dos vías de contacto en vez de una sola. */
-escribir("productos/track/index.html", cab({
-  titulo: "Cóndor Track — condor.ai",
-  desc: "Software y paneles de operación a medida: ERPs, integraciones y automatizaciones para procesos que ya existen en su empresa.",
-  ruta: "/productos/track/",
-}) + heroLinea({
-  logo: "/assets/productos/condor-track.png",
-  nombre: "Cóndor Track",
-  gradiente: "linear-gradient(135deg,#0f1f6b 0%,#2747ff 100%)",
-  bajada: "El tiempo de tu equipo merece estar en lo que aporta. Primero entendemos cómo trabajan; después diseñamos el software que tiene sentido construir. Desde $84.990 CLP: valor inicial referencial sujeto a alcance, impuestos y forma de pago acordados en la cotización.",
-}) + `
-<section style="padding-bottom:clamp(40px,5vw,56px)"><div class="wrap dos-col">
-  <div><h2>Para qué sirve</h2></div>
-  <div>
-    <p>Cuando una planilla o un proceso manual ya no aguanta el volumen del negocio, construimos el sistema que lo reemplaza. No es una plantilla configurada: cada Cóndor Track se diseña sobre el proceso real de la empresa, con acceso y datos que quedan a nombre del cliente.</p>
-    <div class="hechos" style="margin-top:24px">
-      <div class="hecho"><b>Control de stock</b><span>Entradas, salidas y alertas en un solo panel</span></div>
-      <div class="hecho"><b>Seguimiento de pedidos</b><span>Desde que se venden hasta que se entregan</span></div>
-      <div class="hecho"><b>Panel de ventas</b><span>Cifras reales, sin planillas paralelas</span></div>
-      <div class="hecho"><b>Integraciones</b><span>Conecta los sistemas que su empresa ya usa</span></div>
-    </div>
-  </div>
-</div></section>
-
-<section style="padding-bottom:clamp(56px,7vw,96px)"><div class="wrap">
-  <h2>Qué queda al terminar</h2>
-  <div class="lista">
-    <article class="fila"><div class="marca-fila">${icono("panel")}<span class="n">01</span></div>
-      <div><h3>Un panel propio</h3><p class="desc">Diseñado sobre su proceso real, no una plantilla genérica adaptada a la fuerza.</p></div></article>
-    <article class="fila"><div class="marca-fila">${icono("entrega")}<span class="n">02</span></div>
-      <div><h3>Propiedad completa</h3><p class="desc">Código, datos y accesos a nombre de su empresa, sin dependencia de nosotros para seguir operando.</p></div></article>
-    <article class="fila"><div class="marca-fila">${icono("martillo")}<span class="n">03</span></div>
-      <div><h3>Soporte posterior</h3><p class="desc">Acordado por contrato, con tiempos de respuesta definidos para cuando algo falla.</p></div></article>
-  </div>
-</div></section>
-
-<section class="seccion oscura"><div class="wrap">
-  <h2 style="margin-top:20px">Cómo se construye</h2>
-  <div class="pasos" style="margin-top:24px;background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.1)">
-    <div class="paso" style="background:var(--navy-3)"><div class="n">ETAPA 01</div><h3>Levantamiento</h3>
-      <p>Una reunión inicial para entender el proceso y su contexto. Se entrega un alcance escrito con supuestos, plazos y costo antes de comenzar.</p></div>
-    <div class="paso" style="background:var(--navy-3)"><div class="n">ETAPA 02</div><h3>Desarrollo</h3>
-      <p>Avances revisables de forma periódica sobre el sistema real, no sobre maquetas. Las correcciones se incorporan antes de que sean costosas.</p></div>
-    <div class="paso" style="background:var(--navy-3)"><div class="n">ETAPA 03</div><h3>Entrega y soporte</h3>
-      <p>Puesta en producción, documentación y capacitación. La propiedad y los accesos quedan a nombre del cliente, con soporte posterior acordado.</p></div>
-  </div>
-  <div class="hero-cta" style="margin-top:36px">
-    <a class="btn btn-primario" href="/agendar">Agendar diagnóstico →</a>
-    <a class="btn btn-linea" href="/contacto/">Otras vías de contacto</a>
-  </div>
-</div></section>
-` + cierre("¿Cotizamos su sistema?") + pie.replace("</body>", JS_COMUN + "</body>"));
+escribir("productos/track/index.html", trackLanding({cab,pie,jsComun:JS_COMUN}));
 
 /* ── CÓNDOR AGENTS (hub) ──────────────────────────────────────────────
    "Agentes IA" en el menú apunta acá, no directo a Bárbara: a futuro esta
@@ -1127,7 +1136,7 @@ escribir("productos/agentes/index.html", cab({
 
 ${barbaraShowcase}
 <section class="agents-coming"><div class="wrap"><p class="kicker">LA FAMILIA SIGUE CRECIENDO</p><h2>Lo próximo está en camino.</h2><div class="agents-slots"><article><span aria-hidden="true">01</span><h3>PRÓXIMAMENTE</h3><p>Un nuevo agente de Cóndor.</p></article><article><span aria-hidden="true">02</span><h3>PRÓXIMAMENTE</h3><p>Un nuevo agente de Cóndor.</p></article></div></div></section>
-<script src="/rediseno/barbara-currency.js?v=20260909" defer></script>
+<script src="/rediseno/barbara-currency.js?v=3" defer></script>
 ` + cierre("¿Conversamos sobre agentes para su empresa?") + pie.replace("</body>", JS_COMUN + "</body>"));
 
 /* ── EQUIPO ─────────────────────────────────────────────────────────── */
@@ -1138,7 +1147,7 @@ escribir("equipo/index.html", cab({
 }) + `
 <section class="cabecera section-banner banner-team"><div class="wrap">
   <h1>Las personas detrás de lo que construimos.</h1>
-  <p class="bajada">Tres miradas, un mismo compromiso. Conversas con quienes toman las decisiones y hacen avanzar tu proyecto.</p>
+  <p class="bajada">Tres cofundadores, responsabilidades complementarias y más de 10 empleados trabajando en nuestros proyectos.</p>
 </div></section>
 
 <section class="seccion oscura" style="border-top:0"><div class="wrap">
@@ -1171,7 +1180,7 @@ ${p.contacto.map(([ic, txt, url]) => `        <a class="btn ${ic === "calendario
 </div></section>
 
 <section class="seccion"><div class="wrap">
-  <blockquote class="frase">${p.frase}</blockquote>
+  <p class="frase">${p.frase}</p>
   <div class="lista">
 ${p.bloques.map(([ic, titulo, texto]) => `    <article class="fila">
       <div class="marca-fila">${icono(ic)}</div>

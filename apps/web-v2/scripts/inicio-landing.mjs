@@ -7,7 +7,7 @@ const solutions = [
   { id: 'sites', need: 'Quiero una web\nque me represente.', name: 'Cóndor Sites', text: 'Un lugar propio para mostrar lo que haces y hacer más fácil que te contacten. Nosotros lo diseñamos, publicamos y mantenemos.', includes: 'Diseño personalizado · hosting · soporte', cta: 'Ver el plan de Sites' },
   { id: 'ecommerce', need: 'Quiero vender\npor internet.', name: 'Cóndor Ecommerce', text: 'Una tienda para que tus productos encuentren a sus próximos clientes. Si quieres acompañarla con publicidad, también podemos gestionar campañas de paid media de forma opcional.', includes: 'Tienda online · pagos · publicidad opcional', cta: 'Conocer Ecommerce' },
   { id: 'media', need: 'Quiero contenido\na la altura de mi marca.', name: 'Cóndor Media', text: 'Fotos, videos y piezas para comunicar mejor lo que vendes. Definimos la producción según tu marca, tus canales y tu campaña.', includes: 'Producción visual · piezas para campañas', cta: 'Ver calculadora de precios' },
-  { id: 'track', need: 'Quiero dejar atrás\nlas tareas manuales.', name: 'Cóndor Track', text: 'Si las planillas y los procesos desconectados ya no alcanzan, construimos software a medida para ordenar el trabajo de tu empresa.', includes: 'Software a medida · procesos · integraciones', cta: 'Explorar una solución' },
+  { id: 'track', need: 'Quiero darle continuidad\na cada cliente.', name: 'Cóndor Track', text: 'Cada conversación merece un siguiente paso. Construimos un CRM a medida para reunir clientes, oportunidades y tareas según la forma de trabajar de tu equipo.', includes: 'CRM a medida · seguimiento · integraciones', cta: 'Explorar una solución' },
 ];
 
 export function inicioLanding({ cab, pie, jsComun, personas, wsp }) {
@@ -66,7 +66,7 @@ export function inicioLanding({ cab, pie, jsComun, personas, wsp }) {
   </div></section>
 
   <section class="hm-section hm-team" id="equipo"><div class="hm-wrap hm-team-grid">
-    <div><p class="hm-eyebrow">04 / Personas detrás de la tecnología</p><h2>Un equipo.<br><span>Del otro lado.</span></h2><p>Hablamos contigo, construimos y revisamos. La tecnología nos ayuda a avanzar; las decisiones y el acompañamiento siguen en manos de personas.</p><a class="hm-text-link" href="/equipo/">Conoce al equipo ${arrow}</a></div>
+    <div><p class="hm-eyebrow">04 / Personas detrás de la tecnología</p><h2>Un equipo.<br><span>Del otro lado.</span></h2><p>Más de 10 empleados trabajan en nuestros proyectos. Hablamos contigo, construimos y revisamos: la tecnología nos ayuda a avanzar; las decisiones y el acompañamiento siguen en manos de personas.</p><a class="hm-text-link" href="/equipo/">Conoce al equipo ${arrow}</a></div>
     <div class="hm-people">${personas.map(p=>`<figure><a href="/equipo/${p.slug}.html" aria-label="Conocer a ${p.nombre}"><img src="/assets/${p.foto}" alt="${p.nombre}" width="300" height="380" loading="lazy" /></a><figcaption>${p.nombre}<span>${p.rol}</span></figcaption></figure>`).join('')}</div>
   </div></section>
 
