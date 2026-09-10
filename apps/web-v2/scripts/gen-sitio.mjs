@@ -287,6 +287,15 @@ const pie = `
       <a href="mailto:${CORREO}">${CORREO}</a>
       <a href="https://wa.me/${WSP}" target="_blank" rel="noopener">WhatsApp ${WSP_VISIBLE}</a>
       <a href="/acceso">Portal de clientes</a></div>
+    <div><h4>Ubicación</h4>
+      <p class="pie-dir"><b>Oficina</b><br>Kennedy 5600, of. 507, Vitacura<br>
+        <span class="pie-dir-ref">Metro Cerro Colorado – Rosario Norte</span></p>
+      <p class="pie-dir"><b>Domicilio tributario (SII)</b><br>Gral del Canto 281, Providencia</p>
+      <div class="pie-mapa">
+        <iframe src="https://www.google.com/maps?q=Kennedy+5600,+Vitacura,+Santiago,+Chile&output=embed"
+          width="100%" height="150" style="border:0" loading="lazy" referrerpolicy="no-referrer-when-downgrade"
+          title="Ubicación de la oficina de Cóndor AI en Vitacura"></iframe>
+      </div></div>
   </div>
   ${socialLinks}
   <div class="legal"><span>© 2026 condor.ai · Santiago, Chile</span><span>Todos los derechos reservados</span></div>
@@ -570,32 +579,102 @@ const JS_AGENDA = `
 <script>
 (() => {
   const FN = "https://ogmvdthxwcmvqjlxhpsr.supabase.co/functions/v1/agendar-publico";
+  const FN_DISP = "https://ogmvdthxwcmvqjlxhpsr.supabase.co/functions/v1/disponibilidad";
   const ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9nbXZkdGh4d2NtdnFqbHhocHNyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE2NDEwMTksImV4cCI6MjA5NzIxNzAxOX0.wo6zSUlMejjYu1hSweZcWEBBdCvBgVNWg3xtLzFTIrI";
-  const sel = document.getElementById("ag_hora");
-  if (!sel) return;
-  // Tramos de 30 min, de 09:00 a 20:30.
-  for (let h = 9; h <= 20; h++) for (const m of [0, 30]) {
-    const v = String(h).padStart(2, "0") + ":" + String(m).padStart(2, "0");
-    const o = document.createElement("option"); o.value = v; o.textContent = v; sel.appendChild(o);
-  }
-  const fIn = document.getElementById("ag_fecha");
-  fIn.min = new Date().toISOString().slice(0, 10);
-  fIn.max = new Date(Date.now() + 60 * 86400000).toISOString().slice(0, 10);
+  const cal = document.getElementById("agCal");
+  if (!cal) return;
 
   const $ = (id) => document.getElementById(id);
+  const fFecha = $("ag_fecha"), fHora = $("ag_hora"), agBtn = $("agBtn"), elegido = $("agCalElegido");
+  const diasEl = $("agCalDias"), horasEl = $("agCalHoras"), mesEl = $("agCalMes"), antBtn = $("agCalAnt"), sigBtn = $("agCalSig");
+
+  const MESES = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+  const pad2 = (n) => String(n).padStart(2, "0");
+  const ymd = (y, m, d) => y + "-" + pad2(m) + "-" + pad2(d);
+  const diasEnMes = (y, m) => new Date(y, m, 0).getDate();  // m es 1..12
+
+  const hoy = new Date();
+  const hoyYMD = ymd(hoy.getFullYear(), hoy.getMonth() + 1, hoy.getDate());
+  const limite = new Date(hoy.getTime() + 60 * 86400000);
+  const limiteYMD = ymd(limite.getFullYear(), limite.getMonth() + 1, limite.getDate());
+
+  let vistaY = hoy.getFullYear(), vistaM = hoy.getMonth() + 1;  // 1..12
+  let fechaSel = "", horaSel = "";
+
+  function pintarMes() {
+    mesEl.textContent = MESES[vistaM - 1] + " " + vistaY;
+    antBtn.disabled = vistaY === hoy.getFullYear() && vistaM === hoy.getMonth() + 1;
+    sigBtn.disabled = vistaY === limite.getFullYear() && vistaM === limite.getMonth() + 1;
+
+    diasEl.innerHTML = "";
+    const primerDow = (new Date(vistaY, vistaM - 1, 1).getDay() + 6) % 7;  // 0 = lunes
+    for (let i = 0; i < primerDow; i++) {
+      const v = document.createElement("span"); v.className = "ag-cal-dia ag-cal-dia-vacio"; diasEl.appendChild(v);
+    }
+    const total = diasEnMes(vistaY, vistaM);
+    for (let d = 1; d <= total; d++) {
+      const f = ymd(vistaY, vistaM, d);
+      const dow = new Date(vistaY, vistaM - 1, d).getDay();  // 0 = domingo
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "ag-cal-dia"; b.textContent = String(d);
+      const fueraDeRango = f < hoyYMD || f > limiteYMD;
+      if (fueraDeRango || dow === 0) b.disabled = true;
+      if (f === fechaSel) b.classList.add("ag-cal-dia-on");
+      b.addEventListener("click", () => elegirDia(f));
+      diasEl.appendChild(b);
+    }
+  }
+
+  async function elegirDia(f) {
+    fechaSel = f; horaSel = ""; fHora.value = ""; fFecha.value = f;
+    agBtn.disabled = true;
+    pintarMes();  // reencuadra el día elegido con la clase "on"
+    horasEl.hidden = false;
+    horasEl.innerHTML = '<p class="ag-cal-cargando">Cargando horas disponibles…</p>';
+    elegido.textContent = "Cargando disponibilidad para el " + f.split("-").reverse().join("-") + "…";
+
+    let ocupadas = [];
+    try {
+      const r = await fetch(FN_DISP + "?fecha=" + f, { headers: { apikey: ANON, Authorization: "Bearer " + ANON } });
+      const j = await r.json();
+      if (r.ok && j.ok) ocupadas = j.ocupadas || [];
+    } catch (_e) { /* si falla, se muestran todas las horas sin marcar ocupadas */ }
+
+    horasEl.innerHTML = "";
+    const ahoraMin = (f === hoyYMD) ? (new Date().getTime() + 30 * 60000) : 0;
+    for (let h = 9; h <= 20; h++) for (const m of [0, 30]) {
+      const v = pad2(h) + ":" + pad2(m);
+      const bloque = document.createElement("button");
+      bloque.type = "button"; bloque.className = "ag-cal-hora"; bloque.textContent = v;
+      const enElPasado = f === hoyYMD && new Date(f + "T" + v + ":00").getTime() < ahoraMin;
+      if (ocupadas.includes(v) || enElPasado) bloque.disabled = true;
+      bloque.addEventListener("click", () => {
+        horaSel = v; fHora.value = v;
+        [...horasEl.children].forEach((x) => x.classList.remove("ag-cal-hora-on"));
+        bloque.classList.add("ag-cal-hora-on");
+        elegido.textContent = "Elegiste el " + f.split("-").reverse().join("-") + " a las " + v + ".";
+        agBtn.disabled = false;
+      });
+      horasEl.appendChild(bloque);
+    }
+  }
+
+  antBtn.addEventListener("click", () => { vistaM--; if (vistaM < 1) { vistaM = 12; vistaY--; } pintarMes(); });
+  sigBtn.addEventListener("click", () => { vistaM++; if (vistaM > 12) { vistaM = 1; vistaY++; } pintarMes(); });
+  pintarMes();
+
   const msg = $("agMsg");
   document.getElementById("agForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     msg.className = "ag-msg"; msg.textContent = "";
-    const fecha = fIn.value;
-    if (new Date(fecha + "T12:00:00").getDay() === 0) {
-      msg.className = "ag-msg mal"; msg.textContent = "Atendemos de lunes a sábado. Elija otro día."; return;
+    if (!fFecha.value || !fHora.value) {
+      msg.className = "ag-msg mal"; msg.textContent = "Elige un día y una hora."; return;
     }
     const body = {
       nombre: $("ag_nombre").value, whatsapp: $("ag_wsp").value, email: $("ag_email").value,
-      mensaje: $("ag_msg").value, fecha, hora: $("ag_hora").value, website: $("ag_web").value,
+      mensaje: $("ag_msg").value, fecha: fFecha.value, hora: fHora.value, website: $("ag_web").value,
     };
-    $("agBtn").disabled = true; msg.textContent = "Agendando…";
+    agBtn.disabled = true; msg.textContent = "Agendando…";
     try {
       const r = await fetch(FN, { method: "POST",
         headers: { "Content-Type": "application/json", apikey: ANON, Authorization: "Bearer " + ANON },
@@ -608,11 +687,11 @@ const JS_AGENDA = `
           '<a class="btn btn-linea" href="/">Volver al inicio</a></div>';
       } else {
         msg.className = "ag-msg mal"; msg.textContent = j.error || "No se pudo agendar. Intente de nuevo.";
-        $("agBtn").disabled = false;
+        agBtn.disabled = false;
       }
     } catch (_e) {
       msg.className = "ag-msg mal"; msg.textContent = "Error de conexión. Intente de nuevo.";
-      $("agBtn").disabled = false;
+      agBtn.disabled = false;
     }
   });
 })();
@@ -1274,22 +1353,28 @@ escribir("agendar/index.html", cab({
       <label for="ag_email">Correo</label>
       <input id="ag_email" name="email" type="email" maxlength="120" required placeholder="tucorreo@empresa.cl" />
     </div>
-    <div class="ag-dos">
-      <div class="ag-campo">
-        <label for="ag_fecha">Fecha</label>
-        <input id="ag_fecha" name="fecha" type="date" required />
+    <div class="ag-campo">
+      <label>Día y hora</label>
+      <div class="ag-cal" id="agCal">
+        <div class="ag-cal-head">
+          <button type="button" class="ag-cal-nav" id="agCalAnt" aria-label="Mes anterior">←</button>
+          <span class="ag-cal-mes" id="agCalMes"></span>
+          <button type="button" class="ag-cal-nav" id="agCalSig" aria-label="Mes siguiente">→</button>
+        </div>
+        <div class="ag-cal-semana"><span>L</span><span>M</span><span>M</span><span>J</span><span>V</span><span>S</span><span>D</span></div>
+        <div class="ag-cal-dias" id="agCalDias"></div>
+        <div class="ag-cal-horas" id="agCalHoras" hidden></div>
       </div>
-      <div class="ag-campo">
-        <label for="ag_hora">Hora</label>
-        <select id="ag_hora" name="hora" required></select>
-      </div>
+      <p class="ag-cal-elegido" id="agCalElegido">Elige un día para ver las horas disponibles.</p>
+      <input type="hidden" id="ag_fecha" name="fecha" required />
+      <input type="hidden" id="ag_hora" name="hora" required />
     </div>
     <div class="ag-campo">
       <label for="ag_msg">Cuéntenos brevemente sobre su empresa <span>(opcional)</span></label>
       <textarea id="ag_msg" name="mensaje" maxlength="600" rows="4" placeholder="Qué proceso le está costando tiempo o dinero"></textarea>
     </div>
     <input id="ag_web" name="website" type="text" tabindex="-1" autocomplete="off" aria-hidden="true" />
-    <button class="btn btn-primario" type="submit" id="agBtn">Agendar la reunión</button>
+    <button class="btn btn-primario" type="submit" id="agBtn" disabled>Agendar la reunión</button>
     <p id="agMsg" class="ag-msg" role="status" aria-live="polite"></p>
   </form>
 

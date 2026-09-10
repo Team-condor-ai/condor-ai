@@ -331,6 +331,11 @@ img.logo{width:auto;flex:none;max-width:none}
   font-family:var(--body);font-weight:700;margin-bottom:14px}
 .pie a{display:block;padding:5px 0;color:var(--on-navy-2);font-size:14.5px}
 .pie a:hover{color:#fff}
+.pie-dir{font-size:13.5px;line-height:1.55;color:var(--on-navy-2);margin-bottom:12px}
+.pie-dir b{display:block;font-size:12px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--on-navy-3);font-weight:700;margin-bottom:3px}
+.pie-dir-ref{color:var(--on-navy-3);font-size:12.5px}
+.pie-mapa{border-radius:var(--r);overflow:hidden;line-height:0;filter:saturate(.9) brightness(.96)}
 .legal{margin-top:44px;padding-top:22px;border-top:1px solid rgba(255,255,255,.1);
   display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--on-navy-3)}
 @media(max-width:900px){.pie-cols{grid-template-columns:1fr 1fr}}
@@ -1112,6 +1117,40 @@ body.cajon-abierto .cajon{transform:none}
   .ag-grid{grid-template-columns:1fr;gap:34px}
   .ag-lado{order:-1}   /* qué pasa después, ANTES de pedir los datos */
 }
+
+/* ── Agendar: calendario de disponibilidad ─────────────────────────────
+   Reemplaza el <select> ciego por día+hora reales: se consulta la Edge
+   Function "disponibilidad" y las horas ya tomadas quedan tachadas. */
+.ag-cal{border:1.5px solid var(--linea);border-radius:var(--r);padding:14px;background:#fff}
+.ag-cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.ag-cal-mes{font-family:var(--display);font-weight:700;font-size:14.5px;text-transform:capitalize}
+.ag-cal-nav{width:30px;height:30px;border:1.5px solid var(--linea);border-radius:50%;background:#fff;
+  font-size:15px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  color:var(--ink);transition:background .14s var(--ease),border-color .14s var(--ease)}
+.ag-cal-nav:hover:not(:disabled){background:var(--papel-2);border-color:var(--azul)}
+.ag-cal-nav:disabled{opacity:.3;cursor:default}
+.ag-cal-semana{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:4px}
+.ag-cal-semana span{text-align:center;font-size:11px;font-weight:700;letter-spacing:.04em;
+  text-transform:uppercase;color:var(--ink-3)}
+.ag-cal-dias{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.ag-cal-dia{aspect-ratio:1;min-height:34px;border:none;border-radius:8px;background:transparent;
+  font-size:13.5px;font-family:var(--body);color:var(--ink);cursor:pointer;
+  transition:background .14s var(--ease),color .14s var(--ease)}
+.ag-cal-dia:hover:not(:disabled):not(.ag-cal-dia-on){background:var(--papel-2)}
+.ag-cal-dia:disabled{color:var(--linea);cursor:default}
+.ag-cal-dia-vacio{visibility:hidden;cursor:default}
+.ag-cal-dia-on{background:var(--azul);color:#fff;font-weight:700}
+.ag-cal-horas{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:6px;
+  margin-top:14px;padding-top:14px;border-top:1px solid var(--linea)}
+.ag-cal-cargando{grid-column:1/-1;font-size:13.5px;color:var(--ink-3)}
+.ag-cal-hora{min-height:40px;border:1.5px solid var(--linea);border-radius:var(--r);background:#fff;
+  padding:8px 4px;font-size:13px;font-weight:600;font-family:var(--body);color:var(--ink);cursor:pointer;
+  transition:border-color .14s var(--ease),background .14s var(--ease),color .14s var(--ease)}
+.ag-cal-hora:hover:not(:disabled){border-color:var(--azul)}
+.ag-cal-hora:disabled{color:var(--ink-3);background:var(--papel-2);text-decoration:line-through;
+  cursor:default;opacity:.55}
+.ag-cal-hora-on{background:var(--azul);border-color:var(--azul);color:#fff}
+.ag-cal-elegido{font-size:13.5px;color:var(--ink-2);margin-top:9px;min-height:18px}
 
 /* ══════════════════════════════════════════════════════════════════════
    Carrusel en teléfono: pista deslizante
