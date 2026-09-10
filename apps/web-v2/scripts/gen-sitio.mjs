@@ -578,9 +578,9 @@ const JS_COMUN = `
 const JS_AGENDA = `
 <script>
 (() => {
-  const FN = "https://ogmvdthxwcmvqjlxhpsr.supabase.co/functions/v1/agendar-publico";
-  const FN_DISP = "https://ogmvdthxwcmvqjlxhpsr.supabase.co/functions/v1/disponibilidad";
-  const ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9nbXZkdGh4d2NtdnFqbHhocHNyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE2NDEwMTksImV4cCI6MjA5NzIxNzAxOX0.wo6zSUlMejjYu1hSweZcWEBBdCvBgVNWg3xtLzFTIrI";
+  const FN = "https://ylsqvmggycfijzfvguzq.supabase.co/functions/v1/agendar-publico";
+  const FN_DISP = "https://ylsqvmggycfijzfvguzq.supabase.co/functions/v1/disponibilidad";
+  const ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlsc3F2bWdneWNmaWp6ZnZndXpxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczNjE3OTgsImV4cCI6MjEwMjkzNzc5OH0.w1LABnzrOIgJ-UHelPF2A2kXCqDzDYPQK-5oV_o6VPk";
   const cal = document.getElementById("agCal");
   if (!cal) return;
 
