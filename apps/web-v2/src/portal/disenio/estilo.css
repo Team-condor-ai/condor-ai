@@ -117,6 +117,7 @@ main{flex:1;min-width:0;min-height:100vh;min-height:100dvh;padding:12px 14px 24p
 .icono-btn:hover{background:var(--hover);color:var(--texto)}
 .icono-btn.peligro{color:var(--mal-tx)}
 .icono-btn.peligro:hover{background:var(--mal-bg);border-color:var(--mal-bd);color:var(--mal-tx)}
+.icono-btn.chico{width:26px;height:26px;border-radius:7px}
 .btn{display:inline-flex;align-items:center;gap:7px;padding:8px 14px;border-radius:9px;
   cursor:pointer;font-size:13px;font-weight:550;border:1px solid var(--borde);background:var(--panel)}
 .btn:hover{background:var(--hover)}

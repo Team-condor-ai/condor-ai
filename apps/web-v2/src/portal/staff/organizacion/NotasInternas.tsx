@@ -10,49 +10,792 @@ const nombreCliente = (cliente: Cliente) => cliente.negocio || cliente.nombre ||
 const iniciales = (texto: string) => texto.split(/\s+/).filter(Boolean).slice(0, 2).map((x) => x[0]).join("").toUpperCase();
 const copiar = (valor: string) => void navigator.clipboard?.writeText(valor);
 
+/** El id de un módulo y todos sus descendientes, incluido él mismo — así
+ * seleccionar o contar un módulo grande incluye lo que vive en sus
+ * submódulos, no solo lo asignado directamente a él. */
+function descendientesDe(id: string, lista: ModuloCuenta[]): string[] {
+  const hijos = lista.filter((m) => m.parent_id === id);
+  return [id, ...hijos.flatMap((h) => descendientesDe(h.id, lista))];
+}
+function profundidadDe(m: ModuloCuenta, porId: Map<string, ModuloCuenta>): number {
+  let profundidad = 0;
+  let actual: ModuloCuenta | undefined = m;
+  while (actual?.parent_id) {
+    profundidad++;
+    actual = porId.get(actual.parent_id);
+  }
+  return profundidad;
+}
+/** Prefijo visual para listas planas (selects) que igual deben leerse como
+ * árbol: sangría por nivel + "└" en cualquier submódulo. */
+function prefijoModulo(m: ModuloCuenta, lista: ModuloCuenta[]): string {
+  const porId = new Map(lista.map((x) => [x.id, x]));
+  const profundidad = profundidadDe(m, porId);
+  return "  ".repeat(Math.max(0, profundidad - 1)) + (m.parent_id ? "└ " : "");
+}
+
 /** Centro operativo: las cuentas se encuentran por módulo y función, no por
  * recordar en qué tarjeta dispersa se guardó cada login. */
 export function NotasInternas() {
   const confirmar = useConfirmacion();
-  const [items, setItems] = useState<NotaInterna[]>([]); const [modulos, setModulos] = useState<ModuloCuenta[]>([]); const [clientes, setClientes] = useState<Cliente[]>([]); const [equipo, setEquipo] = useState<MiembroEquipo[]>([]);
-  const [cargando, setCargando] = useState(true); const [error, setError] = useState(""); const [seccion, setSeccion] = useState<Seccion>("cuentas"); const [busca, setBusca] = useState(""); const [moduloActivo, setModuloActivo] = useState("todos");
-  const [seleccionada, setSeleccionada] = useState<NotaInterna | null>(null); const [editorCuenta, setEditorCuenta] = useState<NotaInterna | "nueva" | null>(null); const [editorRegistro, setEditorRegistro] = useState<"nota" | "archivo" | null>(null); const [editorModulo, setEditorModulo] = useState<ModuloCuenta | "nueva" | null>(null); const [agregandoPersona, setAgregandoPersona] = useState(false); const [arrastrada, setArrastrada] = useState<string | null>(null);
+  const [items, setItems] = useState<NotaInterna[]>([]);
+  const [modulos, setModulos] = useState<ModuloCuenta[]>([]);
+  const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [equipo, setEquipo] = useState<MiembroEquipo[]>([]);
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState("");
+  const [seccion, setSeccion] = useState<Seccion>("cuentas");
+  const [busca, setBusca] = useState("");
+  const [moduloActivo, setModuloActivo] = useState("todos");
+  const [expandidos, setExpandidos] = useState<Set<string>>(new Set());
+  const [seleccionada, setSeleccionada] = useState<NotaInterna | null>(null);
+  const [editorCuenta, setEditorCuenta] = useState<NotaInterna | "nueva" | null>(null);
+  const [editorRegistro, setEditorRegistro] = useState<"nota" | "archivo" | null>(null);
+  const [editorModulo, setEditorModulo] = useState<ModuloCuenta | "nueva" | null>(null);
+  const [padreSugerido, setPadreSugerido] = useState("");
+  const [agregandoPersona, setAgregandoPersona] = useState(false);
+  const [arrastrada, setArrastrada] = useState<string | null>(null);
+
   async function cargar() {
     setCargando(true);
     const [info, grupos, cartera, personas] = await Promise.all([
-      sb.from("notas_internas").select("*").order("actualizado_en", { ascending: false }), sb.from("modulos_cuentas").select("*").order("orden").order("nombre"), sb.from("clientes").select("id,nombre,negocio,email").order("negocio"), sb.from("admins").select("email,nombre").order("nombre"),
+      sb.from("notas_internas").select("*").order("actualizado_en", { ascending: false }),
+      sb.from("modulos_cuentas").select("*").order("orden").order("nombre"),
+      sb.from("clientes").select("id,nombre,negocio,email").order("negocio"),
+      sb.from("admins").select("email,nombre").order("nombre"),
     ]);
     const fallos = [info.error, grupos.error, cartera.error, personas.error].filter(Boolean);
-    setError(fallos.length ? `No se pudo cargar el Centro operativo: ${fallos[0]?.message}` : ""); setItems((info.data ?? []) as NotaInterna[]); setModulos((grupos.data ?? []) as ModuloCuenta[]); setClientes((cartera.data ?? []) as Cliente[]); setEquipo((personas.data ?? []) as MiembroEquipo[]); setCargando(false);
+    setError(fallos.length ? `No se pudo cargar el Centro operativo: ${fallos[0]?.message}` : "");
+    setItems((info.data ?? []) as NotaInterna[]);
+    setModulos((grupos.data ?? []) as ModuloCuenta[]);
+    setClientes((cartera.data ?? []) as Cliente[]);
+    setEquipo((personas.data ?? []) as MiembroEquipo[]);
+    setCargando(false);
   }
-  useEffect(() => { const timer = window.setTimeout(() => void cargar(), 0); return () => window.clearTimeout(timer); }, []);
+  useEffect(() => {
+    const timer = window.setTimeout(() => void cargar(), 0);
+    return () => window.clearTimeout(timer);
+  }, []);
+
   const cuentas = useMemo(() => items.filter((item) => item.tipo === "cuenta"), [items]);
-  const cuentasPorModulo = useMemo(() => { const conteos = new Map<string, number>(); cuentas.forEach((cuenta) => { const clave = cuenta.modulo_cuenta_id || SIN_MODULO; conteos.set(clave, (conteos.get(clave) ?? 0) + 1); }); return conteos; }, [cuentas]);
-  const clientesPorId = useMemo(() => new Map(clientes.map((cliente) => [cliente.id, cliente])), [clientes]); const moduloPorId = useMemo(() => new Map(modulos.map((modulo) => [modulo.id, modulo])), [modulos]);
-  const textoEncontrable = (item: NotaInterna) => { const datos = item.datos_cuenta; const cliente = item.cliente_id ? clientesPorId.get(item.cliente_id) : undefined; const modulo = item.modulo_cuenta_id ? moduloPorId.get(item.modulo_cuenta_id) : undefined; return [item.titulo, item.contenido, item.categoria, datos?.entidad, datos?.titular, datos?.usuario, datos?.url, cliente && nombreCliente(cliente), modulo?.nombre].filter(Boolean).join(" ").toLowerCase(); };
-  const cuentasVisibles = cuentas.filter((cuenta) => (moduloActivo === "todos" || (cuenta.modulo_cuenta_id || SIN_MODULO) === moduloActivo) && (!busca.trim() || textoEncontrable(cuenta).includes(busca.trim().toLowerCase())));
+  const cuentasPorModulo = useMemo(() => {
+    const conteos = new Map<string, number>();
+    cuentas.forEach((cuenta) => {
+      const clave = cuenta.modulo_cuenta_id || SIN_MODULO;
+      conteos.set(clave, (conteos.get(clave) ?? 0) + 1);
+    });
+    return conteos;
+  }, [cuentas]);
+  const clientesPorId = useMemo(() => new Map(clientes.map((c) => [c.id, c])), [clientes]);
+  const moduloPorId = useMemo(() => new Map(modulos.map((m) => [m.id, m])), [modulos]);
+  const hijosPorPadre = useMemo(() => {
+    const mapa = new Map<string, ModuloCuenta[]>();
+    modulos.forEach((m) => {
+      const clave = m.parent_id || "";
+      if (!mapa.has(clave)) mapa.set(clave, []);
+      mapa.get(clave)!.push(m);
+    });
+    return mapa;
+  }, [modulos]);
+  const raiz = hijosPorPadre.get("") ?? [];
+  const descendientesPorModulo = useMemo(() => {
+    const mapa = new Map<string, string[]>();
+    modulos.forEach((m) => mapa.set(m.id, descendientesDe(m.id, modulos)));
+    return mapa;
+  }, [modulos]);
+  // El contador de un módulo padre suma lo suyo y lo de todos sus
+  // submódulos: al colapsarlo no debe parecer que esas cuentas desaparecen.
+  const conteoAgregado = useMemo(() => {
+    const mapa = new Map<string, number>();
+    modulos.forEach((m) => {
+      const propios = descendientesPorModulo.get(m.id) ?? [m.id];
+      mapa.set(m.id, propios.reduce((suma, id) => suma + (cuentasPorModulo.get(id) ?? 0), 0));
+    });
+    return mapa;
+  }, [modulos, descendientesPorModulo, cuentasPorModulo]);
+
+  // Si el módulo activo queda anidado, sus ancestros se expanden solos: la
+  // selección nunca debe quedar escondida detrás de un grupo cerrado.
+  useEffect(() => {
+    if (moduloActivo === "todos" || moduloActivo === SIN_MODULO) return;
+    let cursor = moduloPorId.get(moduloActivo)?.parent_id ?? null;
+    let cambio = false;
+    const nuevos = new Set(expandidos);
+    while (cursor) {
+      if (!nuevos.has(cursor)) { nuevos.add(cursor); cambio = true; }
+      cursor = moduloPorId.get(cursor)?.parent_id ?? null;
+    }
+    if (cambio) setExpandidos(nuevos);
+    // Solo debe reaccionar a un cambio de selección, no a cada re-render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [moduloActivo, moduloPorId]);
+
+  function alternarExpandido(id: string) {
+    setExpandidos((actuales) => {
+      const nuevos = new Set(actuales);
+      if (nuevos.has(id)) nuevos.delete(id); else nuevos.add(id);
+      return nuevos;
+    });
+  }
+
+  const textoEncontrable = (item: NotaInterna) => {
+    const datos = item.datos_cuenta;
+    const cliente = item.cliente_id ? clientesPorId.get(item.cliente_id) : undefined;
+    const modulo = item.modulo_cuenta_id ? moduloPorId.get(item.modulo_cuenta_id) : undefined;
+    return [item.titulo, item.contenido, item.categoria, datos?.entidad, datos?.titular, datos?.usuario, datos?.url, cliente && nombreCliente(cliente), modulo?.nombre]
+      .filter(Boolean).join(" ").toLowerCase();
+  };
+  const cuentasVisibles = cuentas.filter((cuenta) => {
+    const enModulo = moduloActivo === "todos"
+      ? true
+      : moduloActivo === SIN_MODULO
+        ? !cuenta.modulo_cuenta_id
+        : (descendientesPorModulo.get(moduloActivo) ?? [moduloActivo]).includes(cuenta.modulo_cuenta_id || "");
+    return enModulo && (!busca.trim() || textoEncontrable(cuenta).includes(busca.trim().toLowerCase()));
+  });
   const registrosVisibles = items.filter((item) => item.tipo === (seccion === "notas" ? "nota" : "archivo") && (!busca.trim() || textoEncontrable(item).includes(busca.trim().toLowerCase())));
   const conteo = (tipo: NotaInterna["tipo"]) => items.filter((item) => item.tipo === tipo).length;
-  async function borrar(item: NotaInterna) { if (!await confirmar(`¿Borrar “${item.titulo}”?`, "Se elimina la ficha, pero los adjuntos guardados se conservarán.", "Borrar")) return; const { error: fallo } = await sb.from("notas_internas").delete().eq("id", item.id); if (fallo) setError(fallo.message); else { setItems((actuales) => actuales.filter((actual) => actual.id !== item.id)); if (seleccionada?.id === item.id) setSeleccionada(null); } }
-  async function moverCuenta(item: NotaInterna, moduloId: string) { const nuevoModulo = moduloId || null; setItems((actuales) => actuales.map((actual) => actual.id === item.id ? { ...actual, modulo_cuenta_id: nuevoModulo } : actual)); const { error: fallo } = await sb.from("notas_internas").update({ modulo_cuenta_id: nuevoModulo, actualizado_en: new Date().toISOString() }).eq("id", item.id); if (fallo) { setError(fallo.message); void cargar(); } }
-  async function borrarModulo(modulo: ModuloCuenta) { const cantidad = cuentasPorModulo.get(modulo.id) ?? 0; if (cantidad > 0) { setError("Mueve las cuentas de este módulo antes de eliminarlo."); return; } if (!await confirmar(`¿Eliminar “${modulo.nombre}”?`, "El módulo está vacío y se eliminará de forma permanente.", "Eliminar")) return; const { error: fallo } = await sb.from("modulos_cuentas").delete().eq("id", modulo.id); if (fallo) setError(fallo.message); else { if (moduloActivo === modulo.id) setModuloActivo("todos"); setEditorModulo(null); void cargar(); } }
+
+  async function borrar(item: NotaInterna) {
+    if (!await confirmar(`¿Borrar “${item.titulo}”?`, "Se elimina la ficha, pero los adjuntos guardados se conservarán.", "Borrar")) return;
+    const { error: fallo } = await sb.from("notas_internas").delete().eq("id", item.id);
+    if (fallo) setError(fallo.message);
+    else {
+      setItems((actuales) => actuales.filter((actual) => actual.id !== item.id));
+      if (seleccionada?.id === item.id) setSeleccionada(null);
+    }
+  }
+  async function moverCuenta(item: NotaInterna, moduloId: string) {
+    const nuevoModulo = moduloId || null;
+    setItems((actuales) => actuales.map((actual) => actual.id === item.id ? { ...actual, modulo_cuenta_id: nuevoModulo } : actual));
+    const { error: fallo } = await sb.from("notas_internas").update({ modulo_cuenta_id: nuevoModulo, actualizado_en: new Date().toISOString() }).eq("id", item.id);
+    if (fallo) { setError(fallo.message); void cargar(); }
+  }
+  async function borrarModulo(modulo: ModuloCuenta) {
+    const cantidad = conteoAgregado.get(modulo.id) ?? 0;
+    if (cantidad > 0) { setError("Mueve las cuentas de este módulo (y de sus submódulos) antes de eliminarlo."); return; }
+    if ((hijosPorPadre.get(modulo.id) ?? []).length > 0) { setError("Elimina primero sus submódulos."); return; }
+    if (!await confirmar(`¿Eliminar “${modulo.nombre}”?`, "El módulo está vacío y se eliminará de forma permanente.", "Eliminar")) return;
+    const { error: fallo } = await sb.from("modulos_cuentas").delete().eq("id", modulo.id);
+    if (fallo) setError(fallo.message);
+    else {
+      if (moduloActivo === modulo.id) setModuloActivo("todos");
+      setEditorModulo(null);
+      void cargar();
+    }
+  }
+  function abrirNuevoModulo(padre = "") {
+    setPadreSugerido(padre);
+    setEditorModulo("nueva");
+  }
+  function abrirEdicionModulo(modulo: ModuloCuenta) {
+    setPadreSugerido("");
+    setEditorModulo(modulo);
+  }
+
+  const moduloSeleccionado = moduloActivo !== "todos" && moduloActivo !== SIN_MODULO ? moduloPorId.get(moduloActivo) : undefined;
+
   return <>
-    <section className="bloque centro-cabecera"><div><p className="centro-ceja">OPERACIÓN INTERNA</p><h3>Centro operativo</h3><p className="conteo">Cuentas, conocimiento y accesos del equipo, ordenados para encontrar lo necesario antes de abrir otra conversación.</p></div><div className="centro-acciones">{seccion === "cuentas" && <><button className="btn" onClick={() => setEditorModulo("nueva")}>{Ico.carpetaMas({ t: 15 })} Nuevo módulo</button><button className="btn solido" onClick={() => setEditorCuenta("nueva")}>{Ico.mas({ t: 15 })} Nueva cuenta</button></>}{seccion === "notas" && <button className="btn solido" onClick={() => setEditorRegistro("nota")}>{Ico.mas({ t: 15 })} Nueva nota</button>}{seccion === "archivos" && <button className="btn solido" onClick={() => setEditorRegistro("archivo")}>{Ico.subir({ t: 15 })} Subir archivo</button>}{seccion === "equipo" && <button className="btn solido" onClick={() => setAgregandoPersona(true)}>{Ico.mas({ t: 15 })} Agregar persona</button>}</div><div className="centro-tabs" role="tablist" aria-label="Secciones del Centro operativo">{([ ["cuentas", "Cuentas", cuentas.length], ["notas", "Notas", conteo("nota")], ["archivos", "Archivos", conteo("archivo")], ["equipo", "Equipo", equipo.length] ] as const).map(([id, texto, cantidad]) => <button key={id} role="tab" aria-selected={seccion === id} className={seccion === id ? "on" : ""} onClick={() => { setSeccion(id); setBusca(""); setSeleccionada(null); }}>{texto}<small>{cantidad}</small></button>)}</div></section>
+    <section className="bloque centro-cabecera">
+      <div>
+        <p className="centro-ceja">OPERACIÓN INTERNA</p>
+        <h3>Centro operativo</h3>
+        <p className="conteo">Cuentas, conocimiento y accesos del equipo, ordenados para encontrar lo necesario antes de abrir otra conversación.</p>
+      </div>
+      <div className="centro-acciones">
+        {seccion === "cuentas" && <>
+          <button className="btn" onClick={() => abrirNuevoModulo()}>{Ico.carpetaMas({ t: 15 })} Nuevo módulo</button>
+          <button className="btn solido" onClick={() => setEditorCuenta("nueva")}>{Ico.mas({ t: 15 })} Nueva cuenta</button>
+        </>}
+        {seccion === "notas" && <button className="btn solido" onClick={() => setEditorRegistro("nota")}>{Ico.mas({ t: 15 })} Nueva nota</button>}
+        {seccion === "archivos" && <button className="btn solido" onClick={() => setEditorRegistro("archivo")}>{Ico.subir({ t: 15 })} Subir archivo</button>}
+        {seccion === "equipo" && <button className="btn solido" onClick={() => setAgregandoPersona(true)}>{Ico.mas({ t: 15 })} Agregar persona</button>}
+      </div>
+      <div className="centro-tabs" role="tablist" aria-label="Secciones del Centro operativo">
+        {([
+          ["cuentas", "Cuentas", cuentas.length],
+          ["notas", "Notas", conteo("nota")],
+          ["archivos", "Archivos", conteo("archivo")],
+          ["equipo", "Equipo", equipo.length],
+        ] as const).map(([id, texto, cantidad]) => (
+          <button key={id} role="tab" aria-selected={seccion === id} className={seccion === id ? "on" : ""}
+            onClick={() => { setSeccion(id); setBusca(""); setSeleccionada(null); }}>
+            {texto}<small>{cantidad}</small>
+          </button>
+        ))}
+      </div>
+    </section>
+
     {error && <p className="error">{error}</p>}
-    {cargando ? <p className="vacio">Cargando Centro operativo…</p> : seccion === "cuentas" ? <section className="centro-cuentas"><aside className="modulos-panel" aria-label="Módulos de cuentas"><div className="modulos-panel-titulo"><span>Módulos</span><small>{cuentas.length} cuentas</small></div><button className={moduloActivo === "todos" ? "modulo on" : "modulo"} onClick={() => setModuloActivo("todos")}><span className="modulo-punto gris" /><span>Todo Cóndor</span><b>{cuentas.length}</b></button>{modulos.map((modulo) => <button key={modulo.id} className={moduloActivo === modulo.id ? "modulo on" : "modulo"} onClick={() => setModuloActivo(modulo.id)} onDragOver={(event) => event.preventDefault()} onDrop={() => { if (arrastrada) { const item = cuentas.find((x) => x.id === arrastrada); if (item) void moverCuenta(item, modulo.id); setArrastrada(null); } }} onDoubleClick={() => setEditorModulo(modulo)} title="Doble clic para editar"><span className={`modulo-punto ${modulo.color}`} /><span>{modulo.nombre}</span><b>{cuentasPorModulo.get(modulo.id) ?? 0}</b></button>)}{(cuentasPorModulo.get(SIN_MODULO) ?? 0) > 0 && <button className={moduloActivo === SIN_MODULO ? "modulo on" : "modulo"} onClick={() => setModuloActivo(SIN_MODULO)}><span className="modulo-punto gris" /><span>Sin módulo</span><b>{cuentasPorModulo.get(SIN_MODULO)}</b></button>}</aside><div className="cuentas-lista-panel"><div className="cuentas-lista-cabecera"><div><h4>{moduloActivo === "todos" ? "Todas las cuentas" : moduloActivo === SIN_MODULO ? "Cuentas sin módulo" : moduloPorId.get(moduloActivo)?.nombre}</h4><small>{cuentasVisibles.length} resultados · selecciona una cuenta para ver su ficha</small></div><Busqueda busca={busca} cambiar={setBusca} placeholder="Buscar cuenta, plataforma o cliente…" /></div>{cuentasVisibles.length === 0 ? <Vacio titulo={cuentas.length ? "No hay coincidencias" : "Todavía no hay cuentas"} texto={cuentas.length ? "Prueba con otra búsqueda o módulo." : "Crea un módulo y guarda la primera cuenta para que el conocimiento operativo deje de vivir disperso."} /> : <div className="cuentas-lista">{cuentasVisibles.map((cuenta) => <CuentaFila key={cuenta.id} cuenta={cuenta} modulo={cuenta.modulo_cuenta_id ? moduloPorId.get(cuenta.modulo_cuenta_id) : undefined} cliente={cuenta.cliente_id ? clientesPorId.get(cuenta.cliente_id) : undefined} activa={seleccionada?.id === cuenta.id} seleccionar={() => setSeleccionada(cuenta)} arrastrar={setArrastrada} soltar={(id) => { const item = cuentas.find((x) => x.id === id); if (item && arrastrada && arrastrada !== item.id) void moverCuenta(item, moduloActivo === "sin-modulo" ? "" : moduloActivo); }} />)}</div>}</div><FichaCuenta cuenta={seleccionada} modulo={seleccionada?.modulo_cuenta_id ? moduloPorId.get(seleccionada.modulo_cuenta_id) : undefined} cliente={seleccionada?.cliente_id ? clientesPorId.get(seleccionada.cliente_id) : undefined} editar={() => seleccionada && setEditorCuenta(seleccionada)} borrar={() => seleccionada && void borrar(seleccionada)} mover={(moduloId) => seleccionada && void moverCuenta(seleccionada, moduloId)} modulos={modulos} /></section> : seccion === "equipo" ? <EquipoPanel equipo={equipo} /> : <RegistrosPanel titulo={seccion === "notas" ? "Notas del equipo" : "Archivos internos"} items={registrosVisibles} busca={busca} cambiarBusca={setBusca} />}
-    {editorCuenta && <EditorCuenta cuenta={editorCuenta === "nueva" ? null : editorCuenta} modulos={modulos} clientes={clientes} moduloInicial={moduloActivo} cerrar={() => setEditorCuenta(null)} guardado={() => { setEditorCuenta(null); void cargar(); }} />}{editorRegistro && <EditorRegistro tipo={editorRegistro} cerrar={() => setEditorRegistro(null)} guardado={() => { setEditorRegistro(null); void cargar(); }} />}{editorModulo && <EditorModulo modulo={editorModulo === "nueva" ? null : editorModulo} modulos={modulos} clientes={clientes} cuentasEnModulo={editorModulo === "nueva" ? 0 : (cuentasPorModulo.get(editorModulo.id) ?? 0)} cerrar={() => setEditorModulo(null)} guardado={() => { setEditorModulo(null); void cargar(); }} borrar={() => editorModulo !== "nueva" && void borrarModulo(editorModulo)} />}{agregandoPersona && <EditorPersona cerrar={() => setAgregandoPersona(false)} guardado={() => { setAgregandoPersona(false); void cargar(); }} />}
+
+    {cargando ? <p className="vacio">Cargando Centro operativo…</p> : seccion === "cuentas" ? (
+      <section className="centro-cuentas">
+        <aside className="modulos-panel" aria-label="Módulos de cuentas">
+          <div className="modulos-panel-titulo"><span>Módulos</span><small>{cuentas.length} cuentas</small></div>
+          <button className={moduloActivo === "todos" ? "modulo on" : "modulo"} onClick={() => setModuloActivo("todos")}>
+            <span className="modulo-punto gris" /><span>Todo Cóndor</span><b>{cuentas.length}</b>
+          </button>
+          {raiz.map((modulo) => (
+            <NodoModulo
+              key={modulo.id}
+              modulo={modulo}
+              nivel={0}
+              hijosPorPadre={hijosPorPadre}
+              expandidos={expandidos}
+              moduloActivo={moduloActivo}
+              conteoAgregado={conteoAgregado}
+              seleccionar={setModuloActivo}
+              alternarExpandido={alternarExpandido}
+              soltarCuenta={(moduloId) => {
+                if (!arrastrada) return;
+                const item = cuentas.find((x) => x.id === arrastrada);
+                if (item) void moverCuenta(item, moduloId);
+                setArrastrada(null);
+              }}
+            />
+          ))}
+          {(cuentasPorModulo.get(SIN_MODULO) ?? 0) > 0 && (
+            <button className={moduloActivo === SIN_MODULO ? "modulo on" : "modulo"} onClick={() => setModuloActivo(SIN_MODULO)}>
+              <span className="modulo-punto gris" /><span>Sin módulo</span><b>{cuentasPorModulo.get(SIN_MODULO)}</b>
+            </button>
+          )}
+        </aside>
+
+        <div className="cuentas-lista-panel">
+          <div className="cuentas-lista-cabecera">
+            <div>
+              <h4>
+                {moduloActivo === "todos" ? "Todas las cuentas" : moduloActivo === SIN_MODULO ? "Cuentas sin módulo" : moduloSeleccionado?.nombre}
+                {moduloSeleccionado && (
+                  <span className="modulo-acciones">
+                    <button type="button" className="icono-btn chico" title="Editar módulo" onClick={() => abrirEdicionModulo(moduloSeleccionado)}>{Ico.editar({ t: 13 })}</button>
+                    <button type="button" className="icono-btn chico" title="Nuevo submódulo aquí" onClick={() => abrirNuevoModulo(moduloSeleccionado.id)}>{Ico.mas({ t: 13 })}</button>
+                  </span>
+                )}
+              </h4>
+              <small>{cuentasVisibles.length} resultados · selecciona una cuenta para ver su ficha</small>
+            </div>
+            <Busqueda busca={busca} cambiar={setBusca} placeholder="Buscar cuenta, plataforma o cliente…" />
+          </div>
+          {cuentasVisibles.length === 0 ? (
+            <Vacio
+              titulo={cuentas.length ? "No hay coincidencias" : "Todavía no hay cuentas"}
+              texto={cuentas.length ? "Prueba con otra búsqueda o módulo." : "Crea un módulo y guarda la primera cuenta para que el conocimiento operativo deje de vivir disperso."}
+            />
+          ) : (
+            <div className="cuentas-lista">
+              {cuentasVisibles.map((cuenta) => (
+                <CuentaFila
+                  key={cuenta.id}
+                  cuenta={cuenta}
+                  modulo={cuenta.modulo_cuenta_id ? moduloPorId.get(cuenta.modulo_cuenta_id) : undefined}
+                  cliente={cuenta.cliente_id ? clientesPorId.get(cuenta.cliente_id) : undefined}
+                  activa={seleccionada?.id === cuenta.id}
+                  seleccionar={() => setSeleccionada(cuenta)}
+                  editar={() => setEditorCuenta(cuenta)}
+                  arrastrar={setArrastrada}
+                  soltar={(id) => {
+                    const item = cuentas.find((x) => x.id === id);
+                    if (item && arrastrada && arrastrada !== item.id) {
+                      void moverCuenta(item, moduloActivo === "todos" || moduloActivo === SIN_MODULO ? "" : moduloActivo);
+                    }
+                  }}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
+        <FichaCuenta
+          cuenta={seleccionada}
+          modulo={seleccionada?.modulo_cuenta_id ? moduloPorId.get(seleccionada.modulo_cuenta_id) : undefined}
+          cliente={seleccionada?.cliente_id ? clientesPorId.get(seleccionada.cliente_id) : undefined}
+          editar={() => seleccionada && setEditorCuenta(seleccionada)}
+          borrar={() => seleccionada && void borrar(seleccionada)}
+          mover={(moduloId) => seleccionada && void moverCuenta(seleccionada, moduloId)}
+          modulos={modulos}
+        />
+      </section>
+    ) : seccion === "equipo" ? <EquipoPanel equipo={equipo} /> : (
+      <RegistrosPanel
+        titulo={seccion === "notas" ? "Notas del equipo" : "Archivos internos"}
+        items={registrosVisibles}
+        busca={busca}
+        cambiarBusca={setBusca}
+      />
+    )}
+
+    {editorCuenta && (
+      <EditorCuenta
+        cuenta={editorCuenta === "nueva" ? null : editorCuenta}
+        modulos={modulos}
+        clientes={clientes}
+        moduloInicial={moduloActivo}
+        cerrar={() => setEditorCuenta(null)}
+        guardado={() => { setEditorCuenta(null); void cargar(); }}
+      />
+    )}
+    {editorRegistro && (
+      <EditorRegistro tipo={editorRegistro} cerrar={() => setEditorRegistro(null)} guardado={() => { setEditorRegistro(null); void cargar(); }} />
+    )}
+    {editorModulo && (
+      <EditorModulo
+        modulo={editorModulo === "nueva" ? null : editorModulo}
+        padreInicial={padreSugerido}
+        modulos={modulos}
+        clientes={clientes}
+        cuentasEnModulo={editorModulo === "nueva" ? 0 : (conteoAgregado.get(editorModulo.id) ?? 0)}
+        tieneSubmodulos={editorModulo !== "nueva" && (hijosPorPadre.get(editorModulo.id) ?? []).length > 0}
+        cerrar={() => setEditorModulo(null)}
+        guardado={() => { setEditorModulo(null); void cargar(); }}
+        borrar={() => editorModulo !== "nueva" && void borrarModulo(editorModulo)}
+      />
+    )}
+    {agregandoPersona && (
+      <EditorPersona cerrar={() => setAgregandoPersona(false)} guardado={() => { setAgregandoPersona(false); void cargar(); }} />
+    )}
   </>;
 }
 
-function Busqueda({ busca, cambiar, placeholder }: { busca: string; cambiar: (valor: string) => void; placeholder: string }) { return <label className="campo-busqueda">{Ico.buscar({ t: 15 })}<input value={busca} onChange={(event) => cambiar(event.target.value)} placeholder={placeholder} /></label>; }
-function Vacio({ titulo, texto }: { titulo: string; texto: string }) { return <div className="centro-vacio"><b>{titulo}</b><p>{texto}</p></div>; }
-function CuentaFila({ cuenta, modulo, cliente, activa, seleccionar, arrastrar, soltar }: { cuenta: NotaInterna; modulo?: ModuloCuenta; cliente?: Cliente; activa: boolean; seleccionar: () => void; arrastrar: (id: string | null) => void; soltar: (id: string) => void }) { const datos = cuenta.datos_cuenta; return <button draggable onDragStart={() => arrastrar(cuenta.id)} onDragEnd={() => arrastrar(null)} onDragOver={(event) => event.preventDefault()} onDrop={() => soltar(cuenta.id)} className={activa ? "cuenta-fila on" : "cuenta-fila"} onClick={seleccionar}><span className={`cuenta-fila-marca ${modulo?.color ?? "gris"}`} /><span className="cuenta-fila-principal"><b>{cuenta.titulo}</b><small>{[datos?.entidad, datos?.usuario || datos?.titular].filter(Boolean).join(" · ") || "Sin plataforma ni usuario"}</small></span><span className="cuenta-fila-contexto">{modulo?.nombre || "Sin módulo"}{cliente && <small>{nombreCliente(cliente)}</small>}</span></button>; }
-function Dato({ etiqueta, valor, permiteCopiar = false }: { etiqueta: string; valor?: string; permiteCopiar?: boolean }) { return <div className="dato"><small>{etiqueta}</small>{valor ? <div><span>{valor}</span>{permiteCopiar && <button type="button" className="icono-btn" title={`Copiar ${etiqueta.toLowerCase()}`} onClick={() => copiar(valor)}>{Ico.documentos({ t: 13 })}</button>}</div> : <span className="dato-vacio">No definido</span>}</div>; }
-function FichaCuenta({ cuenta, modulo, cliente, editar, borrar, mover, modulos }: { cuenta: NotaInterna | null; modulo?: ModuloCuenta; cliente?: Cliente; editar: () => void; borrar: () => void; mover: (moduloId: string) => void; modulos: ModuloCuenta[] }) { const [muestraClave, setMuestraClave] = useState(false); useEffect(() => setMuestraClave(false), [cuenta?.id]); if (!cuenta) return <aside className="ficha-cuenta vacia"><div className="ficha-vacia-icono">{Ico.candado({ t: 22 })}</div><h4>Selecciona una cuenta</h4><p>Su ficha aparecerá acá. Los secretos no quedan expuestos mientras recorres el inventario.</p></aside>; const datos = cuenta.datos_cuenta ?? {}; return <aside className="ficha-cuenta"><div className="ficha-cuenta-cabecera"><span className={`modulo-punto ${modulo?.color ?? "gris"}`} /><div><small>{modulo?.nombre || "Sin módulo"}</small><h4>{cuenta.titulo}</h4></div></div><div className="ficha-datos"><Dato etiqueta="Plataforma" valor={datos.entidad} /><Dato etiqueta="Titular" valor={datos.titular} /><Dato etiqueta="Usuario" valor={datos.usuario} permiteCopiar /><div className="dato"><small>Clave</small>{datos.clave ? <div className="secreto"><code>{muestraClave ? datos.clave : "••••••••••••"}</code><button type="button" className="icono-btn" title={muestraClave ? "Ocultar clave" : "Revelar clave"} onClick={() => setMuestraClave((valor) => !valor)}>{muestraClave ? Ico.contraer({ t: 14 }) : Ico.expandir({ t: 14 })}</button><button type="button" className="icono-btn" title="Copiar clave" onClick={() => copiar(datos.clave!)}>{Ico.documentos({ t: 14 })}</button></div> : <span className="dato-vacio">No guardada</span>}</div>{datos.url && <a className="ficha-url" href={datos.url} target="_blank" rel="noreferrer">{Ico.abrirWeb({ t: 14 })} Abrir acceso</a>}{cliente && <Dato etiqueta="Cliente" valor={nombreCliente(cliente)} />}<div className="dato ficha-mover"><small>Mover a m?dulo</small><select className="campo" value={cuenta.modulo_cuenta_id ?? ""} onChange={(event) => mover(event.target.value)}><option value="">Sin m?dulo</option>{modulos.map((item) => <option value={item.id} key={item.id}>{item.nombre}</option>)}</select></div></div>{cuenta.contenido && <div className="ficha-notas"><small>Notas de uso</small><p>{cuenta.contenido}</p></div>}<div className="ficha-acciones"><button className="btn" onClick={editar}>{Ico.editar({ t: 14 })} Editar</button><button className="btn peligro" onClick={borrar}>{Ico.eliminar({ t: 14 })} Borrar</button></div></aside>; }
-function RegistrosPanel({ titulo, items, busca, cambiarBusca }: { titulo: string; items: NotaInterna[]; busca: string; cambiarBusca: (valor: string) => void }) { return <section className="registros-panel"><div className="registros-cabecera"><div><h4>{titulo}</h4><small>Información complementaria que no necesita vivir dentro de una cuenta.</small></div><Busqueda busca={busca} cambiar={cambiarBusca} placeholder="Buscar…" /></div>{items.length ? <div className="registros-grid">{items.map((item) => <article key={item.id} className="registro-card"><span className="pill gris">{item.tipo === "nota" ? "Nota" : "Archivo"}</span><h4>{item.titulo}</h4>{item.contenido && <p>{item.contenido}</p>}{item.archivo_url && <a className="ficha-url" href={item.archivo_url} target="_blank" rel="noreferrer">{Ico.abrirWeb({ t: 13 })} Abrir archivo</a>}<small>Actualizado {fecha(item.actualizado_en)}</small></article>)}</div> : <Vacio titulo="No hay registros para mostrar" texto="Las notas y archivos siguen disponibles como contexto independiente." />}</section>; }
-function EquipoPanel({ equipo }: { equipo: MiembroEquipo[] }) { return <section className="equipo-panel"><div className="equipo-intro"><div><p className="centro-ceja">ACCESO AL PORTAL</p><h4>Personas del equipo</h4><p>Quien aparece aquí puede entrar como staff. La primera vez inicia sesión con su correo y queda habilitado para trabajar en Cóndor.</p></div><span>{equipo.length} activas</span></div><div className="equipo-grid">{equipo.map((persona) => <article className="persona-card" key={persona.email}><span className="avatar-persona">{iniciales(persona.nombre || persona.email)}</span><div><h4>{persona.nombre || "Sin nombre"}</h4><p>{persona.email}</p><small>Acceso de equipo</small></div></article>)}</div></section>; }
-function Modal({ titulo, ayuda, cerrar, children }: { titulo: string; ayuda: string; cerrar: () => void; children: React.ReactNode }) { return <div className="velo" onClick={cerrar}><section className="panel-modal" onClick={(event) => event.stopPropagation()}><header><h2>{titulo}</h2><small>{ayuda}</small></header><div className="contenido">{children}</div></section></div>; }
-function EditorCuenta({ cuenta, modulos, clientes, moduloInicial, cerrar, guardado }: { cuenta: NotaInterna | null; modulos: ModuloCuenta[]; clientes: Cliente[]; moduloInicial: string; cerrar: () => void; guardado: () => void }) { const [titulo, setTitulo] = useState(cuenta?.titulo ?? ""); const [moduloId, setModuloId] = useState(cuenta?.modulo_cuenta_id ?? (moduloInicial !== "todos" && moduloInicial !== SIN_MODULO ? moduloInicial : "")); const [clienteId, setClienteId] = useState(cuenta?.cliente_id ?? ""); const [contenido, setContenido] = useState(cuenta?.contenido ?? ""); const [datos, setDatos] = useState<DatosCuentaInterna>(cuenta?.datos_cuenta ?? {}); const [guardando, setGuardando] = useState(false); const [error, setError] = useState(""); const cambiar = (campo: keyof DatosCuentaInterna, valor: string) => setDatos((actual) => ({ ...actual, [campo]: valor })); async function enviar(event: React.FormEvent) { event.preventDefault(); if (!titulo.trim()) { setError("Ponle un nombre reconocible a la cuenta."); return; } setGuardando(true); const campos = { titulo: titulo.trim(), tipo: "cuenta", categoria: "Cuenta", modulo_cuenta_id: moduloId || null, cliente_id: clienteId || null, contenido: contenido.trim() || null, datos_cuenta: datos, actualizado_en: new Date().toISOString() }; const { error: fallo } = cuenta ? await sb.from("notas_internas").update(campos).eq("id", cuenta.id) : await sb.from("notas_internas").insert(campos); setGuardando(false); if (fallo) setError(fallo.message); else guardado(); } return <Modal titulo={cuenta ? "Editar cuenta" : "Nueva cuenta"} ayuda="Guarda el acceso dentro de un módulo para que el equipo lo encuentre por contexto, no por memoria." cerrar={cerrar}><form onSubmit={enviar} className="form-centro"><label>Nombre de la cuenta<input className="campo" autoFocus value={titulo} onChange={(event) => setTitulo(event.target.value)} placeholder="Ej: Administrador comercial Meta" /></label><div className="dos"><label>Módulo<select className="campo" value={moduloId} onChange={(event) => setModuloId(event.target.value)}><option value="">Sin módulo</option>{modulos.map((modulo) => <option value={modulo.id} key={modulo.id}>{modulo.nombre}</option>)}</select></label><label>Cliente<select className="campo" value={clienteId} onChange={(event) => setClienteId(event.target.value)}><option value="">Sin cliente asignado</option>{clientes.map((cliente) => <option value={cliente.id} key={cliente.id}>{nombreCliente(cliente)}</option>)}</select></label></div><div className="dos"><label>Plataforma<input className="campo" value={datos.entidad ?? ""} onChange={(event) => cambiar("entidad", event.target.value)} placeholder="Meta, Figma, banco…" /></label><label>Titular<input className="campo" value={datos.titular ?? ""} onChange={(event) => cambiar("titular", event.target.value)} /></label></div><div className="dos"><label>Usuario o correo<input className="campo" value={datos.usuario ?? ""} onChange={(event) => cambiar("usuario", event.target.value)} /></label><label>Clave<input className="campo" type="password" autoComplete="new-password" value={datos.clave ?? ""} onChange={(event) => cambiar("clave", event.target.value)} /></label></div><label>URL de acceso<input className="campo" type="url" value={datos.url ?? ""} onChange={(event) => cambiar("url", event.target.value)} placeholder="https://…" /></label><label>Notas de uso<textarea className="campo" rows={4} value={contenido} onChange={(event) => setContenido(event.target.value)} placeholder="Para qué se usa, pasos especiales, responsable…" /></label>{error && <p className="error">{error}</p>}<footer><button type="button" className="btn" onClick={cerrar}>Cancelar</button><button className="btn solido" disabled={guardando}>{guardando ? "Guardando…" : "Guardar cuenta"}</button></footer></form></Modal>; }
-function EditorRegistro({ tipo, cerrar, guardado }: { tipo: "nota" | "archivo"; cerrar: () => void; guardado: () => void }) { const [titulo, setTitulo] = useState(""); const [contenido, setContenido] = useState(""); const [archivo, setArchivo] = useState<File | null>(null); const [guardando, setGuardando] = useState(false); const [error, setError] = useState(""); const archivoRef = useRef<HTMLInputElement>(null); async function enviar(event: React.FormEvent) { event.preventDefault(); if (!titulo.trim() && !archivo) { setError("Agrega un título o selecciona un archivo."); return; } setGuardando(true); let url: string | null = null; if (archivo) { const limpio = archivo.name.replace(/[^a-zA-Z0-9._-]/g, "_"); const ruta = `informacion-interna/${Date.now()}-${limpio}`; const { error: falloSubida } = await sb.storage.from("biblioteca").upload(ruta, archivo, { upsert: false, contentType: archivo.type || undefined }); if (falloSubida) { setGuardando(false); setError(falloSubida.message); return; } url = sb.storage.from("biblioteca").getPublicUrl(ruta).data.publicUrl; } const nombre = titulo.trim() || archivo!.name.replace(/\.[^.]+$/, ""); const campos = { titulo: nombre, tipo, categoria: tipo === "archivo" ? "Archivo" : "Nota", contenido: contenido.trim() || null, archivo_url: url, archivo_nombre: archivo?.name ?? null, archivo_peso_bytes: archivo?.size ?? null, archivos: url ? [{ url, nombre: archivo!.name, peso_bytes: archivo!.size, tipo: archivo!.type }] : [], actualizado_en: new Date().toISOString() }; const { error: fallo } = await sb.from("notas_internas").insert(campos); setGuardando(false); if (fallo) setError(fallo.message); else guardado(); } return <Modal titulo={tipo === "nota" ? "Nueva nota" : "Subir archivo"} ayuda={tipo === "nota" ? "Guarda contexto que el equipo necesite recuperar rápido." : "El archivo queda disponible en la biblioteca interna del equipo."} cerrar={cerrar}><form className="form-centro" onSubmit={enviar}><label>Título<input className="campo" autoFocus value={titulo} onChange={(event) => setTitulo(event.target.value)} placeholder={tipo === "nota" ? "Ej: Decisión de campaña" : "Se completa desde el archivo si lo dejas vacío"} /></label><label>{tipo === "nota" ? "Contenido" : "Descripción"}<textarea className="campo" rows={4} value={contenido} onChange={(event) => setContenido(event.target.value)} /></label>{tipo === "archivo" && <label>Archivo<input ref={archivoRef} className="campo" type="file" onChange={(event) => setArchivo(event.target.files?.[0] ?? null)} /><small>{archivo?.name || "PDF, documento o imagen"}</small></label>}{error && <p className="error">{error}</p>}<footer><button type="button" className="btn" onClick={cerrar}>Cancelar</button><button className="btn solido" disabled={guardando}>{guardando ? "Guardando…" : tipo === "nota" ? "Guardar nota" : "Subir archivo"}</button></footer></form></Modal>; }
-function EditorModulo({ modulo, modulos = [], clientes, cuentasEnModulo, cerrar, guardado, borrar }: { modulo: ModuloCuenta | null; modulos?: ModuloCuenta[]; clientes: Cliente[]; cuentasEnModulo: number; cerrar: () => void; guardado: () => void; borrar: () => void }) { const [nombre, setNombre] = useState(modulo?.nombre ?? ""); const [descripcion, setDescripcion] = useState(modulo?.descripcion ?? ""); const [clienteId, setClienteId] = useState(modulo?.cliente_id ?? ""); const [parentId, setParentId] = useState(modulo?.parent_id ?? ""); const [color, setColor] = useState<ModuloCuenta["color"]>(modulo?.color ?? "azul"); const [error, setError] = useState(""); const [guardando, setGuardando] = useState(false); async function enviar(event: React.FormEvent) { event.preventDefault(); if (!nombre.trim()) { setError("Nombra el m?dulo para que el equipo sepa cu?ndo usarlo."); return; } setGuardando(true); const campos = { nombre: nombre.trim(), descripcion: descripcion.trim() || null, cliente_id: clienteId || null, parent_id: parentId || null, color }; const respuesta = modulo ? await sb.from("modulos_cuentas").update(campos).eq("id", modulo.id) : await sb.from("modulos_cuentas").insert(campos); setGuardando(false); if (respuesta.error) setError(respuesta.error.message); else guardado(); } return <Modal titulo={modulo ? "Editar m?dulo" : "Nuevo m?dulo"} ayuda="Agrupa accesos que se usan juntos. Puedes cambiar su contexto en cualquier momento." cerrar={cerrar}><form className="form-centro" onSubmit={enviar}><label>Nombre<input className="campo" autoFocus value={nombre} onChange={(event) => setNombre(event.target.value)} placeholder="Ej: Marketing C?ndor" /></label><label>Descripci?n<textarea className="campo" rows={3} value={descripcion} onChange={(event) => setDescripcion(event.target.value)} placeholder="Qu? resuelve este grupo de cuentas." /></label><label>M?dulo padre <span className="tenue">opcional ? crea un subm?dulo</span><select className="campo" value={parentId} onChange={(event) => setParentId(event.target.value)}><option value="">M?dulo principal</option>{modulos.filter((item) => item.id !== modulo?.id).map((item) => <option key={item.id} value={item.id}>{item.parent_id ? "? " : ""}{item.nombre}</option>)}</select></label><div className="dos"><label>Cliente <span className="tenue">opcional</span><select className="campo" value={clienteId} onChange={(event) => setClienteId(event.target.value)}><option value="">Operaci?n interna de C?ndor</option>{clientes.map((cliente) => <option key={cliente.id} value={cliente.id}>{nombreCliente(cliente)}</option>)}</select></label><label>Color<select className="campo" value={color} onChange={(event) => setColor(event.target.value as ModuloCuenta["color"])}><option value="azul">Azul</option><option value="violeta">Violeta</option><option value="verde">Verde</option><option value="naranjo">Naranjo</option><option value="gris">Gris</option></select></label></div>{modulo && <small className="tenue">{cuentasEnModulo ? `Tiene ${cuentasEnModulo} cuenta${cuentasEnModulo === 1 ? "" : "s"}. Mu?velas antes de eliminarlo.` : "M?dulo vac?o: puedes eliminarlo si ya no se necesita."}</small>}{error && <p className="error">{error}</p>}<footer>{modulo && !cuentasEnModulo && <button type="button" className="btn peligro" onClick={borrar}>Eliminar m?dulo</button>}<span /><button type="button" className="btn" onClick={cerrar}>Cancelar</button><button className="btn solido" disabled={guardando}>{guardando ? "Guardando?" : modulo ? "Guardar cambios" : "Crear m?dulo"}</button></footer></form></Modal>; }
-function EditorPersona({ cerrar, guardado }: { cerrar: () => void; guardado: () => void }) { const [nombre, setNombre] = useState(""); const [email, setEmail] = useState(""); const [error, setError] = useState(""); const [guardando, setGuardando] = useState(false); async function enviar(event: React.FormEvent) { event.preventDefault(); if (!nombre.trim() || !/^\S+@\S+\.\S+$/.test(email.trim())) { setError("Necesitamos nombre y un correo válido para habilitar el acceso."); return; } setGuardando(true); const { error: fallo } = await sb.from("admins").upsert({ nombre: nombre.trim(), email: email.trim().toLowerCase() }); setGuardando(false); if (fallo) setError(fallo.message); else guardado(); } return <Modal titulo="Agregar persona" ayuda="Su correo quedará autorizado como miembro del equipo. No se le envía una contraseña: entra con el mismo acceso por correo del portal." cerrar={cerrar}><form className="form-centro" onSubmit={enviar}><label>Nombre completo<input className="campo" autoFocus value={nombre} onChange={(event) => setNombre(event.target.value)} placeholder="Ej: María Pérez" /></label><label>Correo de trabajo<input className="campo" type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="maria@empresa.com" /></label>{error && <p className="error">{error}</p>}<footer><button type="button" className="btn" onClick={cerrar}>Cancelar</button><button className="btn solido" disabled={guardando}>{guardando ? "Agregando…" : "Dar acceso"}</button></footer></form></Modal>; }
+/** Una fila de módulo + su chevrón (solo si tiene submódulos) + sus hijos
+ * expandidos debajo. El chevrón es un botón separado, nunca anidado dentro
+ * del botón de selección — eso rompería el HTML. */
+function NodoModulo({
+  modulo, nivel, hijosPorPadre, expandidos, moduloActivo, conteoAgregado, seleccionar, alternarExpandido, soltarCuenta,
+}: {
+  modulo: ModuloCuenta;
+  nivel: number;
+  hijosPorPadre: Map<string, ModuloCuenta[]>;
+  expandidos: Set<string>;
+  moduloActivo: string;
+  conteoAgregado: Map<string, number>;
+  seleccionar: (id: string) => void;
+  alternarExpandido: (id: string) => void;
+  soltarCuenta: (moduloId: string) => void;
+}) {
+  const hijos = hijosPorPadre.get(modulo.id) ?? [];
+  const abierto = expandidos.has(modulo.id);
+  return <>
+    <div className="modulo-fila" style={{ paddingLeft: nivel * 14 }}>
+      {hijos.length > 0 ? (
+        <button
+          type="button"
+          className={"modulo-chevron" + (abierto ? " abierto" : "")}
+          onClick={() => alternarExpandido(modulo.id)}
+          aria-expanded={abierto}
+          aria-label={abierto ? "Contraer submódulos" : "Expandir submódulos"}
+        >
+          {Ico.volver({ t: 11 })}
+        </button>
+      ) : <span className="modulo-chevron-hueco" aria-hidden="true" />}
+      <button
+        type="button"
+        className={moduloActivo === modulo.id ? "modulo on" : "modulo"}
+        onClick={() => seleccionar(modulo.id)}
+        onDragOver={(event) => event.preventDefault()}
+        onDrop={() => soltarCuenta(modulo.id)}
+      >
+        <span className={`modulo-punto ${modulo.color}`} />
+        <span>{modulo.nombre}</span>
+        <b>{conteoAgregado.get(modulo.id) ?? 0}</b>
+      </button>
+    </div>
+    {abierto && hijos.map((hijo) => (
+      <NodoModulo
+        key={hijo.id}
+        modulo={hijo}
+        nivel={nivel + 1}
+        hijosPorPadre={hijosPorPadre}
+        expandidos={expandidos}
+        moduloActivo={moduloActivo}
+        conteoAgregado={conteoAgregado}
+        seleccionar={seleccionar}
+        alternarExpandido={alternarExpandido}
+        soltarCuenta={soltarCuenta}
+      />
+    ))}
+  </>;
+}
+
+function Busqueda({ busca, cambiar, placeholder }: { busca: string; cambiar: (valor: string) => void; placeholder: string }) {
+  return <label className="campo-busqueda">{Ico.buscar({ t: 15 })}<input value={busca} onChange={(event) => cambiar(event.target.value)} placeholder={placeholder} /></label>;
+}
+function Vacio({ titulo, texto }: { titulo: string; texto: string }) {
+  return <div className="centro-vacio"><b>{titulo}</b><p>{texto}</p></div>;
+}
+/** La fila selecciona la cuenta; el lápiz la edita directo, sin pasar antes
+ * por la ficha. Son dos botones hermanos, no uno dentro del otro. */
+function CuentaFila({ cuenta, modulo, cliente, activa, seleccionar, editar, arrastrar, soltar }: {
+  cuenta: NotaInterna; modulo?: ModuloCuenta; cliente?: Cliente; activa: boolean;
+  seleccionar: () => void; editar: () => void; arrastrar: (id: string | null) => void; soltar: (id: string) => void;
+}) {
+  const datos = cuenta.datos_cuenta;
+  return (
+    <div className="cuenta-fila-envoltorio">
+      <button
+        draggable
+        onDragStart={() => arrastrar(cuenta.id)}
+        onDragEnd={() => arrastrar(null)}
+        onDragOver={(event) => event.preventDefault()}
+        onDrop={() => soltar(cuenta.id)}
+        className={activa ? "cuenta-fila on" : "cuenta-fila"}
+        onClick={seleccionar}
+      >
+        <span className={`cuenta-fila-marca ${modulo?.color ?? "gris"}`} />
+        <span className="cuenta-fila-principal">
+          <b>{cuenta.titulo}</b>
+          <small>{[datos?.entidad, datos?.usuario || datos?.titular].filter(Boolean).join(" · ") || "Sin plataforma ni usuario"}</small>
+        </span>
+        <span className="cuenta-fila-contexto">
+          {modulo?.nombre || "Sin módulo"}
+          {cliente && <small>{nombreCliente(cliente)}</small>}
+        </span>
+      </button>
+      <button type="button" className="icono-btn chico cuenta-fila-editar" title="Editar cuenta" onClick={editar}>
+        {Ico.editar({ t: 13 })}
+      </button>
+    </div>
+  );
+}
+function Dato({ etiqueta, valor, permiteCopiar = false }: { etiqueta: string; valor?: string; permiteCopiar?: boolean }) {
+  return (
+    <div className="dato">
+      <small>{etiqueta}</small>
+      {valor ? (
+        <div><span>{valor}</span>{permiteCopiar && (
+          <button type="button" className="icono-btn" title={`Copiar ${etiqueta.toLowerCase()}`} onClick={() => copiar(valor)}>{Ico.documentos({ t: 13 })}</button>
+        )}</div>
+      ) : <span className="dato-vacio">No definido</span>}
+    </div>
+  );
+}
+function FichaCuenta({ cuenta, modulo, cliente, editar, borrar, mover, modulos }: {
+  cuenta: NotaInterna | null; modulo?: ModuloCuenta; cliente?: Cliente;
+  editar: () => void; borrar: () => void; mover: (moduloId: string) => void; modulos: ModuloCuenta[];
+}) {
+  const [muestraClave, setMuestraClave] = useState(false);
+  useEffect(() => setMuestraClave(false), [cuenta?.id]);
+  if (!cuenta) return (
+    <aside className="ficha-cuenta vacia">
+      <div className="ficha-vacia-icono">{Ico.candado({ t: 22 })}</div>
+      <h4>Selecciona una cuenta</h4>
+      <p>Su ficha aparecerá acá. Los secretos no quedan expuestos mientras recorres el inventario.</p>
+    </aside>
+  );
+  const datos = cuenta.datos_cuenta ?? {};
+  return (
+    <aside className="ficha-cuenta">
+      <div className="ficha-cuenta-cabecera">
+        <span className={`modulo-punto ${modulo?.color ?? "gris"}`} />
+        <div><small>{modulo?.nombre || "Sin módulo"}</small><h4>{cuenta.titulo}</h4></div>
+      </div>
+      <div className="ficha-datos">
+        <Dato etiqueta="Plataforma" valor={datos.entidad} />
+        <Dato etiqueta="Titular" valor={datos.titular} />
+        <Dato etiqueta="Usuario" valor={datos.usuario} permiteCopiar />
+        <div className="dato">
+          <small>Clave</small>
+          {datos.clave ? (
+            <div className="secreto">
+              <code>{muestraClave ? datos.clave : "••••••••••••"}</code>
+              <button type="button" className="icono-btn" title={muestraClave ? "Ocultar clave" : "Revelar clave"} onClick={() => setMuestraClave((valor) => !valor)}>
+                {muestraClave ? Ico.contraer({ t: 14 }) : Ico.expandir({ t: 14 })}
+              </button>
+              <button type="button" className="icono-btn" title="Copiar clave" onClick={() => copiar(datos.clave!)}>{Ico.documentos({ t: 14 })}</button>
+            </div>
+          ) : <span className="dato-vacio">No guardada</span>}
+        </div>
+        {datos.url && <a className="ficha-url" href={datos.url} target="_blank" rel="noreferrer">{Ico.abrirWeb({ t: 14 })} Abrir acceso</a>}
+        {cliente && <Dato etiqueta="Cliente" valor={nombreCliente(cliente)} />}
+        <div className="dato ficha-mover">
+          <small>Mover a módulo</small>
+          <select className="campo" value={cuenta.modulo_cuenta_id ?? ""} onChange={(event) => mover(event.target.value)}>
+            <option value="">Sin módulo</option>
+            {modulos.map((item) => <option value={item.id} key={item.id}>{prefijoModulo(item, modulos)}{item.nombre}</option>)}
+          </select>
+        </div>
+      </div>
+      {/* Siempre visible: si está vacía, invita a agregar la nota en vez de
+          desaparecer sin explicación — antes solo aparecía cuando ya tenía
+          contenido, así que no había dónde escribirla después de crear. */}
+      <div className="ficha-notas">
+        <small>Notas internas</small>
+        {cuenta.contenido ? <p>{cuenta.contenido}</p> : (
+          <p className="ficha-notas-vacia">Sin notas todavía. <button type="button" className="enlace-tenue" onClick={editar}>Agregar una</button></p>
+        )}
+      </div>
+      <div className="ficha-acciones">
+        <button className="btn" onClick={editar}>{Ico.editar({ t: 14 })} Editar</button>
+        <button className="btn peligro" onClick={borrar}>{Ico.eliminar({ t: 14 })} Borrar</button>
+      </div>
+    </aside>
+  );
+}
+function RegistrosPanel({ titulo, items, busca, cambiarBusca }: { titulo: string; items: NotaInterna[]; busca: string; cambiarBusca: (valor: string) => void }) {
+  return (
+    <section className="registros-panel">
+      <div className="registros-cabecera">
+        <div><h4>{titulo}</h4><small>Información complementaria que no necesita vivir dentro de una cuenta.</small></div>
+        <Busqueda busca={busca} cambiar={cambiarBusca} placeholder="Buscar…" />
+      </div>
+      {items.length ? (
+        <div className="registros-grid">
+          {items.map((item) => (
+            <article key={item.id} className="registro-card">
+              <span className="pill gris">{item.tipo === "nota" ? "Nota" : "Archivo"}</span>
+              <h4>{item.titulo}</h4>
+              {item.contenido && <p>{item.contenido}</p>}
+              {item.archivo_url && <a className="ficha-url" href={item.archivo_url} target="_blank" rel="noreferrer">{Ico.abrirWeb({ t: 13 })} Abrir archivo</a>}
+              <small>Actualizado {fecha(item.actualizado_en)}</small>
+            </article>
+          ))}
+        </div>
+      ) : <Vacio titulo="No hay registros para mostrar" texto="Las notas y archivos siguen disponibles como contexto independiente." />}
+    </section>
+  );
+}
+function EquipoPanel({ equipo }: { equipo: MiembroEquipo[] }) {
+  return (
+    <section className="equipo-panel">
+      <div className="equipo-intro">
+        <div>
+          <p className="centro-ceja">ACCESO AL PORTAL</p>
+          <h4>Personas del equipo</h4>
+          <p>Quien aparece aquí puede entrar como staff. La primera vez inicia sesión con su correo y queda habilitado para trabajar en Cóndor.</p>
+        </div>
+        <span>{equipo.length} activas</span>
+      </div>
+      <div className="equipo-grid">
+        {equipo.map((persona) => (
+          <article className="persona-card" key={persona.email}>
+            <span className="avatar-persona">{iniciales(persona.nombre || persona.email)}</span>
+            <div><h4>{persona.nombre || "Sin nombre"}</h4><p>{persona.email}</p><small>Acceso de equipo</small></div>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+function Modal({ titulo, ayuda, cerrar, children }: { titulo: string; ayuda: string; cerrar: () => void; children: React.ReactNode }) {
+  return (
+    <div className="velo" onClick={cerrar}>
+      <section className="panel-modal" onClick={(event) => event.stopPropagation()}>
+        <header><h2>{titulo}</h2><small>{ayuda}</small></header>
+        <div className="contenido">{children}</div>
+      </section>
+    </div>
+  );
+}
+function EditorCuenta({ cuenta, modulos, clientes, moduloInicial, cerrar, guardado }: {
+  cuenta: NotaInterna | null; modulos: ModuloCuenta[]; clientes: Cliente[]; moduloInicial: string; cerrar: () => void; guardado: () => void;
+}) {
+  const [titulo, setTitulo] = useState(cuenta?.titulo ?? "");
+  const [moduloId, setModuloId] = useState(cuenta?.modulo_cuenta_id ?? (moduloInicial !== "todos" && moduloInicial !== SIN_MODULO ? moduloInicial : ""));
+  const [clienteId, setClienteId] = useState(cuenta?.cliente_id ?? "");
+  const [contenido, setContenido] = useState(cuenta?.contenido ?? "");
+  const [datos, setDatos] = useState<DatosCuentaInterna>(cuenta?.datos_cuenta ?? {});
+  const [guardando, setGuardando] = useState(false);
+  const [error, setError] = useState("");
+  const cambiar = (campo: keyof DatosCuentaInterna, valor: string) => setDatos((actual) => ({ ...actual, [campo]: valor }));
+  async function enviar(event: React.FormEvent) {
+    event.preventDefault();
+    if (!titulo.trim()) { setError("Ponle un nombre reconocible a la cuenta."); return; }
+    setGuardando(true);
+    const campos = {
+      titulo: titulo.trim(), tipo: "cuenta", categoria: "Cuenta",
+      modulo_cuenta_id: moduloId || null, cliente_id: clienteId || null,
+      contenido: contenido.trim() || null, datos_cuenta: datos,
+      actualizado_en: new Date().toISOString(),
+    };
+    const { error: fallo } = cuenta
+      ? await sb.from("notas_internas").update(campos).eq("id", cuenta.id)
+      : await sb.from("notas_internas").insert(campos);
+    setGuardando(false);
+    if (fallo) setError(fallo.message);
+    else guardado();
+  }
+  return (
+    <Modal titulo={cuenta ? "Editar cuenta" : "Nueva cuenta"} ayuda="Guarda el acceso dentro de un módulo para que el equipo lo encuentre por contexto, no por memoria." cerrar={cerrar}>
+      <form onSubmit={enviar} className="form-centro">
+        <label>Nombre de la cuenta<input className="campo" autoFocus value={titulo} onChange={(event) => setTitulo(event.target.value)} placeholder="Ej: Administrador comercial Meta" /></label>
+        <div className="dos">
+          <label>Módulo
+            <select className="campo" value={moduloId} onChange={(event) => setModuloId(event.target.value)}>
+              <option value="">Sin módulo</option>
+              {modulos.map((modulo) => <option value={modulo.id} key={modulo.id}>{prefijoModulo(modulo, modulos)}{modulo.nombre}</option>)}
+            </select>
+          </label>
+          <label>Cliente
+            <select className="campo" value={clienteId} onChange={(event) => setClienteId(event.target.value)}>
+              <option value="">Sin cliente asignado</option>
+              {clientes.map((cliente) => <option value={cliente.id} key={cliente.id}>{nombreCliente(cliente)}</option>)}
+            </select>
+          </label>
+        </div>
+        <div className="dos">
+          <label>Plataforma<input className="campo" value={datos.entidad ?? ""} onChange={(event) => cambiar("entidad", event.target.value)} placeholder="Meta, Figma, banco…" /></label>
+          <label>Titular<input className="campo" value={datos.titular ?? ""} onChange={(event) => cambiar("titular", event.target.value)} /></label>
+        </div>
+        <div className="dos">
+          <label>Usuario o correo<input className="campo" value={datos.usuario ?? ""} onChange={(event) => cambiar("usuario", event.target.value)} /></label>
+          <label>Clave<input className="campo" type="password" autoComplete="new-password" value={datos.clave ?? ""} onChange={(event) => cambiar("clave", event.target.value)} /></label>
+        </div>
+        <label>URL de acceso<input className="campo" type="url" value={datos.url ?? ""} onChange={(event) => cambiar("url", event.target.value)} placeholder="https://…" /></label>
+        <label>Notas internas<textarea className="campo" rows={4} value={contenido} onChange={(event) => setContenido(event.target.value)} placeholder="Para qué se usa, pasos especiales, responsable…" /></label>
+        {error && <p className="error">{error}</p>}
+        <footer>
+          <button type="button" className="btn" onClick={cerrar}>Cancelar</button>
+          <button className="btn solido" disabled={guardando}>{guardando ? "Guardando…" : "Guardar cuenta"}</button>
+        </footer>
+      </form>
+    </Modal>
+  );
+}
+function EditorRegistro({ tipo, cerrar, guardado }: { tipo: "nota" | "archivo"; cerrar: () => void; guardado: () => void }) {
+  const [titulo, setTitulo] = useState("");
+  const [contenido, setContenido] = useState("");
+  const [archivo, setArchivo] = useState<File | null>(null);
+  const [guardando, setGuardando] = useState(false);
+  const [error, setError] = useState("");
+  const archivoRef = useRef<HTMLInputElement>(null);
+  async function enviar(event: React.FormEvent) {
+    event.preventDefault();
+    if (!titulo.trim() && !archivo) { setError("Agrega un título o selecciona un archivo."); return; }
+    setGuardando(true);
+    let url: string | null = null;
+    if (archivo) {
+      const limpio = archivo.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+      const ruta = `informacion-interna/${Date.now()}-${limpio}`;
+      const { error: falloSubida } = await sb.storage.from("biblioteca").upload(ruta, archivo, { upsert: false, contentType: archivo.type || undefined });
+      if (falloSubida) { setGuardando(false); setError(falloSubida.message); return; }
+      url = sb.storage.from("biblioteca").getPublicUrl(ruta).data.publicUrl;
+    }
+    const nombre = titulo.trim() || archivo!.name.replace(/\.[^.]+$/, "");
+    const campos = {
+      titulo: nombre, tipo, categoria: tipo === "archivo" ? "Archivo" : "Nota",
+      contenido: contenido.trim() || null, archivo_url: url,
+      archivo_nombre: archivo?.name ?? null, archivo_peso_bytes: archivo?.size ?? null,
+      archivos: url ? [{ url, nombre: archivo!.name, peso_bytes: archivo!.size, tipo: archivo!.type }] : [],
+      actualizado_en: new Date().toISOString(),
+    };
+    const { error: fallo } = await sb.from("notas_internas").insert(campos);
+    setGuardando(false);
+    if (fallo) setError(fallo.message);
+    else guardado();
+  }
+  return (
+    <Modal titulo={tipo === "nota" ? "Nueva nota" : "Subir archivo"} ayuda={tipo === "nota" ? "Guarda contexto que el equipo necesite recuperar rápido." : "El archivo queda disponible en la biblioteca interna del equipo."} cerrar={cerrar}>
+      <form className="form-centro" onSubmit={enviar}>
+        <label>Título<input className="campo" autoFocus value={titulo} onChange={(event) => setTitulo(event.target.value)} placeholder={tipo === "nota" ? "Ej: Decisión de campaña" : "Se completa desde el archivo si lo dejas vacío"} /></label>
+        <label>{tipo === "nota" ? "Contenido" : "Descripción"}<textarea className="campo" rows={4} value={contenido} onChange={(event) => setContenido(event.target.value)} /></label>
+        {tipo === "archivo" && <label>Archivo<input ref={archivoRef} className="campo" type="file" onChange={(event) => setArchivo(event.target.files?.[0] ?? null)} /><small>{archivo?.name || "PDF, documento o imagen"}</small></label>}
+        {error && <p className="error">{error}</p>}
+        <footer>
+          <button type="button" className="btn" onClick={cerrar}>Cancelar</button>
+          <button className="btn solido" disabled={guardando}>{guardando ? "Guardando…" : tipo === "nota" ? "Guardar nota" : "Subir archivo"}</button>
+        </footer>
+      </form>
+    </Modal>
+  );
+}
+function EditorModulo({ modulo, padreInicial = "", modulos = [], clientes, cuentasEnModulo, tieneSubmodulos = false, cerrar, guardado, borrar }: {
+  modulo: ModuloCuenta | null; padreInicial?: string; modulos?: ModuloCuenta[]; clientes: Cliente[];
+  cuentasEnModulo: number; tieneSubmodulos?: boolean; cerrar: () => void; guardado: () => void; borrar: () => void;
+}) {
+  const [nombre, setNombre] = useState(modulo?.nombre ?? "");
+  const [descripcion, setDescripcion] = useState(modulo?.descripcion ?? "");
+  const [clienteId, setClienteId] = useState(modulo?.cliente_id ?? "");
+  const [parentId, setParentId] = useState(modulo?.parent_id ?? padreInicial ?? "");
+  const [color, setColor] = useState<ModuloCuenta["color"]>(modulo?.color ?? "azul");
+  const [error, setError] = useState("");
+  const [guardando, setGuardando] = useState(false);
+  // Un módulo no puede terminar colgando de sí mismo ni de sus propios
+  // submódulos: la lista de padres posibles se filtra para que eso no exista.
+  const excluidos = modulo ? new Set(descendientesDe(modulo.id, modulos)) : new Set<string>();
+  const opcionesPadre = modulos.filter((item) => !excluidos.has(item.id));
+  async function enviar(event: React.FormEvent) {
+    event.preventDefault();
+    if (!nombre.trim()) { setError("Nombra el módulo para que el equipo sepa cuándo usarlo."); return; }
+    setGuardando(true);
+    const campos = { nombre: nombre.trim(), descripcion: descripcion.trim() || null, cliente_id: clienteId || null, parent_id: parentId || null, color };
+    const respuesta = modulo ? await sb.from("modulos_cuentas").update(campos).eq("id", modulo.id) : await sb.from("modulos_cuentas").insert(campos);
+    setGuardando(false);
+    if (respuesta.error) setError(respuesta.error.message);
+    else guardado();
+  }
+  return (
+    <Modal titulo={modulo ? "Editar módulo" : padreInicial ? "Nuevo submódulo" : "Nuevo módulo"} ayuda="Agrupa accesos que se usan juntos. Puedes cambiar su contexto en cualquier momento." cerrar={cerrar}>
+      <form className="form-centro" onSubmit={enviar}>
+        <label>Nombre<input className="campo" autoFocus value={nombre} onChange={(event) => setNombre(event.target.value)} placeholder="Ej: Marketing Cóndor" /></label>
+        <label>Descripción<textarea className="campo" rows={3} value={descripcion} onChange={(event) => setDescripcion(event.target.value)} placeholder="Qué resuelve este grupo de cuentas." /></label>
+        <label>Módulo padre <span className="tenue">opcional — crea un submódulo</span>
+          <select className="campo" value={parentId} onChange={(event) => setParentId(event.target.value)}>
+            <option value="">Módulo principal</option>
+            {opcionesPadre.map((item) => <option key={item.id} value={item.id}>{prefijoModulo(item, modulos)}{item.nombre}</option>)}
+          </select>
+        </label>
+        <div className="dos">
+          <label>Cliente <span className="tenue">opcional</span>
+            <select className="campo" value={clienteId} onChange={(event) => setClienteId(event.target.value)}>
+              <option value="">Operación interna de Cóndor</option>
+              {clientes.map((cliente) => <option key={cliente.id} value={cliente.id}>{nombreCliente(cliente)}</option>)}
+            </select>
+          </label>
+          <label>Color
+            <select className="campo" value={color} onChange={(event) => setColor(event.target.value as ModuloCuenta["color"])}>
+              <option value="azul">Azul</option>
+              <option value="violeta">Violeta</option>
+              <option value="verde">Verde</option>
+              <option value="naranjo">Naranjo</option>
+              <option value="gris">Gris</option>
+            </select>
+          </label>
+        </div>
+        {modulo && (
+          <small className="tenue">
+            {tieneSubmodulos
+              ? "Tiene submódulos: elimínalos primero."
+              : cuentasEnModulo
+                ? `Tiene ${cuentasEnModulo} cuenta${cuentasEnModulo === 1 ? "" : "s"}. Muévelas antes de eliminarlo.`
+                : "Módulo vacío: puedes eliminarlo si ya no se necesita."}
+          </small>
+        )}
+        {error && <p className="error">{error}</p>}
+        <footer>
+          {modulo && !cuentasEnModulo && !tieneSubmodulos && <button type="button" className="btn peligro" onClick={borrar}>Eliminar módulo</button>}
+          <span style={{ flex: 1 }} />
+          <button type="button" className="btn" onClick={cerrar}>Cancelar</button>
+          <button className="btn solido" disabled={guardando}>{guardando ? "Guardando…" : modulo ? "Guardar cambios" : "Crear módulo"}</button>
+        </footer>
+      </form>
+    </Modal>
+  );
+}
+function EditorPersona({ cerrar, guardado }: { cerrar: () => void; guardado: () => void }) {
+  const [nombre, setNombre] = useState("");
+  const [email, setEmail] = useState("");
+  const [error, setError] = useState("");
+  const [guardando, setGuardando] = useState(false);
+  async function enviar(event: React.FormEvent) {
+    event.preventDefault();
+    if (!nombre.trim() || !/^\S+@\S+\.\S+$/.test(email.trim())) { setError("Necesitamos nombre y un correo válido para habilitar el acceso."); return; }
+    setGuardando(true);
+    const { error: fallo } = await sb.from("admins").upsert({ nombre: nombre.trim(), email: email.trim().toLowerCase() });
+    setGuardando(false);
+    if (fallo) setError(fallo.message);
+    else guardado();
+  }
+  return (
+    <Modal titulo="Agregar persona" ayuda="Su correo quedará autorizado como miembro del equipo. No se le envía una contraseña: entra con el mismo acceso por correo del portal." cerrar={cerrar}>
+      <form className="form-centro" onSubmit={enviar}>
+        <label>Nombre completo<input className="campo" autoFocus value={nombre} onChange={(event) => setNombre(event.target.value)} placeholder="Ej: María Pérez" /></label>
+        <label>Correo de trabajo<input className="campo" type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="maria@empresa.com" /></label>
+        {error && <p className="error">{error}</p>}
+        <footer>
+          <button type="button" className="btn" onClick={cerrar}>Cancelar</button>
+          <button className="btn solido" disabled={guardando}>{guardando ? "Agregando…" : "Dar acceso"}</button>
+        </footer>
+      </form>
+    </Modal>
+  );
+}
