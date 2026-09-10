@@ -33,7 +33,7 @@ export function inicioLanding({ cab, pie, jsComun, personas, wsp }) {
 
   <section class="hm-trust" aria-label="Empresas que han confiado en Cóndor"><div class="hm-wrap">
     <p>Empresas que han confiado en nosotros</p>
-    <div class="hm-logo-window"><div class="hm-logos">${[['tecnobox','Tecnobox'],['neisstech','Neisstech'],['delta-force','Delta Force'],['bafles-viva','Bafles Viva'],['ebi-foods','Ebi Foods']].map(([file,name])=>`<img src="/assets/clientes/${file}.png" alt="${name}" width="140" height="60" loading="lazy" />`).join('')}</div></div>
+    <div class="hm-logo-window"><div class="hm-logos">${[['tecnobox','Tecnobox'],['neisstech','Neisstech'],['delta-force','Delta Force'],['bafles-viva','Bafles Viva'],['ebi-foods','Ebi Foods'],['gii-medicas','GII Médicas'],['urpa-logistico','URPA Logístico'],['transportes-otniano','Transportes Otniano']].map(([file,name])=>`<img src="/assets/clientes/${file}.png" alt="${name}" width="140" height="60" loading="lazy" />`).join('')}</div></div>
   </div></section>
 
   <section class="hm-section" id="soluciones"><div class="hm-wrap">

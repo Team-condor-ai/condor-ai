@@ -629,6 +629,9 @@ const CLIENTES = [
   { nombre: "Delta Force", logo: "/assets/clientes/delta-force.png" },
   { nombre: "Bafles Viva", logo: "/assets/clientes/bafles-viva.png" },
   { nombre: "Ebi Foods", logo: "/assets/clientes/ebi-foods.png" },
+  { nombre: "GII Médicas", logo: "/assets/clientes/gii-medicas.png" },
+  { nombre: "URPA Logístico", logo: "/assets/clientes/urpa-logistico.png" },
+  { nombre: "Transportes Otniano", logo: "/assets/clientes/transportes-otniano.png" },
 ];
 const chipCliente = (c) => c.logo
   ? `<span class="cliente-chip"><img src="${c.logo}" alt="${c.nombre}" loading="lazy" /></span>`
