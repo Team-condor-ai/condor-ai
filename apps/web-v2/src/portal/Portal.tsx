@@ -26,6 +26,7 @@ import { Dashboard } from "./staff/Dashboard";
 import { Contabilidad } from "./staff/contabilidad/Contabilidad";
 import { Organizacion } from "./staff/organizacion/Organizacion";
 import { Biblioteca } from "./staff/Biblioteca";
+import { CorreoTecnobox } from "./staff/CorreoTecnobox";
 import { Mcp } from "./staff/Mcp";
 import { CreditosApi } from "./staff/CreditosApi";
 import { Mapa } from "./staff/Mapa";
@@ -89,6 +90,8 @@ const MENU_STAFF: Grupo[] = [
       { a: "/acceso/prospeccion", texto: "Prospección", icono: "buscar" },
       { a: "/acceso/marketing", texto: "Marketing", icono: "chat" },
       { a: "/acceso/biblioteca", texto: "Biblioteca", icono: "biblioteca" },
+      // Bandeja de ecommerce@tecnoboxchile.cl: leer y responder como Tecnobox (26-sept-2026).
+      { a: "/acceso/correo-tecnobox", texto: "Correo Tecnobox", icono: "correos" },
     ],
   },
   {
@@ -296,6 +299,7 @@ function PortalContenido() {
           <Route path="cobros" element={<Navigate to="/acceso/contabilidad?tab=cobros" replace />} />
           <Route path="ratia" element={<Navigate to="/acceso/clientes" replace />} />
           <Route path="biblioteca" element={<Biblioteca />} />
+          <Route path="correo-tecnobox" element={<CorreoTecnobox />} />
           <Route path="mcp" element={<Mcp />} />
           <Route path="creditos-api" element={<CreditosApi />} />
           <Route path="mapa" element={<Mapa />} />

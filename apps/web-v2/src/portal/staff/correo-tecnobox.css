@@ -1,0 +1,36 @@
+/* Bandeja de ecommerce@tecnoboxchile.cl (Portal · staff). Scope propio: .correo-tb */
+.correo-tb { display: flex; flex-direction: column; gap: 14px; min-height: calc(100vh - 120px); }
+.correo-tb-cabecera { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
+.correo-tb-cabecera h1 { margin: 0; font-size: 22px; }
+.correo-tb-cabecera p { margin: 4px 0 0; color: #6b7280; font-size: 13px; }
+.correo-tb-acciones { display: flex; align-items: center; gap: 12px; font-size: 13px; color: #4b5563; }
+.correo-tb-acciones button, .correo-tb-responder button {
+  border: 0; border-radius: 10px; padding: 9px 14px; background: #111827; color: #fff; font-weight: 600; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 6px; }
+.correo-tb-acciones button:disabled, .correo-tb-responder button:disabled { opacity: .5; cursor: default; }
+.correo-tb-error { margin: 0; padding: 10px 12px; border-radius: 10px; background: #fef2f2; color: #b91c1c; font-size: 13px; }
+.correo-tb-cuerpo { display: grid; grid-template-columns: minmax(260px, 360px) 1fr; gap: 14px; flex: 1; min-height: 0; }
+.correo-tb-lista { border: 1px solid #e5e7eb; border-radius: 14px; overflow: auto; max-height: calc(100vh - 200px); background: #fff; }
+.correo-tb-item { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; width: 100%; text-align: left; padding: 12px 14px;
+  border: 0; border-bottom: 1px solid #f1f5f9; background: transparent; cursor: pointer; font: inherit; color: inherit; }
+.correo-tb-item:hover { background: #f8fafc; }
+.correo-tb-item.activo { background: #eef2ff; }
+.correo-tb-item .de { font-size: 13.5px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.correo-tb-item.nuevo .de, .correo-tb-item.nuevo .asunto { font-weight: 700; }
+.correo-tb-item.nuevo .de::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #2563eb; margin-right: 6px; vertical-align: middle; }
+.correo-tb-item time { font-size: 11.5px; color: #6b7280; }
+.correo-tb-item .asunto { grid-column: 1 / -1; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.correo-tb-item .extracto { grid-column: 1 / -1; font-size: 12px; color: #6b7280; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.correo-tb-item .respondido { grid-column: 1 / -1; justify-self: start; font-size: 10.5px; font-weight: 700; color: #047857; background: #ecfdf5; padding: 2px 7px; border-radius: 999px; }
+.correo-tb-lectura { border: 1px solid #e5e7eb; border-radius: 14px; padding: 18px; background: #fff; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.correo-tb-meta h2 { margin: 0 0 4px; font-size: 18px; }
+.correo-tb-meta p { margin: 0; font-size: 13px; color: #4b5563; }
+.correo-tb-meta .respondido-txt { margin-top: 4px; color: #047857; font-weight: 600; }
+.correo-tb-html { width: 100%; min-height: 360px; flex: 1; border: 1px solid #f1f5f9; border-radius: 10px; background: #fff; }
+.correo-tb-texto { white-space: pre-wrap; font: 13.5px/1.55 inherit; margin: 0; max-height: 420px; overflow: auto; background: #f8fafc; padding: 12px; border-radius: 10px; }
+.correo-tb-responder { display: flex; flex-direction: column; gap: 8px; }
+.correo-tb-responder textarea { width: 100%; border: 1px solid #d1d5db; border-radius: 10px; padding: 10px 12px; font: inherit; resize: vertical; }
+.correo-tb-responder > div { display: flex; justify-content: flex-end; align-items: center; gap: 12px; }
+.correo-tb-responder .ok { font-size: 12.5px; color: #047857; font-weight: 600; }
+.correo-tb .vacio { color: #6b7280; font-size: 13px; padding: 16px; }
+@media (max-width: 860px) { .correo-tb-cuerpo { grid-template-columns: 1fr; } .correo-tb-lista { max-height: 320px; } }
