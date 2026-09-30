@@ -1,0 +1,846 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Guion Visual Condor</title>
+<meta name="description" content="Guion visual V1 de condor.ai: marca, color, textura acrílica, motion, productos e interfaz para condorai.cl y el Portal Cóndor.">
+<link rel="icon" href="assets/marca/condor-isotipo-cobalto.svg" type="image/svg+xml">
+<link rel="stylesheet" href="tokens/condor.css">
+<link rel="stylesheet" href="guion.css">
+</head>
+<body>
+
+<!-- Glifos de producto (monolínea 1,8 sobre 24) -->
+<svg aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden">
+  <symbol id="g-sites" viewBox="0 0 24 24"><rect x="2.5" y="4" width="19" height="14.5" rx="3.2"/><path d="M2.5 8.2h19"/><path d="M12.4 11.2l6.3 2.4-2.7 1-1 2.7z" class="relleno"/></symbol>
+  <symbol id="g-ecommerce" viewBox="0 0 24 24"><path d="M4.6 8h14.8l-1.2 12H5.8z"/><path d="M8.8 10.5V7.2a3.2 3.2 0 0 1 6.4 0v3.3"/></symbol>
+  <symbol id="g-media" viewBox="0 0 24 24"><path d="M8.5 6.5v11l9-5.5z" class="relleno"/></symbol>
+  <symbol id="g-track" viewBox="0 0 24 24"><path d="M4.5 19.5v-4.5M9.5 19.5v-8M14.5 19.5V8M19.5 19.5v-15"/></symbol>
+  <symbol id="g-agents" viewBox="0 0 24 24"><path d="M4 5.5h16v10.5h-9.5L6 20v-4H4z"/><path d="M9 10.8h.01M12 10.8h.01M15 10.8h.01" stroke-width="2.6"/></symbol>
+  <symbol id="g-barbara" viewBox="0 0 24 24"><path d="M12 2.8l2.1 7.1 7.1 2.1-7.1 2.1-2.1 7.1-2.1-7.1-7.1-2.1 7.1-2.1z" class="relleno"/></symbol>
+  <symbol id="g-flecha" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+  <symbol id="g-copiar" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></symbol>
+  <symbol id="g-repetir" viewBox="0 0 24 24"><path d="M4 12a8 8 0 0 1 13.7-5.7L20 8.5M20 4v4.5h-4.5M20 12a8 8 0 0 1-13.7 5.7L4 15.5M4 20v-4.5h4.5"/></symbol>
+  <symbol id="g-sol" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></symbol>
+  <symbol id="g-buscar" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></symbol>
+  <symbol id="g-inicio" viewBox="0 0 24 24"><path d="M4 10.5L12 4l8 6.5V20H4z"/><path d="M9.5 20v-5.5h5V20"/></symbol>
+  <symbol id="g-clientes" viewBox="0 0 24 24"><circle cx="9" cy="8.5" r="3.5"/><path d="M2.8 19.5a6.2 6.2 0 0 1 12.4 0M16 5.3a3.4 3.4 0 0 1 0 6.4M17.6 14.2a6 6 0 0 1 3.6 5.3"/></symbol>
+  <symbol id="g-finanzas" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2.5"/><path d="M3 10.5h18M7 15h3"/></symbol>
+  <symbol id="g-mas" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+</svg>
+
+<!-- Barra superior: altímetro de lectura -->
+<header class="barra">
+  <a class="barra-marca" href="#portada" aria-label="Volver a la portada">
+    <svg class="barra-iso"><use href="#iso"/></svg>
+    <span>Guion visual <b>V1</b></span>
+  </a>
+  <div class="altimetro" aria-live="polite">
+    <span class="alt-etq">ALT</span>
+    <span class="alt-num" id="alt-num">00000</span>
+    <span class="alt-m">m</span>
+    <span class="alt-nombre" id="alt-nombre">Portada</span>
+  </div>
+  <button class="btn-tema" id="btn-tema" type="button" aria-label="Cambiar tema"><svg><use href="#g-sol"/></svg><span>Auto</span></button>
+</header>
+
+<!-- Riel de capítulos (escritorio) -->
+<nav class="riel" aria-label="Capítulos del guion">
+  <a href="#portada"><i>0</i>Portada</a>
+  <a href="#esencia"><i>500</i>Esencia</a>
+  <a href="#logo"><i>1.200</i>Logo</a>
+  <a href="#carga"><i>1.800</i>Carga</a>
+  <a href="#color"><i>2.400</i>Color</a>
+  <a href="#tipo"><i>3.000</i>Tipografía</a>
+  <a href="#textura"><i>3.600</i>Textura</a>
+  <a href="#motion"><i>4.200</i>Motion</a>
+  <a href="#productos"><i>4.800</i>Productos</a>
+  <a href="#interfaz"><i>5.200</i>Interfaz</a>
+  <a href="#aplicaciones"><i>5.600</i>Aplicaciones</a>
+  <a href="#voz"><i>6.400</i>Voz</a>
+  <a href="#cumbre"><i>6.961</i>Cumbre</a>
+</nav>
+
+<main class="pagina">
+
+<!-- ═══════════════ 0 m · PORTADA ═══════════════ -->
+<section class="portada escenario" id="portada" data-alt="0" data-nombre="Portada" data-zona-raton>
+  <canvas class="portada-fondo" data-vertido="cobalto" data-semilla="4.2" data-escala="0.7" data-zoom="1.25" data-brillo="0.3" data-raton aria-hidden="true"></canvas>
+  <div class="grano" aria-hidden="true"></div>
+  <div class="portada-contenido">
+    <div class="despegue" id="despegue-portada">
+      <div class="despegue-iso">
+        <div class="iso-acrilico" data-foto="glaciar:7.3:0:0.55"></div>
+        <svg class="iso-trazo" aria-hidden="true"></svg>
+      </div>
+      <div class="despegue-word" aria-label="condor.ai">
+        <span>c</span><span>o</span><span>n</span><span>d</span><span>o</span><span>r</span><span class="pt">.</span><span>a</span><span>i</span>
+      </div>
+    </div>
+    <div class="portada-texto">
+      <p class="rotulo">Guion visual · V1 · Septiembre 2026</p>
+      <h1>Acrílico <em>Andino</em></h1>
+      <p class="portada-lead">La nueva identidad de condor.ai. Un solo color para el cóndor, textura de pintura acrílica y láminas de acrílico para todo lo demás, y un movimiento que planea en vez de aletear. De aquí salen el sitio, el Portal Cóndor y cada producto, Medula incluida.</p>
+    </div>
+    <dl class="portada-datos">
+      <div><dt>Base</dt><dd>−33,4489 · −70,6693</dd></div>
+      <div><dt>Envergadura</dt><dd>3,2 m</dd></div>
+      <div><dt>Techo de vuelo</dt><dd>6.961 m</dd></div>
+      <div><dt>Alcance</dt><dd>condorai.cl · Portal · 7 productos</dd></div>
+    </dl>
+  </div>
+  <p class="portada-pista">Mueve el cursor sobre la pintura</p>
+</section>
+
+<!-- ═══════════════ 500 m · ESENCIA ═══════════════ -->
+<section class="capitulo" id="esencia" data-alt="500" data-nombre="Esencia">
+  <header class="cap-cabeza">
+    <p class="rotulo">500 m · Esencia</p>
+    <h2>Planear, no aletear.</h2>
+    <p class="cap-lead">El cóndor andino casi no bate las alas. Encuentra una térmica, sube y planea durante horas gastando lo mínimo. Así se tiene que sentir condor.ai: mucha altura, poco ruido y cada movimiento con una razón.</p>
+  </header>
+
+  <div class="pilares">
+    <article class="pilar">
+      <p class="pilar-num" data-asciende="5000">5.000</p>
+      <p class="pilar-unidad">metros de perspectiva</p>
+      <h3>Altura</h3>
+      <p>Vemos el negocio completo antes que el detalle. Composiciones con aire, horizontes largos, cifras grandes y poco texto encima.</p>
+    </article>
+    <article class="pilar">
+      <p class="pilar-num">2</p>
+      <p class="pilar-unidad">acrílicos</p>
+      <h3>Materia</h3>
+      <p>Pintura acrílica vertida, con venas y celdas, para dar textura. Lámina de acrílico gruesa, con canto y brillo, para sostener contenido. Nada de degradés planos.</p>
+    </article>
+    <article class="pilar">
+      <p class="pilar-num">?</p>
+      <p class="pilar-unidad">antes que la respuesta</p>
+      <h3>Intriga</h3>
+      <p>Mostramos una parte y dejamos que el resto se descubra: textos que se descifran, zonas que se revelan con el cursor, una sombra que cruza la pantalla.</p>
+    </article>
+  </div>
+
+  <div class="tabla-cambios" role="table" aria-label="Qué cambia de la V2 a la V1 Acrílico">
+    <div class="fila cabeza" role="row"><span role="columnheader">Pieza</span><span role="columnheader">Hasta hoy (V2 · Cielo Andino)</span><span role="columnheader">V1 Acrílico Andino</span></div>
+    <div class="fila" role="row"><span role="cell">Logo</span><span role="cell">Cóndor tricolor azul-violeta-rojo, en PNG</span><span role="cell">Cóndor de un color, redibujado en vector (30 vértices) y con versión "corte"</span></div>
+    <div class="fila" role="row"><span role="cell">Color</span><span role="cell">Gradiente azul → violeta → rojo en todo</span><span role="cell">Rampa de 8 azules + 5 ediciones especiales para campañas</span></div>
+    <div class="fila" role="row"><span role="cell">Textura</span><span role="cell">Vidrio liso y cielo fotográfico</span><span role="cell">Vertido acrílico en vivo, lámina con canto, grano y celdas</span></div>
+    <div class="fila" role="row"><span role="cell">Productos</span><span role="cell">Cada ícono con su propio estilo (3D, línea, fantasma)</span><span role="cell">Una ficha acrílica común; cambia el pigmento y el glifo</span></div>
+    <div class="fila" role="row"><span role="cell">Portal</span><span role="cell">Grises verdosos heredados del ERP</span><span role="cell">Los mismos tokens del sitio, en claro y oscuro</span></div>
+    <div class="fila" role="row"><span role="cell">Movimiento</span><span role="cell">Parallax y aparición al hacer scroll</span><span role="cell">Cuatro curvas de vuelo con nombre, cargas de marca y motion con intriga</span></div>
+  </div>
+</section>
+
+<!-- ═══════════════ 1.200 m · LOGO ═══════════════ -->
+<section class="capitulo" id="logo" data-alt="1200" data-nombre="Logo">
+  <header class="cap-cabeza">
+    <p class="rotulo">1.200 m · Logo</p>
+    <h2>Un cóndor, un color.</h2>
+    <p class="cap-lead">Le quitamos los colores al cóndor y lo redibujamos en vector sobre una grilla de 275 × 248. Conserva la silueta que la gente ya reconoce; lo que cambia es que ahora funciona en cualquier tamaño, sobre cualquier fondo y con un solo color.</p>
+  </header>
+
+  <div class="construccion">
+    <figure class="construccion-fig">
+      <svg viewBox="-20 -20 315 288" class="plano" role="img" aria-label="Construcción del isotipo sobre una grilla con sus ángulos">
+        <defs><pattern id="grilla" width="25" height="25" patternUnits="userSpaceOnUse"><path d="M25 0H0V25" fill="none" class="grilla-l"/></pattern></defs>
+        <rect x="0" y="0" width="275" height="248" fill="url(#grilla)"/>
+        <rect x="0" y="0" width="275" height="248" fill="none" class="plano-caja"/>
+        <use href="#iso" class="plano-iso" x="0" y="0" width="275" height="248"/>
+        <line x1="0" y1="0" x2="200" y2="118.8" class="plano-guia"/>
+        <line x1="272" y1="129.5" x2="92" y2="261" class="plano-guia"/>
+        <line x1="0" y1="129.5" x2="275" y2="129.5" class="plano-guia suave"/>
+        <circle cx="0" cy="0" r="3" class="plano-v"/><circle cx="160" cy="95" r="3" class="plano-v"/><circle cx="183" cy="133" r="3" class="plano-v"/><circle cx="243" cy="117" r="3" class="plano-v"/><circle cx="275" cy="145" r="3" class="plano-v"/><circle cx="250" cy="145.6" r="3" class="plano-v"/><circle cx="110" cy="248" r="3" class="plano-v"/><circle cx="32" cy="247" r="3" class="plano-v"/><circle cx="121.5" cy="182.2" r="3" class="plano-v"/><circle cx="38.5" cy="129.5" r="3" class="plano-v"/><circle cx="109" cy="136.8" r="3" class="plano-v"/><circle cx="11" cy="64.5" r="3" class="plano-v"/><circle cx="106.6" cy="104.4" r="3" class="plano-v"/><circle cx="16.8" cy="38.8" r="3" class="plano-v"/>
+        <text x="46" y="16" class="plano-t">30,7°</text>
+        <text x="196" y="214" class="plano-t">36,2°</text>
+        <text x="279" y="133" class="plano-t">C</text>
+        <path d="M268 117v32" class="plano-cota"/>
+      </svg>
+      <figcaption>
+        <span><b>30,7°</b> borde de ataque del ala</span>
+        <span><b>36,2°</b> línea del vientre</span>
+        <span><b>C</b> alto de la cabeza = unidad de respeto</span>
+      </figcaption>
+    </figure>
+    <div class="construccion-texto">
+      <h3>Construcción</h3>
+      <p>Tres plumas primarias escalonadas, un ala que sube a 30,7° y un vientre que baja a 36,2°. La diferencia entre los dos ángulos es lo que hace que el cóndor se vea planeando y no cayendo.</p>
+      <p>El collar blanco del cóndor andino queda como una pequeña muesca en el cuello. Es el único detalle orgánico del isotipo y no se quita.</p>
+      <p>La línea de luz que separaba ala y cuerpo en el logo anterior se convierte en la versión <b>Corte</b>: un tajo limpio que se usa en tamaños grandes, relieves e impresión.</p>
+      <div class="acciones">
+        <button class="btn-lamina" type="button" data-copiar="svg:iso:#2747FF"><svg><use href="#g-copiar"/></svg>Copiar isotipo SVG</button>
+        <button class="btn-lamina" type="button" data-copiar="svg:lockup:#0A0F2C"><svg><use href="#g-copiar"/></svg>Copiar logo horizontal</button>
+      </div>
+    </div>
+  </div>
+
+  <h3 class="sub">Versiones</h3>
+  <div class="versiones">
+    <figure class="version"><div class="version-lienzo"><svg class="v-iso"><use href="#iso"/></svg></div><figcaption><b>Isotipo · Silueta</b><span>Principal. Avatares, favicon, app, sellos.</span></figcaption></figure>
+    <figure class="version"><div class="version-lienzo"><svg class="v-iso"><use href="#iso-corte"/></svg></div><figcaption><b>Isotipo · Corte</b><span>Sobre 64 px. Relieve, grabado, gran formato.</span></figcaption></figure>
+    <figure class="version"><div class="version-lienzo"><svg class="v-word"><use href="#word"/></svg></div><figcaption><b>Wordmark</b><span>Clash Display Semibold, −2 % de tracking, en contornos.</span></figcaption></figure>
+    <figure class="version"><div class="version-lienzo"><svg class="v-lockup-h"><use href="#lockup-h"/></svg></div><figcaption><b>Logo horizontal</b><span>Uso por defecto. Barra del sitio, portal, documentos.</span></figcaption></figure>
+    <figure class="version"><div class="version-lienzo"><svg class="v-lockup-v"><use href="#lockup-v"/></svg></div><figcaption><b>Logo vertical</b><span>Formatos cuadrados, portadas, merch.</span></figcaption></figure>
+    <figure class="version"><div class="version-lienzo sello-lienzo">
+      <svg class="sello" viewBox="0 0 200 200" aria-hidden="true">
+        <defs><path id="circulo" d="M100 100m-78 0a78 78 0 1 1 156 0a78 78 0 1 1-156 0"/></defs>
+        <g class="sello-giro"><text><textPath href="#circulo" textLength="488">CONDOR.AI · INTELIGENCIA ARTIFICIAL · SANTIAGO DE CHILE ·</textPath></text></g>
+        <use href="#iso" x="62" y="66" width="76" height="68"/>
+      </svg></div><figcaption><b>Sello</b><span>Rota lento. Stickers, cierres de video, empaques.</span></figcaption></figure>
+  </div>
+
+  <h3 class="sub">El logo en color</h3>
+  <p class="nota-sub">Siempre un color a la vez. Los gradientes se tratan como un solo color (una tinta que cambia), nunca como tres colores planos.</p>
+  <div class="colores-logo">
+    <figure class="cl" style="--f:#F2F5FC;--c:#2747FF"><svg><use href="#lockup-h"/></svg><figcaption><b>Cobalto</b><span>Principal sobre claro</span><button type="button" data-copiar="svg:lockup:#2747FF" aria-label="Copiar SVG cobalto"><svg><use href="#g-copiar"/></svg></button></figcaption></figure>
+    <figure class="cl" style="--f:#FFFFFF;--c:#0A0F2C"><svg><use href="#lockup-h"/></svg><figcaption><b>Tinta</b><span>Documentos, facturas, prensa</span><button type="button" data-copiar="svg:lockup:#0A0F2C" aria-label="Copiar SVG tinta"><svg><use href="#g-copiar"/></svg></button></figcaption></figure>
+    <figure class="cl" style="--f:#2747FF;--c:#FFFFFF"><svg><use href="#lockup-h"/></svg><figcaption><b>Blanco sobre cobalto</b><span>Botones de marca, redes</span><button type="button" data-copiar="svg:lockup:#FFFFFF" aria-label="Copiar SVG blanco"><svg><use href="#g-copiar"/></svg></button></figcaption></figure>
+    <figure class="cl" style="--f:#050A24;--c:#FFFFFF"><svg><use href="#lockup-h"/></svg><figcaption><b>Blanco sobre abismo</b><span>Video, escenarios oscuros</span><button type="button" data-copiar="svg:lockup:#FFFFFF" aria-label="Copiar SVG blanco"><svg><use href="#g-copiar"/></svg></button></figcaption></figure>
+    <figure class="cl cl-grad" style="--f:#F2F5FC;--g:var(--cn-grad-azul)"><div class="cl-masc"></div><figcaption><b>Gradiente azul</b><span>El gradiente por defecto</span><button type="button" data-copiar="svg:lockup:gradiente-azul" aria-label="Copiar SVG gradiente azul"><svg><use href="#g-copiar"/></svg></button></figcaption></figure>
+    <figure class="cl cl-grad" style="--f:#1A0B2E;--g:var(--cn-grad-rosa-puna)"><div class="cl-masc"></div><figcaption><b>Rosa Puna</b><span>Edición especial · campañas</span><button type="button" data-copiar="svg:lockup:rosa-puna" aria-label="Copiar SVG rosa puna"><svg><use href="#g-copiar"/></svg></button></figcaption></figure>
+    <figure class="cl cl-grad" style="--f:#041226;--g:var(--cn-grad-aurora)"><div class="cl-masc"></div><figcaption><b>Aurora</b><span>Edición especial · datos, Track</span><button type="button" data-copiar="svg:lockup:aurora" aria-label="Copiar SVG aurora"><svg><use href="#g-copiar"/></svg></button></figcaption></figure>
+    <figure class="cl cl-grad" style="--f:#111427;--g:var(--cn-grad-cromo)"><div class="cl-masc"></div><figcaption><b>Cromo</b><span>Premium · impresión metálica</span><button type="button" data-copiar="svg:lockup:cromo" aria-label="Copiar SVG cromo"><svg><use href="#g-copiar"/></svg></button></figcaption></figure>
+    <figure class="cl cl-vivo" style="--f:#050A24"><div class="cl-masc-iso"><canvas data-vertido="cobalto" data-semilla="2.6" data-escala="0.8" data-zoom="0.9" data-brillo="0.5" aria-hidden="true"></canvas></div><figcaption><b>Acrílico vivo</b><span>Solo en pantalla, isotipo sobre 96 px</span></figcaption></figure>
+  </div>
+
+  <div class="respeto">
+    <figure class="respeto-fig">
+      <div class="respeto-caja">
+        <svg class="respeto-logo"><use href="#lockup-h"/></svg>
+        <span class="c c1">C</span><span class="c c2">C</span><span class="c c3">C</span><span class="c c4">C</span>
+      </div>
+      <figcaption>Área de respeto: una <b>C</b> (alto de la cabeza del cóndor) por lado. Nada entra ahí.</figcaption>
+    </figure>
+    <div class="tamanos">
+      <h3>Tamaños mínimos</h3>
+      <div class="tam-fila"><svg style="width:16px"><use href="#iso"/></svg><span><b>16 px</b> Isotipo en favicon y pestañas</span></div>
+      <div class="tam-fila"><svg style="width:24px"><use href="#iso"/></svg><span><b>24 px</b> Isotipo en interfaz (portal, menús)</span></div>
+      <div class="tam-fila"><svg style="width:96px"><use href="#lockup-h"/></svg><span><b>96 px</b> · 25 mm Logo horizontal</span></div>
+      <div class="tam-fila"><svg style="width:64px"><use href="#iso-corte"/></svg><span><b>64 px</b> Versión Corte (bajo eso, el tajo se cierra)</span></div>
+    </div>
+  </div>
+
+  <h3 class="sub">Así no</h3>
+  <div class="noes">
+    <figure class="no"><div class="no-lienzo"><img src="assets/antes/logo-v2.png" alt="Logo anterior tricolor" class="no-viejo"></div><figcaption>No volver al tricolor</figcaption></figure>
+    <figure class="no"><div class="no-lienzo"><svg class="no-estirar"><use href="#lockup-h"/></svg></div><figcaption>No estirar ni comprimir</figcaption></figure>
+    <figure class="no"><div class="no-lienzo"><svg class="no-rotar"><use href="#iso"/></svg></div><figcaption>No rotar al cóndor</figcaption></figure>
+    <figure class="no"><div class="no-lienzo"><svg class="no-contorno"><use href="#iso"/></svg></div><figcaption>No usar solo el contorno</figcaption></figure>
+    <figure class="no"><div class="no-lienzo"><svg class="no-sombra"><use href="#lockup-h"/></svg></div><figcaption>No sombras ni biseles</figcaption></figure>
+    <figure class="no"><div class="no-lienzo no-vertido" data-foto="aurora:3:1"><svg><use href="#lockup-h"/></svg></div><figcaption>No sobre vertido sin lámina</figcaption></figure>
+  </div>
+</section>
+
+<!-- ═══════════════ 1.800 m · CARGA ═══════════════ -->
+<section class="capitulo" id="carga" data-alt="1800" data-nombre="Carga">
+  <header class="cap-cabeza">
+    <p class="rotulo">1.800 m · Carga</p>
+    <h2>Esperar también es marca.</h2>
+    <p class="cap-lead">Cuatro cargas, una por tipo de espera. Todas usan el isotipo y ninguna gira en círculos: el cóndor sube, se llena o planea.</p>
+  </header>
+  <div class="cargas">
+    <article class="carga-ficha">
+      <div class="carga-escena escenario">
+        <div class="despegue despegue-chico" id="carga-despegue">
+          <div class="despegue-iso"><div class="iso-acrilico" data-foto="glaciar:7.3:0:0.55"></div><svg class="iso-trazo" aria-hidden="true"></svg></div>
+          <div class="despegue-word" aria-label="condor.ai"><span>c</span><span>o</span><span>n</span><span>d</span><span>o</span><span>r</span><span class="pt">.</span><span>a</span><span>i</span></div>
+        </div>
+      </div>
+      <div class="carga-info">
+        <h3>Despegue</h3><p>Entrada al sitio y al portal. 2,4 s, una vez por sesión. El trazo dibuja al cóndor, la pintura lo llena y el nombre sube.</p>
+        <button class="btn-mini" type="button" data-repetir="carga-despegue"><svg><use href="#g-repetir"/></svg>Repetir</button>
+      </div>
+    </article>
+    <article class="carga-ficha">
+      <div class="carga-escena escenario">
+        <div class="carga carga-vertido" id="carga-vertido" data-progreso>
+          <div class="cv-iso"><div class="cv-nivel" data-foto="cielo:5.1:0:0.7"></div></div>
+          <p class="carga-dato"><span class="carga-num">000</span>%</p>
+        </div>
+      </div>
+      <div class="carga-info">
+        <h3>Vertido</h3><p>Cargas con progreso real: subir archivos, generar cotizaciones y PDFs, exportar. El cóndor se llena de pintura hasta el 100 %.</p>
+        <button class="btn-mini" type="button" data-repetir="carga-vertido"><svg><use href="#g-repetir"/></svg>Repetir</button>
+      </div>
+    </article>
+    <article class="carga-ficha">
+      <div class="carga-escena escenario">
+        <div class="carga carga-planeo" id="carga-planeo" data-altimetro>
+          <div class="cp-cielo"><i></i><i></i><i></i><i></i></div>
+          <svg class="cp-iso"><use href="#iso"/></svg>
+          <p class="carga-dato mono"><span class="carga-num">4.200</span> m · pensando</p>
+        </div>
+      </div>
+      <div class="carga-info">
+        <h3>Planeo</h3><p>Esperas sin duración conocida: la IA pensando, Barbara creando, un agente respondiendo. El cóndor sube y baja en la térmica y el altímetro no para.</p>
+        <button class="btn-mini" type="button" data-repetir="carga-planeo"><svg><use href="#g-repetir"/></svg>Repetir</button>
+      </div>
+    </article>
+    <article class="carga-ficha">
+      <div class="carga-escena carga-escena-clara">
+        <div class="pulsos">
+          <span class="pulso" style="--s:16px"></span><span class="pulso" style="--s:24px"></span><span class="pulso" style="--s:40px"></span>
+          <button class="ui-btn ui-primario" type="button" data-cargando><span class="pulso" style="--s:18px"></span><span class="ui-btn-tx">Emitir cotización</span></button>
+        </div>
+        <div class="esqueleto"><i></i><i></i><i></i></div>
+      </div>
+      <div class="carga-info">
+        <h3>Pulso</h3><p>Botones, celdas y esqueletos del portal, de 16 a 40 px. Un brillo recorre la silueta cada 1,4 s. Toca el botón para verlo en contexto.</p>
+      </div>
+    </article>
+  </div>
+</section>
+
+<!-- ═══════════════ 2.400 m · COLOR ═══════════════ -->
+<section class="capitulo" id="color" data-alt="2400" data-nombre="Color">
+  <header class="cap-cabeza">
+    <p class="rotulo">2.400 m · Color</p>
+    <h2>Del abismo al glaciar.</h2>
+    <p class="cap-lead">Ocho azules ordenados como el cielo a medida que se sube: la noche abajo, el cobalto al medio y el glaciar arriba. Toca cualquier color para copiar su código.</p>
+  </header>
+  <div class="rampa">
+    <button type="button" class="tono oscuro" style="--t:#050A24" data-copiar="#050A24"><b>Abismo</b><span>#050A24</span></button>
+    <button type="button" class="tono oscuro" style="--t:#0A0F2C" data-copiar="#0A0F2C"><b>Tinta</b><span>#0A0F2C</span></button>
+    <button type="button" class="tono oscuro" style="--t:#0B1A7A" data-copiar="#0B1A7A"><b>Profundo</b><span>#0B1A7A</span></button>
+    <button type="button" class="tono oscuro principal" style="--t:#2747FF" data-copiar="#2747FF"><b>Cobalto</b><span>#2747FF</span><em>Color de marca</em></button>
+    <button type="button" class="tono oscuro" style="--t:#5A7BFF" data-copiar="#5A7BFF"><b>Altura</b><span>#5A7BFF</span></button>
+    <button type="button" class="tono" style="--t:#8FB2FF" data-copiar="#8FB2FF"><b>Cielo</b><span>#8FB2FF</span></button>
+    <button type="button" class="tono" style="--t:#D6E1FF" data-copiar="#D6E1FF"><b>Nube</b><span>#D6E1FF</span></button>
+    <button type="button" class="tono" style="--t:#F2F5FC" data-copiar="#F2F5FC"><b>Glaciar</b><span>#F2F5FC</span></button>
+  </div>
+
+  <div class="color-grid">
+    <div class="bloque-color">
+      <h3>Neutros</h3>
+      <p>Siempre con un poco de azul. Un gris puro se ve sin decidir.</p>
+      <div class="neutros">
+        <button type="button" style="--t:#0B0D1A" data-copiar="#0B0D1A"><span>950</span></button>
+        <button type="button" style="--t:#111427" data-copiar="#111427"><span>900</span></button>
+        <button type="button" style="--t:#1A1E36" data-copiar="#1A1E36"><span>800</span></button>
+        <button type="button" style="--t:#2B3150" data-copiar="#2B3150"><span>700</span></button>
+        <button type="button" style="--t:#5F6788" data-copiar="#5F6788"><span>500</span></button>
+        <button type="button" class="cl-n" style="--t:#838AA8" data-copiar="#838AA8"><span>400</span></button>
+        <button type="button" class="cl-n" style="--t:#A8AFC8" data-copiar="#A8AFC8"><span>300</span></button>
+        <button type="button" class="cl-n" style="--t:#D5DAE8" data-copiar="#D5DAE8"><span>200</span></button>
+        <button type="button" class="cl-n" style="--t:#E9ECF4" data-copiar="#E9ECF4"><span>100</span></button>
+        <button type="button" class="cl-n" style="--t:#F6F7FB" data-copiar="#F6F7FB"><span>50</span></button>
+      </div>
+    </div>
+    <div class="bloque-color">
+      <h3>Estados</h3>
+      <p>Solo para informar. Nunca como decoración ni como acento de marca.</p>
+      <div class="estados">
+        <span class="ui-chip ok">Pagado</span>
+        <span class="ui-chip alerta">Por vencer</span>
+        <span class="ui-chip error">Vencido</span>
+        <span class="ui-chip info">En revisión</span>
+      </div>
+    </div>
+    <div class="bloque-color">
+      <h3>Proporción</h3>
+      <p>Cuánto de cada cosa hay en una pantalla o pieza típica.</p>
+      <div class="proporcion">
+        <span style="--w:60;--t:var(--cn-glaciar);--x:var(--cn-tinta)">Glaciar 60</span>
+        <span style="--w:25;--t:var(--cn-tinta);--x:#fff">Tinta 25</span>
+        <span style="--w:10;--t:var(--cn-cobalto);--x:#fff">10</span>
+        <span style="--w:5;background:var(--cn-grad-rosa-puna)" aria-label="Especial 5"></span>
+      </div>
+    </div>
+  </div>
+
+  <h3 class="sub">Ediciones especiales</h3>
+  <p class="nota-sub">Pigmentos para campañas, productos y fechas. Una edición por pieza, y siempre acompañada del cobalto o la tinta.</p>
+  <div class="ediciones">
+    <article class="edicion" data-foto="glaciar:2.2:0:1.2"><div class="ed-muestra" style="background:var(--cn-grad-azul)"></div><h4>Gradiente azul</h4><p>El único gradiente de uso diario. Botones de marca, logo en gradiente, gráficos.</p></article>
+    <article class="edicion"><div class="ed-muestra" style="background:var(--cn-grad-rosa-puna)"></div><h4>Rosa Puna</h4><p>El rosado del altiplano al atardecer. Campañas, Barbara, fechas especiales.</p></article>
+    <article class="edicion"><div class="ed-muestra" style="background:var(--cn-grad-aurora)"></div><h4>Aurora</h4><p>Frío y técnico. Datos, dashboards, condor track.</p></article>
+    <article class="edicion"><div class="ed-muestra" style="background:var(--cn-grad-cromo)"></div><h4>Cromo</h4><p>Metal pulido. Piezas premium, tarjetas, hot stamping.</p></article>
+    <article class="edicion"><div class="ed-muestra" style="background:var(--cn-grad-atacama)"></div><h4>Atacama</h4><p>Ediciones limitadas. Guiño al rojo del logo anterior, dosificado.</p></article>
+  </div>
+</section>
+
+<!-- ═══════════════ 3.000 m · TIPOGRAFÍA ═══════════════ -->
+<section class="capitulo" id="tipo" data-alt="3000" data-nombre="Tipografía">
+  <header class="cap-cabeza">
+    <p class="rotulo">3.000 m · Tipografía</p>
+    <h2>Tres voces, un idioma.</h2>
+    <p class="cap-lead">Mantenemos la familia que ya usa el sitio y los PDF, y le damos reglas fijas. Clash Display habla fuerte, General Sans explica y Space Mono mide.</p>
+  </header>
+  <div class="especimenes">
+    <article class="especimen esp-display">
+      <p class="esp-aa">Aa</p>
+      <div><h3>Clash Display</h3><p>Semibold 600 · Titulares, cifras, wordmark · tracking −3 %</p></div>
+      <p class="esp-muestra">La IA ya despegó.</p>
+    </article>
+    <article class="especimen esp-texto">
+      <p class="esp-aa">Aa</p>
+      <div><h3>General Sans</h3><p>Regular 400 · Semibold 600 · Texto, interfaz, botones</p></div>
+      <p class="esp-muestra">Webs, videos y automatizaciones que ponen a tu negocio adelante.</p>
+    </article>
+    <article class="especimen esp-mono">
+      <p class="esp-aa">Aa</p>
+      <div><h3>Space Mono</h3><p>Regular 400 · Bold 700 · Rótulos, datos, altímetros · MAYÚSCULAS +8 %</p></div>
+      <p class="esp-muestra">ALT 4.200 m · $1.290.000 · 30/09/2026</p>
+    </article>
+  </div>
+  <div class="escala" aria-label="Escala tipográfica">
+    <div class="esc"><span class="esc-dato">120</span><p style="font:600 clamp(3rem,9vw,7.5rem)/0.95 var(--cn-display);letter-spacing:-0.04em">Altura</p></div>
+    <div class="esc"><span class="esc-dato">84</span><p style="font:600 clamp(2.5rem,6.5vw,5.25rem)/1 var(--cn-display);letter-spacing:-0.035em">Portada</p></div>
+    <div class="esc"><span class="esc-dato">60</span><p style="font:600 clamp(2.1rem,5vw,3.75rem)/1.02 var(--cn-display);letter-spacing:-0.03em">Titular de sección</p></div>
+    <div class="esc"><span class="esc-dato">32</span><p style="font:600 2rem/1.1 var(--cn-display);letter-spacing:-0.02em">Título de tarjeta</p></div>
+    <div class="esc"><span class="esc-dato">20</span><p style="font:400 1.25rem/1.5 var(--cn-texto-f)">Bajada o párrafo destacado, hasta 60 caracteres por línea.</p></div>
+    <div class="esc"><span class="esc-dato">16</span><p style="font:400 1rem/1.6 var(--cn-texto-f)">Texto corrido y controles del portal. Es el tamaño base: nunca menos en párrafos.</p></div>
+    <div class="esc"><span class="esc-dato">12</span><p style="font:400 0.75rem/1.4 var(--cn-mono);letter-spacing:0.08em;text-transform:uppercase">Rótulo · Capítulo · Estado</p></div>
+  </div>
+</section>
+
+<!-- ═══════════════ 3.600 m · TEXTURA ═══════════════ -->
+<section class="capitulo" id="textura" data-alt="3600" data-nombre="Textura">
+  <header class="cap-cabeza">
+    <p class="rotulo">3.600 m · Textura</p>
+    <h2>Acrílico, en sus dos sentidos.</h2>
+    <p class="cap-lead">La pintura acrílica vertida le da a condor.ai la textura que le faltaba: venas, celdas y brillo húmedo. La lámina de acrílico es la superficie donde se apoya el contenido. Una es fondo, la otra es soporte, y no se cambian de rol.</p>
+  </header>
+
+  <div class="lab escenario" data-zona-raton>
+    <canvas id="lab-lienzo" class="lab-lienzo" data-vertido="cobalto" data-semilla="12.4" data-escala="0.75" data-zoom="1.5" data-brillo="0.4" data-raton aria-label="Vertido acrílico generativo"></canvas>
+    <div class="grano" aria-hidden="true"></div>
+    <div class="lab-panel lamina">
+      <p class="rotulo">Laboratorio de vertido</p>
+      <p class="lab-titulo"><span id="lab-nombre">Cobalto</span> · semilla <span id="lab-semilla-valor">12,4</span></p>
+      <div class="lab-paletas" id="lab-paletas" role="group" aria-label="Pigmento">
+        <button type="button" data-paleta="cobalto" aria-pressed="true" style="--a:#2747FF;--b:#050A24">Cobalto</button>
+        <button type="button" data-paleta="rosa-puna" aria-pressed="false" style="--a:#FF6FA8;--b:#8A5CFF">Rosa Puna</button>
+        <button type="button" data-paleta="aurora" aria-pressed="false" style="--a:#7CF5D8;--b:#2747FF">Aurora</button>
+        <button type="button" data-paleta="obsidiana" aria-pressed="false" style="--a:#C9D1E8;--b:#020308">Obsidiana</button>
+        <button type="button" data-paleta="glaciar" aria-pressed="false" style="--a:#F2F5FC;--b:#8FB2FF">Glaciar</button>
+        <button type="button" data-paleta="atacama" aria-pressed="false" style="--a:#FFD3A8;--b:#FF5A3C">Atacama</button>
+      </div>
+      <div class="lab-controles">
+        <label for="lab-vel">Velocidad <output id="lab-vel-valor">1,0×</output></label>
+        <input id="lab-vel" type="range" min="0" max="4" step="0.1" value="1">
+        <label for="lab-zoom">Escala del vertido</label>
+        <input id="lab-zoom" type="range" min="0.6" max="3.2" step="0.05" value="1.5">
+        <label class="lab-check"><input id="lab-celdas" type="checkbox"> Celdas de silicona</label>
+      </div>
+      <button class="btn-lamina" type="button" id="lab-semilla"><svg><use href="#g-repetir"/></svg>Nuevo vertido</button>
+    </div>
+  </div>
+
+  <div class="materiales">
+    <article class="material">
+      <div class="mat-muestra" data-foto="rosa-puna:8.8:0:1.6"></div>
+      <h3>Vertido</h3><p>Fondo de portadas, escenarios, fichas de producto y redes. Se anima lento (un ciclo completo toma minutos) y reacciona al cursor como pintura fresca.</p>
+    </article>
+    <article class="material">
+      <div class="mat-muestra mat-lamina-fondo" data-foto="cobalto:3.3:0:1.3">
+        <div class="lamina-demo" data-magnetica><span class="rotulo">Lámina</span><b>$1.290.000</b><span>Ingresos · septiembre</span></div>
+      </div>
+      <h3>Lámina</h3><p>Acrílico de 6 mm: fondo translúcido, canto iluminado arriba, sombra de color abajo. Sostiene todo texto que va sobre vertido. Pasa el cursor: se inclina con la luz.</p>
+    </article>
+    <article class="material">
+      <div class="mat-muestra mat-grano"><div class="grano fuerte" aria-hidden="true"></div><svg><use href="#iso"/></svg></div>
+      <h3>Grano</h3><p>Ruido fino al 4–8 % sobre toda superficie de color. Evita que los azules se vean digitales y une foto, vertido y color plano.</p>
+    </article>
+    <article class="material">
+      <div class="mat-muestra" data-foto="obsidiana:6.1:1:1.2"></div>
+      <h3>Celdas</h3><p>Las celdas que deja la silicona en un vertido real. Se reservan para piezas de impacto: portadas de campaña, cierres de video, lanzamientos.</p>
+    </article>
+  </div>
+</section>
+
+<!-- ═══════════════ 4.200 m · MOTION ═══════════════ -->
+<section class="capitulo" id="motion" data-alt="4200" data-nombre="Motion">
+  <header class="cap-cabeza">
+    <p class="rotulo">4.200 m · Motion</p>
+    <h2>Cuatro formas de volar.</h2>
+    <p class="cap-lead">Cada animación usa una de estas cuatro curvas. Tienen nombre de vuelo para que diseño y código hablen igual: "esto entra en térmica" se entiende en Figma, en CSS y en una reunión.</p>
+  </header>
+  <div class="curvas">
+    <article class="curva" style="--ease:var(--cn-termica);--dur:1.2s">
+      <svg viewBox="-4 -24 108 148" aria-hidden="true"><path class="curva-eje" d="M0 100H100M0 100V0"/><path class="curva-l" d="M0 100C16 100 30 0 100 0"/></svg>
+      <div class="curva-pista"><svg class="curva-ave"><use href="#iso"/></svg></div>
+      <h3>Térmica</h3><code>cubic-bezier(.16, 1, .3, 1) · 1.200 ms</code><p>Entrar. Sube rápido y se asienta despacio. Aparición de secciones, modales, el logo.</p>
+    </article>
+    <article class="curva" style="--ease:var(--cn-planeo);--dur:.7s">
+      <svg viewBox="-4 -24 108 148" aria-hidden="true"><path class="curva-eje" d="M0 100H100M0 100V0"/><path class="curva-l" d="M0 100C45 100 20 0 100 0"/></svg>
+      <div class="curva-pista"><svg class="curva-ave"><use href="#iso"/></svg></div>
+      <h3>Planeo</h3><code>cubic-bezier(.45, 0, .2, 1) · 700 ms</code><p>Desplazar. Continuo, sin tirones. Carruseles, scroll guiado, paneles que se deslizan.</p>
+    </article>
+    <article class="curva" style="--ease:var(--cn-picada);--dur:.32s">
+      <svg viewBox="-4 -24 108 148" aria-hidden="true"><path class="curva-eje" d="M0 100H100M0 100V0"/><path class="curva-l" d="M0 100C80 100 10 0 100 0"/></svg>
+      <div class="curva-pista"><svg class="curva-ave"><use href="#iso"/></svg></div>
+      <h3>Picada</h3><code>cubic-bezier(.8, 0, .1, 1) · 320 ms</code><p>Cambiar de lugar. Decidido y corto. Pestañas, navegación del portal, reordenar.</p>
+    </article>
+    <article class="curva" style="--ease:var(--cn-aleteo);--dur:.18s">
+      <svg viewBox="-4 -24 108 148" aria-hidden="true"><path class="curva-eje" d="M0 100H100M0 100V0"/><path class="curva-l" d="M0 100C34 100 64 -56 100 0"/></svg>
+      <div class="curva-pista"><svg class="curva-ave"><use href="#iso"/></svg></div>
+      <h3>Aleteo</h3><code>cubic-bezier(.34, 1.56, .64, 1) · 180 ms</code><p>Micro. Un rebote corto y escaso, como el cóndor que casi no aletea. Toques, interruptores, copiar.</p>
+    </article>
+  </div>
+
+  <h3 class="sub">Motion con intriga</h3>
+  <p class="nota-sub">Piezas listas para el sitio y las redes. Todas respetan "reducir movimiento" del sistema.</p>
+  <div class="demos">
+    <article class="demo demo-ancha escenario">
+      <p class="rotulo">Texto térmico</p>
+      <p class="demo-titular" data-descifrar>Tu competencia ya despegó.</p>
+      <p class="demo-nota">El titular llega cifrado y se descifra de izquierda a derecha. Pasa el cursor para repetirlo. Uso: heros, cierres de video, anuncios.</p>
+    </article>
+    <article class="demo linterna" tabindex="0" aria-label="Demo linterna: mueve el cursor para revelar el texto oculto">
+      <p class="linterna-pregunta">¿Qué ve un cóndor a 5.000 metros?</p>
+      <div class="linterna-base" aria-hidden="true"><p>Lo que tu competencia todavía no ve.</p></div>
+      <div class="linterna-luz" data-foto="aurora:9.9:0:1.3"><p>Lo que tu competencia todavía no ve.</p></div>
+      <span class="rotulo demo-rot">Linterna · mueve el cursor</span>
+    </article>
+    <article class="demo demo-paso escenario">
+      <p class="rotulo">El paso</p>
+      <p class="demo-sub">Cada tanto, la sombra de un cóndor cruza la pantalla. No se anuncia ni se explica.</p>
+      <button class="btn-lamina" type="button" data-paso><svg><use href="#iso"/></svg>Invocar el paso</button>
+    </article>
+    <article class="demo demo-magnetica" data-foto="rosa-puna:4.4:0:1.4">
+      <div class="lamina-demo grande" data-magnetica><span class="rotulo">condor media</span><b>Video con IA</b><span>Lámina magnética: sigue al cursor y refleja la luz</span></div>
+    </article>
+    <article class="demo demo-cifras">
+      <p class="rotulo">Cifras que ascienden</p>
+      <p class="cifra"><span data-asciende="6961">6.961</span><small>m</small></p>
+      <p class="demo-nota">Los números suben con la curva térmica cuando aparecen. En el portal, solo la primera vez que se ve un dato.</p>
+    </article>
+  </div>
+</section>
+
+<!-- ═══════════════ 4.800 m · PRODUCTOS ═══════════════ -->
+<section class="capitulo" id="productos" data-alt="4800" data-nombre="Productos">
+  <header class="cap-cabeza">
+    <p class="rotulo">4.800 m · Productos</p>
+    <h2>Una bandada, no un zoológico.</h2>
+    <p class="cap-lead">Todos los productos comparten la misma ficha acrílica: el mismo corte, el mismo brillo, el mismo canto. Cambia el pigmento del vertido y el glifo blanco. Se nombran siempre "condor + palabra", en minúscula. Medula mantiene su nombre y su marca, respaldada por condor.ai.</p>
+  </header>
+
+  <div class="arquitectura">
+    <div class="arq-madre"><svg><use href="#lockup-h"/></svg><span>Marca madre</span></div>
+    <div class="arq-linea" aria-hidden="true"></div>
+    <div class="arq-hijos">
+      <span>condor sites</span><span>condor ecommerce</span><span>condor media</span><span>condor track</span><span>condor agents</span><span>condor barbara</span><span class="arq-respaldo">Medula · de condor.ai</span>
+    </div>
+  </div>
+
+  <div class="productos">
+    <article class="producto">
+      <div class="ficha" data-foto="cobalto:1.7:0:1.3"><svg><use href="#g-sites"/></svg></div>
+      <div class="prod-lockup"><svg class="pl-iso"><use href="#iso"/></svg><span class="pl-madre">condor</span><span class="pl-nombre">sites</span></div>
+      <p>Sitios web y landings que convierten.</p><p class="prod-pig">Pigmento · Cobalto</p>
+    </article>
+    <article class="producto">
+      <div class="ficha" data-foto="indigo:2.9:0:1.3"><svg><use href="#g-ecommerce"/></svg></div>
+      <div class="prod-lockup"><svg class="pl-iso"><use href="#iso"/></svg><span class="pl-madre">condor</span><span class="pl-nombre">ecommerce</span></div>
+      <p>Tiendas Shopify que se operan solas.</p><p class="prod-pig">Pigmento · Índigo</p>
+    </article>
+    <article class="producto">
+      <div class="ficha" data-foto="cielo:3.6:0:1.3"><svg><use href="#g-media"/></svg></div>
+      <div class="prod-lockup"><svg class="pl-iso"><use href="#iso"/></svg><span class="pl-madre">condor</span><span class="pl-nombre">media</span></div>
+      <p>Videos y contenido hechos con IA.</p><p class="prod-pig">Pigmento · Cielo</p>
+    </article>
+    <article class="producto">
+      <div class="ficha" data-foto="aurora:5.2:0:1.3"><svg><use href="#g-track"/></svg></div>
+      <div class="prod-lockup"><svg class="pl-iso"><use href="#iso"/></svg><span class="pl-madre">condor</span><span class="pl-nombre">track</span></div>
+      <p>Campañas y métricas en tiempo real.</p><p class="prod-pig">Pigmento · Aurora</p>
+    </article>
+    <article class="producto">
+      <div class="ficha" data-foto="lila:6.4:0:1.3"><svg><use href="#g-agents"/></svg></div>
+      <div class="prod-lockup"><svg class="pl-iso"><use href="#iso"/></svg><span class="pl-madre">condor</span><span class="pl-nombre">agents</span></div>
+      <p>Agentes que atienden y venden 24/7.</p><p class="prod-pig">Pigmento · Lila</p>
+    </article>
+    <article class="producto">
+      <div class="ficha" data-foto="rosa-puna:7.7:0:1.3"><svg><use href="#g-barbara"/></svg></div>
+      <div class="prod-lockup"><svg class="pl-iso"><use href="#iso"/></svg><span class="pl-madre">condor</span><span class="pl-nombre">barbara</span></div>
+      <p>Carruseles y reels para redes, solos.</p><p class="prod-pig">Pigmento · Rosa Puna</p>
+    </article>
+    <article class="producto producto-medula">
+      <div class="ficha ficha-medula" data-foto="medula:8.1:0:1.3"><img src="assets/marca/medula-marca.svg" alt=""></div>
+      <div class="prod-lockup"><span class="pl-nombre pl-medula">Medula</span><span class="pl-de">de <svg class="pl-iso"><use href="#iso"/></svg> condor.ai</span></div>
+      <p>La memoria de tu empresa, con cerebro 3D.</p><p class="prod-pig">Pigmento · Médula (marca propia)</p>
+    </article>
+    <article class="producto producto-nuevo">
+      <div class="ficha ficha-vacia"><svg><use href="#g-mas"/></svg></div>
+      <div class="prod-lockup"><svg class="pl-iso"><use href="#iso"/></svg><span class="pl-madre">condor</span><span class="pl-nombre">___</span></div>
+      <p>Producto nuevo: elegir pigmento de la rampa o de una edición y un glifo monolínea de 24 px.</p>
+    </article>
+  </div>
+
+  <div class="antes-ahora">
+    <div class="aa-col">
+      <p class="rotulo">Antes</p>
+      <div class="aa-fila">
+        <img src="assets/antes/condor-sites.png" alt="Ícono anterior de Sites">
+        <img src="assets/antes/condor-ecommerce.png" alt="Ícono anterior de Ecommerce">
+        <img src="assets/antes/condor-media.png" alt="Ícono anterior de Media">
+        <img src="assets/antes/condor-track.png" alt="Ícono anterior de Track">
+        <img src="assets/antes/condor-agents.png" alt="Ícono anterior de Agents">
+      </div>
+      <p>Cinco estilos distintos: 3D brillante, degradé tricolor, dibujo lineal.</p>
+    </div>
+    <svg class="aa-flecha" aria-hidden="true"><use href="#g-flecha"/></svg>
+    <div class="aa-col">
+      <p class="rotulo">V1 Acrílico</p>
+      <div class="aa-fila">
+        <div class="ficha chica" data-foto="cobalto:1.7:0:1.3"><svg><use href="#g-sites"/></svg></div>
+        <div class="ficha chica" data-foto="indigo:2.9:0:1.3"><svg><use href="#g-ecommerce"/></svg></div>
+        <div class="ficha chica" data-foto="cielo:3.6:0:1.3"><svg><use href="#g-media"/></svg></div>
+        <div class="ficha chica" data-foto="aurora:5.2:0:1.3"><svg><use href="#g-track"/></svg></div>
+        <div class="ficha chica" data-foto="lila:6.4:0:1.3"><svg><use href="#g-agents"/></svg></div>
+      </div>
+      <p>Una sola familia. Se reconocen juntas y por separado.</p>
+    </div>
+  </div>
+
+  <div class="anatomia">
+    <div class="anat-ficha">
+      <div class="ficha grande" data-foto="aurora:5.2:0:1.3"><svg><use href="#g-track"/></svg></div>
+    </div>
+    <ol class="anat-capas">
+      <li><b>Vertido</b> del pigmento del producto, semilla fija por producto para que no cambie entre piezas.</li>
+      <li><b>Glifo</b> blanco monolínea de 1,8 px sobre 24, centrado óptico, 44 % del ancho.</li>
+      <li><b>Brillo</b> superior: blanco del 38 % al 0 % en la mitad de arriba.</li>
+      <li><b>Canto</b>: filo interior de 1 px blanco al 35 % y reflejo inferior.</li>
+      <li><b>Sombra</b> del color del pigmento, 40 % de opacidad, 18 px hacia abajo.</li>
+      <li><b>Corte</b>: squircle con radio del 28 %, igual en todos los tamaños.</li>
+    </ol>
+  </div>
+</section>
+
+<!-- ═══════════════ 5.200 m · INTERFAZ ═══════════════ -->
+<section class="capitulo" id="interfaz" data-alt="5200" data-nombre="Interfaz">
+  <header class="cap-cabeza">
+    <p class="rotulo">5.200 m · Interfaz</p>
+    <h2>El Portal Cóndor, con la misma piel.</h2>
+    <p class="cap-lead">El sitio y el portal usan los mismos tokens. En la interfaz la textura se dosifica: el vertido aparece en la barra de marca, las fichas de producto y los estados vacíos, nunca detrás de tablas o formularios.</p>
+  </header>
+
+  <div class="modo-bloque" data-modo-bloque="kit" role="group" aria-label="Modo del kit">
+    <button type="button" data-modo="claro" aria-pressed="true">Claro</button>
+    <button type="button" data-modo="oscuro" aria-pressed="false">Oscuro</button>
+  </div>
+
+  <div class="kit cn-claro" id="kit">
+    <div class="kit-grid">
+      <div class="kit-celda">
+        <p class="kit-rot">Botones</p>
+        <div class="kit-fila">
+          <button class="ui-btn ui-primario" type="button">Crear cotización</button>
+          <button class="ui-btn ui-marca" type="button" data-foto="cobalto:4.4:0:1">Despegar</button>
+          <button class="ui-btn ui-secundario" type="button">Ver detalle</button>
+          <button class="ui-btn ui-fantasma" type="button">Cancelar</button>
+          <button class="ui-btn ui-peligro" type="button">Anular pago</button>
+          <button class="ui-btn ui-primario" type="button" data-cargando><span class="pulso" style="--s:18px"></span><span class="ui-btn-tx">Guardar</span></button>
+        </div>
+      </div>
+      <div class="kit-celda">
+        <p class="kit-rot">Campos</p>
+        <div class="kit-campos">
+          <label class="ui-campo" for="kit-cliente"><span>Cliente</span><input id="kit-cliente" type="text" value="Tecnobox Chile"></label>
+          <label class="ui-campo" for="kit-monto"><span>Monto (CLP)</span><input id="kit-monto" type="text" value="$1.290.000" inputmode="numeric"></label>
+          <label class="ui-campo ui-busqueda" for="kit-buscar"><svg><use href="#g-buscar"/></svg><input id="kit-buscar" type="search" placeholder="Buscar cliente, factura o producto"></label>
+        </div>
+      </div>
+      <div class="kit-celda">
+        <p class="kit-rot">Estados y controles</p>
+        <div class="kit-fila">
+          <span class="ui-chip ok">Pagado</span><span class="ui-chip alerta">Por vencer</span><span class="ui-chip error">Vencido</span><span class="ui-chip info">En revisión</span>
+        </div>
+        <div class="kit-fila">
+          <label class="ui-interruptor" for="kit-int"><input id="kit-int" type="checkbox" checked><i></i>Avisos por WhatsApp</label>
+        </div>
+        <div class="ui-pestanas" role="tablist" aria-label="Ejemplo de pestañas">
+          <button type="button" role="tab" aria-selected="true">Cuentas</button><button type="button" role="tab" aria-selected="false">Notas</button><button type="button" role="tab" aria-selected="false">PDFs</button>
+        </div>
+      </div>
+      <div class="kit-celda">
+        <p class="kit-rot">Tarjeta de dato</p>
+        <div class="ui-kpi">
+          <span class="ui-kpi-rot">Ingresos · septiembre</span>
+          <b>$4.820.000</b>
+          <span class="ui-kpi-delta">▲ 18 % vs agosto</span>
+          <svg viewBox="0 0 200 48" class="ui-spark" aria-hidden="true"><path class="spark-area" d="M0 40L25 36L50 38L75 28L100 30L125 20L150 22L175 12L200 8V48H0Z"/><path class="spark-l" d="M0 40L25 36L50 38L75 28L100 30L125 20L150 22L175 12L200 8"/><circle cx="200" cy="8" r="3.5" class="spark-p"/></svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Portal Cóndor · maqueta -->
+    <div class="portal" aria-label="Maqueta del Portal Cóndor con datos de ejemplo">
+      <aside class="portal-lateral">
+        <div class="portal-marca" data-foto="cobalto:9.4:0:1.2"><svg><use href="#iso"/></svg><span>Portal Cóndor</span></div>
+        <nav class="portal-nav">
+          <a class="activo"><svg><use href="#g-inicio"/></svg>Inicio</a>
+          <a><svg><use href="#g-clientes"/></svg>Clientes</a>
+          <a><svg><use href="#g-finanzas"/></svg>Finanzas</a>
+          <p class="portal-grupo">Productos</p>
+          <a><span class="ficha micro" data-foto="cobalto:1.7:0:1.3"><svg><use href="#g-sites"/></svg></span>Sites</a>
+          <a><span class="ficha micro" data-foto="indigo:2.9:0:1.3"><svg><use href="#g-ecommerce"/></svg></span>Ecommerce</a>
+          <a><span class="ficha micro" data-foto="aurora:5.2:0:1.3"><svg><use href="#g-track"/></svg></span>Track</a>
+          <a><span class="ficha micro" data-foto="rosa-puna:7.7:0:1.3"><svg><use href="#g-barbara"/></svg></span>Barbara</a>
+          <a><span class="ficha micro ficha-medula" data-foto="medula:8.1:0:1.3"><img src="assets/marca/medula-marca.svg" alt=""></span>Medula</a>
+        </nav>
+      </aside>
+      <div class="portal-cuerpo">
+        <div class="portal-cabeza">
+          <div><p class="kit-rot">Martes 30 de septiembre · datos de ejemplo</p><h3>Buenos días, equipo</h3></div>
+          <button class="ui-btn ui-primario" type="button"><svg><use href="#g-mas"/></svg>Nueva cotización</button>
+        </div>
+        <div class="portal-kpis">
+          <div class="ui-kpi chico"><span class="ui-kpi-rot">Por cobrar</span><b>$2.140.000</b><span class="ui-kpi-delta neutro">6 facturas</span></div>
+          <div class="ui-kpi chico"><span class="ui-kpi-rot">Clientes activos</span><b>24</b><span class="ui-kpi-delta">▲ 3 este mes</span></div>
+          <div class="ui-kpi chico kpi-vertido" data-foto="cobalto:2.2:0:1.2"><span class="ui-kpi-rot">Barbara publicó</span><b>38</b><span class="ui-kpi-delta">piezas esta semana</span></div>
+        </div>
+        <div class="portal-tabla" role="table" aria-label="Clientes, datos de ejemplo">
+          <div class="pt-fila pt-cabeza" role="row"><span role="columnheader">Cliente</span><span role="columnheader">Producto</span><span role="columnheader">Próximo cobro</span><span role="columnheader">Estado</span></div>
+          <div class="pt-fila" role="row"><span role="cell"><b>Tecnobox</b></span><span role="cell"><i class="ficha micro" data-foto="indigo:2.9:0:1.3"><svg><use href="#g-ecommerce"/></svg></i>Ecommerce</span><span role="cell" class="num">$890.000</span><span role="cell"><span class="ui-chip ok">Pagado</span></span></div>
+          <div class="pt-fila" role="row"><span role="cell"><b>Delta Force</b></span><span role="cell"><i class="ficha micro" data-foto="cobalto:1.7:0:1.3"><svg><use href="#g-sites"/></svg></i>Sites</span><span role="cell" class="num">$450.000</span><span role="cell"><span class="ui-chip alerta">Por vencer</span></span></div>
+          <div class="pt-fila" role="row"><span role="cell"><b>GII Médicas</b></span><span role="cell"><i class="ficha micro" data-foto="aurora:5.2:0:1.3"><svg><use href="#g-track"/></svg></i>Track</span><span role="cell" class="num">$320.000</span><span role="cell"><span class="ui-chip info">En revisión</span></span></div>
+          <div class="pt-fila" role="row"><span role="cell"><b>URPA Logístico</b></span><span role="cell"><i class="ficha micro ficha-medula" data-foto="medula:8.1:0:1.3"><img src="assets/marca/medula-marca.svg" alt=""></i>Medula</span><span role="cell" class="num">$179.850</span><span role="cell"><span class="ui-chip error">Vencido</span></span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sitio · maqueta del hero -->
+  <div class="navegador">
+    <div class="nav-barra"><i></i><i></i><i></i><span>condorai.cl</span></div>
+    <div class="sitio-hero escenario" data-zona-raton>
+      <canvas data-vertido="cobalto" data-semilla="21.5" data-escala="0.7" data-zoom="1.3" data-raton aria-hidden="true"></canvas>
+      <div class="grano" aria-hidden="true"></div>
+      <div class="sitio-nav"><svg class="sn-logo"><use href="#lockup-h"/></svg><span>Productos</span><span>Casos</span><span>Diagnóstico</span><span class="sn-cta">Agendar</span></div>
+      <div class="sitio-copy lamina">
+        <p class="rotulo">ALT 0000 m · La nueva era de la IA · LATAM</p>
+        <p class="sitio-h">La IA ya despegó.<br>¿Te quedas en tierra?</p>
+        <p class="sitio-p">Webs, videos y automatizaciones que ponen a tu negocio adelante.</p>
+        <span class="ui-btn ui-blanco">Quiero adelantarme →</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ 5.600 m · APLICACIONES ═══════════════ -->
+<section class="capitulo" id="aplicaciones" data-alt="5600" data-nombre="Aplicaciones">
+  <header class="cap-cabeza">
+    <p class="rotulo">5.600 m · Aplicaciones</p>
+    <h2>Donde se posa el cóndor.</h2>
+    <p class="cap-lead">Redes, papelería e íconos. Todas las piezas salen de los mismos tres ingredientes: vertido, lámina y el cóndor en un color.</p>
+  </header>
+  <div class="posts">
+    <article class="post" data-foto="cobalto:13.3:0:1.2">
+      <div class="grano" aria-hidden="true"></div>
+      <svg class="post-iso"><use href="#iso"/></svg>
+      <p class="post-h">La IA ya despegó.</p>
+      <p class="post-pie mono">condorai.cl · diagnóstico gratis</p>
+    </article>
+    <article class="post post-lanz" data-foto="aurora:5.2:1:1.2">
+      <div class="grano" aria-hidden="true"></div>
+      <p class="rotulo">Nuevo</p>
+      <div class="ficha grande" data-foto="aurora:5.2:0:1.3"><svg><use href="#g-track"/></svg></div>
+      <p class="post-h chico">condor track</p>
+      <p class="post-pie mono">Tus campañas, en vivo</p>
+    </article>
+    <article class="post post-intriga">
+      <p class="post-h intriga">¿Qué ve un cóndor a <span>5.000 m</span>?</p>
+      <svg class="post-sombra"><use href="#iso"/></svg>
+      <p class="post-pie mono">01.10 · condorai.cl</p>
+    </article>
+  </div>
+
+  <div class="papeleria">
+    <div class="tarjeta tarjeta-frente" data-foto="cobalto:17.6:1:1.1"><div class="grano" aria-hidden="true"></div><svg><use href="#iso"/></svg></div>
+    <div class="tarjeta tarjeta-dorso">
+      <svg class="td-logo"><use href="#lockup-h"/></svg>
+      <div class="td-datos"><b>Maximiliano</b><span>Diseño y frontend</span><span class="mono">condorai.cl · Santiago de Chile</span></div>
+      <span class="td-alt mono">ALT 570 m</span>
+    </div>
+    <div class="iconos-app">
+      <div class="app-icono" data-foto="cobalto:7.3:0:1.1"><svg><use href="#iso"/></svg></div>
+      <div class="app-icono app-tinta"><svg><use href="#iso"/></svg></div>
+      <div class="app-icono app-blanco"><svg><use href="#iso"/></svg></div>
+      <div class="favicons"><span class="fav f32"><svg><use href="#iso"/></svg></span><span class="fav f16"><svg><use href="#iso"/></svg></span></div>
+      <p class="kit-rot">App y favicon · 180 / 32 / 16 px</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ 6.400 m · VOZ ═══════════════ -->
+<section class="capitulo" id="voz" data-alt="6400" data-nombre="Voz">
+  <header class="cap-cabeza">
+    <p class="rotulo">6.400 m · Voz</p>
+    <h2>Hablamos como volamos.</h2>
+    <p class="cap-lead">Directo, con altura y con algo de misterio. Español de Chile, cercano, sin tecnicismos ni frases de agencia.</p>
+  </header>
+  <div class="voz">
+    <div class="voz-par"><p class="voz-si"><b>Sí</b>Tu competencia responde en 3 segundos. ¿Y tú?</p><p class="voz-no"><b>No</b>Potenciamos la transformación digital de tu negocio con soluciones innovadoras.</p></div>
+    <div class="voz-par"><p class="voz-si"><b>Sí</b>Te mostramos qué te está dejando atrás. Toma 2 minutos.</p><p class="voz-no"><b>No</b>Completa nuestro formulario de diagnóstico integral de madurez tecnológica.</p></div>
+    <div class="voz-par"><p class="voz-si"><b>Sí</b>Listo. La cotización ya está en el correo de Tecnobox.</p><p class="voz-no"><b>No</b>¡Genial! 🎉 Tu cotización fue procesada exitosamente.</p></div>
+  </div>
+</section>
+
+<!-- ═══════════════ 6.961 m · CUMBRE ═══════════════ -->
+<section class="capitulo cumbre" id="cumbre" data-alt="6961" data-nombre="Cumbre">
+  <header class="cap-cabeza">
+    <p class="rotulo">6.961 m · Cumbre</p>
+    <h2>Todo en un archivo.</h2>
+    <p class="cap-lead">Los tokens viven en <code>apps/guion-visual/tokens/condor.css</code>. El sitio y el Portal los importan tal cual; el resto de este guion se arma con ellos.</p>
+  </header>
+  <div class="cumbre-grid">
+    <div class="codigo-caja">
+      <div class="codigo-cabeza"><span class="mono">tokens/condor.css · extracto</span><button class="btn-mini" type="button" data-copiar="tokens"><svg><use href="#g-copiar"/></svg>Copiar</button></div>
+<pre id="codigo-tokens"><code>:root {
+  /* marca */
+  --cn-cobalto: #2747FF;
+  --cn-tinta:   #0A0F2C;
+  --cn-glaciar: #F2F5FC;
+  /* interfaz (claro · oscuro) */
+  --cn-fondo:   #F4F6FB;   /* #070A1C */
+  --cn-texto:   #0A0F2C;   /* #EEF1FF */
+  --cn-acento:  #2747FF;   /* #4A66FF */
+  /* vuelo */
+  --cn-termica: cubic-bezier(.16, 1, .3, 1);
+  --cn-planeo:  cubic-bezier(.45, 0, .2, 1);
+  --cn-picada:  cubic-bezier(.8, 0, .1, 1);
+  --cn-aleteo:  cubic-bezier(.34, 1.56, .64, 1);
+  /* forma */
+  --cn-r-ficha: 28%;
+  --cn-display: "Clash Display";
+  --cn-texto-f: "General Sans";
+  --cn-mono:    "Space Mono";
+}</code></pre>
+    </div>
+    <div class="archivos">
+      <h3>Archivos</h3>
+      <ul>
+        <li><code>assets/marca/</code><span>40 SVG: isotipo, corte, wordmark, horizontal y vertical en cobalto, tinta, blanco y 4 gradientes</span></li>
+        <li><code>tokens/condor.css</code><span>Color, tipo, forma y movimiento en claro y oscuro</span></li>
+        <li><code>guion.js</code><span>Motor de vertido WebGL, cargas y demos de motion para reutilizar</span></li>
+        <li><code>herramientas/generar-marca.mjs</code><span><code>npm run marca</code> regenera todos los SVG</span></li>
+      </ul>
+      <h3>Siguientes vuelos</h3>
+      <ul class="pasos">
+        <li><b>V1.1</b> Aplicar tokens y logo nuevo al sitio (barra, hero con vertido, fichas de producto)</li>
+        <li><b>V1.2</b> Portal Cóndor: cambiar <code>estilo.css</code> por los tokens y sumar el modo oscuro</li>
+        <li><b>V1.3</b> Exportar las fichas de producto a PNG 512 / 180 / 32 y reemplazar los íconos actuales</li>
+        <li><b>V1.4</b> Cierres de video y plantillas de Barbara con la paleta nueva</li>
+      </ul>
+    </div>
+  </div>
+  <footer class="pie">
+    <svg class="pie-iso"><use href="#iso"/></svg>
+    <p>condor.ai · Guion visual V1 Acrílico Andino · Santiago de Chile, septiembre 2026</p>
+  </footer>
+</section>
+
+</main>
+
+<!-- Sombra del cóndor que cruza la pantalla -->
+<div class="paso-condor" id="paso-condor" aria-hidden="true"><svg><use href="#iso"/></svg></div>
+<div class="aviso" id="aviso" role="status" aria-live="polite"></div>
+
+<script src="assets/marca-datos.js"></script>
+<script src="guion.js"></script>
+</body>
+</html>

@@ -1,0 +1,175 @@
+/* =========================================================================
+   condor.ai · Tokens V1 "Acrílico Andino"
+   Fuente única de color, tipo, forma y movimiento para condorai.cl y el
+   Portal Cóndor. En la interfaz se usan los tokens SEMÁNTICOS (--cn-fondo,
+   --cn-texto, --cn-acento…); los de rampa (--cn-cobalto…) son para marca,
+   ilustración y texturas.
+   Modo: claro por defecto · oscuro con prefers-color-scheme o
+   data-theme="dark" · forzar un bloque con .cn-claro / .cn-oscuro.
+   ========================================================================= */
+
+@font-face { font-family: "Clash Display"; src: url("../assets/fuentes/ClashDisplay-Semibold.ttf") format("truetype"); font-weight: 600; font-display: swap; }
+@font-face { font-family: "General Sans"; src: url("../assets/fuentes/GeneralSans-Regular.ttf") format("truetype"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "General Sans"; src: url("../assets/fuentes/GeneralSans-Semibold.ttf") format("truetype"); font-weight: 600; font-display: swap; }
+@font-face { font-family: "Space Mono"; src: url("../assets/fuentes/SpaceMono-Regular.ttf") format("truetype"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Space Mono"; src: url("../assets/fuentes/SpaceMono-Bold.ttf") format("truetype"); font-weight: 700; font-display: swap; }
+
+:root {
+  /* ── Rampa Cóndor (de la noche al glaciar) ─────────────────────────── */
+  --cn-abismo: #050A24;
+  --cn-tinta: #0A0F2C;
+  --cn-profundo: #0B1A7A;
+  --cn-cobalto: #2747FF;   /* color de marca */
+  --cn-altura: #5A7BFF;
+  --cn-cielo: #8FB2FF;
+  --cn-nube: #D6E1FF;
+  --cn-glaciar: #F2F5FC;
+
+  /* ── Neutros con sesgo azul (nunca gris puro) ──────────────────────── */
+  --cn-g-950: #0B0D1A;
+  --cn-g-900: #111427;
+  --cn-g-800: #1A1E36;
+  --cn-g-700: #2B3150;
+  --cn-g-500: #5F6788;
+  --cn-g-400: #838AA8;
+  --cn-g-300: #A8AFC8;
+  --cn-g-200: #D5DAE8;
+  --cn-g-100: #E9ECF4;
+  --cn-g-50: #F6F7FB;
+
+  /* ── Ediciones especiales (pigmentos) ──────────────────────────────── */
+  --cn-rosa-puna: #FF6FA8;
+  --cn-lila: #8A5CFF;
+  --cn-aurora: #2FE0C0;
+  --cn-celeste: #2FB8FF;
+  --cn-atacama: #FF5A3C;
+
+  --cn-grad-azul: linear-gradient(135deg, #8FB2FF 0%, #2747FF 48%, #0B1A7A 100%);
+  --cn-grad-rosa-puna: linear-gradient(135deg, #FFC2DA 0%, #FF6FA8 45%, #8A5CFF 100%);
+  --cn-grad-aurora: linear-gradient(135deg, #7CF5D8 0%, #2FB8FF 50%, #2747FF 100%);
+  --cn-grad-cromo: linear-gradient(135deg, #FFFFFF 0%, #9AA6C8 50%, #3A4466 100%);
+  --cn-grad-atacama: linear-gradient(135deg, #FFD3A8 0%, #FF5A3C 55%, #8A1238 100%);
+
+  /* ── Semánticos de estado ──────────────────────────────────────────── */
+  --cn-ok: #12A36A;       --cn-ok-suave: #E3F6EE;
+  --cn-alerta: #C77A06;   --cn-alerta-suave: #FDF2DD;
+  --cn-error: #E0364B;    --cn-error-suave: #FDE8EB;
+  --cn-info: #2747FF;     --cn-info-suave: #E6EBFF;
+
+  /* ── Superficies y texto · CLARO ───────────────────────────────────── */
+  --cn-fondo: #F4F6FB;
+  --cn-superficie: #FFFFFF;
+  --cn-superficie-2: #EEF1F8;
+  --cn-hundida: #E6EAF4;
+  --cn-borde: #DCE1EE;
+  --cn-borde-fuerte: #C2C9DD;
+  --cn-texto: #0A0F2C;
+  --cn-texto-2: #4A5274;
+  --cn-texto-3: #7A82A3;
+  --cn-acento: #2747FF;
+  --cn-acento-hover: #1A36E6;
+  --cn-acento-texto: #1F3BE0;   /* enlaces y rótulos: AA sobre fondo claro */
+  --cn-sobre-acento: #FFFFFF;
+  --cn-foco: 0 0 0 3px rgba(39, 71, 255, 0.35);
+
+  /* Lámina acrílica (vidrio grueso con canto) */
+  --cn-lamina: rgba(255, 255, 255, 0.62);
+  --cn-lamina-borde: rgba(255, 255, 255, 0.9);
+  --cn-lamina-canto: rgba(39, 71, 255, 0.18);
+  --cn-brillo: rgba(255, 255, 255, 0.75);
+
+  --cn-sombra-1: 0 1px 2px rgba(10, 15, 44, 0.06), 0 1px 1px rgba(10, 15, 44, 0.04);
+  --cn-sombra-2: 0 10px 30px -12px rgba(10, 15, 44, 0.22);
+  --cn-sombra-3: 0 30px 80px -30px rgba(10, 15, 44, 0.35);
+  --cn-sombra-acento: 0 18px 40px -14px rgba(39, 71, 255, 0.55);
+
+  /* ── Tipografía ────────────────────────────────────────────────────── */
+  --cn-display: "Clash Display", "General Sans", system-ui, sans-serif;
+  --cn-texto-f: "General Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --cn-mono: "Space Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+
+  /* Escala 1.25 (tercera mayor) para interfaz, 1.333 para editorial */
+  --cn-t-12: 0.75rem;
+  --cn-t-14: 0.875rem;
+  --cn-t-16: 1rem;
+  --cn-t-20: 1.25rem;
+  --cn-t-25: 1.5625rem;
+  --cn-t-32: 2rem;
+  --cn-t-44: 2.75rem;
+  --cn-t-60: 3.75rem;
+  --cn-t-84: 5.25rem;
+  --cn-t-120: 7.5rem;
+
+  /* ── Forma ─────────────────────────────────────────────────────────── */
+  --cn-r-1: 6px;
+  --cn-r-2: 10px;
+  --cn-r-3: 16px;
+  --cn-r-4: 24px;
+  --cn-r-5: 36px;
+  --cn-r-ficha: 28%;      /* láminas de producto (squircle) */
+  --cn-r-pildora: 999px;
+  --cn-e-1: 4px; --cn-e-2: 8px; --cn-e-3: 12px; --cn-e-4: 16px; --cn-e-5: 24px;
+  --cn-e-6: 32px; --cn-e-7: 48px; --cn-e-8: 64px; --cn-e-9: 96px; --cn-e-10: 128px;
+
+  /* ── Movimiento: curvas de vuelo ───────────────────────────────────── */
+  --cn-termica: cubic-bezier(0.16, 1, 0.3, 1);      /* entrar: sube y se asienta */
+  --cn-planeo: cubic-bezier(0.45, 0, 0.2, 1);       /* desplazar: continuo, sin tirones */
+  --cn-picada: cubic-bezier(0.8, 0, 0.1, 1);        /* cambiar de lugar: decidido */
+  --cn-aleteo: cubic-bezier(0.34, 1.56, 0.64, 1);   /* micro: rebote corto */
+  --cn-d-aleteo: 180ms;
+  --cn-d-picada: 320ms;
+  --cn-d-planeo: 700ms;
+  --cn-d-termica: 1200ms;
+
+  color-scheme: light;
+}
+
+/* ── OSCURO ─────────────────────────────────────────────────────────── */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --cn-fondo: #070A1C; --cn-superficie: #0E1228; --cn-superficie-2: #141935; --cn-hundida: #0A0D20;
+    --cn-borde: #232A4A; --cn-borde-fuerte: #343C63;
+    --cn-texto: #EEF1FF; --cn-texto-2: #A5AED3; --cn-texto-3: #6D76A0;
+    --cn-acento: #4A66FF; --cn-acento-hover: #6580FF; --cn-acento-texto: #9DB6FF; --cn-sobre-acento: #FFFFFF;
+    --cn-lamina: rgba(20, 26, 60, 0.55); --cn-lamina-borde: rgba(157, 182, 255, 0.22);
+    --cn-lamina-canto: rgba(143, 178, 255, 0.35); --cn-brillo: rgba(200, 215, 255, 0.18);
+    --cn-ok-suave: #0C2A20; --cn-alerta-suave: #2E2209; --cn-error-suave: #331019; --cn-info-suave: #121C4A;
+    --cn-ok: #3FD79A; --cn-alerta: #F2B348; --cn-error: #FF6B7D; --cn-info: #8FB2FF;
+    --cn-sombra-1: 0 1px 2px rgba(0, 0, 0, 0.5);
+    --cn-sombra-2: 0 12px 34px -12px rgba(0, 0, 0, 0.7);
+    --cn-sombra-3: 0 30px 80px -30px rgba(0, 0, 0, 0.85);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"], .cn-oscuro {
+  --cn-fondo: #070A1C; --cn-superficie: #0E1228; --cn-superficie-2: #141935; --cn-hundida: #0A0D20;
+  --cn-borde: #232A4A; --cn-borde-fuerte: #343C63;
+  --cn-texto: #EEF1FF; --cn-texto-2: #A5AED3; --cn-texto-3: #6D76A0;
+  --cn-acento: #4A66FF; --cn-acento-hover: #6580FF; --cn-acento-texto: #9DB6FF; --cn-sobre-acento: #FFFFFF;
+  --cn-lamina: rgba(20, 26, 60, 0.55); --cn-lamina-borde: rgba(157, 182, 255, 0.22);
+  --cn-lamina-canto: rgba(143, 178, 255, 0.35); --cn-brillo: rgba(200, 215, 255, 0.18);
+  --cn-ok-suave: #0C2A20; --cn-alerta-suave: #2E2209; --cn-error-suave: #331019; --cn-info-suave: #121C4A;
+  --cn-ok: #3FD79A; --cn-alerta: #F2B348; --cn-error: #FF6B7D; --cn-info: #8FB2FF;
+  --cn-sombra-1: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --cn-sombra-2: 0 12px 34px -12px rgba(0, 0, 0, 0.7);
+  --cn-sombra-3: 0 30px 80px -30px rgba(0, 0, 0, 0.85);
+  color-scheme: dark;
+}
+.cn-claro {
+  --cn-fondo: #F4F6FB; --cn-superficie: #FFFFFF; --cn-superficie-2: #EEF1F8; --cn-hundida: #E6EAF4;
+  --cn-borde: #DCE1EE; --cn-borde-fuerte: #C2C9DD;
+  --cn-texto: #0A0F2C; --cn-texto-2: #4A5274; --cn-texto-3: #7A82A3;
+  --cn-acento: #2747FF; --cn-acento-hover: #1A36E6; --cn-acento-texto: #1F3BE0; --cn-sobre-acento: #FFFFFF;
+  --cn-lamina: rgba(255, 255, 255, 0.62); --cn-lamina-borde: rgba(255, 255, 255, 0.9);
+  --cn-lamina-canto: rgba(39, 71, 255, 0.18); --cn-brillo: rgba(255, 255, 255, 0.75);
+  --cn-ok-suave: #E3F6EE; --cn-alerta-suave: #FDF2DD; --cn-error-suave: #FDE8EB; --cn-info-suave: #E6EBFF;
+  --cn-ok: #12A36A; --cn-alerta: #C77A06; --cn-error: #E0364B; --cn-info: #2747FF;
+  --cn-sombra-1: 0 1px 2px rgba(10, 15, 44, 0.06), 0 1px 1px rgba(10, 15, 44, 0.04);
+  --cn-sombra-2: 0 10px 30px -12px rgba(10, 15, 44, 0.22);
+  --cn-sombra-3: 0 30px 80px -30px rgba(10, 15, 44, 0.35);
+  color-scheme: light;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --cn-d-aleteo: 1ms; --cn-d-picada: 1ms; --cn-d-planeo: 1ms; --cn-d-termica: 1ms; }
+}
