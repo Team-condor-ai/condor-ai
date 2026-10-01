@@ -1,19 +1,18 @@
-# Guion visual condor.ai · V1 "Acrílico Andino"
+# Guion visual condor.ai · visión "Claro"
 
-Marca, color, textura acrílica, motion, productos e interfaz para **condorai.cl** y el **Portal Cóndor**.
-Sitio estático, sin build.
+Marca, color, tipografía, acrílico, motion, productos e interfaz para **condorai.cl** y el **Portal Cóndor**.
+Sitio estático, sin build (three.js por CDN para el cóndor 3D).
 
 ```bash
 cd apps/guion-visual
-npm install        # solo para regenerar la marca (opentype.js)
+npm install        # solo para regenerar la marca (sharp, potrace, opentype.js, fuentes)
 npm run dev        # http://127.0.0.1:5320
-npm run marca      # regenera assets/marca/*.svg y assets/marca-datos.js
+npm run marca      # vuelve a forjar assets/marca/*.svg y assets/marca-datos.js
 ```
 
 | Archivo | Qué es |
 |---|---|
-| `tokens/condor.css` | Tokens oficiales (color, tipo, forma, curvas de vuelo), claro/oscuro. Lo importan el sitio y el portal. |
-| `assets/marca/` | 40 SVG: isotipo, isotipo corte, wordmark, logo horizontal y vertical × cobalto, tinta, blanco, gradiente azul, rosa puna, aurora, cromo. Los base usan `currentColor`. |
-| `herramientas/generar-marca.mjs` | Fuente del isotipo redibujado (30 vértices, grilla 275×248) y del wordmark en contornos (Clash Display). |
-| `guion.js` | Motor del vertido acrílico (WebGL2, un solo contexto), cargas de marca, altímetro y demos de motion. |
-| `assets/antes/` | Logo e íconos anteriores, solo para la comparación. |
+| `herramientas/generar-marca.mjs` | Esqueleto de cada marca → fusión (cierre morfológico) → potrace. Misma gramática que el logo de Medula. |
+| `assets/marca/` | Isotipo, wordmark, logo horizontal y vertical (azul, grafito, blanco, ionosfera, aurora, hielo) y las 6 marcas de producto. Los base usan `currentColor`. |
+| `tokens/condor.css` | Tokens oficiales (color, tipo, forma, movimiento), claro y oscuro. |
+| `guion.js` | Construcción del cóndor, carga "Forja", cóndor de acrílico 3D, productos, kit. |
