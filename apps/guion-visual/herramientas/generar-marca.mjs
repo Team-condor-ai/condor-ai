@@ -17,7 +17,6 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import sharp from "sharp";
 import potrace from "potrace";
-import opentype from "opentype.js";
 
 const raiz = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const salida = path.join(raiz, "assets/marca");
@@ -30,8 +29,10 @@ async function forjar(esqueleto, { w, h, escala = 4, cierre = 7, suave = 4 }) {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w * escala}" height="${h * escala}" viewBox="0 0 ${w} ${h}"><rect width="${w}" height="${h}" fill="#fff"/><g fill="#000" stroke="#000" stroke-linecap="round" stroke-linejoin="round">${esqueleto}</g></svg>`;
   let img = await sharp(Buffer.from(svg)).greyscale().png().toBuffer();
   const s = (k) => Math.max(0.3, k * escala * 0.5);
-  img = await sharp(img).blur(s(cierre)).threshold(245).png().toBuffer();
-  img = await sharp(img).blur(s(cierre)).threshold(10).png().toBuffer();
+  if (cierre > 0) {
+    img = await sharp(img).blur(s(cierre)).threshold(245).png().toBuffer();
+    img = await sharp(img).blur(s(cierre)).threshold(10).png().toBuffer();
+  }
   img = await sharp(img).blur(s(suave)).threshold(128).blur(1.2).png().toBuffer();
   const d = await new Promise((ok, mal) =>
     potrace.trace(img, { threshold: 128, turdSize: 60, optTolerance: 0.3, alphaMax: 1.15 }, (e, out) =>
@@ -59,28 +60,50 @@ async function normalizar(d, w, h, pad = 0) {
   return { d: mover(d, pad - c.x, pad - c.y), w: r1(c.w + pad * 2), h: r1(c.h + pad * 2), dx: r1(pad - c.x), dy: r1(pad - c.y) };
 }
 
-// ── Isotipo: cóndor planeando, visto desde abajo ───────────────────────────
-// Alas anchas, tres plumas dedo curvadas hacia arriba, cabeza con collar.
-function condorEsqueleto() {
-  const borde = 210, g = 50, curva = 40, cab = 37, collar = 16, cy = 204;
-  const dedos = [[700, 200, 800, 112], [716, 228, 850, 170], [714, 256, 846, 238]];
-  const lado = (s) => {
-    const X = (x) => 500 + s * (x - 500);
-    const ala = `<path stroke="none" d="M${X(500)} ${borde} C${X(600)} ${borde - 4} ${X(690)} ${borde - 18} ${X(728)} ${borde - 22} L${X(742)} ${borde + 70} C${X(670)} ${borde + 84} ${X(610)} ${borde + 106} ${X(500)} ${borde + 128} Z"/>`;
-    const ds = dedos
-      .map(([x1, y1, x2, y2], i) => {
-        const qx = (x1 + x2) / 2 + 20, qy = (y1 + y2) / 2 + curva * 0.8;
-        return `<path fill="none" stroke-width="${g - i * 3}" d="M${X(x1)} ${y1} Q${X(qx)} ${qy} ${X(x2)} ${y2 - curva * 0.4}"/>`;
-      })
-      .join("");
-    return ala + ds;
-  };
-  return (
-    lado(1) + lado(-1) +
-    `<circle cx="500" cy="${cy}" r="${cab + collar}" fill="#fff" stroke="none"/>` +
-    `<circle cx="500" cy="${cy}" r="${cab}" stroke="none"/>`
-  );
+// ── Isotipo: el cóndor de siempre, refinado ────────────────────────────────
+// Base: el redibujo fiel del logo original (30 vértices, grilla 275×248).
+// Se trabaja ×4 para tener precisión en los redondeos.
+const ISO_ORIGINAL =
+  "M0 0L160 95L183 133L201 130L207 132.5L209 129L196 118L243 117C254 117.6 262 124 268 130.5C272 135 274.6 140 275 145L274.4 149.2L266 145L250 145.6L110 248L117.6 222.4L90 241C83 246 76 248 69 248L32 247L121.5 182.2L104 170L38.5 129.5L109 136.8L38.8 109.8L11 64.5L106.6 104.4L23 49.7L16.8 38.8Z";
+// La franja de luz del original, convertida en un corte que separa ala y cuerpo.
+const CORTE_ORIGINAL = "M178 120C188 152 181 189 150 222";
+const K = 4;
+function puntos(d) {
+  const t = d.match(/[MLCZ]|-?(?:\d+\.?\d*|\.\d+)/g);
+  const pts = [];
+  let i = 0, c = "", cur = [0, 0];
+  const n = () => +t[i++] * K;
+  while (i < t.length) {
+    if (/[MLCZ]/.test(t[i])) { c = t[i++]; continue; }
+    if (c === "M" || c === "L") { cur = [n(), n()]; pts.push(cur); }
+    else if (c === "C") {
+      const a = [n(), n()], b = [n(), n()], e = [n(), n()];
+      for (let k = 1; k <= 8; k++) {
+        const u = k / 8, v = 1 - u;
+        pts.push([v * v * v * cur[0] + 3 * v * v * u * a[0] + 3 * v * u * u * b[0] + u * u * u * e[0], v * v * v * cur[1] + 3 * v * v * u * a[1] + 3 * v * u * u * b[1] + u * u * u * e[1]]);
+      }
+      cur = e;
+    } else i++;
+  }
+  return pts;
 }
+/** Redondea cada vértice con un radio "rad" (limitado por el largo de sus lados). */
+function redondear(pts, rad) {
+  const L = pts.length;
+  let d = "";
+  for (let k = 0; k < L; k++) {
+    const p = pts[(k - 1 + L) % L], v = pts[k], q = pts[(k + 1) % L];
+    const lp = Math.hypot(p[0] - v[0], p[1] - v[1]), lq = Math.hypot(q[0] - v[0], q[1] - v[1]);
+    const r = Math.min(rad, lp / 2, lq / 2);
+    const a = [v[0] + ((p[0] - v[0]) / lp) * r, v[1] + ((p[1] - v[1]) / lp) * r];
+    const b = [v[0] + ((q[0] - v[0]) / lq) * r, v[1] + ((q[1] - v[1]) / lq) * r];
+    d += (k === 0 ? "M" : "L") + r1(a[0]) + " " + r1(a[1]) + "Q" + r1(v[0]) + " " + r1(v[1]) + " " + r1(b[0]) + " " + r1(b[1]);
+  }
+  return d + "Z";
+}
+const ISO_PULIDO = redondear(puntos(ISO_ORIGINAL), 9);
+const corteK = CORTE_ORIGINAL.replace(/-?\d+(\.\d+)?/g, (m) => String(+m * K));
+const OJO = { x: 254 * K, y: 129.5 * K, r: 4.4 * K };
 
 // ── Productos (lienzo 240×240, trazo 34, nodo r≈19) ────────────────────────
 const collar = (cx, cy, r = 19, gap = 11) =>
@@ -118,50 +141,56 @@ const PRODUCTOS = {
   },
 };
 
-// ── Wordmark ───────────────────────────────────────────────────────────────
-const fuenteDe = (archivo) =>
-  opentype.parse(fs.readFileSync(path.join(raiz, "node_modules/@fontsource", archivo)).buffer.slice(0));
-const F600 = fuenteDe("inter-tight/files/inter-tight-latin-600-normal.woff");
-const F500 = fuenteDe("inter-tight/files/inter-tight-latin-500-normal.woff");
-const TAM = 200;
-function contornos(f, texto, x, tracking) {
-  let c = x;
-  const ds = [];
-  const gl = f.stringToGlyphs(texto);
-  gl.forEach((g, i) => {
-    ds.push({ d: g.getPath(c, 0, TAM).toPathData(1), ch: texto[i], x: c, adv: (g.advanceWidth / f.unitsPerEm) * TAM });
-    const kern = i < gl.length - 1 ? f.getKerningValue(g, gl[i + 1]) : 0;
-    c += ((g.advanceWidth + kern) / f.unitsPerEm) * TAM + tracking * TAM;
-  });
-  return { partes: ds, fin: c };
-}
-const xh = (F600.tables.os2.sxHeight / F600.unitsPerEm) * TAM;
-// Wordmark: "condor" en Inter Tight 600 a −4 %, ".ai" con el punto como nodo
-// redondo perfecto (mismo lenguaje del isotipo) y "ai" en 500.
+// ── Wordmark: letras construidas, sin tipografía ───────────────────────────
+// Alto de x = 100, trazo = 22, círculos de radio 50 (interior 28). Ascendente
+// a 46 sobre la x. El corte de la "c" y el remate de la "d" siguen el ángulo
+// del ala del cóndor (30,7°). Los puntos son nodos de radio 13.
+const XH = 100, TR = 22, RE = 50, RI = 28, RC = 39, ASC = 46, BASE = ASC + XH, RN = 13;
+const ALA = 30.7;
+const xh = XH;
+const rad = (a) => (a * Math.PI) / 180;
+const pol = (cx, cy, r, a) => [cx + r * Math.cos(rad(a)), cy + r * Math.sin(rad(a))];
+const P = ([x, y]) => `${r1(x)} ${r1(y)}`;
+const circ = (cx, cy, r, horario = true) =>
+  `M${r1(cx - r)} ${r1(cy)}A${r} ${r} 0 1 ${horario ? 1 : 0} ${r1(cx + r)} ${r1(cy)}A${r} ${r} 0 1 ${horario ? 1 : 0} ${r1(cx - r)} ${r1(cy)}Z`;
+const anillo = (cx, cy) => circ(cx, cy, RE, true) + circ(cx, cy, RI, false);
+const sector = (cx, cy, a0, a1) => {
+  const g = a1 - a0 > 180 ? 1 : 0;
+  return `M${P(pol(cx, cy, RE, a0))}A${RE} ${RE} 0 ${g} 1 ${P(pol(cx, cy, RE, a1))}L${P(pol(cx, cy, RI, a1))}A${RI} ${RI} 0 ${g} 0 ${P(pol(cx, cy, RI, a0))}Z`;
+};
+const rect = (x, y, w, h) => `M${r1(x)} ${r1(y)}H${r1(x + w)}V${r1(y + h)}H${r1(x)}Z`;
+const CY = ASC + XH / 2;
+const caida = TR * Math.tan(rad(ALA));
+// cada letra: forma rellena (d) + líneas centrales (t) para dibujarla en vivo
+const LETRAS = {
+  c: (x) => ({ w: RE + RE * Math.cos(rad(ALA)), d: sector(x + RE, CY, ALA, 360 - ALA),
+    t: [`M${P(pol(x + RE, CY, RC, ALA))}A${RC} ${RC} 0 1 1 ${P(pol(x + RE, CY, RC, 360 - ALA))}`] }),
+  o: (x) => ({ w: 2 * RE, d: anillo(x + RE, CY), t: [circ(x + RE, CY, RC)] }),
+  n: (x) => ({ w: 2 * RE, d: rect(x, ASC, TR, XH) + sector(x + RE, CY, 180, 360) + rect(x + 2 * RE - TR, CY, TR, XH / 2),
+    t: [`M${r1(x + TR / 2)} ${BASE}V${CY}A${RC} ${RC} 0 0 1 ${r1(x + 2 * RE - TR / 2)} ${CY}V${BASE}`] }),
+  d: (x) => ({ w: 2 * RE, d: anillo(x + RE, CY) + `M${r1(x + 2 * RE - TR)} 0L${r1(x + 2 * RE)} ${r1(caida)}V${BASE}H${r1(x + 2 * RE - TR)}Z`,
+    t: [circ(x + RE, CY, RC), `M${r1(x + 2 * RE - TR / 2)} ${r1(caida / 2)}V${BASE}`] }),
+  r: (x) => ({ w: RE + RE * Math.cos(rad(300)), d: rect(x, ASC, TR, XH) + sector(x + RE, CY, 180, 300),
+    t: [`M${r1(x + TR / 2)} ${BASE}V${CY}A${RC} ${RC} 0 0 1 ${P(pol(x + RE, CY, RC, 300))}`] }),
+  ".": (x) => ({ w: 2 * RN, d: circ(x + RN, BASE - RN, RN), t: [], n: [x + RN, BASE - RN] }),
+  a: (x) => ({ w: 2 * RE, d: anillo(x + RE, CY) + rect(x + 2 * RE - TR, ASC, TR, XH),
+    t: [circ(x + RE, CY, RC), `M${r1(x + 2 * RE - TR / 2)} ${ASC}V${BASE}`] }),
+  i: (x) => ({ w: TR, d: rect(x, ASC, TR, XH) + circ(x + TR / 2, ASC - 28, RN), t: [`M${r1(x + TR / 2)} ${BASE}V${ASC}`], n: [x + TR / 2, ASC - 28] }),
+};
+// aire óptico entre pares de letras
+const AIRE = { co: 12, on: 12, nd: 14, do: 12, or: 14, "r.": 8, ".a": 10, ai: 16 };
 function wordmark() {
-  const a = contornos(F600, "condor", 0, -0.04);
-  const rp = xh * 0.15;
-  const px = a.fin + rp + TAM * 0.035;
-  // círculo con cúbicas absolutas (mover() suma a pares x,y: nada de arcos ni relativos)
-  const k = rp * 0.5523, cy = -rp;
-  const punto =
-    `M${r1(px + rp)} ${r1(cy)}C${r1(px + rp)} ${r1(cy + k)} ${r1(px + k)} ${r1(cy + rp)} ${r1(px)} ${r1(cy + rp)}` +
-    `C${r1(px - k)} ${r1(cy + rp)} ${r1(px - rp)} ${r1(cy + k)} ${r1(px - rp)} ${r1(cy)}` +
-    `C${r1(px - rp)} ${r1(cy - k)} ${r1(px - k)} ${r1(cy - rp)} ${r1(px)} ${r1(cy - rp)}` +
-    `C${r1(px + k)} ${r1(cy - rp)} ${r1(px + rp)} ${r1(cy - k)} ${r1(px + rp)} ${r1(cy)}Z`;
-  const b = contornos(F500, "ai", px + rp + TAM * 0.035, -0.02);
-  // la "i": se reemplaza su punto (el subtrazo más alto) por un nodo circular del mismo tamaño que el "."
-  const iParte = b.partes[1];
-  const subs = iParte.d.split(/(?=M)/).filter(Boolean);
-  const cajaSub = (t) => { const n = t.match(NUM).map(Number); const ys = n.filter((_, k) => k % 2); const xs = n.filter((_, k) => !(k % 2)); return { y0: Math.min(...ys), y1: Math.max(...ys), x0: Math.min(...xs), x1: Math.max(...xs) }; };
-  const cajas = subs.map(cajaSub);
-  const ti = cajas.reduce((m, c, k) => (c.y0 < cajas[m].y0 ? k : m), 0);
-  const tc = cajas[ti];
-  const ix = (tc.x0 + tc.x1) / 2, iy = (tc.y0 + tc.y1) / 2;
-  const nodo = (cx, cyy, r) => { const kk = r * 0.5523; return `M${r1(cx + r)} ${r1(cyy)}C${r1(cx + r)} ${r1(cyy + kk)} ${r1(cx + kk)} ${r1(cyy + r)} ${r1(cx)} ${r1(cyy + r)}C${r1(cx - kk)} ${r1(cyy + r)} ${r1(cx - r)} ${r1(cyy + kk)} ${r1(cx - r)} ${r1(cyy)}C${r1(cx - r)} ${r1(cyy - kk)} ${r1(cx - kk)} ${r1(cyy - r)} ${r1(cx)} ${r1(cyy - r)}C${r1(cx + kk)} ${r1(cyy - r)} ${r1(cx + r)} ${r1(cyy - kk)} ${r1(cx + r)} ${r1(cyy)}Z`; };
-  const iD = subs.filter((_, k) => k !== ti).join("") + nodo(ix, iy, rp);
-  const d = a.partes.map((p) => p.d).join("") + punto + b.partes[0].d + iD;
-  return { d, ancho: b.fin };
+  const txt = "condor.ai";
+  let x = 0, d = "";
+  const trazos = [], nodos = [];
+  for (let k = 0; k < txt.length; k++) {
+    const L = LETRAS[txt[k]](x);
+    d += L.d;
+    trazos.push(...L.t.map((t) => ({ d: t, letra: k })));
+    if (L.n) nodos.push({ x: r1(L.n[0]), y: r1(L.n[1]), letra: k });
+    x += L.w + (k < txt.length - 1 ? AIRE[txt[k] + txt[k + 1]] : 0);
+  }
+  return { d, w: r1(x), h: BASE, trazos, nodos, grosor: TR };
 }
 
 // ── Armado ─────────────────────────────────────────────────────────────────
@@ -169,30 +198,38 @@ const svg = (vb, cuerpo, extra = "") =>
   `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb}" fill="currentColor"${extra}>${cuerpo}</svg>\n`;
 const ARIA = ' role="img" aria-label="condor.ai"';
 
-const condorD = await forjar(condorEsqueleto(), { w: 1000, h: 440, cierre: 7, suave: 4 });
-const iso = await normalizar(condorD, 1000, 440);
+// Tres propuestas del isotipo sobre la misma silueta
+const IW = 275 * K, IH = 248 * K;
+const capa = `<path stroke="none" d="${ISO_PULIDO}"/>`;
+const tajo = `<path fill="none" stroke="#fff" stroke-width="30" stroke-linecap="round" d="${corteK}"/>`;
+const ojo = `<circle cx="${OJO.x}" cy="${OJO.y}" r="${OJO.r}" fill="#fff" stroke="none"/>`;
+const variantes = {
+  pulido: await forjar(capa, { w: IW, h: IH, escala: 1.5, cierre: 0, suave: 0.8 }),
+  corte: await forjar(capa + tajo, { w: IW, h: IH, escala: 1.5, cierre: 0, suave: 1.6 }),
+  ojo: await forjar(capa + tajo + ojo, { w: IW, h: IH, escala: 1.5, cierre: 0, suave: 1.2 }),
+};
+const isos = {};
+for (const [k, d] of Object.entries(variantes)) isos[k] = await normalizar(d, IW, IH);
+const iso = isos.corte; // propuesta principal
 const W = wordmark();
-// caja del wordmark: lo trasladamos a coordenadas positivas para medirlo
-const wordPos = mover(W.d, 10, TAM);
-const wc = await caja(wordPos, W.ancho + 40, TAM * 1.4);
-const word = { d: mover(wordPos, -wc.x, -wc.y), w: r1(wc.w), h: r1(wc.h) };
+const word = { d: W.d, w: W.w, h: W.h };
 
 // Lockup horizontal: alto del isotipo = 1,25 × alto de la "d" del wordmark,
 // separación = alto de x. El cóndor se centra ópticamente en el x-height.
 function lockupH() {
-  const H = word.h * 1.2;
+  const H = word.h * 1.34;
   const s = H / iso.h;
   const isoW = iso.w * s;
   const gap = xh * 0.85;
   const top = 0;
-  const wy = (H - word.h) / 2 + word.h * 0.06;
+  const wy = H - word.h; // base del wordmark = base del cóndor
   return {
     vb: `0 ${top} ${r1(isoW + gap + word.w)} ${r1(H)}`,
     cuerpo: `<path fill-rule="evenodd" transform="scale(${s.toFixed(4)})" d="${iso.d}"/><path transform="translate(${r1(isoW + gap)} ${r1(wy)})" d="${word.d}"/>`,
   };
 }
 function lockupV() {
-  const isoW = word.w * 0.78;
+  const isoW = word.w * 0.5;
   const s = isoW / iso.w;
   const isoH = iso.h * s;
   const gap = xh * 0.9;
@@ -223,6 +260,8 @@ function conGradiente(contenido, stops) {
     .join("")}</linearGradient></defs>`;
   return contenido.replace('fill="currentColor"', 'fill="url(#g)"').replace(/(<svg[^>]*>)/, `$1${def}`);
 }
+base["condor-isotipo-pulido"] = svg(`0 0 ${isos.pulido.w} ${isos.pulido.h}`, `<path fill-rule="evenodd" d="${isos.pulido.d}"/>`, ARIA);
+base["condor-isotipo-ojo"] = svg(`0 0 ${isos.ojo.w} ${isos.ojo.h}`, `<path fill-rule="evenodd" d="${isos.ojo.d}"/>`, ARIA);
 let n = 0;
 for (const [nombre, contenido] of Object.entries(base)) {
   fs.writeFileSync(path.join(salida, `${nombre}.svg`), contenido); n++;
@@ -246,9 +285,9 @@ for (const [id, p] of Object.entries(PRODUCTOS)) {
 }
 
 const datos = {
-  iso: { d: iso.d, w: iso.w, h: iso.h, dx: iso.dx, dy: iso.dy },
-  esqueleto: condorEsqueleto(),
-  word: { d: word.d, w: word.w, h: word.h },
+  iso: { d: iso.d, w: iso.w, h: iso.h },
+  isos: Object.fromEntries(Object.entries(isos).map(([k, v]) => [k, { d: v.d, w: v.w, h: v.h }])),
+  word: { d: word.d, w: word.w, h: word.h, trazos: W.trazos, nodos: W.nodos, grosor: W.grosor },
   lockupH: LH,
   lockupV: LV,
   productos,

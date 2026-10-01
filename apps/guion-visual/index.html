@@ -36,14 +36,14 @@
 
 <!-- ══════════ INICIO ══════════ -->
 <section class="inicio" id="inicio">
-  <div class="escena3d" id="escena3d" aria-label="El cóndor de condor.ai en acrílico, girando">
-    <canvas id="lienzo3d"></canvas>
-    <svg class="escena-respaldo" aria-hidden="true"><use href="#iso"/></svg>
+  <div class="inicio-marca">
+    <svg class="inicio-iso" aria-hidden="true"><use href="#iso"/></svg>
+    <svg class="letras-vivas inicio-word" data-escribir="0.5" role="img" aria-label="condor.ai"></svg>
   </div>
   <div class="inicio-texto">
     <p class="rotulo">Guion visual · Visión Claro · Octubre 2026</p>
     <h1>Tecnología del futuro,<br>desde los Andes.</h1>
-    <p class="inicio-lead">La nueva identidad de condor.ai. Un cóndor más simple y más nuestro, un solo azul, acrílico transparente como material y una tipografía precisa. De aquí salen el sitio, el Portal Cóndor y cada producto que lancemos, empezando por Medula.</p>
+    <p class="inicio-lead">La nueva identidad de condor.ai. El mismo cóndor, más preciso. Letras dibujadas solo para nosotros. Un azul, mucho blanco e interfaces de acrílico. De aquí salen el sitio, el Portal Cóndor y cada producto, empezando por Medula.</p>
   </div>
 </section>
 
@@ -54,58 +54,54 @@
   <div class="tres">
     <article><h3>Simple</h3><p>Una idea por pantalla. Mucho aire, pocas palabras y nada que sobre. Si algo se puede quitar, se quita.</p></article>
     <article><h3>Preciso</h3><p>Cada curva tiene una razón y cada medida sale de una grilla. Un solo azul, usado con intención.</p></article>
-    <article><h3>Claro</h3><p>Acrílico transparente: deja ver lo que hay detrás. Así queremos que se sienta la tecnología que hacemos.</p></article>
+    <article><h3>Claro</h3><p>Plano en la marca, acrílico en las interfaces. Nada de 3D ni efectos: la calidad se nota en el detalle.</p></article>
   </div>
   <div class="antes-ahora">
     <figure><div class="aa-lienzo"><img src="assets/antes/logo-v2.png" alt="Logo anterior de condor.ai, cóndor de perfil en tricolor"></div><figcaption>Antes · perfil tricolor, en PNG</figcaption></figure>
     <svg class="aa-flecha" aria-hidden="true"><use href="#i-flecha"/></svg>
-    <figure><div class="aa-lienzo"><svg class="aa-nuevo"><use href="#lockup-h"/></svg></div><figcaption>Ahora · el cóndor desde abajo, en un color y en vector</figcaption></figure>
+    <figure><div class="aa-lienzo"><svg class="aa-nuevo"><use href="#lockup-h"/></svg></div><figcaption>Ahora · el mismo cóndor en vector y en un color, con letras propias</figcaption></figure>
   </div>
 </section>
 
 <!-- ══════════ CÓNDOR ══════════ -->
 <section class="bloque" id="condor">
   <p class="rotulo">El cóndor</p>
-  <h2 class="titular">Visto como se ve en los Andes: desde abajo.</h2>
-  <p class="lead">Quien ha visto un cóndor lo recuerda así: enorme, planeando sobre su cabeza, con las plumas de las puntas abiertas como dedos. Ningún otro pájaro tiene esa silueta. La dibujamos con la misma gramática de Medula: trazos gruesos, remates redondos, uniones suaves y un punto libre.</p>
+  <h2 class="titular">El mismo cóndor, más preciso.</h2>
+  <p class="lead">No cambiamos de pájaro. Lo redibujamos en vector, suavizamos sus vértices y le quitamos los tres colores. Sobre esa misma silueta hay tres propuestas; la marcada es la que recomendamos.</p>
 
-  <div class="construccion">
-    <div class="paso-botones" role="tablist" aria-label="Construcción del isotipo">
-      <button type="button" role="tab" data-paso="esqueleto" aria-selected="false">1 · Esqueleto</button>
-      <button type="button" role="tab" data-paso="fusion" aria-selected="false">2 · Fusión</button>
-      <button type="button" role="tab" data-paso="marca" aria-selected="true">3 · Marca</button>
+  <div class="propuestas">
+    <div class="segmento" role="tablist" aria-label="Propuestas del isotipo" id="propuestas">
+      <button type="button" role="tab" data-variante="original" aria-selected="false">Original</button>
+      <button type="button" role="tab" data-variante="pulido" aria-selected="false">Pulido</button>
+      <button type="button" role="tab" data-variante="corte" aria-selected="true">Corte ★</button>
+      <button type="button" role="tab" data-variante="ojo" aria-selected="false">Corte + ojo</button>
     </div>
-    <div class="construccion-lienzo" id="construccion" data-paso="marca">
-      <svg viewBox="100 30 800 360" class="cons-svg" role="img" aria-label="El isotipo con sus partes: plumas dedo, collar y envergadura">
-        <defs>
-          <filter id="fundir" x="-10%" y="-20%" width="120%" height="140%"><feGaussianBlur stdDeviation="9"/><feColorMatrix values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 26 -12"/></filter>
-          <pattern id="cuadricula" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M20 0H0V20" fill="none" class="cuad-l"/></pattern>
-        </defs>
-        <rect x="100" y="30" width="800" height="360" fill="url(#cuadricula)" class="cuad"/>
-        <g class="cons-esqueleto" id="cons-esqueleto"></g>
-        <g class="cons-fusion" filter="url(#fundir)" id="cons-fusion"></g>
-        <g class="cons-marca" id="cons-marca"></g>
-        <g class="cons-notas">
-          <path d="M806 92 L846 60 H880" class="nota-l"/><text x="880" y="54" text-anchor="end" class="nota-t">Plumas dedo</text>
-          <path d="M538 196 L600 120 H700" class="nota-l"/><text x="700" y="114" text-anchor="end" class="nota-t">Collar</text>
-          <path d="M132 358 H868 M132 350 V366 M868 350 V366" class="nota-l"/><text x="500" y="384" text-anchor="middle" class="nota-t">Envergadura · 3,2 m en el cóndor real</text>
-        </g>
-      </svg>
+    <div class="propuesta-lienzo" id="propuesta" data-variante="corte">
+      <img class="pv pv-original" src="assets/antes/logo-v2.png" alt="Logo original de condor.ai">
+      <svg class="pv pv-pulido" aria-hidden="true"><use href="#iso-pulido"/></svg>
+      <svg class="pv pv-corte" aria-hidden="true"><use href="#iso-corte"/></svg>
+      <svg class="pv pv-ojo" aria-hidden="true"><use href="#iso-ojo"/></svg>
     </div>
-    <div class="anatomia">
-      <div><h3>Plumas dedo</h3><p>Tres por ala, curvadas hacia arriba como en el planeo. Son la firma del cóndor andino y terminan en remates redondos, igual que las ramas de Medula.</p></div>
-      <div><h3>Collar</h3><p>La cabeza es un punto libre, separado del cuerpo por un anillo vacío: el collar blanco del cóndor. Este nodo con collar es la firma de toda la familia.</p></div>
-      <div><h3>Sin perfil, sin pico</h3><p>Dejamos el perfil de águila genérica. De frente es simétrico, funciona chico y se reconoce aunque solo se vea la silueta.</p></div>
+    <div class="propuesta-textos">
+      <p data-texto="original"><b>Original.</b> El cóndor tricolor de hoy, en PNG. Funciona, pero se ve borroso en chico, no se puede usar en un color y sus degradés no salen bien impresos.</p>
+      <p data-texto="pulido"><b>Pulido.</b> La misma silueta en vector, en un color, con cada vértice suavizado a un radio de 2,25. Se siente más moderno sin dejar de ser nuestro.</p>
+      <p data-texto="corte"><b>Corte.</b> La franja de luz que separaba ala y cuerpo en el original se vuelve un corte limpio. Le da profundidad sin usar color y hace al cóndor más reconocible. Es la propuesta principal.</p>
+      <p data-texto="ojo"><b>Corte + ojo.</b> Suma un ojo como nodo, el mismo recurso del punto de Medula. Más cercano y con más vida; menos sobrio.</p>
     </div>
   </div>
 
-  <h3 class="sub">Wordmark</h3>
-  <div class="wordmark-caja">
-    <svg class="wordmark-grande"><use href="#word"/></svg>
+  <h3 class="sub">Letras propias</h3>
+  <p class="nota">El wordmark no usa ninguna tipografía. Cada letra está construida con círculos, arcos y astas de un mismo grosor, y por eso se puede dibujar trazo a trazo.</p>
+  <div class="letras-caja">
+    <div class="letras-plano">
+      <svg class="letras-guia" id="letras-guia" role="img" aria-label="Construcción del wordmark condor.ai con sus guías"></svg>
+      <button class="btn-mini" type="button" id="btn-escribir"><svg><use href="#i-repetir"/></svg>Escribir de nuevo</button>
+    </div>
     <div class="wm-notas">
-      <p><b>Inter Tight 600</b><span>a −4 %, minúsculas. Seria como la tipografía de un producto de Apple, sin ser la de Apple.</span></p>
-      <p><b>Nodos</b><span>El punto de <i>.ai</i> y el de la <i>i</i> son círculos perfectos del mismo tamaño: repiten la cabeza del cóndor.</span></p>
-      <p><b>ai en 500</b><span>Un peso menos que <i>condor</i>, para que el nombre mande y el dominio acompañe.</span></p>
+      <p><b>Geometría</b><span>Alto de x de 100, círculos de radio 50 y trazo de 22. La "a" es de un piso, como un círculo con su asta.</span></p>
+      <p><b>Ángulo del ala</b><span>El corte de la "c" y el remate de la "d" siguen los 30,7° del ala del cóndor. El logo entero habla el mismo idioma.</span></p>
+      <p><b>Nodos</b><span>El punto de ".ai" y el de la "i" son círculos perfectos de radio 13: los nodos de la familia.</span></p>
+      <p><b>Vivas</b><span>Como son trazos, se escriben solas en la carga, en el inicio del sitio y en los cierres de video.</span></p>
     </div>
   </div>
 
@@ -132,7 +128,7 @@
   <div class="reglas">
     <figure class="respeto">
       <div class="respeto-caja"><svg><use href="#lockup-h"/></svg></div>
-      <figcaption>Área de respeto: el diámetro de la cabeza con su collar, por cada lado.</figcaption>
+      <figcaption>Área de respeto: el alto de la "x" del wordmark, por cada lado.</figcaption>
     </figure>
     <div class="minimos">
       <h3>Tamaños mínimos</h3>
@@ -152,26 +148,26 @@
 <!-- ══════════ CARGA ══════════ -->
 <section class="bloque" id="carga">
   <p class="rotulo">Carga</p>
-  <h2 class="titular">El cóndor también se arma.</h2>
-  <p class="lead">Tres cargas, una por tipo de espera. La principal repite cómo se construyó la marca: los trazos aparecen y se funden en el cóndor.</p>
+  <h2 class="titular">El nombre se escribe solo.</h2>
+  <p class="lead">Tres cargas, una por tipo de espera. La principal aprovecha que las letras son trazos: el cóndor aparece y condor.ai se escribe.</p>
   <div class="cargas">
     <article class="carga">
-      <div class="carga-escena" id="carga-forja">
-        <svg viewBox="100 30 800 360" class="forja-svg" aria-hidden="true">
-          <g filter="url(#fundir)" class="forja-trazos" id="forja-trazos"></g>
-          <g class="forja-final" id="forja-final"></g>
-        </svg>
+      <div class="carga-escena" id="carga-trazo">
+        <div class="trazo-carga">
+          <svg class="tc-iso" aria-hidden="true"><use href="#iso"/></svg>
+          <svg class="letras-vivas tc-word" data-escribir="0.35" aria-hidden="true"></svg>
+        </div>
       </div>
-      <div class="carga-info"><h3>Forja</h3><p>Entrada al sitio y al portal, una vez por sesión. 2,2 s.</p><button class="btn-mini" type="button" data-repetir="carga-forja"><svg><use href="#i-repetir"/></svg>Repetir</button></div>
+      <div class="carga-info"><h3>Escritura</h3><p>Entrada al sitio y al portal, una vez por sesión. 1,8 s.</p><button class="btn-mini" type="button" data-repetir="carga-trazo"><svg><use href="#i-repetir"/></svg>Repetir</button></div>
     </article>
     <article class="carga">
-      <div class="carga-escena"><div class="nodo-carga"><svg><use href="#iso"/></svg><i></i></div></div>
-      <div class="carga-info"><h3>Nodo</h3><p>Esperas sin duración conocida: la IA pensando, un agente respondiendo. La cabeza late.</p></div>
+      <div class="carga-escena"><div class="planeo-carga"><svg><use href="#iso"/></svg><i></i></div></div>
+      <div class="carga-info"><h3>Planeo</h3><p>Esperas sin duración conocida: la IA pensando, un agente respondiendo. El cóndor sube y baja.</p></div>
     </article>
     <article class="carga">
       <div class="carga-escena carga-ui">
-        <span class="barrido" style="--s:20px"></span><span class="barrido" style="--s:32px"></span><span class="barrido" style="--s:48px"></span>
-        <button class="ui-btn ui-primario" type="button" data-cargando><span class="barrido blanco" style="--s:20px"></span><span class="tx">Enviar cotización</span></button>
+        <span class="barrido" style="--s:22px"></span><span class="barrido" style="--s:34px"></span><span class="barrido" style="--s:50px"></span>
+        <button class="ui-btn ui-primario" type="button" data-cargando><span class="barrido blanco" style="--s:18px"></span><span class="tx">Enviar cotización</span></button>
       </div>
       <div class="carga-info"><h3>Barrido</h3><p>Botones y celdas del portal. Una luz cruza la silueta. Toca el botón.</p></div>
     </article>
@@ -270,14 +266,14 @@
 <section class="bloque" id="productos">
   <p class="rotulo">Productos</p>
   <h2 class="titular">Una familia, una gramática.</h2>
-  <p class="lead">Cada producto se dibuja con las reglas del cóndor y de Medula: trazo grueso, remates redondos, uniones suaves y un solo nodo libre que cuenta qué hace. Se nombran "condor + palabra". Medula conserva su marca y se presenta como "Medula, de condor.ai".</p>
+  <p class="lead">Cada producto se dibuja con la gramática de Medula: trazo grueso, remates redondos, uniones suaves y un solo nodo libre que cuenta qué hace, el mismo nodo de los puntos de condor.ai. Se nombran "condor + palabra". Medula conserva su marca y se presenta como "Medula, de condor.ai".</p>
   <div class="productos" id="productos-grid"></div>
   <div class="reglas-prod">
     <div class="regla-fig"><svg viewBox="0 0 240 240" class="grilla-prod" aria-hidden="true"><rect x="20" y="20" width="200" height="200" rx="40" class="gp-caja"/><circle cx="120" cy="120" r="100" class="gp-c"/><path d="M120 0V240M0 120H240" class="gp-l"/><use href="#p-track" width="240" height="240" class="gp-marca"/></svg></div>
     <ul class="lista-reglas">
       <li><b>Lienzo de 240</b> con margen óptico de 20. La marca toca el círculo de 200.</li>
       <li><b>Trazo de 38</b> con remates redondos. Uniones fundidas, nunca ángulos.</li>
-      <li><b>Un nodo libre</b> por marca, separado por aire o por un collar de 11.</li>
+      <li><b>Un nodo libre</b> por marca, separado por aire o por un anillo vacío de 11.</li>
       <li><b>Un color</b> el tono del producto, grafito o blanco.</li>
       <li><b>Ícono</b> squircle al 22,5 %, blanco con la marca en su tono, o en su tono con la marca blanca.</li>
     </ul>
@@ -406,9 +402,9 @@
   --cn-r-icono:  22.5%;
 }</code></pre></div>
     <ul class="lista-archivos">
-      <li><code>assets/marca/</code><span>40 SVG: isotipo, wordmark, logo horizontal y vertical en azul, grafito, blanco, ionosfera, aurora y hielo, y las 6 marcas de producto.</span></li>
+      <li><code>assets/marca/</code><span>Isotipo (corte, pulido y ojo), wordmark, logo horizontal y vertical en azul, grafito, blanco, ionosfera, aurora y hielo, y las 6 marcas de producto.</span></li>
       <li><code>tokens/condor.css</code><span>Color, tipo, forma y movimiento, en claro y oscuro.</span></li>
-      <li><code>herramientas/generar-marca.mjs</code><span>El esqueleto de cada marca. <code>npm run marca</code> las vuelve a forjar.</span></li>
+      <li><code>herramientas/generar-marca.mjs</code><span>El cóndor, las letras construidas y las marcas de producto. <code>npm run marca</code> las regenera.</span></li>
     </ul>
   </div>
   <footer class="pie"><svg class="pie-logo"><use href="#lockup-h"/></svg><p>Guion visual · Visión Claro · Santiago de Chile, octubre 2026</p></footer>
@@ -417,7 +413,6 @@
 </main>
 
 <div class="aviso" id="aviso" role="status" aria-live="polite"></div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="assets/marca-datos.js"></script>
 <script src="guion.js"></script>
 </body>
