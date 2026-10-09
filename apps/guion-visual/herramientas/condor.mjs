@@ -292,3 +292,9 @@ export function path(v) {
   if (Array.isArray(v)) return contorno(v);
   return contorno(v.contorno) + v.huecos.map(contorno).join("");
 }
+
+/** Piezas separadas de una variante: [contorno, ...huecos]. En `oficial` = [ala, cuerpo]. */
+export function piezas(v) {
+  if (Array.isArray(v)) return [contorno(v)];
+  return [contorno(v.contorno), ...v.huecos.map(contorno)];
+}

@@ -13,7 +13,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import sharp from "sharp";
-import { path as condorPath, VARIANTES, ANCHO, ALTO } from "./condor.mjs";
+import { path as condorPath, piezas as piezasCondor, VARIANTES, ANCHO, ALTO } from "./condor.mjs";
 import { componer, XH, BL } from "./tipo.mjs";
 import { PRODUCTOS, ESTILOS, svgIcono } from "./iconos.mjs";
 
@@ -41,12 +41,14 @@ const wordD = W.letras.map((l) => l.d).join("");
 const wTop = W.top;                                                       // tope de la d
 const usar = (d, s, dx, dy) => `<path fill-rule="evenodd" transform="translate(${r2(dx)} ${r2(dy)}) scale(${r2(s)})" d="${d}"/>`;
 
-// Horizontal: el cóndor mide 1,5 alto de x; su base cae 2 bajo la línea base; separación 0,36 alto de x.
+// Horizontal: el cóndor mide 1,8 alto de x; su base cae 4 bajo la línea base; separación 0,34 alto de x.
 const H = (() => {
   const hC = Number(process.env.HC || 1.8) * XH, s = hC / cC.h, wC = cC.w * s, gap = 0.34 * XH;
   const yC = BL + 4 - hC, top = Math.min(yC, wTop), bot = BL + 4;
   const cuerpo = usar(condor, s, -cC.x * s, yC - cC.y * s) + `<path transform="translate(${r2(wC + gap)} 0)" d="${wordD}"/>`;
-  return { vb: [0, r2(top), r2(wC + gap + W.w), r2(bot - top)], cuerpo, isoAncho: r2(wC), sep: r2(gap) };
+  // para animar: dónde va el cóndor (transform) y dónde parte el nombre
+  const anim = { condor: `translate(${r2(-cC.x * s)} ${r2(yC - cC.y * s)}) scale(${r2(s)})`, palabraX: r2(wC + gap) };
+  return { vb: [0, r2(top), r2(wC + gap + W.w), r2(bot - top)], cuerpo, isoAncho: r2(wC), sep: r2(gap), anim };
 })();
 // Vertical: el cóndor centrado, de 0,46 del ancho del nombre; separación 0,55 alto de x.
 const Vt = (() => {
@@ -85,16 +87,17 @@ for (const [nombre, p] of Object.entries(piezas)) {
   for (const [t, hex] of Object.entries(TINTAS)) { fs.writeFileSync(path.join(salida, `${nombre}-${t}.svg`), base.replace('fill="currentColor"', `fill="${hex}"`)); n++; }
 }
 for (const [nombre, [fondo, tinta]] of Object.entries(ICONOS)) { fs.writeFileSync(path.join(salida, `icono-${nombre}.svg`), icono(fondo, tinta)); n++; }
-// íconos de producto (P4)
-for (const id of Object.keys(PRODUCTOS)) for (const e of ESTILOS) {
-  fs.writeFileSync(path.join(salida, `producto-${id}-${e}.svg`), svgIcono(id, e, `p-${id}-${e}`) + "\n"); n++;
+// íconos de producto (P4): el oficial es el estilo blanco (elegido 9-oct); los otros quedan como variantes
+for (const id of Object.keys(PRODUCTOS)) {
+  fs.writeFileSync(path.join(salida, `producto-${id}.svg`), svgIcono(id, "blanco", `p-${id}`) + "\n"); n++;
+  for (const e of ESTILOS) { fs.writeFileSync(path.join(salida, `producto-${id}-${e}.svg`), svgIcono(id, e, `p-${id}-${e}`) + "\n"); n++; }
 }
 
 const datos = {
   tintas: TINTAS,
-  iso: { vb: ISO.vb, d: condor },
+  iso: { vb: ISO.vb, d: condor, piezas: piezasCondor(VARIANTES.oficial) },   // piezas = [ala, cuerpo]
   word: { vb: WORD.vb, letras: W.letras.map(({ ch, d, e, p }) => ({ ch, d, e, p })), V: W.V },
-  lockupH: { vb: H.vb, cuerpo: H.cuerpo, isoAncho: H.isoAncho, sep: H.sep },
+  lockupH: { vb: H.vb, cuerpo: H.cuerpo, isoAncho: H.isoAncho, sep: H.sep, anim: H.anim },
   lockupV: { vb: Vt.vb, cuerpo: Vt.cuerpo },
   medidas: { altoX: XH, lineaBase: BL },
   productos: Object.fromEntries(Object.entries(PRODUCTOS).map(([id, p]) => [id, { nombre: p.nombre, que: p.que, color: p.color }])),
