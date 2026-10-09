@@ -3,3 +3,4 @@ node_modules/
 herramientas/pruebas/**/*.png
 herramientas/pruebas/**/*.json
 herramientas/pruebas/**/descargas/
+herramientas/pruebas/**/*.txt

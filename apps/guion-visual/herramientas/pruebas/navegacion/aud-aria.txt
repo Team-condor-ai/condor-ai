@@ -1,8 +1,0 @@
-
-incompletos: aria-valid-attr-value ×5
-
-ids duplicados: ninguno
-referencias aria rotas: ninguna
-role=tab sin aria-controls: 0 
-
-0 fallas · errores de consola: []
