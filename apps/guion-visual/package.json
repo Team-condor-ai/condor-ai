@@ -1,12 +1,15 @@
 {
   "name": "condor-guion-visual",
   "private": true,
-  "version": "1.0.0",
-  "description": "Guion visual V1 de condor.ai — marca, color, textura acrílica, motion, productos y UI para sitio y Portal Cóndor.",
+  "version": "2.0.0",
+  "description": "Guion visual de condor.ai — cóndor, logo, letras, productos, color, forma, material acrílico y movimiento.",
   "type": "module",
   "scripts": {
+    "dev": "node herramientas/servir.mjs",
     "marca": "node herramientas/generar-marca.mjs",
-    "dev": "node herramientas/servir.mjs"
+    "hojas": "node herramientas/hoja-condor.mjs \"\" p1 && node herramientas/hoja-tipo.mjs && node herramientas/hoja-logo.mjs && node herramientas/hoja-productos.mjs && node herramientas/hoja-sistema.mjs",
+    "medir": "node herramientas/medir.mjs http://127.0.0.1:5320/ medicion",
+    "probar": "node herramientas/probar-interaccion.mjs http://127.0.0.1:5320/"
   },
   "devDependencies": {
     "@fontsource/geist-mono": "^5.3.0",

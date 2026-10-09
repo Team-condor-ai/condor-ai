@@ -1,18 +1,25 @@
-# Guion visual condor.ai · visión "Claro"
+# Guion visual condor.ai
 
-Marca, color, tipografía, acrílico, motion, productos e interfaz para **condorai.cl** y el **Portal Cóndor**.
-Sitio estático, sin build. Contexto completo y decisiones: [CONTEXTO.md](CONTEXTO.md).
+El cóndor, el logo, las letras, los productos (ecommerce, track, agents), el color, la forma,
+el material acrílico y el movimiento de **condor.ai**, funcionando en una página estática.
+Decisiones y cómo se llegó a cada una: [CONTEXTO.md](CONTEXTO.md).
 
 ```bash
 cd apps/guion-visual
-npm install        # solo para regenerar la marca (sharp, potrace, opentype.js, fuentes)
-npm run dev        # http://127.0.0.1:5320
-npm run marca      # vuelve a forjar assets/marca/*.svg y assets/marca-datos.js
+npm install        # una vez: sharp, opentype.js, Phosphor Icons
+npm run dev        # http://127.0.0.1:5320  (el guion)  ·  /hojas/… (hojas de decisión)
+npm run marca      # regenera assets/marca/*.svg y assets/marca-datos.js
+npm run medir      # capturas escritorio/celular, errores, desbordes  → ./medicion
+npm run probar     # interacción real por CDP (clics, hover, firmas, descargas)
 ```
 
 | Archivo | Qué es |
 |---|---|
-| `herramientas/generar-marca.mjs` | Cóndor original refinado (pulido/corte/ojo), letras construidas sin tipografía y marcas de producto con la gramática de Medula. |
-| `assets/marca/` | Isotipo, wordmark, logo horizontal y vertical (azul, grafito, blanco, ionosfera, aurora, hielo) y las 6 marcas de producto. Los base usan `currentColor`. |
-| `tokens/condor.css` | Tokens oficiales (color, tipo, forma, movimiento), claro y oscuro. |
-| `guion.js` | Letras vivas, propuestas del isotipo, cargas, productos, kit. |
+| `herramientas/condor.mjs` | El cóndor redibujado en vector sobre el original (`assets/antes/logo-v2.png`). Variante oficial: `oficial` (B7: cuello lleno, corte 3,4, plumas romas). |
+| `herramientas/tipo.mjs` | Letras del nombre: Inter Display Semibold (OFL) pasada a vector propio, con esqueleto por letra. |
+| `herramientas/iconos.mjs` | Íconos de producto: fondo del ícono de condor sites + glifo de Phosphor Icons (MIT). Oficial: estilo blanco. |
+| `herramientas/generar-marca.mjs` | Arma todo: isotipo, nombre, logo horizontal y vertical en negro/blanco/azul, ícono de app e íconos de producto. |
+| `tokens/condor.css` | Tokens oficiales: color, tipografía, radios, acrílico y movimiento (con un resorte real como `linear()`). |
+| `index.html` · `guion.css` · `guion.js` | El guion. Los logos se dibujan desde `assets/marca-datos.js` con piezas animables. |
+| `hojas/` | Las hojas con que se decidió cada pieza (P1 cóndor … P5 sistema). |
+| `assets/fuentes/inter-display/` | Inter Display + su licencia OFL. |

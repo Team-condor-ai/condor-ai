@@ -1,9 +1,16 @@
 // Captura una página por CDP con espera real (sirve para animaciones CSS).
 // node herramientas/captura.mjs URL salida.png [ancho] [alto] [espera_ms]
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+
+/** Cierra SOLO los Chrome de este perfil temporal (nunca el Chrome del usuario). */
+function cerrarChrome(perfil, proc) {
+  try { proc.kill(); } catch {}
+  const marca = path.basename(perfil).replace(/'/g, "");
+  spawnSync("powershell", ["-NoProfile", "-Command", `Get-CimInstance Win32_Process -Filter "Name='chrome.exe'" | Where-Object { $_.CommandLine -like '*${marca}*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }`], { stdio: "ignore" });
+}
 const [url, salida, ancho = "1280", alto = "1500", espera = "4000"] = process.argv.slice(2);
 const chrome = "C:/Program Files/Google/Chrome/Application/chrome.exe";
 const perfil = fs.mkdtempSync(path.join(os.tmpdir(), "cn-cap-"));
@@ -13,7 +20,7 @@ const esperar = (ms) => new Promise((r) => setTimeout(r, ms));
 let ws;
 try {
   let objetivos;
-  for (let i = 0; i < 60 && !objetivos; i++) { try { objetivos = await (await fetch(`http://127.0.0.1:${puerto}/json`)).json(); } catch { await esperar(250); } }
+  for (let i = 0; i < 120 && !objetivos; i++) { try { objetivos = await (await fetch(`http://127.0.0.1:${puerto}/json`)).json(); } catch { await esperar(250); } }
   ws = new WebSocket(objetivos.find((t) => t.type === "page").webSocketDebuggerUrl);
   await new Promise((r) => (ws.onopen = r));
   let n = 0; const pend = new Map();
@@ -27,7 +34,7 @@ try {
   fs.writeFileSync(salida, Buffer.from(shot.result.data, "base64"));
 } finally {
   try { ws && ws.close(); } catch {}
-  proc.kill();
+  cerrarChrome(perfil, proc); // en Windows hay que cerrar el árbol entero
   await esperar(600);
   try { fs.rmSync(perfil, { recursive: true, force: true }); } catch {}
 }

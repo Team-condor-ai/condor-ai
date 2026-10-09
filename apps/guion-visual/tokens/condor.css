@@ -24,7 +24,7 @@
 
   /* Grises (escala del sistema de Apple, afinada a la tinta) */
   --cn-gris-1: #636368;         /* texto secundario */
-  --cn-gris-2: #8E8E93;         /* texto terciario, íconos */
+  --cn-gris-2: #8E8E93;         /* íconos y texto grande (3,3:1): nunca texto chico */
   --cn-gris-3: #C7C7CC;         /* deshabilitado */
   --cn-gris-4: #DDDDDF;         /* líneas */
   --cn-gris-5: #F2F2F4;         /* superficies hundidas */
@@ -37,9 +37,9 @@
   --cn-p-agents: #FF5A1F;
 
   /* Estados */
-  --cn-ok: #1F9D55;      --cn-ok-suave: #E7F6EE;
-  --cn-alerta: #B86E00;  --cn-alerta-suave: #FCF1DE;
-  --cn-error: #D3222E;   --cn-error-suave: #FDECEC;
+  --cn-ok: #147A42;      --cn-ok-suave: #E7F6EE;   /* contraste 4,9:1 sobre su suave */
+  --cn-alerta: #8F5600;  --cn-alerta-suave: #FCF1DE;   /* 5,3:1 */
+  --cn-error: #C01E2A;   --cn-error-suave: #FDECEC;   /* 5,3:1 */
   --cn-info: #014CFD;    --cn-info-suave: #EEF3FF;
 
   /* ── Semánticos ─────────────────────────────────────────────────────── */
@@ -50,7 +50,7 @@
   --cn-linea: var(--cn-gris-4);
   --cn-texto: var(--cn-tinta);
   --cn-texto-2: var(--cn-gris-1);
-  --cn-texto-3: var(--cn-gris-2);
+  --cn-texto-3: #737378;          /* 4,7:1: el gris más claro permitido para texto chico */
   --cn-acento: var(--cn-azul);
   --cn-acento-hover: var(--cn-azul-hondo);
   --cn-foco: 0 0 0 4px rgba(1, 76, 253, 0.22);
