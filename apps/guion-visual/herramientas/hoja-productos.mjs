@@ -1,6 +1,6 @@
 // Hoja P4 · íconos de producto.  node herramientas/hoja-productos.mjs  →  hojas/p4-productos.html
 import fs from "node:fs";
-import { PRODUCTOS } from "./iconos.mjs";
+import { PRODUCTOS, ESTILOS } from "./iconos.mjs";
 
 const a = (f) => `../assets/marca/${f}`;
 const ids = Object.keys(PRODUCTOS);
@@ -36,25 +36,26 @@ h2{font:600 20px/1.2 "Inter Display",-apple-system,sans-serif;margin:64px 0 6px}
 @media (max-width:900px){.familia{grid-template-columns:1fr 1fr}.reglas{grid-template-columns:1fr}}
 </style></head><body><main>
 <h1>P4 · Íconos de producto</h1>
-<p class="sub">Mismo sistema que el ícono de condor sites: baldosa en el color del producto, dos láminas de acrílico en abanico que se oscurecen hacia abajo, un resplandor al centro y una escena blanca que cuenta qué hace cada producto.</p>
+<p class="sub">Fondo aprobado (sistema de condor sites, colores nuevos). Glifos de Phosphor Icons (MIT): bolsa tipo Shopify con el cursor encima, la libreta de clientes del CRM y la burbuja con el destello de la IA. Tres estilos de glifo para elegir.</p>
+${ESTILOS.map((e) => `<h2>${({blanco:"Blanco · sólido, como los íconos de Apple. El más legible.",vidrio:"Vidrio · acrílico: el fondo desenfocado a través del glifo, con canto de luz.",duotono:"Duotono · contorno blanco con relleno translúcido. El más liviano."})[e]}</h2>
 <div class="familia">
-  <div class="p ref"><img src="../assets/referencias/condor-sites.png" alt="condor sites"><span class="nom"><span class="c">condor</span> sites</span><small>Referencia: el ícono actual</small></div>
-  ${ids.map((id) => `<div class="p"><img src="${a(`producto-${id}.svg`)}" alt="condor ${id}">${nombre(PRODUCTOS[id].nombre)}<small>${PRODUCTOS[id].que}</small></div>`).join("")}
-</div>
+  <div class="p ref"><img src="../assets/referencias/condor-sites.png" alt="condor sites"><span class="nom"><span class="c">condor</span> sites</span><small>Referencia</small></div>
+  ${ids.map((id) => `<div class="p"><img src="${a(`producto-${id}-${e}.svg`)}" alt="condor ${id}">${nombre(PRODUCTOS[id].nombre)}<small>${PRODUCTOS[id].que}</small></div>`).join("")}
+</div>`).join("")}
 
 <h2>Tamaños reales</h2><p class="sub">Se leen hasta 20 px: a ese tamaño queda el color y la silueta del pictograma.</p>
-<div class="tam">${ids.map((id) => `<div>${[96, 64, 40, 28, 20].map((t) => `<figure style="margin:0"><img src="${a(`producto-${id}.svg`)}" width="${t}" height="${t}" alt=""><span>${t}</span></figure>`).join("")}</div>`).join("")}</div>
+<div class="tam">${ids.map((id) => `<div>${[96, 64, 40, 28, 20].map((t) => `<figure style="margin:0"><img src="${a(`producto-${id}-blanco.svg`)}" width="${t}" height="${t}" alt=""><span>${t}</span></figure>`).join("")}</div>`).join("")}</div>
 
 <h2>En contexto</h2><p class="sub">Sobre tinta y en el menú de productos del sitio.</p>
-<div class="oscuro">${ids.map((id) => `<div class="chip"><img src="${a(`producto-${id}.svg`)}" alt="">${nombre(PRODUCTOS[id].nombre)}</div>`).join("")}</div>
-<div class="menu">${ids.map((id) => `<a href="#"><img src="${a(`producto-${id}.svg`)}" alt="">Cóndor ${PRODUCTOS[id].nombre[0].toUpperCase() + PRODUCTOS[id].nombre.slice(1)}</a>`).join("")}</div>
+<div class="oscuro">${ids.map((id) => `<div class="chip"><img src="${a(`producto-${id}-blanco.svg`)}" alt="">${nombre(PRODUCTOS[id].nombre)}</div>`).join("")}</div>
+<div class="menu">${ids.map((id) => `<a href="#"><img src="${a(`producto-${id}-blanco.svg`)}" alt="">Cóndor ${PRODUCTOS[id].nombre[0].toUpperCase() + PRODUCTOS[id].nombre.slice(1)}</a>`).join("")}</div>
 
 <h2>Reglas</h2>
 <ul class="reglas">
   <li><b>Baldosa</b> squircle continuo, la misma del ícono de app de condor.ai.</li>
   <li><b>Un color por producto</b>: ecommerce violeta con rosa, track turquesa-océano con menta, agents naranja con magenta. Los fondos profundos son índigo, azul o carmesí: nunca café ni oliva.</li>
   <li><b>Dos láminas</b>: la de arriba en el tono profundo del producto; la de abajo en su acento, que se oscurece hacia la esquina inferior izquierda.</li>
-  <li><b>Escena</b> blanca que cuenta qué hace el producto, con volumen (degradado y sombra) y contorno fino en el tono profundo. El cursor de sites es el hilo de la familia: hace clic en la bolsa y arrastra la tarjeta del cliente. En agents no hay cursor: trabaja la IA.</li>
+  <li><b>Glifo</b> de Phosphor Icons, a ~48 % de la baldosa, sin contorno, con sombra en el tono profundo. Una insignia (cursor, destello) se recorta del glifo con un margen limpio.</li>
   <li><b>Resplandor</b> blanco detrás del pictograma: es la luz que atraviesa el acrílico.</li>
   <li><b>Nombre</b> en minúscula: "condor" en gris, el producto en tinta.</li>
 </ul>

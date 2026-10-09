@@ -15,7 +15,7 @@ import { fileURLToPath } from "node:url";
 import sharp from "sharp";
 import { path as condorPath, VARIANTES, ANCHO, ALTO } from "./condor.mjs";
 import { componer, XH, BL } from "./tipo.mjs";
-import { PRODUCTOS, svgIcono } from "./iconos.mjs";
+import { PRODUCTOS, ESTILOS, svgIcono } from "./iconos.mjs";
 
 const raiz = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const salida = path.join(raiz, "assets/marca");
@@ -86,7 +86,9 @@ for (const [nombre, p] of Object.entries(piezas)) {
 }
 for (const [nombre, [fondo, tinta]] of Object.entries(ICONOS)) { fs.writeFileSync(path.join(salida, `icono-${nombre}.svg`), icono(fondo, tinta)); n++; }
 // íconos de producto (P4)
-for (const id of Object.keys(PRODUCTOS)) { fs.writeFileSync(path.join(salida, `producto-${id}.svg`), svgIcono(id, `p-${id}`) + "\n"); n++; }
+for (const id of Object.keys(PRODUCTOS)) for (const e of ESTILOS) {
+  fs.writeFileSync(path.join(salida, `producto-${id}-${e}.svg`), svgIcono(id, e, `p-${id}-${e}`) + "\n"); n++;
+}
 
 const datos = {
   tintas: TINTAS,
