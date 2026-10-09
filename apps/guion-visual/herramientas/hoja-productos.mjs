@@ -36,7 +36,7 @@ h2{font:600 20px/1.2 "Inter Display",-apple-system,sans-serif;margin:64px 0 6px}
 @media (max-width:900px){.familia{grid-template-columns:1fr 1fr}.reglas{grid-template-columns:1fr}}
 </style></head><body><main>
 <h1>P4 · Íconos de producto</h1>
-<p class="sub">Mismo sistema que el ícono de condor sites: baldosa en el color del producto, dos láminas de acrílico en abanico que se oscurecen hacia abajo, un resplandor al centro y un pictograma blanco protagonista, como el cursor.</p>
+<p class="sub">Mismo sistema que el ícono de condor sites: baldosa en el color del producto, dos láminas de acrílico en abanico que se oscurecen hacia abajo, un resplandor al centro y una escena blanca que cuenta qué hace cada producto.</p>
 <div class="familia">
   <div class="p ref"><img src="../assets/referencias/condor-sites.png" alt="condor sites"><span class="nom"><span class="c">condor</span> sites</span><small>Referencia: el ícono actual</small></div>
   ${ids.map((id) => `<div class="p"><img src="${a(`producto-${id}.svg`)}" alt="condor ${id}">${nombre(PRODUCTOS[id].nombre)}<small>${PRODUCTOS[id].que}</small></div>`).join("")}
@@ -52,9 +52,9 @@ h2{font:600 20px/1.2 "Inter Display",-apple-system,sans-serif;margin:64px 0 6px}
 <h2>Reglas</h2>
 <ul class="reglas">
   <li><b>Baldosa</b> squircle continuo, la misma del ícono de app de condor.ai.</li>
-  <li><b>Un color por producto</b>: ecommerce violeta ${PRODUCTOS.ecommerce.color}, track verde ${PRODUCTOS.track.color}, agents naranja ${PRODUCTOS.agents.color}.</li>
+  <li><b>Un color por producto</b>: ecommerce violeta con rosa, track turquesa-océano con menta, agents naranja con magenta. Los fondos profundos son índigo, azul o carmesí: nunca café ni oliva.</li>
   <li><b>Dos láminas</b>: la de arriba en el tono profundo del producto; la de abajo en su acento, que se oscurece hacia la esquina inferior izquierda.</li>
-  <li><b>Pictograma</b> blanco, de interfaz, a ~40 % de la baldosa, con contorno fino en el tono profundo y sombra suave.</li>
+  <li><b>Escena</b> blanca que cuenta qué hace el producto, con volumen (degradado y sombra) y contorno fino en el tono profundo. El cursor de sites es el hilo de la familia: hace clic en la bolsa y arrastra la tarjeta del cliente. En agents no hay cursor: trabaja la IA.</li>
   <li><b>Resplandor</b> blanco detrás del pictograma: es la luz que atraviesa el acrílico.</li>
   <li><b>Nombre</b> en minúscula: "condor" en gris, el producto en tinta.</li>
 </ul>
