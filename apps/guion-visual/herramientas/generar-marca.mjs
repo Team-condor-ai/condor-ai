@@ -15,6 +15,7 @@ import { fileURLToPath } from "node:url";
 import sharp from "sharp";
 import { path as condorPath, VARIANTES, ANCHO, ALTO } from "./condor.mjs";
 import { componer, XH, BL } from "./tipo.mjs";
+import { PRODUCTOS, svgIcono } from "./iconos.mjs";
 
 const raiz = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const salida = path.join(raiz, "assets/marca");
@@ -84,6 +85,8 @@ for (const [nombre, p] of Object.entries(piezas)) {
   for (const [t, hex] of Object.entries(TINTAS)) { fs.writeFileSync(path.join(salida, `${nombre}-${t}.svg`), base.replace('fill="currentColor"', `fill="${hex}"`)); n++; }
 }
 for (const [nombre, [fondo, tinta]] of Object.entries(ICONOS)) { fs.writeFileSync(path.join(salida, `icono-${nombre}.svg`), icono(fondo, tinta)); n++; }
+// íconos de producto (P4)
+for (const id of Object.keys(PRODUCTOS)) { fs.writeFileSync(path.join(salida, `producto-${id}.svg`), svgIcono(id, `p-${id}`) + "\n"); n++; }
 
 const datos = {
   tintas: TINTAS,
@@ -92,6 +95,7 @@ const datos = {
   lockupH: { vb: H.vb, cuerpo: H.cuerpo, isoAncho: H.isoAncho, sep: H.sep },
   lockupV: { vb: Vt.vb, cuerpo: Vt.cuerpo },
   medidas: { altoX: XH, lineaBase: BL },
+  productos: Object.fromEntries(Object.entries(PRODUCTOS).map(([id, p]) => [id, { nombre: p.nombre, que: p.que, color: p.color }])),
 };
 fs.writeFileSync(path.join(raiz, "assets/marca-datos.js"), `// Generado por herramientas/generar-marca.mjs — no editar a mano.\nwindow.CONDOR_MARCA = ${JSON.stringify(datos)};\n`);
 console.log(`${n} SVG · horizontal ${H.vb[2]}×${H.vb[3]} · vertical ${Vt.vb[2]}×${Vt.vb[3]}`);
