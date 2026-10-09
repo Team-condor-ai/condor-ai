@@ -37,3 +37,11 @@
 Hay cambios sin commit de la v2 rechazada (index/css/js/tokens y `herramientas/*`).
 `npm run marca` está roto (generar-marca usa la API vieja de letras.mjs). Se rehace en P1–P3;
 el commit `f3c0d1e` sigue intacto como referencia.
+
+## Avance (9-oct)
+- **P1 cóndor ✔** `oficial` en `herramientas/condor.mjs`: B7 cuello lleno, corte 3,4, plumas romas (hojas p1–p1d).
+- **P2 letras ✔** Inter Display **Semibold** en vector propio (`herramientas/tipo.mjs`, hoja p2c). Descartadas: geométricas redondeadas y la neo-grotesca dibujada a mano (`tipo-mano.mjs`).
+  Animaciones de p2c NO convencieron → se rehacen en P5 (estudio de motion primero).
+- **P3 logo ✔** `npm run marca` → horizontal (cóndor 1,8 alto de x), vertical, isotipo, nombre, íconos de app; tintas negro #151517, blanco, azul #014CFD (hoja p3).
+- Siguiente: P4 íconos de producto (ecommerce, track, agents).
+- Ojo: `index.html` del guion usa el formato viejo de `marca-datos.js` → se rehace en P6.
