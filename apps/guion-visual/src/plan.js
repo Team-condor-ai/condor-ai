@@ -2,7 +2,7 @@
    Cada sección existe en index.html con el mismo id. */
 export const CAPITULOS = [
   { id: "identidad", n: "I", nombre: "Identidad", que: "El cóndor, el logo, las letras y los productos." },
-  { id: "material", n: "II", nombre: "Material", que: "Vidrio líquido que refracta de verdad." },
+  { id: "material", n: "II", nombre: "Material", que: "Acrílico esmerilado con textura y canto pulido." },
   { id: "movimiento", n: "III", nombre: "Marca en movimiento", que: "El cóndor se arma, espera, trabaja y vuela." },
   { id: "fundamentos", n: "IV", nombre: "Fundamentos", que: "Color, tipografía, forma y curvas." },
   { id: "kit", n: "V", nombre: "Kit", que: "Las piezas que usa todo." },
@@ -17,7 +17,7 @@ export const SECCIONES = [
   { id: "logo", nombre: "Logo", cap: "identidad" },
   { id: "letras", nombre: "Letras", cap: "identidad" },
   { id: "productos", nombre: "Productos", cap: "identidad" },
-  { id: "vidrio", nombre: "Vidrio líquido", cap: "material" },
+  { id: "acrilico", nombre: "Acrílico", cap: "material" },
   { id: "superficies", nombre: "Superficies", cap: "material" },
   { id: "firmas", nombre: "Firmas", cap: "movimiento" },
   { id: "carga", nombre: "La carga", cap: "movimiento" },

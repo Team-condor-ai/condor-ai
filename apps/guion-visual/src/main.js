@@ -1,7 +1,7 @@
 /* Guion visual condor.ai · arranque.
-   Orden: marca → secciones (arman su DOM) → vidrio → kit → patrones → navegación. */
+   Orden: marca → secciones (arman su DOM) → acrílico → kit → patrones → navegación. */
 import { montarLogos } from "./kit/marca.js";
-import { montarVidrios } from "./kit/vidrio.js";
+import { montarAcrilicos } from "./kit/acrilico.js";
 import { montarControles } from "./kit/controles.js";
 import { montarCampos } from "./kit/campos.js";
 import { montarPopups } from "./kit/popups.js";
@@ -17,7 +17,7 @@ const reducido = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 montarLogos();
 montarSecciones();
-montarVidrios();
+montarAcrilicos();
 montarControles();
 montarCampos();
 montarPopups();

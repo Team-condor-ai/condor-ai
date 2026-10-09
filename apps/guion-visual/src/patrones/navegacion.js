@@ -1,12 +1,12 @@
 /* Navegación del guion (y demostración de los patrones):
    - Barra: el logo se pliega a isotipo al bajar; migas "Capítulo › Sección" donde el
      capítulo abre un menú con sus secciones hermanas; botón ⌘K; progreso de lectura.
-   - Dock de vidrio: capítulos con una gota que se desliza (resorte) al activo.
+   - Dock de acrílico: capítulos con una gota que se desliza (resorte) al activo.
      En celular: una píldora con la sección actual que abre el índice como hoja.
    - ⌘K: paleta de comandos (buscar secciones, copiar colores, acciones).
    - Pestañas: indicador que viaja con resorte. */
 import { CAPITULOS, SECCIONES, capituloDe, seccionesDe } from "../plan.js";
-import { hacerVidrio } from "../kit/vidrio.js";
+import { hacerAcrilico } from "../kit/acrilico.js";
 import { Resorte } from "../kit/resorte.js";
 import { hoja, montarPopups } from "../kit/popups.js";
 import { toast } from "../kit/avisos.js";
@@ -32,15 +32,15 @@ export function montarNavegacion() {
   const progreso = $(".barra-progreso i");
   const pildora = $(".pildora-indice"), indice = $("#hoja-indice");
   // el menú vive fuera de la barra: su backdrop-filter la vuelve raíz de fondo y bloque
-  // contenedor de lo fijo, así el vidrio del menú no esmerilaba la página de abajo
+  // contenedor de lo fijo, así el acrílico del menú no esmerilaba la página de abajo
   document.body.appendChild(menuCap);
 
   // ── dock: un botón por capítulo ──
   const lista = $(".dock-capitulos");
   lista.innerHTML = CAPITULOS.map((c) => `<a href="#${seccionesDe(c.id)[0].id}" data-cap="${c.id}" data-tip="${c.nombre}"><b aria-hidden="true">${c.n}</b><span>${c.nombre}</span></a>`).join("");
   montarPopups(lista);   // los tooltips del dock (se montaron antes de que existieran los botones)
-  hacerVidrio(dock);
-  hacerVidrio(gota);
+  hacerAcrilico(dock);
+  hacerAcrilico(gota);
   const gx = new Resorte(0, { rigidez: 260, amortiguacion: 25 }), gw = new Resorte(44, { rigidez: 260, amortiguacion: 27 });
   const pintarGota = () => { gota.style.transform = `translateX(${gx.x}px)`; gota.style.width = `${gw.x}px`; };
   const moverGota = (cap, instante) => {
@@ -66,15 +66,26 @@ export function montarNavegacion() {
     pildora.setAttribute("aria-label", `Índice del guion, estás en ${s.nombre}`);
     if (c.id !== capActual) {
       // el menú solo se rehace al cambiar de capítulo (si está abierto no pierde el foco)
-      // solo se cambian los ítems: un innerHTML borraría la lente de vidrio y el menú quedaba transparente
+      // solo se cambian los ítems: un innerHTML borraría la capa de acrílico y el menú quedaba transparente
       capActual = c.id;
       $$("[role=menuitem]", menuCap).forEach((a) => a.remove());
       menuCap.insertAdjacentHTML("beforeend", seccionesDe(c.id).map((x) => `<a role="menuitem" href="#${x.id}">${x.nombre}</a>`).join(""));
     }
     $$("[role=menuitem]", menuCap).forEach((a) => (a.getAttribute("href") === `#${id}` ? a.setAttribute("aria-current", "true") : a.removeAttribute("aria-current")));
     $$("a", indice).forEach((a) => (a.getAttribute("href") === `#${id}` ? a.setAttribute("aria-current", "location") : a.removeAttribute("aria-current")));
-    moverGota(c.id, instante);
+    if (!destino || destino === c.id) moverGota(c.id, instante);
   };
+  // al tocar un capítulo la gota viaja altiro (sin esperar al scroll) y no se distrae con los
+  // capítulos que la página cruza en el camino; se suelta cuando el scroll termina
+  let destino = null, soltar = 0;
+  const liberar = () => { destino = null; const c = capituloDe(actual); if (c) moverGota(c.id); };
+  lista.addEventListener("click", (e) => {
+    const a = e.target.closest("a[data-cap]");
+    if (!a) return;
+    destino = a.dataset.cap; moverGota(destino);
+    clearTimeout(soltar); soltar = setTimeout(liberar, 2500);   // por si el navegador no avisa scrollend
+  });
+  addEventListener("scrollend", () => { if (destino) { clearTimeout(soltar); liberar(); } });
   let primera = true;
   const obs = new IntersectionObserver((xs) => {
     const vis = xs.filter((x) => x.isIntersecting).pop();
@@ -208,7 +219,7 @@ function montarComando() {
     dlg.classList.remove("sale");   // si venía cerrándose, se recupera sin trabarse
     dlg.hidden = false;
     document.documentElement.classList.add("con-modal");
-    if (!caja._vidrio) hacerVidrio(caja);
+    if (!caja._acrilico) hacerAcrilico(caja);
     inp.value = ""; filtrar(); inp.focus();
   };
   const cerrar = () => {

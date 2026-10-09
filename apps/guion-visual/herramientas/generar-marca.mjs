@@ -90,6 +90,8 @@ for (const [nombre, [fondo, tinta]] of Object.entries(ICONOS)) { fs.writeFileSyn
 // íconos de producto (P4): el oficial es el estilo blanco (elegido 9-oct); los otros quedan como variantes
 for (const id of Object.keys(PRODUCTOS)) {
   fs.writeFileSync(path.join(salida, `producto-${id}.svg`), svgIcono(id, "blanco", `p-${id}`) + "\n"); n++;
+  // versión chica (32 px o menos): glifo más grande, sin sombra ni hilo de borde
+  fs.writeFileSync(path.join(salida, `producto-${id}-chico.svg`), svgIcono(id, "blanco", `p-${id}-chico`, { chico: true }) + "\n"); n++;
   for (const e of ESTILOS) { fs.writeFileSync(path.join(salida, `producto-${id}-${e}.svg`), svgIcono(id, e, `p-${id}-${e}`) + "\n"); n++; }
 }
 

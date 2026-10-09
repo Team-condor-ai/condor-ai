@@ -22,7 +22,7 @@ npm run secciones  # una captura por sección + hojas de contacto → ./medicion
 | `herramientas/generar-marca.mjs` | Arma todo: isotipo, nombre, logo horizontal y vertical en negro/blanco/azul, ícono de app e íconos de producto. |
 | `tokens/condor.css` | Tokens oficiales: color, tipografía, radios, acrílico y movimiento (con un resorte real como `linear()`). |
 | `index.html` | El guion: solo muestra. Ocho capítulos según `src/plan.js`. |
-| `src/kit/` · `src/patrones/` | Las piezas (vidrio, resorte, marca, avisos, popups, controles, campos) y los patrones (navegación, stepper, scrollers, datos). |
-| `estilos/` | base → vidrio → movimiento → kit → patrones → secciones. |
+| `src/kit/` · `src/patrones/` | Las piezas (acrílico, resorte, marca, avisos, popups, controles, campos) y los patrones (navegación, stepper, scrollers, datos). |
+| `estilos/` | base → acrilico → movimiento → kit → patrones → secciones. |
 | `hojas/` | Las hojas con que se decidió cada pieza (P1 cóndor … P5 sistema). |
 | `assets/fuentes/inter-display/` | Inter Display + su licencia OFL. |

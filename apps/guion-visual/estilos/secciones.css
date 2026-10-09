@@ -2,7 +2,7 @@
    Secciones: composición de cada sección (las piezas vienen del kit).
    ========================================================================= */
 
-/* ── Inicio: la lente refracta el titular ───────────────────────────── */
+/* ── Inicio: la placa de acrílico con el logo ───────────────────────── */
 .inicio { position: relative; overflow: hidden; isolation: isolate; min-height: 100svh; padding: calc(var(--g-barra) + 56px) var(--g-lado) 96px; display: grid; align-content: center; justify-items: center; gap: 20px; text-align: center; background: radial-gradient(70% 55% at 50% 42%, #fff 0%, #fff 55%, var(--cn-gris-6) 100%); }
 .inicio::before { content: ""; position: absolute; inset: 0; z-index: -2; background-image: radial-gradient(circle at 1px 1px, rgba(21, 21, 23, 0.09) 1px, transparent 0); background-size: 24px 24px; -webkit-mask: radial-gradient(60% 60% at 50% 45%, #000, transparent 85%); mask: radial-gradient(60% 60% at 50% 45%, #000, transparent 85%); }
 .inicio-logo { width: min(100%, 520px); color: var(--cn-tinta); margin-bottom: 14px; cursor: pointer; }
@@ -10,8 +10,21 @@
 .inicio-titulo { font-size: clamp(2.6rem, 7.4vw, 5.6rem); letter-spacing: -0.045em; line-height: 1; }
 .inicio-lead { font-size: clamp(1.05rem, 1.6vw, var(--cn-t-21)); color: var(--cn-texto-2); max-width: 56ch; }
 .inicio-pista { font-size: var(--cn-t-13); color: var(--cn-texto-3); }
-.inicio-lente { position: absolute; left: 0; top: 0; z-index: 2; width: clamp(150px, 20vw, 240px); height: clamp(96px, 12vw, 140px); pointer-events: none; --tinte: rgba(255, 255, 255, 0.16); will-change: transform; box-shadow: 0 30px 60px -24px rgba(21, 21, 23, 0.45), 0 2px 6px rgba(21, 21, 23, 0.08), inset 0 1.5px 1px rgba(255, 255, 255, 1), inset 0 -2px 3px rgba(21, 21, 23, 0.08), inset 0 0 0 1px rgba(21, 21, 23, 0.06) !important; }
-.inicio-lente::before { content: ""; position: absolute; left: 12%; right: 12%; top: 8%; height: 34%; border-radius: 999px; background: linear-gradient(180deg, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0)); pointer-events: none; z-index: 1; }
+/* la placa: una lámina gruesa de acrílico con el logo impreso, montada con cuatro separadores.
+   El grosor es el canto apilado abajo; la sombra cae sobre el muro de puntos. */
+.inicio-placa { --rx: 0deg; --ry: 0deg; width: min(100%, 600px); padding: clamp(30px, 5vw, 58px) clamp(30px, 6vw, 70px) clamp(22px, 4vw, 46px); margin-bottom: 18px; }
+.inicio-placa.inclinada { transform: perspective(1100px) rotateX(var(--rx)) rotateY(var(--ry)); }
+.inicio-placa.acrilico {
+  --tinte: rgba(255, 255, 255, 0.55); --esmerilado: 14px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 1), inset 0 0 0 1px rgba(255, 255, 255, 0.6),
+    0 1px 0 #F4F4F6, 0 2px 0 #E9E9ED, 0 4px 0 #E1E1E6, 0 5px 0 rgba(21, 21, 23, 0.08),
+    0 44px 70px -34px rgba(21, 21, 23, 0.38), 0 14px 24px -14px rgba(21, 21, 23, 0.16);
+}
+/* separadores de acero en las cuatro esquinas */
+.inicio-placa::before { content: ""; position: absolute; inset: 16px; pointer-events: none; background: var(--sep), var(--sep), var(--sep), var(--sep); background-size: 14px 14px; background-repeat: no-repeat; background-position: 0 0, 100% 0, 0 100%, 100% 100%;
+  --sep: radial-gradient(circle at 42% 38%, #FFFFFF 0 1.5px, #E2E2E7 3px, #B9B9C1 5px, #8E8E96 6.4px, rgba(21, 21, 23, 0.12) 7px, transparent 7.4px); }
+.inicio-placa .inicio-logo { margin: 0 auto; }
 @media (hover: none), (pointer: coarse) { .inicio-pista { display: none; } }
 
 /* ── Cóndor ─────────────────────────────────────────────────────────── */
@@ -61,8 +74,12 @@
 @media (max-width: 820px) { .familia { grid-template-columns: 1fr; } }
 .prod { border: 1px solid var(--cn-linea); border-radius: var(--cn-r-5); padding: 30px 20px 22px; display: grid; justify-items: center; gap: 10px; text-align: center; background: #fff; }
 .prod small { color: var(--cn-texto-2); font-size: var(--cn-t-15); }
-.icono-vivo { --rx: 0deg; --ry: 0deg; --gx: 50%; --gy: 0%; position: relative; width: min(100%, 168px); aspect-ratio: 1; perspective: 700px; margin-bottom: 8px; }
-.icono-vivo img, .icono-vivo .brillo { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotateX(var(--rx)) rotateY(var(--ry)); transition: transform calc(0.6s * var(--vel)) var(--cn-llegada); }
+/* Nitidez: una transformación 3D (aunque sea de 0°) pasa el ícono a una capa que Chrome
+   reescala con escalas de pantalla fraccionarias (125 %, 150 %) y lo deja borroso.
+   Quieto no lleva transform; la inclinación existe solo mientras se mueve (.inclinado). */
+.icono-vivo { --rx: 0deg; --ry: 0deg; --gx: 50%; --gy: 0%; position: relative; width: min(100%, 168px); aspect-ratio: 1; margin-bottom: 8px; }
+.icono-vivo img, .icono-vivo .brillo { position: absolute; inset: 0; width: 100%; height: 100%; transition: transform calc(0.6s * var(--vel)) var(--cn-llegada); }
+.icono-vivo.inclinado img, .icono-vivo.inclinado .brillo { transform: perspective(700px) rotateX(var(--rx)) rotateY(var(--ry)); }
 .icono-vivo img { filter: drop-shadow(0 18px 22px rgba(21, 21, 23, 0.18)); }
 .icono-vivo .brillo { border-radius: 22.37%; background: radial-gradient(60% 50% at var(--gx) var(--gy), rgba(255, 255, 255, 0.45), transparent 70%); mix-blend-mode: soft-light; opacity: 0; transition: opacity var(--cn-d-3), transform calc(0.6s * var(--vel)) var(--cn-llegada); pointer-events: none; }
 .icono-vivo:hover .brillo { opacity: 1; }
@@ -70,9 +87,11 @@
 .nom { font: 600 var(--cn-t-21)/1.1 var(--cn-display); letter-spacing: -0.02em; }
 .nom span { color: var(--cn-texto-3); }
 
-/* ── Banco de vidrio ────────────────────────────────────────────────── */
+/* ── Banco de acrílico ──────────────────────────────────────────────── */
 .banco { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 16px; }
-@media (max-width: 900px) { .banco { grid-template-columns: 1fr; } }
+@media (max-width: 900px) { .banco { grid-template-columns: minmax(0, 1fr); } }
+.banco-controles { min-width: 0; grid-template-columns: minmax(0, 1fr); }
+.banco-controles .segmentado { max-width: 100%; }
 .banco-mesa { position: relative; overflow: hidden; isolation: isolate; min-height: 440px; border-radius: var(--cn-r-5); background: #fff; box-shadow: inset 0 0 0 1px var(--cn-linea); touch-action: none; }
 .escena-texto { position: absolute; inset: 0; padding: clamp(20px, 4vw, 40px); display: grid; align-content: center; gap: 18px; }
 .et-1 { font: 600 clamp(2rem, 4.4vw, 3.4rem)/1 var(--cn-display); letter-spacing: -0.04em; max-width: 13ch; }
@@ -81,16 +100,23 @@
 .et-2 { color: var(--cn-texto-2); max-width: 44ch; }
 .et-grilla { display: flex; gap: 10px; flex-wrap: wrap; }
 .et-grilla span { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 14px; box-shadow: inset 0 0 0 1px var(--cn-linea); font: 600 var(--cn-t-21) var(--cn-display); }
-.escena-foto, .escena-cielo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity calc(0.6s * var(--vel)) var(--cn-suave); }
-.banco-mesa[data-escena="foto"] .escena-foto, .banco-mesa[data-escena="cielo"] .escena-cielo { opacity: 1; }
-.banco-mesa[data-escena="foto"] .escena-texto, .banco-mesa[data-escena="cielo"] .escena-texto { opacity: 0; }
+.escena-foto, .escena-condor { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity calc(0.6s * var(--vel)) var(--cn-suave); }
+.escena-condor { display: grid; place-items: center; color: var(--cn-tinta); }
+.escena-condor span { width: min(64%, 380px); }
+.escena-condor svg { width: 100%; height: auto; }
+.banco-mesa[data-escena="foto"] .escena-foto, .banco-mesa[data-escena="condor"] .escena-condor { opacity: 1; }
+.banco-mesa:not([data-escena="texto"]) .escena-texto { opacity: 0; }
 .escena-texto { transition: opacity calc(0.6s * var(--vel)) var(--cn-suave); }
-.banco-lente { position: absolute; left: 30%; top: 26%; width: 200px; height: 200px; cursor: grab; touch-action: none; --tinte: rgba(255, 255, 255, 0.04); transition: width calc(0.45s * var(--vel)) var(--cn-llegada), height calc(0.45s * var(--vel)) var(--cn-llegada), box-shadow var(--cn-d-3); }
-.banco-lente.tomada { cursor: grabbing; box-shadow: 0 26px 50px -18px rgba(21, 21, 23, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.75) !important; }
-.banco-lente[data-forma="pildora"] { width: 300px; height: 96px; }
-.banco-lente[data-forma="lamina"] { width: 320px; height: 210px; }
-@media (max-width: 600px) { .banco-lente { width: 150px; height: 150px; } .banco-lente[data-forma="pildora"] { width: 220px; height: 80px; } .banco-lente[data-forma="lamina"] { width: 240px; height: 160px; } }
-.banco-aviso { position: absolute; left: 12px; right: 12px; bottom: 12px; padding: 10px 12px; border-radius: 12px; background: rgba(255, 255, 255, 0.92); font-size: var(--cn-t-13); color: var(--cn-texto-2); }
+/* la lámina: se toma y se arrastra; al tomarla se levanta (más sombra, un poco más grande) */
+.banco-lamina { position: absolute; left: 30%; top: 24%; width: 320px; height: 210px; display: grid; align-content: end; padding: 18px 22px; cursor: grab; touch-action: none; user-select: none; transition: width calc(0.45s * var(--vel)) var(--cn-llegada), height calc(0.45s * var(--vel)) var(--cn-llegada), border-radius calc(0.45s * var(--vel)) var(--cn-llegada), scale calc(0.3s * var(--vel)) var(--cn-resorte), box-shadow var(--cn-d-3); }
+.banco-lamina.tomada { cursor: grabbing; scale: 1.03; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95), inset 0 0 0 1px rgba(255, 255, 255, 0.5), 0 34px 60px -22px rgba(21, 21, 23, 0.42), 0 2px 4px rgba(21, 21, 23, 0.06); }
+.banco-lamina:focus-visible { outline: 2px solid var(--cn-azul); outline-offset: 4px; }
+.banco-lamina[data-forma="pildora"] { width: 300px; height: 84px; align-content: center; padding: 0 28px; }
+.banco-lamina[data-forma="placa"] { width: 220px; height: 220px; }
+.bl-texto { display: grid; gap: 2px; }
+.bl-texto b { font: 600 var(--cn-t-21)/1.1 var(--cn-display); letter-spacing: -0.02em; }
+.bl-texto span { font-size: var(--cn-t-13); color: var(--cn-texto-2); }
+@media (max-width: 600px) { .banco-lamina { width: 240px; height: 160px; } .banco-lamina[data-forma="pildora"] { width: 220px; height: 72px; } .banco-lamina[data-forma="placa"] { width: 160px; height: 160px; } }
 .banco-controles { display: grid; align-content: start; gap: 18px; padding: 20px; border: 1px solid var(--cn-linea); border-radius: var(--cn-r-5); }
 .banco-controles .mini { margin-bottom: 8px; }
 
@@ -183,7 +209,7 @@
 .planeo-sombra { position: absolute; bottom: 44px; width: 70px; height: 8px; border-radius: 50%; background: radial-gradient(closest-side, rgba(21, 21, 23, 0.22), transparent); }
 .barra-mini { display: grid; place-items: center; padding: 0 20px; }
 .barra-mini::before { content: ""; position: absolute; }
-.bm-logo { display: block; width: 100%; padding: 14px 16px; border-radius: 16px; background: rgba(255, 255, 255, 0.85); box-shadow: var(--cn-sombra-2), var(--cn-vidrio-canto); color: var(--cn-tinta); }
+.bm-logo { display: block; width: 100%; padding: 14px 16px; border-radius: 16px; background: rgba(255, 255, 255, 0.85); box-shadow: var(--cn-sombra-2), var(--cn-acrilico-canto); color: var(--cn-tinta); }
 .bm-logo svg { width: 100%; height: auto; }
 
 /* ── Color ──────────────────────────────────────────────────────────── */

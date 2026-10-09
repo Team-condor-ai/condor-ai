@@ -89,10 +89,10 @@ button.miga[aria-expanded="true"] svg { transform: rotate(180deg); }
 /* celular: sin migas; la lupa queda como objetivo táctil de 44 px */
 @media (max-width: 760px) { .migas { display: none; } .buscar-cmd span, .buscar-cmd kbd { display: none; } .buscar-cmd { width: 44px; height: 44px; padding: 0; justify-content: center; border-radius: 14px; } .buscar-cmd svg { width: 18px; height: 18px; } }
 
-/* ── Dock de vidrio (capítulos) ─────────────────────────────────────── */
-/* `.dock.vidrio` gana a `.vidrio { position: relative }` (vidrio.css carga después):
+/* ── Dock de acrílico (capítulos) ─────────────────────────────────────── */
+/* `.dock.acrilico` gana a `.acrilico { position: relative }` (acrilico.css carga después):
    sin esto el dock y la gota caían al flujo, al final de la página */
-.dock, .dock.vidrio { position: fixed; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); translate: -50% 0; z-index: 55; padding: 6px; display: flex; --tinte: rgba(255, 255, 255, 0.5); }
+.dock, .dock.acrilico { position: fixed; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); translate: -50% 0; z-index: 55; padding: 6px; display: flex; --tinte: rgba(255, 255, 255, 0.5); }
 .dock-capitulos { position: relative; display: flex; gap: 2px; }
 .dock-capitulos a { position: relative; z-index: 1; display: grid; place-items: center; min-width: 44px; height: 44px; padding: 0 10px; border-radius: 16px; color: var(--cn-texto-2); text-decoration: none; -webkit-tap-highlight-color: transparent; transition: color var(--cn-d-2) var(--cn-suave); }
 .dock-capitulos a b { font: 600 var(--cn-t-13) var(--cn-display); font-variant-numeric: tabular-nums; transition: transform var(--cn-d-2) var(--cn-suave); }
@@ -100,11 +100,11 @@ button.miga[aria-expanded="true"] svg { transform: rotate(180deg); }
 .dock-capitulos a:hover, .dock-capitulos a.activo { color: var(--cn-tinta); }
 .dock-capitulos a:active b { transform: scale(0.9); }
 .dock-capitulos a:focus-visible { outline-offset: -2px; border-radius: 16px; }
-.dock-gota, .dock .dock-gota.vidrio { position: absolute; left: 6px; top: 6px; height: 44px; width: 44px; z-index: 0; border-radius: 16px; --tinte: rgba(255, 255, 255, 0.72); box-shadow: 0 4px 14px -6px rgba(21, 21, 23, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.75), inset 0 -1px 1px rgba(255, 255, 255, 0.2), inset 0 0 0 0.5px rgba(255, 255, 255, 0.4); pointer-events: none; will-change: transform, width; }
+.dock-gota, .dock .dock-gota.acrilico { position: absolute; left: 6px; top: 6px; height: 44px; width: 44px; z-index: 0; border-radius: 16px; --tinte: rgba(255, 255, 255, 0.72); box-shadow: 0 4px 14px -6px rgba(21, 21, 23, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.75), inset 0 -1px 1px rgba(255, 255, 255, 0.2), inset 0 0 0 0.5px rgba(255, 255, 255, 0.4); pointer-events: none; will-change: transform, width; }
 .pildora-indice { display: none; }
 @media (max-width: 760px) {
-  .dock, .dock.vidrio { display: none; }
-  .pildora-indice { position: fixed; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); translate: -50% 0; z-index: 55; display: inline-flex; align-items: center; gap: 8px; height: 48px; padding: 0 16px 0 10px; border: 0; border-radius: 999px; background: rgba(255, 255, 255, 0.82); backdrop-filter: blur(20px) saturate(1.8); -webkit-backdrop-filter: blur(20px) saturate(1.8); box-shadow: var(--cn-vidrio-canto), 0 10px 30px -12px rgba(21, 21, 23, 0.35); color: var(--cn-tinta); font-weight: 500; width: max-content; max-width: calc(100vw - 32px); -webkit-tap-highlight-color: transparent; transition: transform var(--cn-d-2) var(--cn-suave); }
+  .dock, .dock.acrilico { display: none; }
+  .pildora-indice { position: fixed; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); translate: -50% 0; z-index: 55; display: inline-flex; align-items: center; gap: 8px; height: 48px; padding: 0 16px 0 10px; border: 0; border-radius: 999px; background: rgba(255, 255, 255, 0.82); backdrop-filter: blur(20px) saturate(1.8); -webkit-backdrop-filter: blur(20px) saturate(1.8); box-shadow: var(--cn-acrilico-canto), 0 10px 30px -12px rgba(21, 21, 23, 0.35); color: var(--cn-tinta); font-weight: 500; width: max-content; max-width: calc(100vw - 32px); -webkit-tap-highlight-color: transparent; transition: transform var(--cn-d-2) var(--cn-suave); }
   .pildora-indice:active { transform: scale(0.96); }
   .pildora-indice:focus-visible { border-radius: 999px; }
   .pildora-indice .tx { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

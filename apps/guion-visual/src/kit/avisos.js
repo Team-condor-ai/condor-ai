@@ -40,15 +40,15 @@ const vivos = () => (pila ? [...pila.children].filter((t) => !t.classList.contai
 export function toast(texto, { tono = "ok", deshacer, duracion = 4200 } = {}) {
   const c = contenedor();
   const t = document.createElement("div");
-  t.className = `toast vidrio toast--${tono}`;
-  t.dataset.vidrio = ""; t.dataset.liviano = "";
+  t.className = `toast acrilico toast--${tono}`;
+  t.dataset.acrilico = ""; t.dataset.denso = "";
   t.setAttribute("role", tono === "error" ? "alert" : "status");
   t.innerHTML = `<svg class="toast-ico" viewBox="0 0 24 24" aria-hidden="true">${iconos[tono] || iconos.info}</svg><span></span>` +
     (deshacer ? `<button type="button" class="toast-accion">Deshacer</button>` : "") +
     `<button type="button" class="toast-cerrar" aria-label="Cerrar aviso"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17"/></svg></button>`;
   t.querySelector("span").textContent = texto;
   c.prepend(t);
-  import("./vidrio.js").then((v) => v.hacerVidrio(t));
+  import("./acrilico.js").then((v) => v.hacerAcrilico(t));
   // máximo 3 a la vista: el más viejo se va
   vivos().slice(MAX).forEach(salir);
   orden();
@@ -103,7 +103,7 @@ export function alerta(desde, { titulo, texto, confirmar = "Aceptar", cancelar =
     const id = `alerta-${++alertaN}`;
     const velo = document.createElement("div");
     velo.className = "velo";
-    velo.innerHTML = `<div class="alerta-caja vidrio" role="alertdialog" aria-modal="true" aria-labelledby="${id}-t" aria-describedby="${id}-d" data-vidrio data-liviano data-radio="22">
+    velo.innerHTML = `<div class="alerta-caja acrilico" role="alertdialog" aria-modal="true" aria-labelledby="${id}-t" aria-describedby="${id}-d" data-acrilico data-denso data-radio="22">
         <h3 id="${id}-t"></h3><p id="${id}-d"></p>
         <div class="alerta-botones"><button type="button" class="btn suave" data-r="0"></button><button type="button" class="btn ${peligro ? "peligro" : "primario"}" data-r="1"></button></div>
       </div>`;
@@ -113,7 +113,7 @@ export function alerta(desde, { titulo, texto, confirmar = "Aceptar", cancelar =
     const botones = [...caja.querySelectorAll("button")];
     botones[0].textContent = cancelar; botones[1].textContent = confirmar;
     document.body.appendChild(velo);
-    import("./vidrio.js").then((v) => v.hacerVidrio(caja));
+    import("./acrilico.js").then((v) => v.hacerAcrilico(caja));
     // nace del botón: el origen de la escala es el centro del botón (medido sin la escala de entrada)
     caja.style.transformOrigin = `${r.left + r.width / 2 - caja.offsetLeft}px ${r.top + r.height / 2 - caja.offsetTop}px`;
     document.documentElement.classList.add("con-modal");

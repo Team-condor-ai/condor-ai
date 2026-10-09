@@ -1,3 +1,5 @@
+> **Nota 9-oct (noche):** el vidrio líquido de este plan se reemplazó entero por **acrílico** (pedido de Max). Ver CONTEXTO.md §3c.
+
 # Guion visual condor.ai · plan v3 (9-oct-2026)
 
 Pedido de Max: más acrílico/vidrio, más motion graphics suaves, más innovación; **nada de fondos de

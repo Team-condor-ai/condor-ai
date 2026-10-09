@@ -2,7 +2,7 @@
    secciones. Las secciones solo MUESTRAN: las piezas vienen del kit. */
 import { DATOS as M, logoH, logoPlano } from "./kit/marca.js";
 import { cargaCondor } from "./kit/marca.js";
-import { hacerVidrio, actualizar, REFRACCION_REAL } from "./kit/vidrio.js";
+import { hacerAcrilico, ponerTextura } from "./kit/acrilico.js";
 import { toast, alerta } from "./kit/avisos.js";
 
 const $ = (s, r = document) => r.querySelector(s);
@@ -12,41 +12,42 @@ const T = M.tintas;
 const PRODUCTOS = Object.entries(M.productos);
 
 export function montarSecciones() {
-  inicioLente();
+  inicioPlaca();
   logos();
   productos();
   paleta();
   firmas();
-  bancoVidrio();
+  bancoAcrilico();
   carga();
   momentos();
   archivos();
   demosKit();
 }
 
-// ── Inicio: la lente deriva hacia el puntero y refracta el titular ──────
-// Es decoración (el cursor sigue siendo el del sistema); con puntero grueso o
-// movimiento reducido queda quieta sobre el titular.
-function inicioLente() {
-  const sec = $("#inicio"), lente = $("#inicio-lente");
-  if (!sec || !lente) return;
-  const quieta = !matchMedia("(hover: hover) and (pointer: fine)").matches || matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const centrar = () => {
-    const t = $(".inicio-titulo").getBoundingClientRect(), s = sec.getBoundingClientRect(), l = lente.getBoundingClientRect();
-    return [t.left - s.left + t.width * 0.62 - l.width / 2, t.top - s.top + t.height / 2 - l.height / 2];
-  };
-  const [cx, cy] = centrar();
-  lente.style.transform = `translate(${cx}px, ${cy}px)`;
-  if (quieta) return;
+// ── Inicio: la placa de acrílico se inclina hacia el puntero ────────────
+// La luz (brillo y canto) sigue al puntero por toda la sección. Con puntero
+// grueso o movimiento reducido la placa queda quieta.
+function inicioPlaca() {
+  const sec = $("#inicio"), placa = $("#inicio-placa");
+  if (!sec || !placa) return;
+  if (!matchMedia("(hover: hover) and (pointer: fine)").matches || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
   import("./kit/resorte.js").then(({ Resorte }) => {
-    const x = new Resorte(cx, { rigidez: 40, amortiguacion: 12 }), y = new Resorte(cy, { rigidez: 40, amortiguacion: 12 });
-    const pintar = () => (lente.style.transform = `translate(${x.x}px, ${y.x}px)`);
+    const rx = new Resorte(0, { rigidez: 90, amortiguacion: 16 }), ry = new Resorte(0, { rigidez: 90, amortiguacion: 16 });
+    // derecha (0°) se quita la transformación: el logo se pinta nítido (ver .icono-vivo en CSS)
+    const pintar = () => {
+      placa.style.setProperty("--rx", `${rx.x.toFixed(2)}deg`); placa.style.setProperty("--ry", `${ry.x.toFixed(2)}deg`);
+      placa.classList.toggle("inclinada", Math.abs(rx.x) + Math.abs(ry.x) > 0.02 || rx.destino !== 0 || ry.destino !== 0);
+    };
     sec.addEventListener("pointermove", (e) => {
-      const s = sec.getBoundingClientRect(), l = lente.getBoundingClientRect();
-      x.a(e.clientX - s.left - l.width / 2, pintar);
-      y.a(e.clientY - s.top - l.height / 2, pintar);
+      const r = placa.getBoundingClientRect();
+      const x = Math.max(-1, Math.min(1, (e.clientX - (r.left + r.width / 2)) / (innerWidth / 2)));
+      const y = Math.max(-1, Math.min(1, (e.clientY - (r.top + r.height / 2)) / (innerHeight / 2)));
+      rx.a(-y * 9, pintar); ry.a(x * 12, pintar);
+      const capa = placa._acrilico?.capa;
+      capa?.style.setProperty("--bx", `${(50 + x * 50).toFixed(1)}%`);
+      capa?.style.setProperty("--by", `${(50 + y * 50).toFixed(1)}%`);
     });
-    sec.addEventListener("pointerleave", () => { const [a, b] = centrar(); x.a(a, pintar); y.a(b, pintar); });
+    sec.addEventListener("pointerleave", () => { rx.a(0, pintar); ry.a(0, pintar); });
   });
 }
 
@@ -74,20 +75,27 @@ function productos() {
       <div class="icono-vivo" data-tilt><img src="${a(`producto-${id}.svg`)}" alt="Ícono de condor ${p.nombre}"><i class="brillo"></i></div>
       ${nombre(p.nombre)}<small>${p.que}</small>
       <a class="btn mini" href="${a(`producto-${id}.svg`)}" download><svg aria-hidden="true"><use href="#i-bajar"/></svg>SVG</a></article>`).join("");
-  const fichas = PRODUCTOS.map(([id, p]) => `<span class="ficha-prod" data-vidrio data-liviano data-radio="pildora"><img src="${a(`producto-${id}.svg`)}" alt="">${p.nombre}</span>`).join("");
+  const fichas = PRODUCTOS.map(([id, p]) => `<span class="ficha-prod" data-acrilico data-denso data-radio="pildora"><img src="${a(`producto-${id}-chico.svg`)}" alt="">${p.nombre}</span>`).join("");
   $$("[data-fichas-producto]").forEach((el) => (el.innerHTML = fichas));
   $$("[data-iconos-producto]").forEach((el) => (el.innerHTML = PRODUCTOS.map(([id]) => `<img src="${a(`producto-${id}.svg`)}" alt="">`).join("")));
   // inclinación 3D hacia el puntero (solo con puntero fino)
   if (!matchMedia("(hover: hover) and (pointer: fine)").matches) return;
   $$("[data-tilt]").forEach((el) => {
+    // al volver a 0° se quita la transformación: quieto se pinta nítido (ver .icono-vivo en CSS)
+    let t;
     el.addEventListener("pointermove", (e) => {
+      clearTimeout(t);
+      el.classList.add("inclinado");
       const r = el.getBoundingClientRect(), x = (e.clientX - r.left) / r.width - 0.5, y = (e.clientY - r.top) / r.height - 0.5;
       el.style.setProperty("--rx", `${(-y * 16).toFixed(2)}deg`);
       el.style.setProperty("--ry", `${(x * 18).toFixed(2)}deg`);
       el.style.setProperty("--gx", `${(x + 0.5) * 100}%`);
       el.style.setProperty("--gy", `${(y + 0.5) * 100}%`);
     });
-    el.addEventListener("pointerleave", () => { el.style.setProperty("--rx", "0deg"); el.style.setProperty("--ry", "0deg"); });
+    el.addEventListener("pointerleave", () => {
+      el.style.setProperty("--rx", "0deg"); el.style.setProperty("--ry", "0deg");
+      t = setTimeout(() => el.classList.remove("inclinado"), 700 * (parseFloat(getComputedStyle(document.body).getPropertyValue("--vel")) || 1));
+    });
   });
 }
 
@@ -113,12 +121,15 @@ function firmas() {
   $("#firmas-grilla").innerHTML = lista.map(([id, t, d, uso]) => `<div class="escena m-${id}" id="f-${id}"><div class="escena-cab"><h3>${t}</h3><span class="uso">${uso}</span></div><div class="escena-logo">${logoH({ destello: id === "destello" })}</div><p>${d}</p><button class="btn mini otra" type="button" data-otra="f-${id}"><svg aria-hidden="true"><use href="#i-repetir"/></svg>Otra vez</button></div>`).join("");
 }
 
-// ── Banco de vidrio: lente arrastrable + parámetros en vivo ─────────────
-function bancoVidrio() {
-  const banco = $("#banco"), lente = $("#banco-lente"), mesa = $("#banco-mesa");
+// ── Banco de acrílico: lámina arrastrable + textura y parámetros en vivo ─
+function bancoAcrilico() {
+  const banco = $("#banco"), lente = $("#banco-lamina"), mesa = $("#banco-mesa");
   if (!banco) return;
-  $("#banco-aviso").hidden = REFRACCION_REAL;
-  // arrastrar la lente
+  // la textura es global: el segmentado parte en la que está puesta
+  const actual = document.documentElement.dataset.textura;
+  $$("#banco-textura [role=radio]").forEach((b) => b.setAttribute("aria-checked", String(b.dataset.valor === actual)));
+  $("#banco-textura").addEventListener("cambio", (e) => ponerTextura(e.detail));
+  // arrastrar la lámina
   let dx = 0, dy = 0, arrastrando = false;
   const poner = (x, y) => {
     const m = mesa.getBoundingClientRect(), l = lente.getBoundingClientRect();
@@ -143,16 +154,18 @@ function bancoVidrio() {
     poner(lente.offsetLeft + p[0], lente.offsetTop + p[1]);
   });
   // parámetros
-  $$("#banco [data-param]").forEach((inp) => inp.addEventListener("input", () => {
-    lente.dataset[inp.dataset.param] = inp.value;
-    actualizar(lente);
-  }));
+  const param = {
+    esmerilado: (v) => ["--esmerilado", `${v}px`],
+    tinte: (v) => ["--tinte", `rgba(255, 255, 255, ${v / 100})`],
+    textura: (v) => ["--tx-k", String(v / 100)],
+  };
+  $$("#banco [data-param]").forEach((inp) => inp.addEventListener("input", () => lente.style.setProperty(...param[inp.dataset.param](inp.value))));
   // forma y escena
+  const radios = { lamina: "26px", pildora: "999px", placa: "40px" };
   $("#banco-forma").addEventListener("cambio", (e) => {
     lente.dataset.forma = e.detail;
-    lente.dataset.radio = e.detail === "pildora" ? "pildora" : e.detail === "lente" ? "999" : "28";
-    // el ResizeObserver repinta al cambiar de tamaño; si no cambia, se fuerza
-    setTimeout(() => actualizar(lente), 380);
+    lente.style.borderRadius = radios[e.detail];
+    lente.setAttribute("aria-valuetext", { lamina: "Lámina", pildora: "Píldora", placa: "Placa" }[e.detail]);
   });
   $("#banco-escena").addEventListener("cambio", (e) => { mesa.dataset.escena = e.detail; });
 }
@@ -185,11 +198,11 @@ function carga() {
 
 // ── Momentos de marca ───────────────────────────────────────────────────
 function momentos() {
-  // el ícono que se abre en una ventana de vidrio
+  // el ícono que se abre en una ventana de acrílico
   const app = $("#app-abre");
   if (app) {
     const ventana = app.querySelector(".app-ventana");
-    hacerVidrio(ventana);
+    hacerAcrilico(ventana);
     app.querySelector(".app-icono-boton").addEventListener("click", () => app.classList.toggle("abierta"));
     app.querySelector(".app-cerrar").addEventListener("click", () => app.classList.remove("abierta"));
   }

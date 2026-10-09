@@ -66,17 +66,20 @@ export function squircle(t = 512, n = 5) {
   return `M${pts.join("L")}Z`;
 }
 
-/** Ícono completo (contenido interno de un <svg viewBox="0 0 512 512">). */
-export function icono(id, estilo = "blanco", p = `${id}-${estilo}`) {
+/** Ícono completo (contenido interno de un <svg viewBox="0 0 512 512">).
+ *  chico: versión para 32 px o menos (fichas, tablas). Glifo más grande, sin sombra,
+ *  sin hilo de borde y con el resplandor suave: a ese tamaño la sombra y el resplandor
+ *  empastan el glifo. Es lo que hace Apple con sus íconos chicos. */
+export function icono(id, estilo = "blanco", p = `${id}-${estilo}`, { chico = false } = {}) {
   const P = PRODUCTOS[id], T = 512;
   const g = (nom, [a, b], [x1, y1, x2, y2] = [0, 0, 0, T]) => `<linearGradient id="${p}-${nom}" gradientUnits="userSpaceOnUse" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient>`;
   const lamina = (y, giro, grad) =>
     `<g transform="rotate(${giro} 256 256)"><rect x="34" y="${y}" width="620" height="700" rx="86" fill="url(#${p}-${grad})"/><rect x="34" y="${y}" width="620" height="700" rx="86" fill="url(#${p}-filo)"/></g>`;
   // el fondo se define una vez y se usa dos veces (a la vista y, desenfocado, dentro del vidrio)
-  const fondo = `<g id="${p}-fondo"><rect width="${T}" height="${T}" fill="url(#${p}-baldosa)"/>${lamina(104, 4, "l1")}${lamina(292, -7, "l2")}<rect width="${T}" height="${T}" fill="url(#${p}-brillo)"/></g>`;
+  const fondo = `<g id="${p}-fondo"><rect width="${T}" height="${T}" fill="url(#${p}-baldosa)"/>${lamina(104, 4, "l1")}${lamina(292, -7, "l2")}<rect width="${T}" height="${T}" fill="url(#${p}-brillo)"${chico ? ' opacity=".45"' : ""}/></g>`;
 
   // glifo en su espacio de 256, ubicado al centro de la baldosa
-  const tam = 248, G = `translate(${(T - tam) / 2} ${(T - tam) / 2 + 6}) scale(${r2(tam / 256)})`;
+  const tam = chico ? 312 : 248, G = `translate(${(T - tam) / 2} ${(T - tam) / 2 + (chico ? 0 : 6)}) scale(${r2(tam / 256)})`;
   const I = P.insignia;
   const enInsignia = (contenido) => (I ? `<g transform="translate(${I.x} ${I.y}) scale(${I.s})">${contenido}</g>` : "");
   // máscara: el glifo principal pierde un margen alrededor de la insignia
@@ -120,8 +123,8 @@ export function icono(id, estilo = "blanco", p = `${id}-${estilo}`) {
     `</defs>`;
   return defs +
     `<g clip-path="url(#${p}-clip)"><use href="#${p}-fondo"/><rect width="${T}" height="${T}" fill="url(#${p}-velo)"/></g>` +
-    `<path d="${squircle(T)}" fill="none" stroke="#fff" stroke-opacity=".28" stroke-width="3"/>` +
-    `<g class="glifo" filter="url(#${p}-sombra)" transform="${G}">${pieza}</g>`;
+    (chico ? "" : `<path d="${squircle(T)}" fill="none" stroke="#fff" stroke-opacity=".28" stroke-width="3"/>`) +
+    `<g class="glifo"${chico ? "" : ` filter="url(#${p}-sombra)"`} transform="${G}">${pieza}</g>`;
 }
 
 /** Transformación inversa: lleva el fondo (espacio de la baldosa) al espacio del glifo. */
@@ -134,6 +137,6 @@ function invertir(G, I) {
   return t;
 }
 
-export function svgIcono(id, estilo = "blanco", p) {
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="condor ${PRODUCTOS[id].nombre}">${icono(id, estilo, p)}</svg>`;
+export function svgIcono(id, estilo = "blanco", p, opciones) {
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="condor ${PRODUCTOS[id].nombre}">${icono(id, estilo, p, opciones)}</svg>`;
 }

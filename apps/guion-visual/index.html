@@ -4,12 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>condor.ai · Guion visual</title>
-  <meta name="description" content="Guion visual de condor.ai: identidad, vidrio líquido, marca en movimiento, kit, formularios y patrones, funcionando.">
+  <meta name="description" content="Guion visual de condor.ai: identidad, acrílico, marca en movimiento, kit, formularios y patrones, funcionando.">
   <meta name="color-scheme" content="light">
   <link rel="icon" href="assets/marca/icono-azul.svg" type="image/svg+xml">
   <link rel="stylesheet" href="tokens/condor.css">
   <link rel="stylesheet" href="estilos/base.css">
-  <link rel="stylesheet" href="estilos/vidrio.css">
+  <link rel="stylesheet" href="estilos/acrilico.css">
   <link rel="stylesheet" href="estilos/movimiento.css">
   <link rel="stylesheet" href="estilos/kit.css">
   <link rel="stylesheet" href="estilos/patrones.css">
@@ -46,7 +46,7 @@
     <svg class="miga-sep" aria-hidden="true"><use href="#i-chevron"/></svg>
     <span class="miga miga-actual" id="miga-sec" aria-current="location">Inicio</span>
   </nav>
-  <div class="menu" id="menu-hermanas" role="menu" aria-label="Secciones de este capítulo" data-vidrio data-liviano data-radio="18" hidden></div>
+  <div class="menu" id="menu-hermanas" role="menu" aria-label="Secciones de este capítulo" data-acrilico data-denso data-radio="18" hidden></div>
   <button type="button" class="buscar-cmd" data-comando aria-label="Buscar (Ctrl K)"><svg aria-hidden="true"><use href="#i-buscar"/></svg><span>Buscar</span><kbd>Ctrl K</kbd></button>
   <div class="barra-progreso" aria-hidden="true"><i></i></div>
 </header>
@@ -55,13 +55,14 @@
 
 <!-- ═════════════════════════ I · IDENTIDAD ═════════════════════════ -->
 <section class="inicio" id="inicio">
-  <div class="inicio-lente" id="inicio-lente" data-vidrio data-radio="pildora" data-refraccion="52" data-bisel="30" data-desenfoque="0.3" data-aberracion="0.08" aria-hidden="true"></div>
-  <div class="inicio-logo corre m-aleteo" data-logo="h" data-firma="aleteo" data-tip="Toca para volver a verlo"></div>
+  <div class="inicio-placa" id="inicio-placa" data-acrilico data-radio="34">
+    <div class="inicio-logo corre m-aleteo" data-logo="h" data-firma="aleteo" data-tip="Toca para volver a verlo"></div>
+  </div>
   <p class="rotulo">Guion visual · Octubre 2026</p>
   <h1 class="inicio-titulo">Tecnología del futuro,<br>desde los Andes.</h1>
-  <p class="inicio-lead">La identidad de condor.ai entera y funcionando: el cóndor de siempre redibujado, vidrio líquido que refracta de verdad, una marca que se mueve y un kit listo para construir.</p>
-  <div class="fila centro"><a href="#condor" class="btn primario">Empezar el recorrido</a><button type="button" class="btn vidrio-btn" data-comando data-vidrio data-radio="14" data-refraccion="30" data-bisel="16"><svg aria-hidden="true"><use href="#i-buscar"/></svg>Buscar en el guion</button></div>
-  <p class="inicio-pista">Mueve el puntero: la lente de vidrio refracta el titular.</p>
+  <p class="inicio-lead">La identidad de condor.ai entera y funcionando: el cóndor de siempre redibujado, un material propio —el acrílico—, una marca que se mueve y un kit listo para construir.</p>
+  <div class="fila centro"><a href="#condor" class="btn primario">Empezar el recorrido</a><button type="button" class="btn acrilico-btn" data-comando data-acrilico data-radio="14"><svg aria-hidden="true"><use href="#i-buscar"/></svg>Buscar en el guion</button></div>
+  <p class="inicio-pista">Mueve el puntero: la placa de acrílico se inclina con la luz.</p>
 </section>
 
 <section class="bloque" id="condor">
@@ -116,10 +117,10 @@
 </section>
 
 <!-- ═════════════════════════ II · MATERIAL ═════════════════════════ -->
-<section class="bloque" id="vidrio">
-  <p class="rotulo">II · Material · Vidrio líquido</p>
-  <h2 class="titular revelar">Vidrio que refracta de verdad.</h2>
-  <p class="lead revelar">No es un desenfoque: cada pieza calcula cómo se dobla la luz en su canto, como un lente. Arrastra la lente, cambia su forma y lo que hay detrás, y mueve los parámetros.</p>
+<section class="bloque" id="acrilico">
+  <p class="rotulo">II · Material · Acrílico</p>
+  <h2 class="titular revelar">Todo es acrílico.</h2>
+  <p class="lead revelar">Una lámina lechosa y esmerilada con cuerpo: desenfoca lo que hay detrás, lo tiñe de blanco, tiene una superficie con textura y un canto pulido que atrapa la luz. Arrastra la lámina, elige la textura y mueve sus parámetros.</p>
   <div class="banco revelar" id="banco">
     <div class="banco-mesa" id="banco-mesa" data-escena="texto">
       <div class="escena-texto" aria-hidden="true">
@@ -129,40 +130,39 @@
         <div class="et-grilla"><span>Aa</span><span>01</span><span>→</span><span>⌘</span><span>%</span><span>✓</span></div>
       </div>
       <img class="escena-foto" src="assets/fotos/equipo.webp" alt="" aria-hidden="true">
-      <img class="escena-cielo" src="assets/fotos/cielo.webp" alt="" aria-hidden="true">
-      <div class="banco-lente" id="banco-lente" tabindex="0" role="slider" aria-label="Lente de vidrio: arrástrala o muévela con las flechas" aria-valuetext="Lente" data-vidrio data-radio="999" data-refraccion="58" data-bisel="30" data-desenfoque="0.6" data-aberracion="0.16" data-forma="lente"></div>
-      <p class="banco-aviso" id="banco-aviso" hidden>Este navegador no pinta la refracción (solo Chromium lo hace): ves el vidrio esmerilado de respaldo.</p>
+      <div class="escena-condor" aria-hidden="true"><span data-logo="iso"></span></div>
+      <div class="banco-lamina" id="banco-lamina" tabindex="0" role="slider" aria-label="Lámina de acrílico: arrástrala o muévela con las flechas" aria-valuetext="Lámina" data-acrilico data-radio="26" data-forma="lamina"><span class="bl-texto"><b>Acrílico</b><span>condor.ai</span></span></div>
     </div>
     <div class="banco-controles">
-      <div><p class="mini">Forma</p><div class="segmentado" role="radiogroup" aria-label="Forma de la lente" id="banco-forma"><button type="button" role="radio" data-valor="lente" aria-checked="true">Lente</button><button type="button" role="radio" data-valor="pildora" aria-checked="false">Píldora</button><button type="button" role="radio" data-valor="lamina" aria-checked="false">Lámina</button></div></div>
-      <div><p class="mini">Detrás</p><div class="segmentado" role="radiogroup" aria-label="Qué hay detrás del vidrio" id="banco-escena"><button type="button" role="radio" data-valor="texto" aria-checked="true">Texto</button><button type="button" role="radio" data-valor="foto" aria-checked="false">Equipo</button><button type="button" role="radio" data-valor="cielo" aria-checked="false">Cielo</button></div></div>
-      <label class="deslizador"><span>Refracción</span><input type="range" min="0" max="120" value="58" data-param="refraccion"><output></output></label>
-      <label class="deslizador"><span>Bisel</span><input type="range" min="6" max="60" value="30" data-param="bisel"><output></output></label>
-      <label class="deslizador"><span>Esmerilado</span><input type="range" min="0" max="12" step="0.2" value="0.6" data-param="desenfoque"><output></output></label>
-      <label class="deslizador"><span>Prisma</span><input type="range" min="0" max="0.3" step="0.01" value="0.16" data-param="aberracion"><output></output></label>
+      <div><p class="mini">Textura · se aplica a todo el guion</p><div class="segmentado" role="radiogroup" aria-label="Textura del acrílico" id="banco-textura"><button type="button" role="radio" data-valor="grano" aria-checked="true">Grano</button><button type="button" role="radio" data-valor="acanalado" aria-checked="false">Acanalado</button><button type="button" role="radio" data-valor="escarcha" aria-checked="false">Escarcha</button><button type="button" role="radio" data-valor="lisa" aria-checked="false">Lisa</button></div></div>
+      <div><p class="mini">Forma</p><div class="segmentado" role="radiogroup" aria-label="Forma de la lámina" id="banco-forma"><button type="button" role="radio" data-valor="lamina" aria-checked="true">Lámina</button><button type="button" role="radio" data-valor="pildora" aria-checked="false">Píldora</button><button type="button" role="radio" data-valor="placa" aria-checked="false">Placa</button></div></div>
+      <div><p class="mini">Detrás</p><div class="segmentado" role="radiogroup" aria-label="Qué hay detrás del acrílico" id="banco-escena"><button type="button" role="radio" data-valor="texto" aria-checked="true">Texto</button><button type="button" role="radio" data-valor="foto" aria-checked="false">Equipo</button><button type="button" role="radio" data-valor="condor" aria-checked="false">Cóndor</button></div></div>
+      <label class="deslizador"><span>Esmerilado</span><input type="range" min="0" max="48" value="26" data-param="esmerilado" data-formato="px"><output></output></label>
+      <label class="deslizador"><span>Tinte</span><input type="range" min="20" max="95" value="64" data-param="tinte" data-formato="%"><output></output></label>
+      <label class="deslizador"><span>Textura</span><input type="range" min="0" max="200" value="100" data-param="textura" data-formato="%"><output></output></label>
     </div>
   </div>
-  <details class="ficha-uso"><summary>Ficha de uso · Vidrio</summary>
-    <div class="ficha-cuerpo"><ul><li><b>Refracción real</b> solo en piezas chicas y protagonistas (botones, lentes, píldoras, dock). Láminas grandes y toasts: <code>data-liviano</code>.</li><li><b>Prisma</b> (aberración ≥ 0,14) solo en lentes protagonistas.</li><li>Fuera de Chromium se ve esmerilado: el diseño debe funcionar igual.</li></ul>
-    <pre><code>&lt;div data-vidrio data-radio="pildora" data-refraccion="46"&gt;…&lt;/div&gt;
-import { montarVidrios } from "./src/kit/vidrio.js";</code></pre></div></details>
+  <details class="ficha-uso"><summary>Ficha de uso · Acrílico</summary>
+    <div class="ficha-cuerpo"><ul><li><b>Lámina</b> (<code>data-acrilico</code>): barras, docks, botones secundarios, tarjetas que flotan.</li><li><b>Denso</b> (<code>data-denso</code>): menús, toasts, hojas y diálogos, donde hay texto encima.</li><li>La <b>textura</b> es una sola para todo el sitio (<code>&lt;html data-textura="grano"&gt;</code>). Sobre contenido quieto, nunca detrás de texto largo.</li></ul>
+    <pre><code>&lt;div data-acrilico data-radio="pildora"&gt;…&lt;/div&gt;
+import { montarAcrilicos } from "./src/kit/acrilico.js";</code></pre></div></details>
 </section>
 
 <section class="bloque" id="superficies">
   <p class="rotulo">II · Material · Superficies</p>
-  <h2 class="titular revelar">Cada capa, su vidrio.</h2>
-  <p class="lead revelar">El mismo material en cuatro grosores, según cuánto flota la pieza. Todo sobre blanco: el vidrio se nota por lo que dobla, no por colores de fondo.</p>
+  <h2 class="titular revelar">Cada capa, su acrílico.</h2>
+  <p class="lead revelar">El mismo material en cuatro piezas, según cuánto flota cada una. Todo sobre blanco: el acrílico se nota por su esmerilado, su textura y su canto, no por colores de fondo.</p>
   <div class="superficies revelar">
     <div class="sup-mesa">
       <div class="sup-contenido" aria-hidden="true"><span data-logo="iso"></span><p>Ventas · octubre</p><b>$4.820.000</b><i></i><i></i><i></i></div>
-      <div class="sup sup-pildora" data-vidrio data-radio="pildora" data-refraccion="34" data-bisel="18"><span class="punto-vivo"></span>Agente en línea</div>
-      <div class="sup sup-lamina" data-vidrio data-liviano data-radio="22"><p class="mini">Lámina</p><b>Resumen del día</b><span>3 pedidos nuevos · 1 reunión</span></div>
-      <button class="sup sup-boton" type="button" data-vidrio data-radio="16" data-refraccion="30" data-bisel="16">Botón de vidrio</button>
-      <div class="sup sup-dock" data-vidrio data-radio="22" data-refraccion="40"><span data-fichas-producto></span></div>
+      <div class="sup sup-pildora" data-acrilico data-radio="pildora"><span class="punto-vivo"></span>Agente en línea</div>
+      <div class="sup sup-lamina" data-acrilico data-denso data-radio="22"><p class="mini">Lámina</p><b>Resumen del día</b><span>3 pedidos nuevos · 1 reunión</span></div>
+      <button class="sup sup-boton" type="button" data-acrilico data-radio="16">Botón de acrílico</button>
+      <div class="sup sup-dock" data-acrilico data-radio="22"><span data-fichas-producto></span></div>
     </div>
     <ul class="lista-reglas">
-      <li><b>Píldora</b> · estado vivo, siempre a la vista. Refracta.</li>
-      <li><b>Lámina</b> · paneles y tarjetas que flotan. Liviana: sin refracción, mismo canto.</li>
+      <li><b>Píldora</b> · estado vivo, siempre a la vista. Esmerilado normal.</li>
+      <li><b>Lámina</b> · paneles y tarjetas que flotan. Densa: más tinte para que el texto se lea, mismo canto.</li>
       <li><b>Botón</b> · secundario sobre imágenes o contenido; el sólido azul sigue siendo uno por pantalla.</li>
       <li><b>Dock</b> · navegación que flota abajo, como la de este guion.</li>
     </ul>
@@ -214,9 +214,9 @@ import { montarVidrios } from "./src/kit/vidrio.js";</code></pre></div></details
     <article class="momento">
       <div class="app-abre" id="app-abre">
         <button type="button" class="app-icono-boton" aria-label="Abrir condor.ai"><img src="assets/marca/icono-azul.svg" alt=""></button>
-        <div class="app-ventana" data-radio="26" data-refraccion="36"><button type="button" class="app-cerrar" aria-label="Cerrar"><svg aria-hidden="true"><use href="#i-cerrar"/></svg></button><span data-logo="h"></span><p>Buenos días. Tienes 3 pedidos nuevos.</p></div>
+        <div class="app-ventana" data-radio="26"><button type="button" class="app-cerrar" aria-label="Cerrar"><svg aria-hidden="true"><use href="#i-cerrar"/></svg></button><span data-logo="h"></span><p>Buenos días. Tienes 3 pedidos nuevos.</p></div>
       </div>
-      <h3>El ícono se abre</h3><p>Toca el ícono: crece desde su lugar a una ventana de vidrio. Así se abre la app.</p>
+      <h3>El ícono se abre</h3><p>Toca el ícono: crece desde su lugar a una ventana de acrílico. Así se abre la app.</p>
     </article>
     <article class="momento">
       <div class="sello-caja"><svg class="sello" id="sello" viewBox="0 0 200 200" aria-hidden="true"><defs><path id="sello-circulo" d="M100 100m-78 0a78 78 0 1 1 156 0a78 78 0 1 1 -156 0"/></defs><text><textPath href="#sello-circulo"></textPath></text></svg><span class="sello-iso" data-logo="iso"></span></div>
@@ -275,7 +275,7 @@ import { montarVidrios } from "./src/kit/vidrio.js";</code></pre></div></details
     <div class="pieza"><p class="mini">Variantes</p><div class="fila"><button class="btn primario" type="button">Agenda una reunión</button><button class="btn suave" type="button">Ver productos</button><button class="btn fantasma" type="button">Cancelar</button><button class="btn peligro" type="button">Eliminar</button></div></div>
     <div class="pieza"><p class="mini">Estados en capas · tócalo</p><div class="fila"><button class="btn primario" type="button" data-estados data-cargando="Enviando" data-listo="Enviado">Enviar cotización</button><button class="btn suave" type="button" data-estados data-cargando="Guardando" data-listo="Guardado">Guardar</button></div></div>
     <div class="pieza"><p class="mini">Tamaños e íconos</p><div class="fila"><button class="btn primario chico" type="button">Chico</button><button class="btn primario" type="button">Mediano</button><button class="btn primario grande" type="button">Grande<svg aria-hidden="true"><use href="#i-flecha"/></svg></button></div></div>
-    <div class="pieza"><p class="mini">Botón de ícono · con etiqueta</p><div class="fila"><button class="btn-icono" type="button" aria-label="Editar" data-tip="Editar"><svg><use href="#i-editar"/></svg></button><button class="btn-icono" type="button" aria-label="Duplicar" data-tip="Duplicar"><svg><use href="#i-duplicar"/></svg></button><button class="btn-icono" type="button" aria-label="Archivar" data-tip="Archivar"><svg><use href="#i-archivar"/></svg></button><button class="btn-icono vidrio-ico" type="button" aria-label="Más opciones" data-tip="Más opciones" data-vidrio data-radio="999" data-refraccion="22" data-bisel="12"><svg><use href="#i-puntos"/></svg></button></div></div>
+    <div class="pieza"><p class="mini">Botón de ícono · con etiqueta</p><div class="fila"><button class="btn-icono" type="button" aria-label="Editar" data-tip="Editar"><svg><use href="#i-editar"/></svg></button><button class="btn-icono" type="button" aria-label="Duplicar" data-tip="Duplicar"><svg><use href="#i-duplicar"/></svg></button><button class="btn-icono" type="button" aria-label="Archivar" data-tip="Archivar"><svg><use href="#i-archivar"/></svg></button><button class="btn-icono acrilico-ico" type="button" aria-label="Más opciones" data-tip="Más opciones" data-acrilico data-radio="999"><svg><use href="#i-puntos"/></svg></button></div></div>
   </div>
   <details class="ficha-uso"><summary>Ficha de uso · Botón</summary><div class="ficha-cuerpo"><ul><li>Un solo <b>primario</b> (azul) por pantalla; el resto, suave o fantasma.</li><li>Con <code>data-estados</code>, el botón cruza quieto → cargando → listo sin cambiar de tamaño.</li><li>El botón de ícono siempre lleva <code>aria-label</code> y tooltip; su área táctil es de 44 px.</li></ul><pre><code>&lt;button class="btn primario" data-estados data-listo="Enviado"&gt;Enviar&lt;/button&gt;</code></pre></div></details>
 </section>
@@ -297,7 +297,7 @@ import { montarVidrios } from "./src/kit/vidrio.js";</code></pre></div></details
   <h2 class="titular revelar">Lo que pasa mientras esperas.</h2>
   <div class="kit-grilla revelar">
     <div class="pieza"><p class="mini">Insignias · ícono + texto</p><div class="fila"><span class="insignia ok">Pagado</span><span class="insignia info">En revisión</span><span class="insignia alerta">Por vencer</span><span class="insignia error">Vencido</span></div></div>
-    <div class="pieza"><p class="mini">Progreso líquido</p><div class="progreso" role="progressbar" aria-valuenow="64" aria-valuemin="0" aria-valuemax="100" aria-label="Importando productos"><i style="--p:.64"></i></div><div class="progreso indeterminado" role="progressbar" aria-label="Cargando"><i></i></div></div>
+    <div class="pieza"><p class="mini">Progreso</p><div class="progreso" role="progressbar" aria-valuenow="64" aria-valuemin="0" aria-valuemax="100" aria-label="Importando productos"><i style="--p:.64"></i></div><div class="progreso indeterminado" role="progressbar" aria-label="Cargando"><i></i></div></div>
     <div class="pieza"><p class="mini">Esqueleto · imita lo que viene</p><div class="esqueleto"><i class="e-av"></i><div><i></i><i class="corto"></i></div></div><div class="esqueleto"><i class="e-av"></i><div><i></i><i class="corto"></i></div></div></div>
     <div class="pieza pieza-vacio"><span class="vacio-iso" data-logo="iso"></span><b>Aún no hay pedidos</b><p>Cuando alguien compre en tu tienda, aparece aquí.</p><button class="btn suave chico" type="button">Compartir la tienda</button></div>
   </div>
@@ -321,7 +321,7 @@ import { montarVidrios } from "./src/kit/vidrio.js";</code></pre></div></details
   <div class="kit-grilla revelar">
     <div class="pieza"><p class="mini">Menú · flechas, inicial, Escape</p>
       <button class="btn suave" type="button" data-menu="menu-acciones">Acciones<svg aria-hidden="true"><use href="#i-abajo"/></svg></button>
-      <div class="menu" id="menu-acciones" role="menu" aria-label="Acciones del pedido" data-vidrio data-liviano data-radio="18" hidden>
+      <div class="menu" id="menu-acciones" role="menu" aria-label="Acciones del pedido" data-acrilico data-denso data-radio="18" hidden>
         <button role="menuitem" type="button"><svg aria-hidden="true"><use href="#i-editar"/></svg>Editar<kbd>E</kbd></button>
         <button role="menuitem" type="button"><svg aria-hidden="true"><use href="#i-duplicar"/></svg>Duplicar<kbd>D</kbd></button>
         <button role="menuitem" type="button"><svg aria-hidden="true"><use href="#i-archivar"/></svg>Archivar</button>
@@ -331,19 +331,19 @@ import { montarVidrios } from "./src/kit/vidrio.js";</code></pre></div></details
     </div>
     <div class="pieza"><p class="mini">Popover · información al lado</p>
       <button class="btn suave" type="button" data-popover="pop-plan"><svg aria-hidden="true"><use href="#i-info"/></svg>¿Qué incluye?</button>
-      <div class="popover" id="pop-plan" role="dialog" aria-label="Qué incluye condor ecommerce" data-vidrio data-liviano data-radio="20" hidden>
+      <div class="popover" id="pop-plan" role="dialog" aria-label="Qué incluye condor ecommerce" data-acrilico data-denso data-radio="20" hidden>
         <b>condor ecommerce</b><p>Tienda online administrada por $54.990 al mes, IVA incluido, más 6,7 % por venta. La comisión incluye la gestión de anuncios.</p><a href="#productos">Ver el producto →</a>
       </div>
     </div>
     <div class="pieza"><p class="mini">Tooltip · al pasar o con foco</p><div class="fila"><button class="btn-icono" type="button" aria-label="Copiar enlace" data-tip="Copiar enlace"><svg><use href="#i-copiar"/></svg></button><span class="con-tip" tabindex="0" data-tip="Impuesto al valor agregado, 19 %">IVA</span></div></div>
     <div class="pieza"><p class="mini">Modal y hoja</p><div class="fila"><button class="btn suave" type="button" data-modal="modal-demo">Abrir modal</button><button class="btn suave" type="button" data-hoja="hoja-demo">Abrir hoja (celular)</button></div><small class="nota-mini">La hoja se arrastra y se queda en media o completa.</small></div>
   </div>
-  <div class="modal" id="modal-demo" role="dialog" aria-modal="true" aria-labelledby="modal-t" data-vidrio data-liviano data-radio="28" hidden>
+  <div class="modal" id="modal-demo" role="dialog" aria-modal="true" aria-labelledby="modal-t" data-acrilico data-denso data-radio="28" hidden>
     <h3 id="modal-t">Invita a tu equipo</h3><p>Comparte el acceso a condor track. Cada persona recibe un correo para entrar.</p>
     <label class="campo" data-tipo="correo"><input type="email" placeholder=" " autocomplete="off"><span class="campo-etiqueta">Correo de la persona</span><small class="campo-ayuda">Le llega una invitación.</small></label>
     <div class="fila fin"><button class="btn fantasma" type="button" data-cerrar>Cancelar</button><button class="btn primario" type="button" data-cerrar>Enviar invitación</button></div>
   </div>
-  <div class="hoja" id="hoja-demo" role="dialog" aria-modal="true" aria-label="Detalle del pedido" data-vidrio data-liviano data-radio="28" hidden>
+  <div class="hoja" id="hoja-demo" role="dialog" aria-modal="true" aria-label="Detalle del pedido" data-acrilico data-denso data-radio="28" hidden>
     <div class="hoja-agarre" aria-hidden="true"><i></i></div>
     <h3>Pedido #1042</h3><p class="nota">Datos de ejemplo.</p>
     <dl class="detalle"><div><dt>Cliente</dt><dd>Café Altiplano</dd></div><div><dt>Total</dt><dd>$38.900</dd></div><div><dt>Estado</dt><dd><span class="insignia ok">Pagado</span></dd></div></dl>
@@ -439,8 +439,8 @@ import { montarVidrios } from "./src/kit/vidrio.js";</code></pre></div></details
         <button type="button" class="miga-demo" data-menu="menu-migas-2">Café Altiplano<svg aria-hidden="true"><use href="#i-abajo"/></svg></button><svg aria-hidden="true"><use href="#i-chevron"/></svg>
         <span aria-current="page">Pedido #1042</span>
       </nav>
-      <div class="menu" id="menu-migas-1" role="menu" data-vidrio data-liviano data-radio="18" hidden><button role="menuitem" type="button">Clientes</button><button role="menuitem" type="button">Pedidos</button><button role="menuitem" type="button">Productos</button><button role="menuitem" type="button">Reportes</button></div>
-      <div class="menu" id="menu-migas-2" role="menu" data-vidrio data-liviano data-radio="18" hidden><button role="menuitem" type="button">Café Altiplano</button><button role="menuitem" type="button">Clínica Mirador</button><button role="menuitem" type="button">Ferretería Los Andes</button></div>
+      <div class="menu" id="menu-migas-1" role="menu" data-acrilico data-denso data-radio="18" hidden><button role="menuitem" type="button">Clientes</button><button role="menuitem" type="button">Pedidos</button><button role="menuitem" type="button">Productos</button><button role="menuitem" type="button">Reportes</button></div>
+      <div class="menu" id="menu-migas-2" role="menu" data-acrilico data-denso data-radio="18" hidden><button role="menuitem" type="button">Café Altiplano</button><button role="menuitem" type="button">Clínica Mirador</button><button role="menuitem" type="button">Ferretería Los Andes</button></div>
       <small class="nota-mini">Las migas de la barra de arriba funcionan igual: toca el capítulo.</small>
     </div>
     <div class="pieza"><p class="mini">Paleta de comandos</p><button class="btn suave" type="button" data-comando><svg aria-hidden="true"><use href="#i-buscar"/></svg>Abrir · Ctrl K</button><small class="nota-mini">Busca secciones, copia colores, descarga el logo.</small></div>
@@ -501,7 +501,7 @@ import { montarVidrios } from "./src/kit/vidrio.js";</code></pre></div></details
     <div class="nav-barra"><i></i><i></i><i></i><span>condorai.cl</span></div>
     <div class="sitio">
       <img class="sitio-foto" src="assets/fotos/equipo.webp" alt="El equipo de condor.ai trabajando">
-      <div class="sitio-nav" data-vidrio data-radio="20" data-refraccion="34"><span data-logo="h" data-alto="22"></span><span class="sn-links"><span>Productos</span><span>Casos</span><span>Equipo</span></span><span class="btn primario chico">Hablemos</span></div>
+      <div class="sitio-nav" data-acrilico data-radio="20"><span data-logo="h" data-alto="22"></span><span class="sn-links"><span>Productos</span><span>Casos</span><span>Equipo</span></span><span class="btn primario chico">Hablemos</span></div>
       <div class="sitio-hero">
         <p class="rotulo">condor.ai · Santiago de Chile</p>
         <p class="sitio-h">Construimos la tecnología que tu empresa usará mañana.</p>
@@ -549,17 +549,17 @@ import { montarVidrios } from "./src/kit/vidrio.js";</code></pre></div></details
 
 </main>
 
-<!-- ══════════ DOCK de vidrio (capítulos) + píldora de índice en celular ══════════ -->
-<nav class="dock" aria-label="Capítulos" data-radio="24" data-refraccion="38" data-bisel="20">
-  <span class="dock-gota" data-radio="16" data-refraccion="22" data-bisel="12" aria-hidden="true"></span>
+<!-- ══════════ DOCK de acrílico (capítulos) + píldora de índice en celular ══════════ -->
+<nav class="dock" aria-label="Capítulos" data-radio="24">
+  <span class="dock-gota" data-radio="16" aria-hidden="true"></span>
   <div class="dock-capitulos"></div>
 </nav>
 <button type="button" class="pildora-indice" aria-label="Índice del guion"><span class="iso-mini" data-logo="iso"></span><span class="tx">Inicio</span><svg aria-hidden="true"><use href="#i-abajo"/></svg></button>
-<div class="hoja" id="hoja-indice" role="dialog" aria-modal="true" aria-label="Índice del guion" data-vidrio data-liviano data-radio="28" hidden><div class="hoja-agarre" aria-hidden="true"><i></i></div><div class="indice"></div></div>
+<div class="hoja" id="hoja-indice" role="dialog" aria-modal="true" aria-label="Índice del guion" data-acrilico data-denso data-radio="28" hidden><div class="hoja-agarre" aria-hidden="true"><i></i></div><div class="indice"></div></div>
 
 <!-- ══════════ ⌘K ══════════ -->
 <div class="comando" id="comando" hidden>
-  <div class="comando-caja" role="dialog" aria-modal="true" aria-label="Buscar en el guion" data-liviano data-radio="22">
+  <div class="comando-caja" role="dialog" aria-modal="true" aria-label="Buscar en el guion" data-denso data-radio="22">
     <label class="comando-campo"><svg aria-hidden="true"><use href="#i-buscar"/></svg><input id="comando-buscar" type="text" placeholder="Buscar secciones, colores, archivos…" role="combobox" aria-expanded="true" aria-controls="comando-resultados" autocomplete="off"><kbd>Esc</kbd></label>
     <ul id="comando-resultados" role="listbox" aria-label="Resultados"></ul>
   </div>

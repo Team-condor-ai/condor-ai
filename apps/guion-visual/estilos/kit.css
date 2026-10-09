@@ -37,7 +37,7 @@
   .peligro:hover { background: #FAD9DB; }
   .btn.mini:hover { background: #E8E8EC; }
 }
-.vidrio-btn { color: var(--cn-tinta); --tinte: rgba(255, 255, 255, 0.5); }
+.acrilico-btn { color: var(--cn-tinta); --tinte: rgba(255, 255, 255, 0.5); }
 .btn.chico { height: 34px; padding: 0 14px; font-size: var(--cn-t-13); border-radius: 10px; }
 .btn.grande { height: 54px; padding: 0 26px; font-size: var(--cn-t-17); border-radius: 16px; }
 .btn.grande svg { width: 18px; height: 18px; transition: transform var(--cn-d-3) var(--cn-llegada); }
@@ -63,9 +63,9 @@
 @media (hover: hover) { .btn-icono:hover { background: #E8E8EC; } }
 .btn-icono:disabled { opacity: 0.35; cursor: default; }
 .btn-icono svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
-.btn-icono.vidrio-ico { --tinte: rgba(255, 255, 255, 0.4); background: none; }
-.btn-icono.vidrio-ico:focus-visible { border-radius: 999px; }
-.btn-icono.vidrio-ico svg { fill: currentColor; stroke: none; }
+.btn-icono.acrilico-ico { --tinte: rgba(255, 255, 255, 0.4); background: none; }
+.btn-icono.acrilico-ico:focus-visible { border-radius: 999px; }
+.btn-icono.acrilico-ico svg { fill: currentColor; stroke: none; }
 @media (max-width: 860px), (pointer: coarse) { .btn-icono { width: 44px; height: 44px; } .btn.chico, .btn.mini { min-height: 44px; } }
 
 /* ── Controles ──────────────────────────────────────────────────────── */
@@ -166,7 +166,7 @@
 .toast { grid-area: 1 / 1; position: relative; z-index: calc(10 - var(--i, 0)); pointer-events: auto; display: flex; align-items: center; gap: 10px; width: 100%; min-height: 52px; padding: 8px 8px 8px 16px; border-radius: 18px; font-size: var(--cn-t-15); line-height: 1.35; --tinte: rgba(255, 255, 255, 0.9); box-shadow: 0 18px 44px -18px rgba(21, 21, 23, 0.34), 0 2px 6px -2px rgba(21, 21, 23, 0.08) !important; transform-origin: 50% 100%; transform: translateY(calc(var(--i, 0) * -10px)) scale(calc(1 - var(--i, 0) * 0.05)); opacity: calc(1 - var(--i, 0) * 0.25); transition: transform calc(0.45s * var(--vel)) var(--cn-llegada), opacity var(--cn-d-3) var(--cn-suave); animation: toast-entra calc(0.5s * var(--vel)) var(--cn-llegada); }
 /* lo de atrás no se lee a medias: solo asoma su borde */
 .toast > * { transition: opacity var(--cn-d-2) var(--cn-suave); }
-.toast.atras > :not(.vidrio__lente) { opacity: 0; }
+.toast.atras > :not(.acrilico__capa) { opacity: 0; }
 .toasts.abierta .toast { transform: translateY(calc(var(--y, 0px) * -1)); opacity: 1; }
 .toasts.abierta .toast > * { opacity: 1; }
 .toast.sale { pointer-events: none; animation: toast-sale calc(0.3s * var(--vel)) var(--cn-suave) forwards; }

@@ -60,7 +60,7 @@ export function montarDatos(raiz = document) {
       const total = filas.length, paginas = Math.max(1, Math.ceil(total / porPagina));
       pagina = Math.min(pagina, paginas - 1);
       filas = filas.slice(pagina * porPagina, (pagina + 1) * porPagina);
-      tbody.innerHTML = filas.map((f, k) => `<tr style="--i:${k}"><td data-c="Cliente"><b>${f[0]}</b></td><td data-c="Producto"><span class="prod-mini"><img src="assets/marca/producto-${f[1]}.svg" alt="">${f[1]}</span></td><td data-c="Estado"><span class="insignia ${tono[f[2]]}">${f[2]}</span></td><td data-c="Mensual" class="num">${mensual(f[3])}</td><td data-c="Alta" class="num">${fecha(f[4])}</td></tr>`).join("") ||
+      tbody.innerHTML = filas.map((f, k) => `<tr style="--i:${k}"><td data-c="Cliente"><b>${f[0]}</b></td><td data-c="Producto"><span class="prod-mini"><img src="assets/marca/producto-${f[1]}-chico.svg" alt="">${f[1]}</span></td><td data-c="Estado"><span class="insignia ${tono[f[2]]}">${f[2]}</span></td><td data-c="Mensual" class="num">${mensual(f[3])}</td><td data-c="Alta" class="num">${fecha(f[4])}</td></tr>`).join("") ||
         `<tr class="tabla-vacia"><td colspan="5"><b>Sin resultados</b><span>Ningún cliente coincide con «${limpio(buscar.value.trim())}». Prueba con un producto, como «track».</span><button type="button" class="btn mini" data-limpiar>Limpiar búsqueda</button></td></tr>`;
       tbody.classList.remove("anima");
       if (animar) { void tbody.offsetWidth; tbody.classList.add("anima"); }

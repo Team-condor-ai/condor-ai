@@ -167,7 +167,7 @@ await conChrome(async ({ cdp, ev, abrir, tecla }) => {
     console.log(`Animaciones infinitas corriendo con movimiento reducido: ${r.length}`);
     r.forEach((x) => console.log("  " + x));
     console.log(`requestAnimationFrame en 2 s quieto (al final de la página): ${raf1 - raf0}`);
-    for (const id of ["inicio", "vidrio", "momentos", "carga"]) {
+    for (const id of ["inicio", "acrilico", "momentos", "carga"]) {
       await ev(`document.getElementById('${id}').scrollIntoView()`); await esperar(800);
       const a = await ev(`__rafs()`); await esperar(1000); const b = await ev(`__rafs()`);
       const inf = await ev(`document.getAnimations().filter(x=>x.effect?.getComputedTiming().iterations===Infinity&&x.playState==='running').length`);

@@ -76,10 +76,10 @@
   --cn-sombra-3: 0 30px 70px -28px rgba(21, 21, 23, 0.32);
 
   /* ── Material: acrílico claro ───────────────────────────────────────── */
-  --cn-vidrio: rgba(255, 255, 255, 0.58);
-  --cn-vidrio-borde: rgba(255, 255, 255, 0.78);
-  --cn-vidrio-blur: blur(24px) saturate(1.8);
-  --cn-vidrio-canto: inset 0 1px 0 rgba(255, 255, 255, 0.95), inset 0 -1px 0 rgba(21, 21, 23, 0.05);
+  --cn-acrilico: rgba(255, 255, 255, 0.58);
+  --cn-acrilico-borde: rgba(255, 255, 255, 0.78);
+  --cn-acrilico-blur: blur(24px) saturate(1.8);
+  --cn-acrilico-canto: inset 0 1px 0 rgba(255, 255, 255, 0.95), inset 0 -1px 0 rgba(21, 21, 23, 0.05);
 
   /* ── Movimiento ─────────────────────────────────────────────────────── */
   --cn-llegada: cubic-bezier(0.16, 1, 0.3, 1);      /* lo que entra: rápido y se posa */

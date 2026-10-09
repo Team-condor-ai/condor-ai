@@ -38,13 +38,33 @@ movimiento suave y satisfactorio. Productos: solo **condor ecommerce, track y ag
 Max pidió más vidrio, más motion, más innovación, **nada de fondos de color** (azul solo acento),
 **fuera condor sites** (deja de existir) y un kit completo. Se rehízo el guion como módulos ES sin build:
 - `src/plan.js` — capítulos y secciones: fuente del dock, las migas, el índice y ⌘K.
-- `src/kit/` — `vidrio.js` (refracción real portada de Medula), `resorte.js` (muelle en pasos de 8 ms),
+- `src/kit/` — `acrilico.js` (el material; ver 3c), `resorte.js` (muelle en pasos de 8 ms),
   `marca.js` (logo por piezas + **el cóndor como carga**), `avisos.js` (toast, alerta, banner),
   `popups.js` (menú, popover, tooltip, modal, hoja), `controles.js`, `campos.js` (RUT, correo, OTP, archivos).
 - `src/patrones/` — `navegacion.js` (barra que se pliega, migas con hermanas, dock, ⌘K, pestañas),
   `stepper.js` (Agenda una reunión), `scrollers.js` (carrusel, marquee, vuelo con scroll), `datos.js`.
-- `estilos/` — base → vidrio → movimiento → kit → patrones → secciones.
+- `estilos/` — base → acrilico → movimiento → kit → patrones → secciones.
 - Ocho capítulos: Identidad · Material · Marca en movimiento · Fundamentos · Kit · Formularios · Patrones · Aplicaciones.
+
+## 3c. Solo acrílico (9-oct, noche)
+Max: «Lo que necesitábamos no era glass transparente. La marca gira alrededor del **acrílico**.» Se sacó
+entero el vidrio líquido (refracción, mapas de desplazamiento, lentes) y quedó un solo material:
+- `src/kit/acrilico.js` + `estilos/acrilico.css`: `data-acrilico` (lámina) y `data-denso` (menús, toasts,
+  hojas, diálogos: más tinte). Lámina lechosa: esmerilado (`--esmerilado`), tinte blanco (`--tinte`),
+  textura de superficie, canto pulido y un brillo suave que sigue al puntero. Nada se dobla.
+- **Textura global**: `<html data-textura="grano|acanalado|escarcha|lisa">` (`ponerTextura()`, se recuerda en el
+  navegador). Grano por defecto (arenado fino); **acanalado** es la textura nueva (estrías verticales, como el
+  acrílico acanalado de interiorismo); escarcha = relieve de hoyuelos iluminado (`feDiffuseLighting`, tipo
+  acrílico «hielo»). El satinado se descartó: parecía metal cepillado y tenía costura.
+- Inicio: el logo va en una **placa de acrílico** con separadores de acero, que se inclina hacia el puntero.
+- Banco de acrílico (`#acrilico`): lámina arrastrable, textura, forma (lámina/píldora/placa), qué hay detrás
+  (texto/equipo/cóndor), esmerilado, tinte e intensidad de la textura.
+- **Íconos de producto borrosos — causa:** la inclinación 3D (`perspective` + `rotateX/Y(0)`) estaba siempre
+  puesta; Chrome pasa eso a una capa que reescala con escalas de pantalla fraccionarias (125 %, la típica de
+  Windows) y la deja borrosa (nitidez medida 291 vs 452 sin ella). Ahora la transformación existe solo mientras
+  el ícono (o la placa) se inclina. Además hay `producto-*-chico.svg` para 32 px o menos (glifo más grande,
+  sin sombra ni hilo de borde, resplandor suave), usado en fichas y tabla.
+- Dock: al tocar un capítulo la gota viaja al instante (antes esperaba a que el scroll llegara).
 
 ## 4. Pendientes
 1. Que Max elija la(s) firma(s) de movimiento (propuesta: Aleteo carga, Enfoque video, Destello esperas).
@@ -72,6 +92,8 @@ Max pidió más vidrio, más motion, más innovación, **nada de fondos de color
 - Chrome headless en Windows deja procesos hijos: las herramientas los cierran filtrando por su perfil temporal.
 - Las clases de estado (`.corre`) y de firma (`.m-aleteo`) van en el MISMO elemento: el selector es `.corre.m-aleteo`.
 - En las pruebas por CDP hay que apagar `scroll-behavior: smooth` o los clics caen fuera.
-- `.vidrio { position: relative }` le gana a `position: fixed` de piezas como el dock: subir la especificidad (`.dock.vidrio`).
-- Un `innerHTML` sobre una pieza de vidrio borra su `.vidrio__lente`: cambiar solo los hijos de contenido.
-- Un `backdrop-filter` en un ancestro (la barra) rompe el vidrio de lo que va adentro: los menús van a `body`.
+- `.acrilico { position: relative }` le gana a `position: fixed` de piezas como el dock: subir la especificidad (`.dock.acrilico`).
+- Un `innerHTML` sobre una pieza de acrílico borra su `.acrilico__capa`: cambiar solo los hijos de contenido.
+- Un `backdrop-filter` en un ancestro (la barra) rompe el acrílico de lo que va adentro: los menús van a `body`.
+- Una transformación 3D quieta (aunque sea 0°) deja borroso lo que lleva adentro a 125 %/150 %: aplicarla solo mientras se mueve.
+- Una grilla `1fr` se estira al ancho mínimo de su contenido (un segmentado largo): usar `minmax(0, 1fr)`; si no, en el celular el viewport se ensancha y los clics de las pruebas caen corridos.

@@ -5,7 +5,7 @@
    - Tooltip:  [data-tip="texto"]
    - Modal:    <button data-modal="id">  +  <div class="modal" id="id" role="dialog">
    - Hoja:     <button data-hoja="id">   +  <div class="hoja" id="id">  (arrastrable, con anclas) */
-import { hacerVidrio } from "./vidrio.js";
+import { hacerAcrilico } from "./acrilico.js";
 import { Resorte, goma } from "./resorte.js";
 
 let abierto = null;   // { panel, boton }
@@ -53,7 +53,7 @@ function abrir(panel, boton, enfocarPrimero) {
   if (abierto?.panel === panel) return cerrarAbierto();
   cerrarAbierto(false);
   panel.classList.remove("sale");
-  if (!panel._vidrio && panel.dataset.vidrio !== undefined) hacerVidrio(panel);
+  if (!panel._acrilico && panel.dataset.acrilico !== undefined) hacerAcrilico(panel);
   // reinicia la animación de entrada aunque se reabra a mitad de la salida
   panel.style.animation = "none"; panel.hidden = false; void panel.offsetWidth; panel.style.animation = "";
   ubicar(panel, boton);
@@ -201,7 +201,7 @@ export function modal(caja, desde) {
   caja.hidden = false;
   velo.appendChild(caja);
   document.body.appendChild(velo);
-  if (!caja._vidrio && caja.dataset.vidrio !== undefined) hacerVidrio(caja);
+  if (!caja._acrilico && caja.dataset.acrilico !== undefined) hacerAcrilico(caja);
   const origen = () => { const r = rectReal(desde); caja.style.transformOrigin = `${r.left + r.width / 2 - caja.offsetLeft}px ${r.top + r.height / 2 - caja.offsetTop}px`; };
   origen();
   document.documentElement.classList.add("con-modal");
@@ -244,7 +244,7 @@ export function hoja(el, desde) {
   el.hidden = false;
   velo.appendChild(el);
   document.body.appendChild(velo);
-  if (!el._vidrio && el.dataset.vidrio !== undefined) hacerVidrio(el);
+  if (!el._acrilico && el.dataset.acrilico !== undefined) hacerAcrilico(el);
   const ac = new AbortController(), on = { signal: ac.signal };
   const alto = () => el.offsetHeight;
   const anclas = () => { const h = alto(), media = Math.min(h, Math.max(320, h * 0.55)); return [0, Math.round(h - media), h]; };

@@ -1,14 +1,14 @@
 /* Controles del kit.
    - Segmentado: <div class="segmentado" role="radiogroup"> con <button role="radio">; una lente de
-     vidrio viaja con resorte y se estira hacia donde va mientras se mueve.
+     acrílico viaja con resorte y se estira hacia donde va mientras se mueve.
    - Deslizador: <label class="deslizador"><input type="range" data-formato="clp|%|n"><output>
    - Contador:   <div class="contador" data-min data-max> con − valor +
    - Botón con estados en capas: <button class="btn" data-estados> quieto → cargando → listo. */
-import { hacerVidrio } from "./vidrio.js";
+import { hacerAcrilico } from "./acrilico.js";
 import { Resorte } from "./resorte.js";
 
 const clp = new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP", maximumFractionDigits: 0 });
-const formatos = { clp: (v) => clp.format(v), "%": (v) => `${v} %`, n: (v) => String(v), h: (v) => `${v} h` };
+const formatos = { clp: (v) => clp.format(v), "%": (v) => `${v} %`, n: (v) => String(v), h: (v) => `${v} h`, px: (v) => `${v} px` };
 const reducido = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 export function montarControles(raiz = document) {
@@ -17,10 +17,8 @@ export function montarControles(raiz = document) {
     const lente = document.createElement("span");
     lente.className = "seg-lente";
     lente.setAttribute("aria-hidden", "true");
-    lente.dataset.vidrio = ""; lente.dataset.radio = "pildora"; lente.dataset.vivo = "";
-    lente.dataset.refraccion = "26"; lente.dataset.bisel = "14"; lente.dataset.desenfoque = "0.6";
-    seg.prepend(lente);
-    hacerVidrio(lente);
+    lente.dataset.acrilico = ""; lente.dataset.radio = "pildora"; seg.prepend(lente);
+    hacerAcrilico(lente);
     const tabs = [...seg.querySelectorAll('[role="radio"]')];
     // el ancho de cada opción se reserva en negrita (CSS ::after con data-texto)
     tabs.forEach((t) => (t.dataset.texto = t.textContent.trim()));
