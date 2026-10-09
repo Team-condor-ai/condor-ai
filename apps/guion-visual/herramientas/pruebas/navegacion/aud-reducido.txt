@@ -1,0 +1,9 @@
+prefers-reduced-motion emulado: true
+Animaciones infinitas corriendo con movimiento reducido: 0
+requestAnimationFrame en 2 s quieto (al final de la página): 0
+  en #inicio: rAF/s 0, infinitas 0
+  en #vidrio: rAF/s 0, infinitas 0
+  en #momentos: rAF/s 0, infinitas 0
+  en #carga: rAF/s 0, infinitas 0
+
+0 fallas · errores de consola: []

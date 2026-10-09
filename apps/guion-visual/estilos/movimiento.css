@@ -1,0 +1,84 @@
+/* =========================================================================
+   Movimiento: biblioteca con nombre + marca en movimiento.
+   Duraciones × --vel (cámara lenta). Con movimiento reducido: sin loops.
+   ========================================================================= */
+@keyframes crece { from { opacity: 0; transform: scale(0.92); } to { opacity: 1; transform: none; } }
+@keyframes encoge { to { opacity: 0; transform: scale(0.94); } }
+@keyframes velo-entra { from { opacity: 0; } }
+@keyframes velo-sale { to { opacity: 0; } }
+@keyframes aparecer { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes sacudir { 0%, 100% { transform: none; } 20% { transform: translateX(-6px); } 40% { transform: translateX(5px); } 60% { transform: translateX(-3px); } 80% { transform: translateX(2px); } }
+@keyframes rueda-arriba { from { transform: translateY(60%); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes rueda-abajo { from { transform: translateY(-60%); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes girar { to { transform: rotate(360deg); } }
+@keyframes planea { from { transform: translateY(6px) rotate(-2.5deg); } to { transform: translateY(-10px) rotate(2.5deg); } }
+@keyframes planea-sombra { from { transform: scaleX(1.1); opacity: 0.9; } to { transform: scaleX(0.7); opacity: 0.45; } }
+.aparecer { animation: aparecer calc(0.5s * var(--vel)) var(--cn-llegada); }
+
+/* ── Piezas animables del logo ──────────────────────────────────────── */
+.logo { overflow: visible; }
+.logo .ala, .logo .cuerpo, .logo .le, .logo .todo { transform-box: fill-box; }
+/* 1 · Aleteo: el ala (pieza aparte gracias al corte) da un aletazo y se asienta */
+.m-aleteo .ala { transform-origin: 88% 78%; opacity: 0; }
+.m-aleteo .cuerpo, .m-aleteo .le { opacity: 0; }
+.corre.m-aleteo .ala { animation: aletea calc(1.25s * var(--vel)) cubic-bezier(0.3, 0, 0.2, 1) forwards; }
+.corre.m-aleteo .cuerpo { animation: asoma calc(0.6s * var(--vel)) var(--cn-llegada) forwards; }
+.corre.m-aleteo .le { animation: asoma-x calc(0.7s * var(--vel)) var(--cn-llegada) calc((0.55s + var(--k) * 0.035s) * var(--vel)) forwards; }
+@keyframes aletea { 0% { opacity: 0; transform: rotate(26deg); } 18% { opacity: 1; } 42% { transform: rotate(-9deg); } 66% { transform: rotate(3.5deg); } 84% { transform: rotate(-1deg); } 100% { opacity: 1; transform: none; } }
+@keyframes asoma { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes asoma-x { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: none; } }
+/* 2 · Enfoque */
+.m-enfoque .todo { opacity: 0; transform-origin: 50% 50%; }
+.m-enfoque .le { transform: translateX(calc((var(--k) - 4) * 9px)); }
+.corre.m-enfoque .todo { animation: enfoca calc(1.1s * var(--vel)) var(--cn-llegada) forwards; }
+.corre.m-enfoque .le { animation: junta calc(1.3s * var(--vel)) var(--cn-llegada) forwards; }
+@keyframes enfoca { from { opacity: 0; filter: blur(14px); transform: scale(1.07); } to { opacity: 1; filter: blur(0); transform: none; } }
+@keyframes junta { to { transform: none; } }
+/* 3 · Destello */
+.m-destello .luz { opacity: 0; }
+.corre.m-destello .luz { animation: barre calc(1.4s * var(--vel)) cubic-bezier(0.45, 0, 0.25, 1) calc(0.2s * var(--vel)) 2 forwards; }
+@keyframes barre { 0% { opacity: 0; transform: none; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { opacity: 0; transform: translateX(var(--viaje)); } }
+/* 4 · Despegue */
+.m-despegue .ala, .m-despegue .cuerpo, .m-despegue .le { opacity: 0; }
+.corre.m-despegue .ala, .corre.m-despegue .cuerpo { animation: despega calc(1.2s * var(--vel)) var(--cn-llegada) forwards; }
+.corre.m-despegue .le { animation: descubre calc(0.8s * var(--vel)) var(--cn-llegada) calc((0.4s + var(--k) * 0.05s) * var(--vel)) forwards; }
+@keyframes despega { from { opacity: 0; transform: translate(-36px, 42px) rotate(-9deg); } to { opacity: 1; transform: none; } }
+@keyframes descubre { from { opacity: 0; transform: translateY(40%); filter: blur(5px); } to { opacity: 1; transform: none; filter: blur(0); } }
+
+/* ── El cóndor como carga ───────────────────────────────────────────── */
+.carga-condor { position: relative; display: grid; justify-items: center; gap: 18px; }
+.carga-condor > svg:first-child { width: 128px; height: auto; overflow: visible; }
+.cc-fantasma { fill: #ECECEF; }
+.cc-tinta { fill: var(--cn-tinta); }
+.cc-tinta .ala, .cc-tinta .cuerpo { transform-box: fill-box; }
+.cc-nivel { transition: y calc(0.25s * var(--vel)) var(--cn-suave), height calc(0.25s * var(--vel)) var(--cn-suave); }
+.cc-check { position: absolute; top: 18px; right: calc(50% - 86px); width: 34px; height: 34px; padding: 6px; border-radius: 50%; background: var(--cn-azul); fill: none; stroke: #fff; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; opacity: 0; transform: scale(0.4); }
+.cc-check path { stroke-dasharray: 22; stroke-dashoffset: 22; }
+.cc-texto { font-size: var(--cn-t-15); color: var(--cn-texto-2); min-height: 1.4em; font-variant-numeric: tabular-nums; }
+/* armar: el ala aletea y el cuerpo asoma */
+.carga-condor[data-estado="armar"] .cc-tinta .ala { transform-origin: 88% 78%; animation: aletea calc(1.25s * var(--vel)) cubic-bezier(0.3, 0, 0.2, 1) both; }
+.carga-condor[data-estado="armar"] .cc-tinta .cuerpo { animation: asoma calc(0.6s * var(--vel)) var(--cn-llegada) both; }
+.carga-condor[data-estado="armar"] .cc-fantasma { opacity: 0; }
+/* espera: planea */
+.carga-condor[data-estado="espera"] > svg:first-child { animation: planea calc(1.4s * var(--vel)) var(--cn-suave) infinite alternate; }
+.carga-condor[data-estado="espera"] .cc-fantasma { opacity: 0; }
+/* listo: check que se dibuja */
+.carga-condor[data-estado="listo"] .cc-check { animation: check-entra calc(0.6s * var(--vel)) var(--cn-resorte) forwards; }
+.carga-condor[data-estado="listo"] .cc-check path { animation: trazo calc(0.45s * var(--vel)) var(--cn-suave) calc(0.15s * var(--vel)) forwards; }
+@keyframes check-entra { to { opacity: 1; transform: none; } }
+@keyframes trazo { to { stroke-dashoffset: 0; } }
+
+/* ── Momentos ───────────────────────────────────────────────────────── */
+.sello { width: 100%; height: 100%; animation: girar calc(26s * var(--vel)) linear infinite; }
+.sello text { font: 600 13px var(--cn-mono); letter-spacing: 0.32em; fill: var(--cn-tinta); }
+.planeo svg { animation: planea calc(1.6s * var(--vel)) var(--cn-suave) infinite alternate; }
+.planeo-sombra { animation: planea-sombra calc(1.6s * var(--vel)) var(--cn-suave) infinite alternate; }
+.barra-mini .le { transform-box: fill-box; animation: plegar calc(4.8s * var(--vel)) var(--cn-llegada) infinite; animation-delay: calc(var(--k) * 30ms); }
+@keyframes plegar { 0%, 30% { opacity: 1; transform: none; } 45%, 75% { opacity: 0; transform: translateX(-10px); } 90%, 100% { opacity: 1; transform: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .logo *, .carga-condor > svg:first-child, .carga-condor > svg:first-child * { animation: none !important; opacity: 1 !important; transform: none !important; filter: none !important; }
+  .carga-condor[data-estado="listo"] .cc-check { animation: none !important; opacity: 1; transform: none; }
+  .sello, .planeo svg, .planeo-sombra, .barra-mini .le { animation: none !important; }
+  .cc-check path { stroke-dashoffset: 0; }
+}

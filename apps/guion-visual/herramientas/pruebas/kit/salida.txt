@@ -1,0 +1,89 @@
+OK    Insignia «Por vencer» de tamaño normal (93,26)
+OK    Toast: cola máx. 3 (hay 3 vivos)
+OK    Toast: el más nuevo queda adelante (no tapado por los viejos)
+OK    Toast: abanico al pasar el puntero, sin solaparse ({"abierta":true,"solapan":false})
+OK    Toast: el puntero en el hueco entre dos no cierra el abanico
+OK    Toast: con el puntero encima no se van (4,8 s)
+OK    Toast: Deshacer muestra «Listo, se deshizo»
+OK    Toast: al salir el puntero se cierra el abanico
+OK    Toast: al soltarlos, se van solos
+OK    Alerta: abre con foco en Cancelar ({"origen":"307.367px 79.0469px","foco":"Cancelar","anim":"kit-nace"})
+OK    Alerta: crece desde el centro de su botón (desvío 0,0)
+OK    Alerta: Tab atrapado (Eliminar → Cancelar → ⇧⇧ Eliminar)
+OK    Alerta: Escape cierra y el foco vuelve a su botón
+OK    Alerta: Escape = cancelar (toast «No se eliminó nada»)
+OK    Alerta: confirmar con teclado resuelve true
+OK    Alerta: devuelve el scroll de la página
+OK    Menú: nace bajo su botón ({"vis":true,"debajo":true,"izq":true,"exp":"true","foco":true})
+OK    Menú: flechas, Inicio, Fin, inicial (EditarE | Eliminar | EditarE | Eliminar | Archivar | DuplicarD)
+OK    Menú: repetir la inicial cicla (Eliminar → EditarE)
+OK    Menú: Escape cierra y el foco vuelve al botón
+OK    Menú: ↓ abre en el primero; Tab cierra y sale (EditarE → ¿Qué incluye?)
+OK    Menú: hover resalta el ítem (rgba(21, 21, 23, 0.06))
+OK    Menú: elegir con clic cierra y confirma
+OK    Menú: abrir-cerrar-abrir rápido lo deja abierto
+OK    Menú: clic afuera lo cierra
+OK    Popover: abre bajo su botón ({"vis":true,"debajo":true,"dentro":true})
+OK    Popover: Escape cierra y devuelve el foco
+OK    Tooltip: al pasar el puntero ({"ver":true,"txt":"Copiar enlace","arriba":true})
+OK    Tooltip: se va al salir el puntero
+OK    Tooltip: con foco de teclado ({"f":"IVA","ver":true,"txt":"Impuesto al valor agregado, 19 %","desc":"tip"})
+OK    Tooltip: Escape lo esconde
+OK    Modal: abre con foco en el primer campo ({"abierto":true,"foco":"INPUT"})
+OK    Modal: Tab atrapado (Cancelar → Enviar invitación → INPUT → Cancelar)
+OK    Modal: ⇧Tab también queda adentro
+OK    Modal: Escape cierra y el foco vuelve
+OK    Segmentado: la lente llega a la opción ({"dx":0,"dw":0,"sel":"true"})
+OK    Segmentado: la lente se estira en viaje (+20 px sobre el ancho final)
+OK    Segmentado: flechas e Inicio
+OK    Segmentado: elegir no corre el ancho de las opciones
+OK    Interruptor: cambia al tocarlo
+OK    Interruptor: Espacio lo alterna
+OK    Deslizador: clic mueve y el valor se ve ({"v":"1550000","out":"$1.550.000","vt":"$1.550.000"})
+OK    Deslizador: flechas del teclado
+OK    Deslizador: el valor va en la línea de la etiqueta
+OK    Contador: tope máximo 10 ({"v":"10","dis":"true"})
+OK    Contador: en el tope el foco no se pierde
+OK    Contador: tope mínimo 1 con flechas
+OK    Botón en capas: quieto → cargando → listo → quieto sin cambiar ancho (cargando, listo, undefined, 160/160)
+OK    Banner: se pliega de verdad ({"h":0,"exp":"false"})
+OK    RUT: se formatea (76.086.428-5)
+OK    RUT: 76.086.428-5 es válido
+OK    RUT: dígito malo → error al salir que dice cómo arreglarlo (Ese RUT no cuadra: revisa el dígito después del guion.)
+OK    Correo: sugiere gmail ({"vis":true,"txt":"¿Quisiste decirnombre@gmail.com?"})
+OK    Correo: la sugerencia no rompe la grilla
+OK    Correo: tocar la sugerencia corrige y deja el foco en el campo
+OK    Teléfono: al entrar aparece +56
+OK    Teléfono: formato (+56 9 1234 5678)
+OK    Teléfono: se puede borrar todo ("+56 ")
+OK    Teléfono: error dice cuántos faltan (Faltan 5 dígitos: son 9, como 9 1234 5678.)
+OK    Select: vacío, la etiqueta no flota
+OK    Select: elegido, la etiqueta flota
+OK    Textarea: contador
+OK    Textarea: el contador no choca con el tirador
+OK    Textarea requerido: vacío al salir (2.ª vez) → error
+OK    OTP: avanza solo
+OK    OTP: retrocede y borra ({"i":2,"v":"12"})
+OK    OTP: ignora letras
+OK    OTP: pegar el código completo ({"v":"482107","c":true})
+OK    OTP: escribir sobre una caja llena la reemplaza
+OK    Archivos: arrastrar (sin parpadeo) y la barra avanza ({"enc":true,"n":1,"barra":"matrix(0.220808, 0, 0, 1, 0, 0)"})
+OK    Archivos: termina en verde
+OK    Fichas: se marcan
+OK    Fichas: se desmarcan (varias)
+OK    Botón suave: hover
+OK    Táctil ≥ 44 px a 390 (chicos: [])
+OK    Inputs ≥ 16 px (sin zoom en iOS)
+OK    Sin scroll horizontal a 390 (0)
+OK    Hoja: abre en media ({"top":524,"alto":523,"vis":320})
+OK    Hoja: arrastrar arriba → completa (top 321, esperado 321)
+OK    Hoja: arrastrar un poco abajo, lento → media (top 524, esperado 524)
+OK    Hoja: lanzarla abajo la cierra
+OK    Hoja: reabrir y cerrar con «Listo»
+OK    Hoja: Escape la cierra (3.ª apertura)
+OK    Menú: dentro de la pantalla a 390
+OK    Movimiento reducido: sin animaciones infinitas en el kit ([])
+errores de consola: []
+OK    Sin errores de consola
+
+TODO OK

@@ -1,0 +1,100 @@
+
+== Stepper (reducido)
+OK    vacío: no avanza del paso 1
+OK    vacío: 2 errores claros → ["Completa nombre de la empresa.","Escribe el RUT de la empresa, por ejemplo 76.086.428-5."]
+OK    RUT malo: no avanza
+OK    RUT malo: mensaje 'no cuadra'
+OK    datos buenos: pasa al paso 2
+OK    transición hacia adelante
+OK    línea al 33 % (0.34)
+OK    paso 1 marcado hecho
+OK    sin producto: no avanza
+OK    sin producto: muestra 'Elige una opción'
+OK    elige condor track
+OK    al elegir, el error se va
+OK    pasa al paso 3
+OK    paso 3 vacío: no avanza, 3 errores
+OK    pasa a Revisar
+      resumen: ["Empresa: Café Altiplano","RUT: 11.111.111-1","Producto: condor track","Día y hora: Martes 14, 11:00","Nombre: Ana (ejemplo)","Correo: ana@ejemplo.cl"]
+OK    Revisar resume producto, horario y empresa
+OK    botón dice 'Agendar reunión'
+OK    línea llena en Revisar
+OK    reabre paso 1 con transición hacia atrás
+OK    paso 4 sigue alcanzable desde la cabeza
+OK    salta de vuelta a Revisar
+OK    Atrás vuelve al paso 3
+OK    envío: aparece el cóndor cargando
+OK    envío: termina en listo
+OK    Volver a empezar resetea todo {"paso":0,"vals":0,"err":0,"fin":true,"bloqueados":[false,true,true,true],"linea":0}
+OK    cabeza: círculos ≥ 36px
+
+== Migas
+       {"rec":false,"vis":"Inicio > Clientes > Café Altiplano > Pedido #1042","sw":1138,"cw":1138}
+OK    migas: sin separadores dobles
+OK    migas: no desbordan
+
+== Carrusel
+      inicio {"sl":0,"max":484,"prev":true,"next":false,"dot":0,"dots":3,"barra":0.08}
+OK    inicio: ← deshabilitada, → habilitada, punto 1
+OK    → avanza una tarjeta ({"sl":336,"max":484,"prev":false,"next":false,"dot":1,"dots":3,"barra":0.7187})
+OK    final: → deshabilitada, último punto, barra llena ({"sl":484,"max":484,"prev":false,"next":true,"dot":2,"dots":3,"barra":1})
+OK    punto 1 vuelve al inicio
+OK    teclado → avanza
+OK    teclado End → final
+OK    teclado Home → inicio
+      arrastre: durante 176 tras 336 snaps [0,336,484,484,484]
+OK    arrastre: sigue al mouse
+OK    arrastre: sigue con inercia al soltar
+OK    arrastre: se asienta en una tarjeta (snap)
+OK    arrastre: limpia el estado
+
+== Marquee
+       {"n":2,"anim":"none","w0":1180,"w1":0,"mw":1180,"junta":1310,"hid":"true"}
+FALLA marquee: dos cintas iguales, la copia oculta, más anchas que la caja (sin costura)
+OK    marquee: quieta con movimiento reducido
+
+== Tabla
+OK    inicio: ordenada por Alta descendente
+OK    Cliente ↑ (Café Altiplano | Clínica Mirador | Estudio Pacífico | Ferretería Los Andes | Inmobiliaria Cumbre)
+OK    Cliente ↓ (Viña Quebrada | Transportes Sur | Óptica Central | Logística Austral | Inmobiliaria Cumbre)
+OK    col 1 ↑: agents | agents | agents | ecommerce | ecommerce
+OK    col 2 ↑: Activo | Activo | Activo | Activo | Activo
+OK    col 3 ↑: — | $54.990 | $54.990 | A medida | A medida
+OK    col 4 ↑: 30 jul | 21 ago | 3 sept | 12 sept | 28 sept
+OK    búsqueda 'track': 3 de 9 clientes
+OK    búsqueda sin tilde encuentra 'Óptica'
+OK    búsqueda vacía: estado vacío y 0 de 9
+OK    página 1: 5 filas
+OK    página 2: 4 filas
+OK    › deshabilitada en la última
+OK    tabla sin desborde {"sw":1178,"cw":1178,"rol":0,"disp":"table-row"}
+
+== Acordeón
+      abrir: medio 76.7 fin 76.7
+OK    abre
+OK    interrumpir el cierre lo reabre sin trabarse
+
+== Vuelo
+      p=0.05 dist=0.5 dash=1px off=calc(0.95px) pl=1 letras=1.00 vistos=1
+OK    p≈0.05: el cóndor está sobre la curva (0.5px)
+FALLA al inicio: nombre oculto, 1 paso
+      p=0.5 dist=0.3 dash=1px off=calc(0.5px) pl=1 letras=1.00 vistos=2
+OK    p≈0.5: el cóndor está sobre la curva (0.3px)
+      p=0.8 dist=0.2 dash=1px off=calc(0.2px) pl=1 letras=1.00 vistos=4
+OK    p≈0.8: el cóndor está sobre la curva (0.2px)
+      p=0.95 dist=0.2 dash=1px off=calc(0.05px) pl=1 letras=1.00 vistos=4
+OK    p≈0.95: el cóndor está sobre la curva (0.2px)
+OK    el nombre ya está completo antes del final
+OK    los 4 pasos marcados
+OK    la estela usa pathLength=1 (se dibuja, no queda punteada)
+
+== Desborde y movimiento
+       #pasos:0  #navegacion:0  #scrollers:90  #datos:0  #preguntas:0  #vuelo:0
+FALLA sin desborde lateral en mis secciones
+OK    página sin scroll lateral
+      infinitas: []
+OK    sin animaciones infinitas en mis secciones
+
+errores de consola: []
+
+3 fallas

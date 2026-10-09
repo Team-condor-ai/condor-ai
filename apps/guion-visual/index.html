@@ -4,11 +4,16 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>condor.ai · Guion visual</title>
-  <meta name="description" content="Guion visual de condor.ai: el cóndor, el logo, las letras, los productos, el color, la forma, el material acrílico y el movimiento.">
+  <meta name="description" content="Guion visual de condor.ai: identidad, vidrio líquido, marca en movimiento, kit, formularios y patrones, funcionando.">
   <meta name="color-scheme" content="light">
   <link rel="icon" href="assets/marca/icono-azul.svg" type="image/svg+xml">
   <link rel="stylesheet" href="tokens/condor.css">
-  <link rel="stylesheet" href="guion.css">
+  <link rel="stylesheet" href="estilos/base.css">
+  <link rel="stylesheet" href="estilos/vidrio.css">
+  <link rel="stylesheet" href="estilos/movimiento.css">
+  <link rel="stylesheet" href="estilos/kit.css">
+  <link rel="stylesheet" href="estilos/patrones.css">
+  <link rel="stylesheet" href="estilos/secciones.css">
 </head>
 <body>
 
@@ -18,74 +23,70 @@
   <symbol id="i-bajar" viewBox="0 0 24 24"><path d="M12 4v11M7 10.5l5 5 5-5M5 20h14"/></symbol>
   <symbol id="i-flecha" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
   <symbol id="i-buscar" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></symbol>
+  <symbol id="i-chevron" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></symbol>
+  <symbol id="i-abajo" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></symbol>
+  <symbol id="i-mas" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-menos" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+  <symbol id="i-cerrar" viewBox="0 0 24 24"><path d="M7 7l10 10M17 7L7 17"/></symbol>
+  <symbol id="i-puntos" viewBox="0 0 24 24"><circle cx="6" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="18" cy="12" r="1.4"/></symbol>
+  <symbol id="i-editar" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16v4zM14 6l4 4"/></symbol>
+  <symbol id="i-duplicar" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="3"/><path d="M4 16V6a2 2 0 0 1 2-2h10"/></symbol>
+  <symbol id="i-archivar" viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="4" rx="1.5"/><path d="M5.5 8.5v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-9M10 12.5h4"/></symbol>
+  <symbol id="i-basura" viewBox="0 0 24 24"><path d="M5 7h14M10 7V5h4v2M7 7l1 12h8l1-12"/></symbol>
+  <symbol id="i-subir" viewBox="0 0 24 24"><path d="M12 16V5M7 9.5l5-5 5 5M5 19h14"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5M12 7.6v.2"/></symbol>
+  <symbol id="i-calendario" viewBox="0 0 24 24"><rect x="4" y="5.5" width="16" height="14" rx="3"/><path d="M4 10h16M9 3.5v4M15 3.5v4"/></symbol>
 </svg>
 
+<!-- ══════════ BARRA: el logo se pliega a isotipo; migas; ⌘K; progreso ══════════ -->
 <header class="barra">
-  <a href="#inicio" class="barra-marca" aria-label="condor.ai, volver arriba"><span data-logo="h" data-alto="24"></span></a>
-  <nav class="barra-nav" aria-label="Secciones">
-    <a href="#condor">Cóndor</a><a href="#logo">Logo</a><a href="#letras">Letras</a><a href="#productos">Productos</a><a href="#color">Color</a><a href="#forma">Forma</a><a href="#material">Material</a><a href="#movimiento">Movimiento</a><a href="#aplicaciones">Aplicaciones</a><a href="#archivos">Archivos</a>
+  <a href="#inicio" class="barra-marca" aria-label="condor.ai, volver al inicio"><span data-logo="h" data-alto="24"></span></a>
+  <nav class="migas" aria-label="Estás en">
+    <button type="button" class="miga" id="miga-cap" data-menu="menu-hermanas"><span>I · Identidad</span><svg aria-hidden="true"><use href="#i-abajo"/></svg></button>
+    <svg class="miga-sep" aria-hidden="true"><use href="#i-chevron"/></svg>
+    <span class="miga miga-actual" id="miga-sec" aria-current="location">Inicio</span>
   </nav>
+  <div class="menu" id="menu-hermanas" role="menu" aria-label="Secciones de este capítulo" data-vidrio data-liviano data-radio="18" hidden></div>
+  <button type="button" class="buscar-cmd" data-comando aria-label="Buscar (Ctrl K)"><svg aria-hidden="true"><use href="#i-buscar"/></svg><span>Buscar</span><kbd>Ctrl K</kbd></button>
+  <div class="barra-progreso" aria-hidden="true"><i></i></div>
 </header>
 
 <main>
 
-<!-- ══════════ INICIO ══════════ -->
+<!-- ═════════════════════════ I · IDENTIDAD ═════════════════════════ -->
 <section class="inicio" id="inicio">
-  <div class="liquido" aria-hidden="true"><i class="mancha m1"></i><i class="mancha m2"></i><i class="mancha m3"></i></div>
-  <div class="inicio-logo corre m-aleteo" id="inicio-logo" data-logo="h" data-firma="aleteo"></div>
+  <div class="inicio-lente" id="inicio-lente" data-vidrio data-radio="pildora" data-refraccion="52" data-bisel="30" data-desenfoque="0.3" data-aberracion="0.08" aria-hidden="true"></div>
+  <div class="inicio-logo corre m-aleteo" data-logo="h" data-firma="aleteo" data-tip="Toca para volver a verlo"></div>
   <p class="rotulo">Guion visual · Octubre 2026</p>
-  <h1>Tecnología del futuro,<br>desde los Andes.</h1>
-  <p class="inicio-lead">La identidad de condor.ai, entera y funcionando: el cóndor de siempre redibujado, un nombre con letras tipo Apple, una familia de productos y un sistema blanco, preciso y vivo.</p>
-  <a href="#condor" class="btn primario">Empezar el recorrido</a>
+  <h1 class="inicio-titulo">Tecnología del futuro,<br>desde los Andes.</h1>
+  <p class="inicio-lead">La identidad de condor.ai entera y funcionando: el cóndor de siempre redibujado, vidrio líquido que refracta de verdad, una marca que se mueve y un kit listo para construir.</p>
+  <div class="fila centro"><a href="#condor" class="btn primario">Empezar el recorrido</a><button type="button" class="btn vidrio-btn" data-comando data-vidrio data-radio="14" data-refraccion="30" data-bisel="16"><svg aria-hidden="true"><use href="#i-buscar"/></svg>Buscar en el guion</button></div>
+  <p class="inicio-pista">Mueve el puntero: la lente de vidrio refracta el titular.</p>
 </section>
 
-<!-- ══════════ VISIÓN ══════════ -->
-<section class="bloque" id="vision">
-  <p class="rotulo">Visión</p>
-  <h2 class="titular">Claro. Preciso. Vivo.</h2>
-  <div class="tres">
-    <article><h3>Claro</h3><p>Blanco de base, tinta para hablar y un solo azul para destacar. Una idea por pantalla y mucho aire.</p></article>
-    <article><h3>Preciso</h3><p>Cada pieza tiene una razón: el cóndor se redibujó punto a punto, las letras salen de una tipografía de display y cada radio viene de una escala.</p></article>
-    <article><h3>Vivo</h3><p>Láminas de acrílico que dejan pasar la luz y un movimiento suave, con inercia, que termina en su lugar.</p></article>
-  </div>
-</section>
-
-<!-- ══════════ CÓNDOR ══════════ -->
 <section class="bloque" id="condor">
-  <p class="rotulo">El cóndor</p>
-  <h2 class="titular">El mismo cóndor, mejor dibujado.</h2>
-  <p class="lead">No cambiamos de pájaro. Usamos el logo original como calco, leímos sus puntos y lo reconstruimos en vector, con curvas reales y esquinas redondeadas con precisión.</p>
-  <div class="condor-caja">
-    <div class="calco" id="calco">
-      <img class="calco-original" src="assets/antes/logo-v2.png" alt="" aria-hidden="true">
-      <span class="calco-nuevo" data-iso></span>
-    </div>
+  <p class="rotulo">I · Identidad · El cóndor</p>
+  <h2 class="titular revelar">El mismo cóndor, mejor dibujado.</h2>
+  <p class="lead revelar">No cambiamos de pájaro. Usamos el logo original como calco, leímos sus puntos y lo reconstruimos en vector, con curvas reales y esquinas redondeadas con precisión.</p>
+  <div class="condor-caja revelar">
+    <div class="calco" id="calco"><img class="calco-original" src="assets/antes/logo-v2.png" alt="" aria-hidden="true"><span class="calco-nuevo" data-logo="iso"></span></div>
     <div class="condor-notas">
-      <p><b>Cuello lleno</b><span>El cuerpo acompaña al ala hasta la cabeza: el cuello queda ancho y firme, y la cabeza se lee completa.</span></p>
-      <p><b>Un corte</b><span>Un tajo fino que sigue la curva del ala separa ala y cuerpo de punta a punta. Es lo que vuelve animable el aleteo.</span></p>
-      <p><b>Plumas romas</b><span>Las puntas de las plumas, la cola y el espolón se redondean con el mismo radio: firmes de lejos, suaves de cerca.</span></p>
-      <button class="btn secundario" type="button" id="btn-calco" aria-pressed="false">Ver el original debajo</button>
+      <p><b>Cuello lleno</b><span>El cuerpo acompaña al ala hasta la cabeza: el cuello es ancho y firme y la cabeza se lee entera.</span></p>
+      <p><b>Un corte</b><span>Un tajo fino que sigue la curva del ala separa ala y cuerpo de punta a punta. Por eso el ala se puede animar sola.</span></p>
+      <p><b>Plumas romas</b><span>Puntas, cola y espolón con el mismo radio: firme de lejos, suave de cerca.</span></p>
+      <button class="btn suave" type="button" id="btn-calco" aria-pressed="false"><span class="tx">Ver el original debajo</span></button>
     </div>
-  </div>
-  <div class="antes-ahora">
-    <figure><div class="aa-lienzo"><img src="assets/antes/logo-v2.png" alt="Logo anterior de condor.ai"></div><figcaption>Antes · PNG en tres colores</figcaption></figure>
-    <svg class="aa-flecha" aria-hidden="true"><use href="#i-flecha"/></svg>
-    <figure><div class="aa-lienzo"><span data-logo="h"></span></div><figcaption>Ahora · vector, en una tinta, con letras propias</figcaption></figure>
   </div>
 </section>
 
-<!-- ══════════ LOGO ══════════ -->
 <section class="bloque" id="logo">
-  <p class="rotulo">El logo</p>
-  <h2 class="titular">Siempre en una sola tinta.</h2>
-  <p class="lead">El cóndor mide 1,8 veces el alto de x y se separa del nombre 0,34 alto de x. Negro sobre blanco por defecto; azul en momentos de marca; blanco sobre tinta o sobre azul.</p>
+  <p class="rotulo">I · Identidad · Logo</p>
+  <h2 class="titular revelar">Siempre en una sola tinta.</h2>
+  <p class="lead revelar">El cóndor mide 1,8 veces el alto de x y se separa del nombre 0,34 alto de x. Negro sobre blanco por defecto; el azul se reserva para momentos de marca.</p>
   <div class="rejilla dos" id="logos-h"></div>
   <div class="rejilla cuatro" id="logos-v"></div>
   <div class="logo-extra">
-    <div class="iconos-app">
-      <img src="assets/marca/icono-azul.svg" alt="Ícono de app azul"><img src="assets/marca/icono-blanco.svg" alt="Ícono de app blanco"><img src="assets/marca/icono-tinta.svg" alt="Ícono de app tinta">
-      <p><b>Ícono de app</b> Squircle continuo, como los íconos de Apple. Cóndor al 66 % del ancho.</p>
-    </div>
+    <div class="iconos-app"><img src="assets/marca/icono-azul.svg" alt="Ícono de app azul"><img src="assets/marca/icono-blanco.svg" alt="Ícono de app blanco"><img src="assets/marca/icono-tinta.svg" alt="Ícono de app tinta"><p><b>Ícono de app.</b> Squircle continuo, como los íconos de Apple. Cóndor al 66 % del ancho.</p></div>
     <div class="minimos">
       <p><span class="min-h" data-logo="h" data-alto="16"></span><span><b>110 px</b> Horizontal en pantalla · 28 mm impreso</span></p>
       <p><img src="assets/marca/condor-isotipo-negro.svg" width="20" alt=""><span><b>20 px</b> Isotipo. Más chico, el ícono de app.</span></p>
@@ -95,52 +96,157 @@
   <div class="rejilla cuatro noes" id="noes"></div>
 </section>
 
-<!-- ══════════ LETRAS ══════════ -->
 <section class="bloque" id="letras">
-  <p class="rotulo">Letras</p>
-  <h2 class="titular">Un nombre con la calma de Apple.</h2>
-  <p class="lead">Inter Display Semibold, la alternativa abierta más cercana a SF Pro Display, pasada a vector propio: el logo no depende de tener la fuente y cada letra trae su esqueleto para animarse.</p>
-  <div class="letras-gran"><span data-logo="palabra"></span></div>
+  <p class="rotulo">I · Identidad · Letras</p>
+  <h2 class="titular revelar">Un nombre con la calma de Apple.</h2>
+  <p class="lead revelar">Inter Display Semibold, la alternativa abierta más cercana a SF Pro Display, pasada a vector propio: no depende de tener la fuente y cada letra es una pieza animable.</p>
+  <div class="letras-gran revelar" id="ola" data-tip="Pasa el puntero por las letras"><span data-logo="palabra"></span></div>
   <div class="tres">
-    <article><h3>Neo-grotesca</h3><p>Panzas casi ovaladas, a de dos pisos, remates horizontales en la c. Neutra para que el cóndor sea el protagonista.</p></article>
+    <article><h3>Neo-grotesca</h3><p>Panzas casi ovaladas, a de dos pisos, remates horizontales. Neutra para que el cóndor sea el protagonista.</p></article>
     <article><h3>Display</h3><p>Espaciado ajustado para tamaños grandes, con aire extra entre la r y el punto para que no se toquen en chico.</p></article>
-    <article><h3>Licencia abierta</h3><p>Inter es SIL OFL 1.1: se puede modificar y usar en un logo. SF Pro no: su licencia es solo para interfaces de Apple.</p></article>
+    <article><h3>Licencia abierta</h3><p>Inter es SIL OFL 1.1: se puede modificar y usar en un logo. SF Pro no: es solo para interfaces de Apple.</p></article>
   </div>
 </section>
 
-<!-- ══════════ PRODUCTOS ══════════ -->
 <section class="bloque" id="productos">
-  <p class="rotulo">Productos</p>
-  <h2 class="titular">Una familia que se reconoce.</h2>
-  <p class="lead">Todos nacen del ícono de condor sites: baldosa en el color del producto, dos láminas de acrílico en abanico, un resplandor y un glifo blanco que dice qué hace.</p>
+  <p class="rotulo">I · Identidad · Productos</p>
+  <h2 class="titular revelar">Tres productos, una familia.</h2>
+  <p class="lead revelar">Baldosa en el color del producto, dos láminas de acrílico en abanico, un resplandor y un glifo blanco que dice qué hace. El color de producto vive solo dentro de su ícono. Pasa el puntero: el ícono se inclina con la luz.</p>
   <div class="familia" id="familia"></div>
-  <div class="prod-contexto">
-    <div class="menu-demo" id="menu-demo" role="menu" aria-label="Menú de productos, ejemplo"></div>
+</section>
+
+<!-- ═════════════════════════ II · MATERIAL ═════════════════════════ -->
+<section class="bloque" id="vidrio">
+  <p class="rotulo">II · Material · Vidrio líquido</p>
+  <h2 class="titular revelar">Vidrio que refracta de verdad.</h2>
+  <p class="lead revelar">No es un desenfoque: cada pieza calcula cómo se dobla la luz en su canto, como un lente. Arrastra la lente, cambia su forma y lo que hay detrás, y mueve los parámetros.</p>
+  <div class="banco revelar" id="banco">
+    <div class="banco-mesa" id="banco-mesa" data-escena="texto">
+      <div class="escena-texto" aria-hidden="true">
+        <p class="et-1">Tecnología del futuro, desde los Andes.</p>
+        <div class="et-logo" data-logo="h"></div>
+        <p class="et-2">Tiendas, CRM y agentes de IA hechos a la medida de tu negocio. Construimos lo que tu empresa usará mañana, con la calma de lo bien hecho.</p>
+        <div class="et-grilla"><span>Aa</span><span>01</span><span>→</span><span>⌘</span><span>%</span><span>✓</span></div>
+      </div>
+      <img class="escena-foto" src="assets/fotos/equipo.webp" alt="" aria-hidden="true">
+      <img class="escena-cielo" src="assets/fotos/cielo.webp" alt="" aria-hidden="true">
+      <div class="banco-lente" id="banco-lente" tabindex="0" role="slider" aria-label="Lente de vidrio: arrástrala o muévela con las flechas" aria-valuetext="Lente" data-vidrio data-radio="999" data-refraccion="58" data-bisel="30" data-desenfoque="0.6" data-aberracion="0.16" data-forma="lente"></div>
+      <p class="banco-aviso" id="banco-aviso" hidden>Este navegador no pinta la refracción (solo Chromium lo hace): ves el vidrio esmerilado de respaldo.</p>
+    </div>
+    <div class="banco-controles">
+      <div><p class="mini">Forma</p><div class="segmentado" role="radiogroup" aria-label="Forma de la lente" id="banco-forma"><button type="button" role="radio" data-valor="lente" aria-checked="true">Lente</button><button type="button" role="radio" data-valor="pildora" aria-checked="false">Píldora</button><button type="button" role="radio" data-valor="lamina" aria-checked="false">Lámina</button></div></div>
+      <div><p class="mini">Detrás</p><div class="segmentado" role="radiogroup" aria-label="Qué hay detrás del vidrio" id="banco-escena"><button type="button" role="radio" data-valor="texto" aria-checked="true">Texto</button><button type="button" role="radio" data-valor="foto" aria-checked="false">Equipo</button><button type="button" role="radio" data-valor="cielo" aria-checked="false">Cielo</button></div></div>
+      <label class="deslizador"><span>Refracción</span><input type="range" min="0" max="120" value="58" data-param="refraccion"><output></output></label>
+      <label class="deslizador"><span>Bisel</span><input type="range" min="6" max="60" value="30" data-param="bisel"><output></output></label>
+      <label class="deslizador"><span>Esmerilado</span><input type="range" min="0" max="12" step="0.2" value="0.6" data-param="desenfoque"><output></output></label>
+      <label class="deslizador"><span>Prisma</span><input type="range" min="0" max="0.3" step="0.01" value="0.16" data-param="aberracion"><output></output></label>
+    </div>
+  </div>
+  <details class="ficha-uso"><summary>Ficha de uso · Vidrio</summary>
+    <div class="ficha-cuerpo"><ul><li><b>Refracción real</b> solo en piezas chicas y protagonistas (botones, lentes, píldoras, dock). Láminas grandes y toasts: <code>data-liviano</code>.</li><li><b>Prisma</b> (aberración ≥ 0,14) solo en lentes protagonistas.</li><li>Fuera de Chromium se ve esmerilado: el diseño debe funcionar igual.</li></ul>
+    <pre><code>&lt;div data-vidrio data-radio="pildora" data-refraccion="46"&gt;…&lt;/div&gt;
+import { montarVidrios } from "./src/kit/vidrio.js";</code></pre></div></details>
+</section>
+
+<section class="bloque" id="superficies">
+  <p class="rotulo">II · Material · Superficies</p>
+  <h2 class="titular revelar">Cada capa, su vidrio.</h2>
+  <p class="lead revelar">El mismo material en cuatro grosores, según cuánto flota la pieza. Todo sobre blanco: el vidrio se nota por lo que dobla, no por colores de fondo.</p>
+  <div class="superficies revelar">
+    <div class="sup-mesa">
+      <div class="sup-contenido" aria-hidden="true"><span data-logo="iso"></span><p>Ventas · octubre</p><b>$4.820.000</b><i></i><i></i><i></i></div>
+      <div class="sup sup-pildora" data-vidrio data-radio="pildora" data-refraccion="34" data-bisel="18"><span class="punto-vivo"></span>Agente en línea</div>
+      <div class="sup sup-lamina" data-vidrio data-liviano data-radio="22"><p class="mini">Lámina</p><b>Resumen del día</b><span>3 pedidos nuevos · 1 reunión</span></div>
+      <button class="sup sup-boton" type="button" data-vidrio data-radio="16" data-refraccion="30" data-bisel="16">Botón de vidrio</button>
+      <div class="sup sup-dock" data-vidrio data-radio="22" data-refraccion="40"><span data-fichas-producto></span></div>
+    </div>
     <ul class="lista-reglas">
-      <li><b>Baldosa</b> squircle, la misma del ícono de app de condor.ai.</li>
-      <li><b>Láminas</b> en el tono profundo del producto y en su acento; se oscurecen hacia abajo.</li>
-      <li><b>Glifo</b> blanco de Phosphor Icons (MIT), a ~48 % de la baldosa, con su insignia recortada.</li>
-      <li><b>Nombre</b> en minúscula: "condor" en gris, el producto en tinta.</li>
+      <li><b>Píldora</b> · estado vivo, siempre a la vista. Refracta.</li>
+      <li><b>Lámina</b> · paneles y tarjetas que flotan. Liviana: sin refracción, mismo canto.</li>
+      <li><b>Botón</b> · secundario sobre imágenes o contenido; el sólido azul sigue siendo uno por pantalla.</li>
+      <li><b>Dock</b> · navegación que flota abajo, como la de este guion.</li>
     </ul>
   </div>
 </section>
 
-<!-- ══════════ COLOR ══════════ -->
-<section class="bloque" id="color">
-  <p class="rotulo">Color</p>
-  <h2 class="titular">Tinta, blanco y un azul.</h2>
-  <p class="lead">El azul aparece poco y por eso se nota: el logo en momentos de marca, la acción principal y lo que está activo. Cada producto suma su color solo en su ícono y sus acentos.</p>
-  <div class="paleta" id="paleta"></div>
-  <div class="contraste">
-    <p><b>Contraste medido</b> (WCAG): tinta sobre blanco 18,2:1 · texto 2 #636368 5,97:1 · texto 3 #737378 4,7:1 · azul sobre blanco 6,1:1 · estados sobre su fondo suave ≥ 4,8:1. El gris #8E8E93 (3,3:1) es solo para íconos y texto grande.</p>
+<!-- ═════════════════════════ III · MARCA EN MOVIMIENTO ═════════════════════════ -->
+<section class="bloque" id="firmas">
+  <p class="rotulo">III · Marca en movimiento · Firmas</p>
+  <h2 class="titular revelar">Cuatro formas de llegar.</h2>
+  <p class="lead revelar">Una sola animación compleja por pantalla: estas son las del logo. Propuesta, por confirmar: Aleteo en la carga, Enfoque en video, Destello en esperas.</p>
+  <div class="barra-firmas"><label class="casilla"><input type="checkbox" id="lento"><i></i>Cámara lenta ×4</label><button class="btn suave" type="button" id="todas"><svg aria-hidden="true"><use href="#i-repetir"/></svg>Repetir todas</button></div>
+  <div class="firmas" id="firmas-grilla"></div>
+</section>
+
+<section class="bloque" id="carga">
+  <p class="rotulo">III · Marca en movimiento · La carga</p>
+  <h2 class="titular revelar">La marca es la carga.</h2>
+  <p class="lead revelar">Nunca un spinner genérico. El cóndor se arma al entrar, planea mientras espera, se llena con el progreso y termina en un check.</p>
+  <div class="carga-caja revelar">
+    <div class="carga-escenario"><div id="carga-demo"></div></div>
+    <div class="carga-botones" role="group" aria-label="Estados de la carga">
+      <button class="btn suave" type="button" data-carga="armar" aria-pressed="false">Armar</button>
+      <button class="btn suave" type="button" data-carga="espera" aria-pressed="false">Esperar</button>
+      <button class="btn suave" type="button" data-carga="progreso" aria-pressed="false">Progreso</button>
+      <button class="btn suave" type="button" data-carga="listo" aria-pressed="false">Listo</button>
+    </div>
   </div>
 </section>
 
-<!-- ══════════ TIPOGRAFÍA ══════════ -->
-<section class="bloque" id="tipo">
-  <p class="rotulo">Tipografía</p>
-  <h2 class="titular">Display para decir, texto para leer.</h2>
-  <div class="escala">
+<section class="vuelo" id="vuelo" aria-label="El cóndor cruza al ritmo del scroll">
+  <div class="vuelo-escena">
+    <p class="rotulo">III · Marca en movimiento · Vuelo con scroll</p>
+    <div class="vuelo-cielo" aria-hidden="true">
+      <span class="vuelo-condor" data-logo="iso"></span>
+      <svg class="vuelo-estela" viewBox="0 0 1000 300" preserveAspectRatio="none"><path d="M-20 260 C 240 250, 420 120, 620 110 S 900 40, 1040 20"/></svg>
+    </div>
+    <div class="vuelo-palabra" data-logo="palabra"></div>
+    <ol class="vuelo-pasos">
+      <li class="vuelo-paso">Despega</li><li class="vuelo-paso">Toma altura</li><li class="vuelo-paso">Planea</li><li class="vuelo-paso">Se posa en tu marca</li>
+    </ol>
+  </div>
+</section>
+
+<section class="bloque" id="momentos">
+  <p class="rotulo">III · Marca en movimiento · Momentos</p>
+  <h2 class="titular revelar">Pequeños momentos de marca.</h2>
+  <div class="momentos revelar">
+    <article class="momento">
+      <div class="app-abre" id="app-abre">
+        <button type="button" class="app-icono-boton" aria-label="Abrir condor.ai"><img src="assets/marca/icono-azul.svg" alt=""></button>
+        <div class="app-ventana" data-radio="26" data-refraccion="36"><button type="button" class="app-cerrar" aria-label="Cerrar"><svg aria-hidden="true"><use href="#i-cerrar"/></svg></button><span data-logo="h"></span><p>Buenos días. Tienes 3 pedidos nuevos.</p></div>
+      </div>
+      <h3>El ícono se abre</h3><p>Toca el ícono: crece desde su lugar a una ventana de vidrio. Así se abre la app.</p>
+    </article>
+    <article class="momento">
+      <div class="sello-caja"><svg class="sello" id="sello" viewBox="0 0 200 200" aria-hidden="true"><defs><path id="sello-circulo" d="M100 100m-78 0a78 78 0 1 1 156 0a78 78 0 1 1 -156 0"/></defs><text><textPath href="#sello-circulo"></textPath></text></svg><span class="sello-iso" data-logo="iso"></span></div>
+      <h3>Sello</h3><p>El texto gira lento alrededor del cóndor. Para cierres, stickers y el pie del sitio.</p>
+    </article>
+    <article class="momento">
+      <div class="planeo-caja"><span class="planeo" data-logo="iso"></span><i class="planeo-sombra"></i></div>
+      <h3>Planeo</h3><p>El cóndor sube y baja con calma: la espera sin duración conocida.</p>
+    </article>
+    <article class="momento">
+      <div class="barra-mini" aria-hidden="true"><span class="bm-logo" data-logo="h"></span></div>
+      <h3>La barra se pliega</h3><p>Al bajar, el nombre se recoge y queda el cóndor. Míralo arriba en esta misma página.</p>
+    </article>
+  </div>
+</section>
+
+<!-- ═════════════════════════ IV · FUNDAMENTOS ═════════════════════════ -->
+<section class="bloque" id="color">
+  <p class="rotulo">IV · Fundamentos · Color</p>
+  <h2 class="titular revelar">Tinta, blanco y un azul.</h2>
+  <p class="lead revelar">Los fondos son siempre blancos o grises muy claros. El azul aparece poco y por eso se nota: la acción principal, lo activo y el foco. Toca un color para copiarlo.</p>
+  <div class="paleta revelar" id="paleta"></div>
+  <h3 class="sub">Color de producto: solo dentro de su ícono</h3>
+  <div class="paleta-productos" id="paleta-productos"></div>
+</section>
+
+<section class="bloque" id="tipografia">
+  <p class="rotulo">IV · Fundamentos · Tipografía</p>
+  <h2 class="titular revelar">Display para decir, texto para leer.</h2>
+  <div class="escala revelar">
     <p class="e1">Tecnología del futuro.</p>
     <p class="e2">Desde los Andes.</p>
     <p class="e3">Título de tarjeta · Inter Display 28</p>
@@ -150,98 +256,282 @@
   </div>
 </section>
 
-<!-- ══════════ FORMA ══════════ -->
 <section class="bloque" id="forma">
-  <p class="rotulo">Forma</p>
-  <h2 class="titular">Radios generosos, piezas tranquilas.</h2>
-  <div class="radios">
-    <div style="border-radius:var(--cn-r-1)">8 · chips</div><div style="border-radius:var(--cn-r-2)">12 · botones</div><div style="border-radius:var(--cn-r-4)">22 · tarjetas</div><div style="border-radius:var(--cn-r-5)">28 · paneles</div>
-  </div>
-  <div class="kit">
-    <div class="pieza"><p class="mini">Botones</p><div class="fila"><button class="btn primario" type="button">Agenda una reunión</button><button class="btn secundario" type="button">Ver productos</button><button class="btn texto" type="button">Cancelar</button></div></div>
-    <div class="pieza"><p class="mini">Campos</p>
-      <label class="campo"><span>Correo</span><input type="email" placeholder="tu@empresa.cl"></label>
-      <label class="busqueda"><svg aria-hidden="true"><use href="#i-buscar"/></svg><input type="search" placeholder="Buscar" aria-label="Buscar"></label>
-    </div>
-    <div class="pieza"><p class="mini">Controles</p>
-      <div class="fila"><label class="interruptor"><input type="checkbox" checked><i></i>Avisos</label><span class="chip ok">Pagado</span><span class="chip alerta">Por vencer</span><span class="chip error">Vencido</span></div>
-      <div class="segmento" role="tablist" aria-label="Vista de ejemplo"><button type="button" role="tab" aria-selected="true">Resumen</button><button type="button" role="tab" aria-selected="false">Clientes</button><button type="button" role="tab" aria-selected="false">Ventas</button></div>
-    </div>
-  </div>
-</section>
-
-<!-- ══════════ MATERIAL ══════════ -->
-<section class="bloque" id="material">
-  <p class="rotulo">Material</p>
-  <h2 class="titular">Acrílico claro.</h2>
-  <p class="lead">Láminas translúcidas sobre blanco: dejan pasar el color de abajo, lo desenfocan y tienen un canto de luz que sigue al cursor. Solo en capas que flotan: barras, menús, tarjetas destacadas.</p>
-  <div class="mesa" id="mesa">
-    <i class="mancha m1"></i><i class="mancha m2"></i><i class="mancha m3"></i>
-    <div class="vidrio tarjeta" data-luz>
-      <span class="rotulo">Ventas del mes · datos de ejemplo</span>
-      <span class="cifra">$4.820.000</span>
-      <span class="tarjeta-sub">+18 % respecto a septiembre</span>
-      <div class="fichas" id="fichas"></div>
-    </div>
-  </div>
-  <div class="tres">
-    <article><h3>Lámina</h3><p>Blanco al 58 %, desenfoque de 24 px y saturación 1,8.</p></article>
-    <article><h3>Canto</h3><p>Un filo de luz arriba y una sombra de 1 px abajo: es lo que le da grosor.</p></article>
-    <article><h3>Luz</h3><p>Un brillo suave sigue al cursor sobre la lámina. Nunca detrás de texto largo.</p></article>
-  </div>
-</section>
-
-<!-- ══════════ MOVIMIENTO ══════════ -->
-<section class="bloque" id="movimiento">
-  <p class="rotulo">Movimiento</p>
-  <h2 class="titular">Se mueve como planea.</h2>
-  <p class="lead">Suave, con inercia y un final que se siente. Tres curvas para todo; el resorte es un muelle real calculado, no una curva que lo imita.</p>
-  <div class="curvas" id="curvas">
+  <p class="rotulo">IV · Fundamentos · Forma y curvas</p>
+  <h2 class="titular revelar">Radios generosos, movimiento con inercia.</h2>
+  <div class="radios revelar"><div style="border-radius:var(--cn-r-1)">8 · chips</div><div style="border-radius:var(--cn-r-2)">12 · botones</div><div style="border-radius:var(--cn-r-4)">22 · tarjetas</div><div style="border-radius:var(--cn-r-5)">28 · paneles</div></div>
+  <div class="curvas revelar">
     <article class="curva"><div class="pista"><span class="bola" style="--e:var(--cn-llegada);--d:900ms"></span></div><h3>Llegada</h3><code>cubic-bezier(.16, 1, .3, 1)</code><p>Lo que entra en pantalla.</p></article>
     <article class="curva"><div class="pista"><span class="bola" style="--e:var(--cn-suave);--d:500ms"></span></div><h3>Suave</h3><code>cubic-bezier(.25, .1, .25, 1)</code><p>Cambios de estado.</p></article>
-    <article class="curva"><div class="pista"><span class="bola" style="--e:var(--cn-resorte);--d:700ms"></span></div><h3>Resorte</h3><code>muelle amortiguado · ζ 0,62</code><p>Toques, interruptores, insignias.</p></article>
+    <article class="curva"><div class="pista"><span class="bola" style="--e:var(--cn-resorte);--d:700ms"></span></div><h3>Resorte</h3><code>muelle amortiguado · ζ 0,62</code><p>Lo que se toca.</p></article>
   </div>
-  <h3 class="sub">Firmas del logo</h3>
-  <p class="nota">Propuesta de uso, por confirmar: <b>Aleteo</b> en la carga del sitio, <b>Enfoque</b> en video y portadas, <b>Destello</b> en esperas y al pasar sobre el logo. <b>Despegue</b> queda de reserva.</p>
-  <div class="barra-firmas"><label><input type="checkbox" id="lento"> Cámara lenta (×4)</label><button class="btn secundario" type="button" id="todas"><svg aria-hidden="true"><use href="#i-repetir"/></svg>Repetir todas</button></div>
-  <div class="firmas" id="firmas"></div>
 </section>
 
-<!-- ══════════ APLICACIONES ══════════ -->
-<section class="bloque" id="aplicaciones">
-  <p class="rotulo">Aplicaciones</p>
-  <h2 class="titular">Donde se posa.</h2>
-  <div class="navegador">
+<!-- ═════════════════════════ V · KIT ═════════════════════════ -->
+<section class="bloque" id="botones">
+  <p class="rotulo">V · Kit · Botones</p>
+  <h2 class="titular revelar">Un protagonista por pantalla.</h2>
+  <div class="kit-grilla revelar">
+    <div class="pieza"><p class="mini">Variantes</p><div class="fila"><button class="btn primario" type="button">Agenda una reunión</button><button class="btn suave" type="button">Ver productos</button><button class="btn fantasma" type="button">Cancelar</button><button class="btn peligro" type="button">Eliminar</button></div></div>
+    <div class="pieza"><p class="mini">Estados en capas · tócalo</p><div class="fila"><button class="btn primario" type="button" data-estados data-cargando="Enviando" data-listo="Enviado">Enviar cotización</button><button class="btn suave" type="button" data-estados data-cargando="Guardando" data-listo="Guardado">Guardar</button></div></div>
+    <div class="pieza"><p class="mini">Tamaños e íconos</p><div class="fila"><button class="btn primario chico" type="button">Chico</button><button class="btn primario" type="button">Mediano</button><button class="btn primario grande" type="button">Grande<svg aria-hidden="true"><use href="#i-flecha"/></svg></button></div></div>
+    <div class="pieza"><p class="mini">Botón de ícono · con etiqueta</p><div class="fila"><button class="btn-icono" type="button" aria-label="Editar" data-tip="Editar"><svg><use href="#i-editar"/></svg></button><button class="btn-icono" type="button" aria-label="Duplicar" data-tip="Duplicar"><svg><use href="#i-duplicar"/></svg></button><button class="btn-icono" type="button" aria-label="Archivar" data-tip="Archivar"><svg><use href="#i-archivar"/></svg></button><button class="btn-icono vidrio-ico" type="button" aria-label="Más opciones" data-tip="Más opciones" data-vidrio data-radio="999" data-refraccion="22" data-bisel="12"><svg><use href="#i-puntos"/></svg></button></div></div>
+  </div>
+  <details class="ficha-uso"><summary>Ficha de uso · Botón</summary><div class="ficha-cuerpo"><ul><li>Un solo <b>primario</b> (azul) por pantalla; el resto, suave o fantasma.</li><li>Con <code>data-estados</code>, el botón cruza quieto → cargando → listo sin cambiar de tamaño.</li><li>El botón de ícono siempre lleva <code>aria-label</code> y tooltip; su área táctil es de 44 px.</li></ul><pre><code>&lt;button class="btn primario" data-estados data-listo="Enviado"&gt;Enviar&lt;/button&gt;</code></pre></div></details>
+</section>
+
+<section class="bloque" id="controles">
+  <p class="rotulo">V · Kit · Controles</p>
+  <h2 class="titular revelar">Controles que responden al toque.</h2>
+  <div class="kit-grilla revelar">
+    <div class="pieza"><p class="mini">Segmentado · la lente viaja</p><div class="segmentado" role="radiogroup" aria-label="Periodo"><button type="button" role="radio" aria-checked="true">Día</button><button type="button" role="radio" aria-checked="false">Semana</button><button type="button" role="radio" aria-checked="false">Mes</button><button type="button" role="radio" aria-checked="false">Año</button></div></div>
+    <div class="pieza"><p class="mini">Interruptor · aplica al instante</p><label class="interruptor"><input type="checkbox" checked><i></i>Avisos por correo</label><label class="interruptor"><input type="checkbox"><i></i>Modo vacaciones</label></div>
+    <div class="pieza"><p class="mini">Deslizador · valor a la vista</p><label class="deslizador"><span>Presupuesto mensual en anuncios</span><input type="range" min="100000" max="2000000" step="50000" value="450000" data-formato="clp"><output></output></label></div>
+    <div class="pieza"><p class="mini">Contador · con topes</p><div class="contador" data-min="1" data-max="10" role="group" aria-label="Usuarios"><button type="button" data-paso="-1" aria-label="Menos"><svg><use href="#i-menos"/></svg></button><span class="contador-valor">3</span><button type="button" data-paso="1" aria-label="Más"><svg><use href="#i-mas"/></svg></button></div><small class="nota-mini">Usuarios del equipo (1 a 10)</small></div>
+    <div class="pieza"><p class="mini">Casillas y opciones</p><label class="casilla"><input type="checkbox" checked><i></i>Recibir el resumen semanal</label><label class="casilla"><input type="checkbox"><i></i>Acepto los términos</label><div class="radios-fila" role="radiogroup" aria-label="Frecuencia"><label class="radio"><input type="radio" name="frec" checked><i></i>Diaria</label><label class="radio"><input type="radio" name="frec"><i></i>Semanal</label></div></div>
+  </div>
+</section>
+
+<section class="bloque" id="estados">
+  <p class="rotulo">V · Kit · Carga y estados</p>
+  <h2 class="titular revelar">Lo que pasa mientras esperas.</h2>
+  <div class="kit-grilla revelar">
+    <div class="pieza"><p class="mini">Insignias · ícono + texto</p><div class="fila"><span class="insignia ok">Pagado</span><span class="insignia info">En revisión</span><span class="insignia alerta">Por vencer</span><span class="insignia error">Vencido</span></div></div>
+    <div class="pieza"><p class="mini">Progreso líquido</p><div class="progreso" role="progressbar" aria-valuenow="64" aria-valuemin="0" aria-valuemax="100" aria-label="Importando productos"><i style="--p:.64"></i></div><div class="progreso indeterminado" role="progressbar" aria-label="Cargando"><i></i></div></div>
+    <div class="pieza"><p class="mini">Esqueleto · imita lo que viene</p><div class="esqueleto"><i class="e-av"></i><div><i></i><i class="corto"></i></div></div><div class="esqueleto"><i class="e-av"></i><div><i></i><i class="corto"></i></div></div></div>
+    <div class="pieza pieza-vacio"><span class="vacio-iso" data-logo="iso"></span><b>Aún no hay pedidos</b><p>Cuando alguien compre en tu tienda, aparece aquí.</p><button class="btn suave chico" type="button">Compartir la tienda</button></div>
+  </div>
+</section>
+
+<section class="bloque" id="avisos">
+  <p class="rotulo">V · Kit · Avisos</p>
+  <h2 class="titular revelar">Avisos que no interrumpen.</h2>
+  <div class="kit-grilla revelar">
+    <div class="pieza"><p class="mini">Toast · confirma lo que hiciste</p><div class="fila"><button class="btn suave" type="button" id="demo-toast">Guardar</button><button class="btn suave" type="button" id="demo-toast-deshacer">Archivar (con Deshacer)</button><button class="btn suave" type="button" id="demo-toast-error">Simular error</button></div><small class="nota-mini">Máximo 3, en abanico al pasar el puntero; con el puntero encima no se van.</small></div>
+    <div class="pieza"><p class="mini">Alerta · crece desde su botón</p><button class="btn peligro" type="button" id="demo-alerta">Eliminar tienda de prueba</button><small class="nota-mini">Foco en Cancelar, Escape cierra, Tab atrapado, el foco vuelve aquí.</small></div>
+    <div class="pieza ancha"><p class="mini">Banner · un estado que dura</p>
+      <div class="banner" role="status"><svg aria-hidden="true"><use href="#i-info"/></svg><div class="banner-texto"><b>Tu dominio se está verificando.</b><span class="banner-detalle">Puede tardar hasta 24 horas. Te avisamos por correo cuando esté listo; mientras, la tienda funciona en su dirección temporal.</span></div><button type="button" class="btn-icono banner-plegar" aria-expanded="true" aria-label="Plegar aviso"><svg><use href="#i-abajo"/></svg></button></div>
+    </div>
+  </div>
+</section>
+
+<section class="bloque" id="popups">
+  <p class="rotulo">V · Kit · Menús y popups</p>
+  <h2 class="titular revelar">Todo nace de su botón.</h2>
+  <div class="kit-grilla revelar">
+    <div class="pieza"><p class="mini">Menú · flechas, inicial, Escape</p>
+      <button class="btn suave" type="button" data-menu="menu-acciones">Acciones<svg aria-hidden="true"><use href="#i-abajo"/></svg></button>
+      <div class="menu" id="menu-acciones" role="menu" aria-label="Acciones del pedido" data-vidrio data-liviano data-radio="18" hidden>
+        <button role="menuitem" type="button"><svg aria-hidden="true"><use href="#i-editar"/></svg>Editar<kbd>E</kbd></button>
+        <button role="menuitem" type="button"><svg aria-hidden="true"><use href="#i-duplicar"/></svg>Duplicar<kbd>D</kbd></button>
+        <button role="menuitem" type="button"><svg aria-hidden="true"><use href="#i-archivar"/></svg>Archivar</button>
+        <hr>
+        <button role="menuitem" type="button" class="peligro"><svg aria-hidden="true"><use href="#i-basura"/></svg>Eliminar</button>
+      </div>
+    </div>
+    <div class="pieza"><p class="mini">Popover · información al lado</p>
+      <button class="btn suave" type="button" data-popover="pop-plan"><svg aria-hidden="true"><use href="#i-info"/></svg>¿Qué incluye?</button>
+      <div class="popover" id="pop-plan" role="dialog" aria-label="Qué incluye condor ecommerce" data-vidrio data-liviano data-radio="20" hidden>
+        <b>condor ecommerce</b><p>Tienda online administrada por $54.990 al mes, IVA incluido, más 6,7 % por venta. La comisión incluye la gestión de anuncios.</p><a href="#productos">Ver el producto →</a>
+      </div>
+    </div>
+    <div class="pieza"><p class="mini">Tooltip · al pasar o con foco</p><div class="fila"><button class="btn-icono" type="button" aria-label="Copiar enlace" data-tip="Copiar enlace"><svg><use href="#i-copiar"/></svg></button><span class="con-tip" tabindex="0" data-tip="Impuesto al valor agregado, 19 %">IVA</span></div></div>
+    <div class="pieza"><p class="mini">Modal y hoja</p><div class="fila"><button class="btn suave" type="button" data-modal="modal-demo">Abrir modal</button><button class="btn suave" type="button" data-hoja="hoja-demo">Abrir hoja (celular)</button></div><small class="nota-mini">La hoja se arrastra y se queda en media o completa.</small></div>
+  </div>
+  <div class="modal" id="modal-demo" role="dialog" aria-modal="true" aria-labelledby="modal-t" data-vidrio data-liviano data-radio="28" hidden>
+    <h3 id="modal-t">Invita a tu equipo</h3><p>Comparte el acceso a condor track. Cada persona recibe un correo para entrar.</p>
+    <label class="campo" data-tipo="correo"><input type="email" placeholder=" " autocomplete="off"><span class="campo-etiqueta">Correo de la persona</span><small class="campo-ayuda">Le llega una invitación.</small></label>
+    <div class="fila fin"><button class="btn fantasma" type="button" data-cerrar>Cancelar</button><button class="btn primario" type="button" data-cerrar>Enviar invitación</button></div>
+  </div>
+  <div class="hoja" id="hoja-demo" role="dialog" aria-modal="true" aria-label="Detalle del pedido" data-vidrio data-liviano data-radio="28" hidden>
+    <div class="hoja-agarre" aria-hidden="true"><i></i></div>
+    <h3>Pedido #1042</h3><p class="nota">Datos de ejemplo.</p>
+    <dl class="detalle"><div><dt>Cliente</dt><dd>Café Altiplano</dd></div><div><dt>Total</dt><dd>$38.900</dd></div><div><dt>Estado</dt><dd><span class="insignia ok">Pagado</span></dd></div></dl>
+    <button class="btn primario ancho" type="button" data-cerrar>Listo</button>
+  </div>
+</section>
+
+<!-- ═════════════════════════ VI · FORMULARIOS ═════════════════════════ -->
+<section class="bloque" id="campos">
+  <p class="rotulo">VI · Formularios · Campos</p>
+  <h2 class="titular revelar">Pedir datos sin fricción.</h2>
+  <p class="lead revelar">La etiqueta flota, el error aparece al salir del campo y dice cómo arreglarlo. El RUT se formatea y se valida; el correo te sugiere el dominio si hay un error de tipeo.</p>
+  <div class="campos-grilla revelar">
+    <label class="campo" data-tipo="rut"><input type="text" inputmode="text" placeholder=" " autocomplete="off"><span class="campo-etiqueta">RUT de la empresa</span><small class="campo-ayuda">Con guion y dígito verificador. Prueba 76.086.428-5</small></label>
+    <label class="campo" data-tipo="correo"><input type="email" placeholder=" " autocomplete="email"><span class="campo-etiqueta">Correo</span><small class="campo-ayuda">Prueba escribiendo nombre@gmial.com</small></label>
+    <label class="campo" data-tipo="telefono"><input type="tel" placeholder=" " autocomplete="tel"><span class="campo-etiqueta">Celular</span><small class="campo-ayuda">Te escribimos por WhatsApp.</small></label>
+    <label class="campo campo-select"><select><option value="" disabled selected hidden></option><option>Comercio</option><option>Salud</option><option>Logística</option><option>Servicios</option><option>Industria</option></select><span class="campo-etiqueta">Rubro</span><svg class="campo-flecha" aria-hidden="true"><use href="#i-abajo"/></svg><small class="campo-ayuda">Para mostrarte casos parecidos.</small></label>
+    <label class="campo ancho" data-requerido><textarea placeholder=" " rows="3" maxlength="280"></textarea><span class="campo-etiqueta">¿Qué te gustaría resolver?</span><small class="campo-ayuda">En pocas palabras.</small><small class="campo-contador"></small></label>
+    <div class="pieza"><p class="mini">Código de verificación</p><div class="codigo-otp" role="group" aria-label="Código de 6 dígitos"><input inputmode="numeric" maxlength="1" aria-label="Dígito 1"><input inputmode="numeric" maxlength="1" aria-label="Dígito 2"><input inputmode="numeric" maxlength="1" aria-label="Dígito 3"><input inputmode="numeric" maxlength="1" aria-label="Dígito 4"><input inputmode="numeric" maxlength="1" aria-label="Dígito 5"><input inputmode="numeric" maxlength="1" aria-label="Dígito 6"></div><small class="nota-mini">Avanza solo y acepta pegar el código completo.</small></div>
+    <div class="pieza"><p class="mini">Archivos</p><label class="zona-archivos"><input type="file" multiple><svg aria-hidden="true"><use href="#i-subir"/></svg><b>Arrastra tu catálogo aquí</b><span>o toca para elegir · Excel, CSV o PDF</span></label><ul class="lista-archivos-subidos"></ul></div>
+    <div class="pieza"><p class="mini">Fichas de opción · varias</p><div class="fichas-opcion" data-multiple role="group" aria-label="Canales de venta"><button type="button" aria-pressed="true">Tienda online</button><button type="button" aria-pressed="false">Instagram</button><button type="button" aria-pressed="false">WhatsApp</button><button type="button" aria-pressed="false">Local físico</button><button type="button" aria-pressed="false">Mercado Libre</button></div></div>
+  </div>
+</section>
+
+<section class="bloque" id="pasos">
+  <p class="rotulo">VI · Formularios · Stepper</p>
+  <h2 class="titular revelar">Agenda una reunión, en cuatro pasos.</h2>
+  <p class="lead revelar">El caso real del sitio. Cada paso valida antes de avanzar, la línea se llena y los pasos hechos se pueden reabrir. Es una demostración: no se envía nada.</p>
+  <div class="stepper revelar" data-stepper>
+    <div class="stepper-linea" aria-hidden="true"><i></i></div>
+    <ol class="stepper-cabeza">
+      <li><button type="button"><span class="num">1</span><span class="nombre">Empresa</span></button></li>
+      <li><button type="button"><span class="num">2</span><span class="nombre">Necesidad</span></button></li>
+      <li><button type="button"><span class="num">3</span><span class="nombre">Horario</span></button></li>
+      <li><button type="button"><span class="num">4</span><span class="nombre">Revisar</span></button></li>
+    </ol>
+    <p class="stepper-estado" aria-live="polite"></p>
+    <form class="stepper-cuerpo" onsubmit="return false" novalidate>
+      <section class="paso">
+        <h3>Cuéntanos de tu empresa</h3>
+        <div class="campos-grilla dos">
+          <label class="campo" data-requerido><input name="Empresa" type="text" placeholder=" " autocomplete="organization"><span class="campo-etiqueta">Nombre de la empresa</span><small class="campo-ayuda">Como la conocen tus clientes.</small></label>
+          <label class="campo" data-tipo="rut"><input name="RUT" type="text" placeholder=" " autocomplete="off"><span class="campo-etiqueta">RUT</span><small class="campo-ayuda">Con guion y dígito verificador.</small></label>
+        </div>
+      </section>
+      <section class="paso" hidden>
+        <h3>¿Qué necesitas?</h3>
+        <div class="opciones-producto" role="radiogroup" aria-label="Producto" data-requerido-grupo>
+          <label class="op-prod"><input type="radio" name="Producto" value="condor ecommerce"><img src="assets/marca/producto-ecommerce.svg" alt=""><b>Una tienda online</b><span>condor ecommerce</span></label>
+          <label class="op-prod"><input type="radio" name="Producto" value="condor track"><img src="assets/marca/producto-track.svg" alt=""><b>Un CRM a medida</b><span>condor track</span></label>
+          <label class="op-prod"><input type="radio" name="Producto" value="condor agents"><img src="assets/marca/producto-agents.svg" alt=""><b>Un agente de IA</b><span>condor agents</span></label>
+        </div>
+        <small class="grupo-error">Elige una opción para seguir.</small>
+      </section>
+      <section class="paso" hidden>
+        <h3>¿Cuándo te acomoda?</h3>
+        <p class="nota">Horarios de ejemplo, en hora de Chile.</p>
+        <div class="horarios" role="radiogroup" aria-label="Día y hora" data-requerido-grupo>
+          <label class="hora"><input type="radio" name="Horario" value="Lunes 13, 10:00"><b>Lun 13</b><span>10:00</span></label>
+          <label class="hora"><input type="radio" name="Horario" value="Lunes 13, 15:30"><b>Lun 13</b><span>15:30</span></label>
+          <label class="hora"><input type="radio" name="Horario" value="Martes 14, 11:00"><b>Mar 14</b><span>11:00</span></label>
+          <label class="hora"><input type="radio" name="Horario" value="Miércoles 15, 09:30"><b>Mié 15</b><span>09:30</span></label>
+          <label class="hora"><input type="radio" name="Horario" value="Jueves 16, 16:00"><b>Jue 16</b><span>16:00</span></label>
+          <label class="hora"><input type="radio" name="Horario" value="Viernes 17, 12:00"><b>Vie 17</b><span>12:00</span></label>
+        </div>
+        <small class="grupo-error">Elige un horario para seguir.</small>
+        <div class="campos-grilla dos">
+          <label class="campo" data-requerido><input name="Nombre" type="text" placeholder=" " autocomplete="name"><span class="campo-etiqueta">Tu nombre</span><small class="campo-ayuda">Para saludarte.</small></label>
+          <label class="campo" data-tipo="correo"><input name="Correo" type="email" placeholder=" " autocomplete="email"><span class="campo-etiqueta">Correo</span><small class="campo-ayuda">Ahí llega la invitación.</small></label>
+        </div>
+      </section>
+      <section class="paso" hidden data-resumen>
+        <h3>Revisa y agenda</h3>
+        <dl class="resumen"></dl>
+        <p class="nota">Toca «Cambiar» o un paso de arriba para corregir.</p>
+      </section>
+    </form>
+    <div class="stepper-pie"><button class="btn fantasma" type="button" data-atras>Atrás</button><button class="btn primario" type="button" data-siguiente><span class="tx">Continuar</span><svg aria-hidden="true"><use href="#i-flecha"/></svg></button></div>
+    <div class="stepper-fin" hidden><div class="fin-carga"></div><button class="btn suave" type="button" data-reiniciar>Volver a empezar</button></div>
+  </div>
+</section>
+
+<!-- ═════════════════════════ VII · PATRONES ═════════════════════════ -->
+<section class="bloque" id="navegacion">
+  <p class="rotulo">VII · Patrones · Navegación</p>
+  <h2 class="titular revelar">Siempre sabes dónde estás.</h2>
+  <div class="kit-grilla revelar">
+    <div class="pieza ancha"><p class="mini">Migas · cada tramo abre sus hermanas; si no caben, se recogen</p>
+      <nav class="migas-demo" aria-label="Ruta de ejemplo">
+        <a href="#navegacion">Inicio</a><svg aria-hidden="true"><use href="#i-chevron"/></svg>
+        <button type="button" class="migas-puntos miga-demo" data-menu="menu-migas-1" aria-label="Ver tramos ocultos">…</button><svg class="sep-recogible" aria-hidden="true"><use href="#i-chevron"/></svg>
+        <button type="button" class="miga-demo recogible" data-menu="menu-migas-1">Clientes<svg aria-hidden="true"><use href="#i-abajo"/></svg></button><svg class="sep-recogible" aria-hidden="true"><use href="#i-chevron"/></svg>
+        <button type="button" class="miga-demo" data-menu="menu-migas-2">Café Altiplano<svg aria-hidden="true"><use href="#i-abajo"/></svg></button><svg aria-hidden="true"><use href="#i-chevron"/></svg>
+        <span aria-current="page">Pedido #1042</span>
+      </nav>
+      <div class="menu" id="menu-migas-1" role="menu" data-vidrio data-liviano data-radio="18" hidden><button role="menuitem" type="button">Clientes</button><button role="menuitem" type="button">Pedidos</button><button role="menuitem" type="button">Productos</button><button role="menuitem" type="button">Reportes</button></div>
+      <div class="menu" id="menu-migas-2" role="menu" data-vidrio data-liviano data-radio="18" hidden><button role="menuitem" type="button">Café Altiplano</button><button role="menuitem" type="button">Clínica Mirador</button><button role="menuitem" type="button">Ferretería Los Andes</button></div>
+      <small class="nota-mini">Las migas de la barra de arriba funcionan igual: toca el capítulo.</small>
+    </div>
+    <div class="pieza"><p class="mini">Paleta de comandos</p><button class="btn suave" type="button" data-comando><svg aria-hidden="true"><use href="#i-buscar"/></svg>Abrir · Ctrl K</button><small class="nota-mini">Busca secciones, copia colores, descarga el logo.</small></div>
+    <div class="pieza ancha pestanas"><p class="mini">Pestañas · el indicador viaja</p>
+      <div role="tablist" aria-label="Vista del cliente" class="pestanas-lista"><button role="tab" type="button" aria-selected="true" aria-controls="tp-1" id="t-1">Resumen</button><button role="tab" type="button" aria-selected="false" aria-controls="tp-2" id="t-2">Pedidos</button><button role="tab" type="button" aria-selected="false" aria-controls="tp-3" id="t-3">Notas</button></div>
+      <div role="tabpanel" id="tp-1" aria-labelledby="t-1" class="tp"><b>Café Altiplano</b> · cliente desde septiembre · 12 pedidos (ejemplo).</div>
+      <div role="tabpanel" id="tp-2" aria-labelledby="t-2" class="tp" hidden>Último pedido: #1042 por $38.900 (ejemplo).</div>
+      <div role="tabpanel" id="tp-3" aria-labelledby="t-3" class="tp" hidden>Prefiere despacho los martes (ejemplo).</div>
+    </div>
+  </div>
+</section>
+
+<section class="bloque" id="scrollers">
+  <p class="rotulo">VII · Patrones · Scrollers</p>
+  <h2 class="titular revelar">Desplazarse con gusto.</h2>
+  <div class="carrusel revelar" role="region" aria-roledescription="carrusel" aria-label="Casos de ejemplo">
+    <div class="carrusel-cab"><p class="mini">Carrusel · arrastra, usa las flechas o el teclado</p><div class="fila"><button class="btn-icono" type="button" data-dir="-1" aria-label="Anterior"><svg style="transform:rotate(180deg)"><use href="#i-flecha"/></svg></button><button class="btn-icono" type="button" data-dir="1" aria-label="Siguiente"><svg><use href="#i-flecha"/></svg></button></div></div>
+    <div class="carrusel-pista" role="group" tabindex="0" aria-label="Tarjetas, usa las flechas">
+      <article class="tarjeta-caso"><img src="assets/marca/producto-ecommerce.svg" alt=""><b>Tu tienda en 7 días</b><p>Catálogo, pagos y despacho listos para vender.</p></article>
+      <article class="tarjeta-caso"><img src="assets/marca/producto-track.svg" alt=""><b>Cada cliente, su historia</b><p>Un CRM con tus etapas, tus tareas y tu equipo.</p></article>
+      <article class="tarjeta-caso"><img src="assets/marca/producto-agents.svg" alt=""><b>Un agente que atiende</b><p>Responde, cotiza y agenda, día y noche.</p></article>
+      <article class="tarjeta-caso"><span class="tc-iso" data-logo="iso"></span><b>Hecho en Santiago</b><p>Un equipo que diseña y construye a la medida.</p></article>
+      <article class="tarjeta-caso"><span class="tc-iso" data-logo="iso"></span><b>Datos que se entienden</b><p>Reportes claros, sin planillas eternas.</p></article>
+    </div>
+    <div class="carrusel-pie"><div class="carrusel-puntos"></div><div class="carrusel-progreso" aria-hidden="true"><i></i></div></div>
+  </div>
+  <div class="marquee revelar" role="region" aria-label="Algunos clientes"><div class="marquee-cinta"><span>Tecnobox</span><span>Delta Force</span><span>GII Médicas</span><span>URPA Logístico</span><span>Transportes Otniano</span><span>Neisstech</span><span>Howden</span></div></div>
+</section>
+
+<section class="bloque" id="datos">
+  <p class="rotulo">VII · Patrones · Datos</p>
+  <h2 class="titular revelar">Tablas que se dejan leer.</h2>
+  <div class="tabla-demo revelar">
+    <div class="tabla-cab"><label class="busqueda"><svg aria-hidden="true"><use href="#i-buscar"/></svg><input type="search" placeholder="Buscar cliente o producto" aria-label="Buscar en la tabla"></label><span class="tabla-cuenta"></span><span class="insignia info">Datos de ejemplo</span></div>
+    <div class="tabla-rol"><table>
+      <thead><tr><th data-col="0"><button type="button">Cliente</button></th><th data-col="1"><button type="button">Producto</button></th><th data-col="2"><button type="button">Estado</button></th><th data-col="3" class="num"><button type="button">Mensual</button></th><th data-col="4" class="num"><button type="button">Alta</button></th></tr></thead>
+      <tbody></tbody>
+    </table></div>
+    <nav class="paginacion" aria-label="Páginas"></nav>
+  </div>
+</section>
+
+<section class="bloque" id="preguntas">
+  <p class="rotulo">VII · Patrones · Preguntas</p>
+  <h2 class="titular revelar">Respuestas que se abren con calma.</h2>
+  <div class="acordeones revelar">
+    <details class="acordeon"><summary>¿Cuánto cuesta condor ecommerce?<svg aria-hidden="true"><use href="#i-mas"/></svg></summary><div class="acordeon-cuerpo"><p>$54.990 al mes con IVA incluido, más 6,7 % por venta facturada. La comisión incluye la gestión de anuncios pagados.</p></div></details>
+    <details class="acordeon"><summary>¿Track es un CRM genérico?<svg aria-hidden="true"><use href="#i-mas"/></svg></summary><div class="acordeon-cuerpo"><p>No. Lo diseñamos a la medida de tu proceso comercial, tus tareas y tu equipo.</p></div></details>
+    <details class="acordeon"><summary>¿Quién es Bárbara?<svg aria-hidden="true"><use href="#i-mas"/></svg></summary><div class="acordeon-cuerpo"><p>El primer agente de condor agents. Vienen más agentes especializados.</p></div></details>
+  </div>
+</section>
+
+<!-- ═════════════════════════ VIII · APLICACIONES ═════════════════════════ -->
+<section class="bloque" id="sitio">
+  <p class="rotulo">VIII · Aplicaciones · Sitio</p>
+  <h2 class="titular revelar">Donde se posa.</h2>
+  <div class="navegador revelar">
     <div class="nav-barra"><i></i><i></i><i></i><span>condorai.cl</span></div>
     <div class="sitio">
-      <div class="liquido suave" aria-hidden="true"><i class="mancha m1"></i><i class="mancha m2"></i><i class="mancha m3"></i></div>
-      <div class="sitio-nav vidrio"><span data-logo="h" data-alto="22"></span><span class="sn-links"><span>Productos</span><span>Casos</span><span>Equipo</span></span><span class="btn primario chico">Hablemos</span></div>
+      <img class="sitio-foto" src="assets/fotos/equipo.webp" alt="El equipo de condor.ai trabajando">
+      <div class="sitio-nav" data-vidrio data-radio="20" data-refraccion="34"><span data-logo="h" data-alto="22"></span><span class="sn-links"><span>Productos</span><span>Casos</span><span>Equipo</span></span><span class="btn primario chico">Hablemos</span></div>
       <div class="sitio-hero">
         <p class="rotulo">condor.ai · Santiago de Chile</p>
         <p class="sitio-h">Construimos la tecnología que tu empresa usará mañana.</p>
         <p class="sitio-p">Tiendas, CRM y agentes de IA hechos a la medida de tu negocio.</p>
-        <div class="fila"><span class="btn primario">Agenda una reunión</span><span class="btn secundario">Ver productos</span></div>
-        <div class="sitio-iconos" id="sitio-iconos"></div>
+        <div class="fila"><span class="btn primario">Agenda una reunión</span><span class="btn suave">Ver productos</span></div>
+        <div class="sitio-iconos" data-iconos-producto></div>
       </div>
     </div>
   </div>
-  <div class="posts">
+</section>
+
+<section class="bloque" id="piezas">
+  <p class="rotulo">VIII · Aplicaciones · Redes y papelería</p>
+  <h2 class="titular revelar">Piezas con la misma calma.</h2>
+  <div class="posts revelar">
     <article class="post p-blanco"><span data-logo="h" data-alto="20"></span><p class="post-h">El futuro se construye desde el sur.</p><p class="post-pie">condorai.cl</p></article>
     <article class="post p-producto"><img src="assets/marca/producto-ecommerce.svg" alt=""><p class="post-h">Tu tienda, vendiendo mientras duermes.</p><p class="post-pie">condor ecommerce</p></article>
     <article class="post p-tinta"><img class="post-iso" src="assets/marca/condor-isotipo-blanco.svg" alt=""><p class="post-h">¿Qué ve un cóndor a 5.000 metros?</p><p class="post-pie">condor.ai</p></article>
   </div>
-  <div class="papeleria">
+  <div class="papeleria revelar">
     <div class="tarjeta-v frente"><img src="assets/marca/condor-isotipo-blanco.svg" alt=""></div>
     <div class="tarjeta-v dorso"><span data-logo="h" data-alto="18"></span><div><b>Maximiliano</b><span>Diseño y producto</span><span class="mono">condorai.cl · Santiago de Chile</span></div></div>
   </div>
 </section>
 
-<!-- ══════════ ARCHIVOS ══════════ -->
 <section class="bloque" id="archivos">
-  <p class="rotulo">Archivos</p>
-  <h2 class="titular">Todo sale de aquí.</h2>
-  <div class="archivos">
-    <div class="codigo"><div class="codigo-cab"><span>tokens/condor.css · extracto</span><button class="btn mini-btn" type="button" data-copiar="tokens"><svg aria-hidden="true"><use href="#i-copiar"/></svg>Copiar</button></div>
+  <p class="rotulo">VIII · Aplicaciones · Archivos</p>
+  <h2 class="titular revelar">Todo sale de aquí.</h2>
+  <div class="archivos revelar">
+    <div class="codigo"><div class="codigo-cab"><span>tokens/condor.css · extracto</span><button class="btn mini oscuro" type="button" data-copiar="tokens"><svg aria-hidden="true"><use href="#i-copiar"/></svg>Copiar</button></div>
 <pre id="codigo-tokens"><code>:root {
   --cn-tinta:    #151517;   /* el negro de condor.ai */
   --cn-azul:     #014CFD;   /* solo para destacar */
@@ -250,7 +540,6 @@
   --cn-texto-f:  "Inter";
   --cn-r-2:      12px;      /* botones */
   --cn-r-4:      22px;      /* tarjetas */
-  --cn-vidrio:   rgba(255,255,255,.58);
   --cn-llegada:  cubic-bezier(.16, 1, .3, 1);
 }</code></pre></div>
     <ul class="lista-archivos" id="lista-archivos"></ul>
@@ -260,8 +549,23 @@
 
 </main>
 
-<div class="aviso" id="aviso" role="status" aria-live="polite"></div>
+<!-- ══════════ DOCK de vidrio (capítulos) + píldora de índice en celular ══════════ -->
+<nav class="dock" aria-label="Capítulos" data-radio="24" data-refraccion="38" data-bisel="20">
+  <span class="dock-gota" data-radio="16" data-refraccion="22" data-bisel="12" aria-hidden="true"></span>
+  <div class="dock-capitulos"></div>
+</nav>
+<button type="button" class="pildora-indice" aria-label="Índice del guion"><span class="iso-mini" data-logo="iso"></span><span class="tx">Inicio</span><svg aria-hidden="true"><use href="#i-abajo"/></svg></button>
+<div class="hoja" id="hoja-indice" role="dialog" aria-modal="true" aria-label="Índice del guion" data-vidrio data-liviano data-radio="28" hidden><div class="hoja-agarre" aria-hidden="true"><i></i></div><div class="indice"></div></div>
+
+<!-- ══════════ ⌘K ══════════ -->
+<div class="comando" id="comando" hidden>
+  <div class="comando-caja" role="dialog" aria-modal="true" aria-label="Buscar en el guion" data-liviano data-radio="22">
+    <label class="comando-campo"><svg aria-hidden="true"><use href="#i-buscar"/></svg><input id="comando-buscar" type="text" placeholder="Buscar secciones, colores, archivos…" role="combobox" aria-expanded="true" aria-controls="comando-resultados" autocomplete="off"><kbd>Esc</kbd></label>
+    <ul id="comando-resultados" role="listbox" aria-label="Resultados"></ul>
+  </div>
+</div>
+
 <script src="assets/marca-datos.js"></script>
-<script src="guion.js"></script>
+<script type="module" src="src/main.js"></script>
 </body>
 </html>

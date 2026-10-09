@@ -1,2 +1,5 @@
 medicion/
 node_modules/
+herramientas/pruebas/**/*.png
+herramientas/pruebas/**/*.json
+herramientas/pruebas/**/descargas/

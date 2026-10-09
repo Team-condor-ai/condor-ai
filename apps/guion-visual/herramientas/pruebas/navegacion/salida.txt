@@ -1,0 +1,41 @@
+OK    Barra: arriba no está plegada
+OK    Barra: se pliega al bajar (marca 44 px)
+OK    Barra: progreso de lectura scaleX(0.0358938)
+OK    Barra: vuelve al subir (marca 154 px)
+OK    Migas y dock siguen a las 28 secciones 
+OK    Dock: la gota descansa bajo el activo (Δx 0.0, Δw 0.0)
+OK    Menú hermanas: abre con Color, Tipografía, Forma y curvas (padre BODY, top 52)
+OK    Menú hermanas: el foco cae en la sección actual (Color)
+OK    Menú hermanas: flecha abajo → Tipografía
+OK    Menú hermanas: End → última
+OK    Menú hermanas: Enter lleva a la sección y cierra ({"top":76,"sec":"Forma y curvas","oculto":true,"hash":"#forma","foco":"BODY"})
+OK    Menú hermanas: Escape cierra y vuelve al botón
+OK    ⌘K: Ctrl+K abre con el foco en el campo
+OK    ⌘K: filtra sin tildes ("tipografia" → Tipografía)
+OK    ⌘K: flechas mueven la selección ({"ad":"cmd-1","sel":"cmd-1"})
+OK    ⌘K: Tab no saca el foco del diálogo (INPUT)
+OK    ⌘K: Escape cierra y devuelve el foco (barra-marca)
+OK    ⌘K: el botón de la barra abre
+OK    ⌘K: Enter va a la sección ({"top":76,"sec":"Scrollers","foco":"scrollers"})
+OK    ⌘K: copiar Azul Cóndor → portapapeles "#014CFD", aviso "#014CFD copiado|#014CFD copiado||"
+OK    ⌘K: descargar logo → condor-logo-horizontal-negro.svg
+OK    ⌘K: cámara lenta se activa ({"body":true,"casilla":true})
+OK    ⌘K: cámara lenta se desactiva
+OK    ⌘K: abrir-cerrar-abrir rápido queda abierto ({"hidden":false,"sale":false,"modal":true})
+OK    ⌘K: clic en el velo cierra
+OK    Dock: los 8 botones llevan a su capítulo y lo marcan 
+OK    Dock: la gota terminó bajo el último (Δ 0.0)
+OK    Dock: la gota se desliza (33 posiciones distintas en 90 cuadros)
+OK    Dock: aria-current en el activo (material)
+OK    Celular: píldora visible (48px), dock oculto, dice "Inicio"
+OK    Celular: la píldora sigue a la sección (Avisos)
+OK    Celular: la hoja de índice abre a media altura ({"vis":true,"top":480,"alto":661,"modal":true,"actual":"Avisos","foco":"Avisos"})
+OK    Celular: arrastrar la hoja la sube (480 → 183)
+OK    Celular: «Datos» visible en la hoja (y 554)
+OK    Celular: tocar «Datos» cierra la hoja y lleva ahí ({"oculta":true,"top":76,"tx":"Datos","modal":false,"velos":0})
+OK    Celular: la hoja abre marcando y enfocando la sección actual ({"top":480,"actual":"Datos","foco":"Datos"})
+OK    Celular: 2.ª apertura, arrastrar sube y no cierra ({"oculta":false,"top":183})
+OK    Celular: Escape cierra la hoja ({"oculta":true,"modal":false,"foco":"pildora-indice"})
+OK    Celular: ⌘K abre y cabe (16–374)
+
+0 fallas · errores de consola: []

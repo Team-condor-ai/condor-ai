@@ -16,7 +16,7 @@ main{max-width:1200px;margin:0 auto;padding:48px 24px 96px}
 h1{font:600 30px/1.1 "Inter Display",-apple-system,sans-serif;letter-spacing:-.02em;margin:0}
 h2{font:600 20px/1.2 "Inter Display",-apple-system,sans-serif;margin:64px 0 6px}
 .sub{color:var(--gris);margin:6px 0 0;max-width:72ch}
-.familia{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:24px}
+.familia{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:24px}
 .p{border:1px solid var(--linea);border-radius:22px;padding:28px 24px;display:grid;justify-items:center;gap:14px;text-align:center}
 .p img{width:168px;height:168px;transition:transform .5s cubic-bezier(.16,1,.3,1)}
 .p:hover img{transform:translateY(-4px) scale(1.03)}
@@ -36,10 +36,9 @@ h2{font:600 20px/1.2 "Inter Display",-apple-system,sans-serif;margin:64px 0 6px}
 @media (max-width:900px){.familia{grid-template-columns:1fr 1fr}.reglas{grid-template-columns:1fr}}
 </style></head><body><main>
 <h1>P4 · Íconos de producto</h1>
-<p class="sub">Fondo aprobado (sistema de condor sites, colores nuevos). Glifos de Phosphor Icons (MIT): bolsa tipo Shopify con el cursor encima, la libreta de clientes del CRM y la burbuja con el destello de la IA. Tres estilos de glifo para elegir.</p>
+<p class="sub">Fondo aprobado (baldosa, láminas de acrílico y resplandor), colores nuevos. Glifos de Phosphor Icons (MIT): bolsa tipo Shopify con el cursor encima, la libreta de clientes del CRM y la burbuja con el destello de la IA. Tres estilos de glifo para elegir.</p>
 ${ESTILOS.map((e) => `<h2>${({blanco:"Blanco · sólido, como los íconos de Apple. El más legible.",vidrio:"Vidrio · acrílico: el fondo desenfocado a través del glifo, con canto de luz.",duotono:"Duotono · contorno blanco con relleno translúcido. El más liviano."})[e]}</h2>
 <div class="familia">
-  <div class="p ref"><img src="../assets/referencias/condor-sites.png" alt="condor sites"><span class="nom"><span class="c">condor</span> sites</span><small>Referencia</small></div>
   ${ids.map((id) => `<div class="p"><img src="${a(`producto-${id}-${e}.svg`)}" alt="condor ${id}">${nombre(PRODUCTOS[id].nombre)}<small>${PRODUCTOS[id].que}</small></div>`).join("")}
 </div>`).join("")}
 

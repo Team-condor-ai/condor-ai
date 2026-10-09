@@ -31,7 +31,6 @@
   --cn-gris-6: #F8F8FA;         /* fondo alterno */
 
   /* Productos */
-  --cn-p-sites: #014CFD;
   --cn-p-ecommerce: #7A3CFF;
   --cn-p-track: #0A8FE0;
   --cn-p-agents: #FF5A1F;
@@ -50,7 +49,7 @@
   --cn-linea: var(--cn-gris-4);
   --cn-texto: var(--cn-tinta);
   --cn-texto-2: var(--cn-gris-1);
-  --cn-texto-3: #737378;          /* 4,7:1: el gris más claro permitido para texto chico */
+  --cn-texto-3: #6B6B70;          /* 5,3:1 sobre blanco y 4,7:1 sobre gris-5: el más claro para texto chico */
   --cn-acento: var(--cn-azul);
   --cn-acento-hover: var(--cn-azul-hondo);
   --cn-foco: 0 0 0 4px rgba(1, 76, 253, 0.22);

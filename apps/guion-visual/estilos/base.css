@@ -1,0 +1,149 @@
+/* =========================================================================
+   Base: reset, tipografía de rol, bloques, barra, dock y ⌘K.
+   Fondo SIEMPRE blanco; el azul solo como acento (foco, activo, primario).
+   ========================================================================= */
+:root { --g-max: 1180px; --g-lado: clamp(16px, 5vw, 40px); --g-barra: 56px; --g-dock: 84px; }
+*, *::before, *::after { box-sizing: border-box; }
+/* scroll-padding-bottom: lo que recibe el foco con Tab nunca queda tapado por el dock */
+html { scroll-behavior: smooth; scroll-padding-top: calc(var(--g-barra) + 20px); scroll-padding-bottom: calc(var(--g-dock) + 16px); -webkit-text-size-adjust: 100%; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+html.con-modal { overflow: hidden; }
+body { margin: 0; background: var(--cn-fondo); color: var(--cn-texto); font: 400 var(--cn-t-17)/1.55 var(--cn-texto-f); letter-spacing: -0.006em; -webkit-font-smoothing: antialiased; overflow-x: clip; padding-bottom: calc(var(--g-dock) + 24px); --vel: 1; }
+body.lento { --vel: 4; }
+h1, h2, h3 { margin: 0; font-family: var(--cn-display); font-weight: 600; letter-spacing: -0.025em; line-height: 1.06; text-wrap: balance; }
+p { margin: 0; }
+figure { margin: 0; }
+img, svg { display: block; max-width: 100%; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+code, kbd, .mono { font-family: var(--cn-mono); font-size: 0.85em; }
+kbd { display: inline-grid; place-items: center; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 6px; background: var(--cn-gris-5); color: var(--cn-texto-2); font-size: 11px; }
+:focus-visible { outline: 2px solid var(--cn-acento); outline-offset: 3px; }
+/* una sección que recibe el foco al navegar (⌘K, índice) no se enmarca */
+main > section[tabindex="-1"]:focus { outline: none; }
+::selection { background: var(--cn-azul); color: #fff; }
+[hidden] { display: none !important; }
+a { color: var(--cn-acento); }
+
+/* ── Tipografía de rol ──────────────────────────────────────────────── */
+.rotulo { font: 500 var(--cn-t-12)/1.3 var(--cn-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--cn-texto-3); }
+.bloque > .rotulo { color: var(--cn-texto-3); }
+.mini { font: 500 11px/1.3 var(--cn-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--cn-texto-3); }
+.titular { font-size: clamp(2.1rem, 5.2vw, 3.6rem); letter-spacing: -0.035em; max-width: 19ch; }
+.lead { font-size: clamp(1.06rem, 1.5vw, var(--cn-t-21)); line-height: 1.45; color: var(--cn-texto-2); max-width: 62ch; }
+.sub { font-size: var(--cn-t-21); margin-top: 16px; }
+.nota { color: var(--cn-texto-2); font-size: var(--cn-t-15); }
+.nota-mini { color: var(--cn-texto-3); font-size: var(--cn-t-13); }
+
+/* ── Bloques ────────────────────────────────────────────────────────── */
+.bloque { max-width: calc(var(--g-max) + var(--g-lado) * 2); margin: 0 auto; padding: clamp(96px, 12vw, 150px) var(--g-lado) 0; display: flex; flex-direction: column; gap: clamp(18px, 2.4vw, 28px); }
+.tres { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(20px, 3vw, 40px); margin-top: 6px; }
+.tres h3 { font-size: var(--cn-t-21); margin-bottom: 6px; }
+.tres p { color: var(--cn-texto-2); }
+@media (max-width: 760px) { .tres { grid-template-columns: 1fr; } }
+.fila { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.fila.centro { justify-content: center; }
+.fila.fin { justify-content: flex-end; }
+.rejilla { display: grid; gap: 14px; }
+.rejilla.dos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.rejilla.cuatro { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (max-width: 900px) { .rejilla.cuatro { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px) { .rejilla.dos, .rejilla.cuatro { grid-template-columns: 1fr; } }
+.lista-reglas { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; color: var(--cn-texto-2); font-size: var(--cn-t-15); }
+.lista-reglas li { padding-bottom: 12px; border-bottom: 1px solid var(--cn-linea); }
+.lista-reglas b { color: var(--cn-texto); }
+
+/* aparece al entrar: sube 14 px y se aclara, una vez */
+.revelar { opacity: 0; transform: translateY(14px); transition: opacity calc(0.8s * var(--vel)) var(--cn-llegada), transform calc(0.9s * var(--vel)) var(--cn-llegada); }
+.revelar.visto { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) { .revelar { opacity: 1; transform: none; } }
+
+/* ── Barra: el logo se pliega a isotipo, migas, ⌘K y progreso ───────── */
+.barra { position: fixed; inset: 0 0 auto 0; z-index: 60; height: calc(var(--g-barra) + env(safe-area-inset-top, 0px)); padding: env(safe-area-inset-top, 0px) var(--g-lado) 0; display: flex; align-items: center; gap: 16px; background: rgba(255, 255, 255, 0.76); backdrop-filter: blur(20px) saturate(1.8); -webkit-backdrop-filter: blur(20px) saturate(1.8); border-bottom: 1px solid rgba(21, 21, 23, 0.06); }
+/* 8 px de aire a cada lado (compensados con margen): plegado sigue siendo un blanco de 44 × 44 */
+.barra-marca { flex: none; display: flex; align-items: center; width: 154px; height: 44px; padding: 0 8px; margin: 0 -8px; overflow: hidden; border-radius: 12px; color: var(--cn-tinta); -webkit-tap-highlight-color: transparent; transition: width calc(0.6s * var(--vel)) var(--cn-llegada); }
+.barra-marca:focus-visible { outline-offset: -2px; border-radius: 12px; }
+.barra-marca svg { width: 138px !important; height: 24px !important; max-width: none; }   /* se recorta, no se encoge */
+.barra-marca .le { transition: opacity calc(0.35s * var(--vel)) var(--cn-suave), transform calc(0.5s * var(--vel)) var(--cn-llegada); transform-box: fill-box; }
+.barra.plegada .barra-marca { width: 44px; }
+.barra.plegada .barra-marca .le { opacity: 0; transform: translateX(-8px); }
+.barra-marca .le { transition-delay: calc(var(--k) * 18ms); }
+.migas { display: flex; align-items: center; gap: 4px; min-width: 0; font-size: var(--cn-t-13); }
+.miga { display: inline-flex; align-items: center; gap: 4px; height: 32px; padding: 0 10px; border: 0; border-radius: 10px; background: none; color: var(--cn-texto-2); white-space: nowrap; transition: background var(--cn-d-2) var(--cn-suave), color var(--cn-d-2) var(--cn-suave); }
+button.miga { padding-right: 7px; }
+button.miga:hover, button.miga[aria-expanded="true"] { background: var(--cn-gris-5); color: var(--cn-texto); }
+button.miga:active { background: #E9E9ED; }
+.miga:focus-visible { border-radius: 10px; outline-offset: 1px; }
+.miga svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; transition: transform var(--cn-d-3) var(--cn-llegada); }
+button.miga[aria-expanded="true"] svg { transform: rotate(180deg); }
+.miga-sep { width: 14px; height: 14px; fill: none; stroke: var(--cn-gris-3); stroke-width: 2; flex: none; }
+.miga-actual { color: var(--cn-texto); font-weight: 500; overflow: hidden; text-overflow: ellipsis; }
+.buscar-cmd { margin-left: auto; display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 8px 0 12px; border: 0; border-radius: 12px; background: var(--cn-gris-5); color: var(--cn-texto-2); font-size: var(--cn-t-13); transition: background var(--cn-d-2) var(--cn-suave); }
+.buscar-cmd:hover { background: #E9E9ED; color: var(--cn-texto); }
+.buscar-cmd:active { background: #E2E2E7; }
+.buscar-cmd:focus-visible { border-radius: 12px; outline-offset: 2px; }
+.buscar-cmd svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; }
+.buscar-cmd kbd { background: #fff; box-shadow: 0 0.5px 1px rgba(21, 21, 23, 0.12); font-variant-numeric: tabular-nums; }
+.barra-progreso { position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; pointer-events: none; }
+.barra-progreso i { display: block; height: 100%; background: var(--cn-azul); transform-origin: left; transform: scaleX(0); will-change: transform; }
+/* celular: sin migas; la lupa queda como objetivo táctil de 44 px */
+@media (max-width: 760px) { .migas { display: none; } .buscar-cmd span, .buscar-cmd kbd { display: none; } .buscar-cmd { width: 44px; height: 44px; padding: 0; justify-content: center; border-radius: 14px; } .buscar-cmd svg { width: 18px; height: 18px; } }
+
+/* ── Dock de vidrio (capítulos) ─────────────────────────────────────── */
+/* `.dock.vidrio` gana a `.vidrio { position: relative }` (vidrio.css carga después):
+   sin esto el dock y la gota caían al flujo, al final de la página */
+.dock, .dock.vidrio { position: fixed; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); translate: -50% 0; z-index: 55; padding: 6px; display: flex; --tinte: rgba(255, 255, 255, 0.5); }
+.dock-capitulos { position: relative; display: flex; gap: 2px; }
+.dock-capitulos a { position: relative; z-index: 1; display: grid; place-items: center; min-width: 44px; height: 44px; padding: 0 10px; border-radius: 16px; color: var(--cn-texto-2); text-decoration: none; -webkit-tap-highlight-color: transparent; transition: color var(--cn-d-2) var(--cn-suave); }
+.dock-capitulos a b { font: 600 var(--cn-t-13) var(--cn-display); font-variant-numeric: tabular-nums; transition: transform var(--cn-d-2) var(--cn-suave); }
+.dock-capitulos a span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.dock-capitulos a:hover, .dock-capitulos a.activo { color: var(--cn-tinta); }
+.dock-capitulos a:active b { transform: scale(0.9); }
+.dock-capitulos a:focus-visible { outline-offset: -2px; border-radius: 16px; }
+.dock-gota, .dock .dock-gota.vidrio { position: absolute; left: 6px; top: 6px; height: 44px; width: 44px; z-index: 0; border-radius: 16px; --tinte: rgba(255, 255, 255, 0.72); box-shadow: 0 4px 14px -6px rgba(21, 21, 23, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.75), inset 0 -1px 1px rgba(255, 255, 255, 0.2), inset 0 0 0 0.5px rgba(255, 255, 255, 0.4); pointer-events: none; will-change: transform, width; }
+.pildora-indice { display: none; }
+@media (max-width: 760px) {
+  .dock, .dock.vidrio { display: none; }
+  .pildora-indice { position: fixed; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); translate: -50% 0; z-index: 55; display: inline-flex; align-items: center; gap: 8px; height: 48px; padding: 0 16px 0 10px; border: 0; border-radius: 999px; background: rgba(255, 255, 255, 0.82); backdrop-filter: blur(20px) saturate(1.8); -webkit-backdrop-filter: blur(20px) saturate(1.8); box-shadow: var(--cn-vidrio-canto), 0 10px 30px -12px rgba(21, 21, 23, 0.35); color: var(--cn-tinta); font-weight: 500; width: max-content; max-width: calc(100vw - 32px); -webkit-tap-highlight-color: transparent; transition: transform var(--cn-d-2) var(--cn-suave); }
+  .pildora-indice:active { transform: scale(0.96); }
+  .pildora-indice:focus-visible { border-radius: 999px; }
+  .pildora-indice .tx { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pildora-indice .iso-mini { flex: none; }
+  .pildora-indice .iso-mini svg { width: 26px; height: auto; }
+  .pildora-indice > svg { flex: none; width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; }
+}
+/* lo que se desplaza bajo el agarre se desvanece en vez de cortarse en seco */
+.indice { display: grid; gap: 18px; padding: 4px 4px 12px; max-height: 70vh; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; -webkit-mask-image: linear-gradient(transparent, #000 14px, #000 calc(100% - 14px), transparent); mask-image: linear-gradient(transparent, #000 14px, #000 calc(100% - 14px), transparent); }
+.indice-cap { display: grid; gap: 2px; }
+.indice-cap .rotulo { padding: 0 12px 4px; }
+.indice-cap a { display: flex; align-items: center; min-height: 44px; padding: 10px 12px; border-radius: 12px; color: var(--cn-tinta); text-decoration: none; -webkit-tap-highlight-color: transparent; transition: background var(--cn-d-1) var(--cn-suave); }
+.indice-cap a:hover, .indice-cap a:active { background: var(--cn-gris-5); }
+.indice-cap a:focus-visible { outline-offset: -2px; border-radius: 12px; }
+.indice-cap a[aria-current] { background: var(--cn-azul-suave); color: var(--cn-azul-hondo); font-weight: 500; }
+
+/* ── ⌘K ─────────────────────────────────────────────────────────────── */
+.comando { position: fixed; inset: 0; z-index: 90; display: grid; place-items: start center; padding: min(18vh, 140px) 16px 16px; background: rgba(21, 21, 23, 0.22); animation: velo-entra calc(0.25s * var(--vel)) var(--cn-suave); }
+.comando.sale { animation: velo-sale calc(0.2s * var(--vel)) var(--cn-suave) forwards; }
+.comando-caja { width: min(100%, 600px); padding: 8px; --tinte: rgba(255, 255, 255, 0.86); box-shadow: var(--cn-sombra-3); animation: crece calc(0.4s * var(--vel)) var(--cn-llegada); }
+.comando-campo { display: flex; align-items: center; gap: 10px; height: 52px; padding: 0 12px; border-bottom: 1px solid var(--cn-linea); }
+.comando-campo svg { width: 20px; height: 20px; fill: none; stroke: var(--cn-texto-3); stroke-width: 2; flex: none; }
+.comando-campo input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; font-size: 17px; }
+#comando-resultados { list-style: none; margin: 0; padding: 6px 0 2px; max-height: 50vh; overflow-y: auto; }
+#comando-resultados { scroll-padding: 6px; overscroll-behavior: contain; }
+#comando-resultados li { display: grid; grid-template-columns: 72px minmax(0, 1fr) auto; align-items: center; gap: 10px; min-height: 44px; padding: 10px 12px; border-radius: 12px; cursor: pointer; transition: background var(--cn-d-1) var(--cn-suave); }
+#comando-resultados li[aria-selected="true"] { background: var(--cn-azul-suave); }
+#comando-resultados li[aria-selected="true"] b { color: var(--cn-azul-hondo); }
+#comando-resultados b { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#comando-resultados small { color: var(--cn-texto-3); font-size: var(--cn-t-13); white-space: nowrap; }
+.cmd-k { font: 500 11px var(--cn-mono); text-transform: uppercase; letter-spacing: 0.05em; color: var(--cn-texto-3); }
+li.cmd-vacio { display: block !important; padding: 18px 12px !important; color: var(--cn-texto-2); cursor: default !important; text-align: center; }
+.comando-campo kbd { flex: none; }
+/* movimiento reducido: la paleta solo aparece (sin crecer) */
+@media (prefers-reduced-motion: reduce) { .comando-caja { animation-name: velo-entra; } .miga svg { transition: none; } }
+/* celular: la etiqueta de tipo se va y la descripción baja bajo el título */
+@media (max-width: 520px) {
+  .comando { padding-top: max(12px, env(safe-area-inset-top, 0px)); }
+  #comando-resultados li { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  #comando-resultados .cmd-k { display: none; }
+  .comando-campo kbd { display: none; }
+}

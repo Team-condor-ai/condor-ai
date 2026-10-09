@@ -1,12 +1,12 @@
 /**
  * Íconos de producto · condor ecommerce, track y agents (puerta P4, v3).
  *
- * Fondo (aprobado): el sistema del ícono de condor sites — baldosa squircle en
+ * Fondo (aprobado): baldosa squircle en
  * el color del producto, dos láminas de acrílico en abanico y un resplandor.
  *
  * Glifo: ya no se dibuja a mano. Sale de Phosphor Icons (MIT), que tiene
  * proporciones y trazo resueltos por diseñadores:
- *   ecommerce · handbag (silueta tipo Shopify) + insignia cursor (el de sites)
+ *   ecommerce · handbag (silueta tipo Shopify) + insignia cursor
  *   track     · address-book (la libreta de clientes de un CRM)
  *   agents    · chat-circle-dots + insignia sparkle (la IA)
  * La insignia se recorta del glifo principal con un margen limpio (máscara),
