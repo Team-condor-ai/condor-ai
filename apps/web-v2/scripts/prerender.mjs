@@ -26,7 +26,7 @@ console.log("prerender: /colombia/index.html → inicio (campaña retirada)");
    La home pasa a ser el sitio corporativo estático (11-ago-2026)
 
    `dist/index.html` que produce Vite es la cáscara del SPA. Acá se
-   reemplaza por la página generada en `scripts/gen-sitio.mjs`.
+   reemplaza por la página generada en `scripts/gen-condor.mjs` (escribe public/rediseno/inicio.html).
 
    EL ORDEN IMPORTA, y es la parte fácil de romper: `404.html` tiene que
    quedar con la cáscara del SPA, NO con la home estática. GitHub Pages

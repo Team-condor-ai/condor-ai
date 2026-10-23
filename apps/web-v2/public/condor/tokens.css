@@ -1,0 +1,94 @@
+/* =========================================================================
+   condor.ai · Tokens · guion visual v2 (puerta P5)
+   Blanco de base, negro y blanco corporativo, el azul de la página pública
+   solo para destacar. Forma tipo Apple (radios generosos), acrílico claro y
+   movimiento suave. Fuente única para condorai.cl y los productos.
+   Usar SIEMPRE los semánticos en interfaz (--cn-fondo, --cn-texto, --cn-acento…).
+   ========================================================================= */
+
+@font-face { font-family: "Inter Display"; src: url("/condor/fuentes/InterDisplay-Medium.ttf") format("truetype"); font-weight: 500; font-display: swap; }
+@font-face { font-family: "Inter Display"; src: url("/condor/fuentes/InterDisplay-SemiBold.ttf") format("truetype"); font-weight: 600; font-display: swap; }
+@font-face { font-family: "Inter"; src: url("/condor/fuentes/inter-latin-400-normal.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Inter"; src: url("/condor/fuentes/inter-latin-500-normal.woff2") format("woff2"); font-weight: 500; font-display: swap; }
+@font-face { font-family: "Inter"; src: url("/condor/fuentes/inter-latin-600-normal.woff2") format("woff2"); font-weight: 600; font-display: swap; }
+@font-face { font-family: "Geist Mono"; src: url("/condor/fuentes/geist-mono-latin-500-normal.woff2") format("woff2"); font-weight: 500; font-display: swap; }
+
+:root {
+  /* ── Marca ──────────────────────────────────────────────────────────── */
+  --cn-tinta: #151517;          /* el negro de condor.ai */
+  --cn-blanco: #FFFFFF;
+  --cn-azul: #014CFD;           /* Azul Cóndor: solo para destacar */
+  --cn-azul-hondo: #0039C7;
+  --cn-azul-suave: #EEF3FF;
+
+  /* Grises (escala del sistema de Apple, afinada a la tinta) */
+  --cn-gris-1: #636368;         /* texto secundario */
+  --cn-gris-2: #8E8E93;         /* íconos y texto grande (3,3:1): nunca texto chico */
+  --cn-gris-3: #C7C7CC;         /* deshabilitado */
+  --cn-gris-4: #DDDDDF;         /* líneas */
+  --cn-gris-5: #F2F2F4;         /* superficies hundidas */
+  --cn-gris-6: #F8F8FA;         /* fondo alterno */
+
+  /* Productos */
+  --cn-p-ecommerce: #7A3CFF;
+  --cn-p-track: #0A8FE0;
+  --cn-p-agents: #FF5A1F;
+
+  /* Estados */
+  --cn-ok: #147A42;      --cn-ok-suave: #E7F6EE;   /* contraste 4,9:1 sobre su suave */
+  --cn-alerta: #8F5600;  --cn-alerta-suave: #FCF1DE;   /* 5,3:1 */
+  --cn-error: #C01E2A;   --cn-error-suave: #FDECEC;   /* 5,3:1 */
+  --cn-info: #014CFD;    --cn-info-suave: #EEF3FF;
+
+  /* ── Semánticos ─────────────────────────────────────────────────────── */
+  --cn-fondo: #FFFFFF;
+  --cn-superficie: #FFFFFF;
+  --cn-superficie-2: var(--cn-gris-6);
+  --cn-hundida: var(--cn-gris-5);
+  --cn-linea: var(--cn-gris-4);
+  --cn-texto: var(--cn-tinta);
+  --cn-texto-2: var(--cn-gris-1);
+  --cn-texto-3: #6B6B70;          /* 5,3:1 sobre blanco y 4,7:1 sobre gris-5: el más claro para texto chico */
+  --cn-acento: var(--cn-azul);
+  --cn-acento-hover: var(--cn-azul-hondo);
+  --cn-foco: 0 0 0 4px rgba(1, 76, 253, 0.22);
+
+  /* ── Tipografía ─────────────────────────────────────────────────────── */
+  --cn-display: "Inter Display", -apple-system, "SF Pro Display", system-ui, sans-serif;
+  --cn-texto-f: "Inter", -apple-system, "SF Pro Text", system-ui, sans-serif;
+  --cn-mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --cn-t-80: 5rem; --cn-t-56: 3.5rem; --cn-t-40: 2.5rem; --cn-t-28: 1.75rem; --cn-t-21: 1.3125rem;
+  --cn-t-17: 1.0625rem; --cn-t-15: 0.9375rem; --cn-t-13: 0.8125rem; --cn-t-12: 0.75rem;
+
+  /* ── Forma: radios generosos, tipo Apple ────────────────────────────── */
+  --cn-r-1: 8px;     /* chips, campos chicos */
+  --cn-r-2: 12px;    /* botones, campos */
+  --cn-r-3: 16px;    /* tarjetas chicas */
+  --cn-r-4: 22px;    /* tarjetas */
+  --cn-r-5: 28px;    /* paneles, hojas */
+  --cn-r-pildora: 999px;
+  --cn-r-icono: 22.37%;   /* aproximación CSS del squircle de los íconos */
+
+  /* ── Profundidad ────────────────────────────────────────────────────── */
+  --cn-sombra-1: 0 1px 2px rgba(21, 21, 23, 0.06);
+  --cn-sombra-2: 0 8px 24px -10px rgba(21, 21, 23, 0.18);
+  --cn-sombra-3: 0 30px 70px -28px rgba(21, 21, 23, 0.32);
+
+  /* ── Material: acrílico claro ───────────────────────────────────────── */
+  --cn-acrilico: rgba(255, 255, 255, 0.58);
+  --cn-acrilico-borde: rgba(255, 255, 255, 0.78);
+  --cn-acrilico-blur: blur(24px) saturate(1.8);
+  --cn-acrilico-canto: inset 0 1px 0 rgba(255, 255, 255, 0.95), inset 0 -1px 0 rgba(21, 21, 23, 0.05);
+
+  /* ── Movimiento ─────────────────────────────────────────────────────── */
+  --cn-llegada: cubic-bezier(0.16, 1, 0.3, 1);      /* lo que entra: rápido y se posa */
+  --cn-suave: cubic-bezier(0.25, 0.1, 0.25, 1);     /* cambios de estado */
+  /* resorte real (muelle amortiguado, ζ = 0,62): toques, interruptores, insignias */
+  --cn-resorte: linear(0, 0.026, 0.093, 0.188, 0.299, 0.416, 0.531, 0.641, 0.739, 0.826, 0.898, 0.957, 1.003, 1.037, 1.061, 1.075, 1.082, 1.083, 1.08, 1.074, 1.065, 1.056, 1.046, 1.036, 1.028, 1.02, 1.013, 1.007, 1.002, 0.999, 0.996, 0.994, 0.993, 0.993, 0.993, 0.993, 0.994, 0.995, 0.996, 0.996, 0.997, 0.998, 0.999, 0.999, 1, 1, 1, 1, 1);
+  --cn-d-1: 150ms; --cn-d-2: 250ms; --cn-d-3: 400ms; --cn-d-4: 700ms; --cn-d-5: 1100ms;
+
+  color-scheme: light;
+}
+@media (prefers-reduced-motion: reduce) {
+  :root { --cn-d-1: 1ms; --cn-d-2: 1ms; --cn-d-3: 1ms; --cn-d-4: 1ms; --cn-d-5: 1ms; }
+}

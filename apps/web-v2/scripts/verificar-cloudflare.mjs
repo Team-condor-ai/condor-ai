@@ -31,7 +31,7 @@ if (grandes.length) {
 const portada = readFileSync(join(dist, "index.html"), "utf8");
 const shell = readFileSync(join(dist, "404.html"), "utf8");
 
-if (!portada.includes("rediseno/estilo.css")) {
+if (!portada.includes("condor/estilo.css")) {
   throw new Error("dist/index.html no es la portada corporativa estática");
 }
 if (!shell.includes('id="root"')) {

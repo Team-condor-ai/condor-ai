@@ -28,7 +28,7 @@ const PRODUCTOS: Producto[] = [
 ];
 
 /** Todo lo que no es "/" o "/acceso" vive en las páginas estáticas
- *  generadas por `gen-sitio.mjs` (fuera del router de React) — de ahí que
+ *  generadas por `gen-condor.mjs` (fuera del router de React) — de ahí que
  *  todo use `<a>` normal, no `<Link>`. */
 function MenuProductos() {
   const [abierto, setAbierto] = useState(false);
