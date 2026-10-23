@@ -42,6 +42,7 @@ export function NotasInternas() {
   const [modulos, setModulos] = useState<ModuloCuenta[]>([]);
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [equipo, setEquipo] = useState<MiembroEquipo[]>([]);
+  const [miCorreo, setMiCorreo] = useState("");
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
   const [seccion, setSeccion] = useState<Seccion>("cuentas");
@@ -58,12 +59,14 @@ export function NotasInternas() {
 
   async function cargar() {
     setCargando(true);
-    const [info, grupos, cartera, personas] = await Promise.all([
+    const [info, grupos, cartera, personas, usuario] = await Promise.all([
       sb.from("notas_internas").select("*").order("actualizado_en", { ascending: false }),
       sb.from("modulos_cuentas").select("*").order("orden").order("nombre"),
       sb.from("clientes").select("id,nombre,negocio,email").order("negocio"),
       sb.from("admins").select("email,nombre").order("nombre"),
+      sb.auth.getUser(),
     ]);
+    setMiCorreo(usuario.data.user?.email?.toLowerCase() ?? "");
     const fallos = [info.error, grupos.error, cartera.error, personas.error].filter(Boolean);
     setError(fallos.length ? `No se pudo cargar el Centro operativo: ${fallos[0]?.message}` : "");
     setItems((info.data ?? []) as NotaInterna[]);
@@ -156,6 +159,15 @@ export function NotasInternas() {
   const registrosVisibles = items.filter((item) => item.tipo === (seccion === "notas" ? "nota" : "archivo") && (!busca.trim() || textoEncontrable(item).includes(busca.trim().toLowerCase())));
   const conteo = (tipo: NotaInterna["tipo"]) => items.filter((item) => item.tipo === tipo).length;
 
+  async function quitarPersona(persona: MiembroEquipo) {
+    const nombre = persona.nombre || persona.email;
+    if (!await confirmar(`¿Quitar a ${nombre} del equipo?`, "Pierde el acceso de staff al portal desde su próximo ingreso. Puedes volver a agregarla cuando quieras.", "Quitar")) return;
+    // RLS no avisa cuando filtra un delete: sin filas de vuelta, no se borró.
+    const { data, error: fallo } = await sb.from("admins").delete().eq("email", persona.email).select("email");
+    if (fallo) setError(fallo.message);
+    else if (!data?.length) setError("No se pudo quitar a esa persona. Nadie puede quitarse a sí mismo del equipo.");
+    else setEquipo((actuales) => actuales.filter((actual) => actual.email !== persona.email));
+  }
   async function borrar(item: NotaInterna) {
     if (!await confirmar(`¿Borrar “${item.titulo}”?`, "Se elimina la ficha, pero los adjuntos guardados se conservarán.", "Borrar")) return;
     const { error: fallo } = await sb.from("notas_internas").delete().eq("id", item.id);
@@ -316,7 +328,7 @@ export function NotasInternas() {
           modulos={modulos}
         />
       </section>
-    ) : seccion === "equipo" ? <EquipoPanel equipo={equipo} /> : (
+    ) : seccion === "equipo" ? <EquipoPanel equipo={equipo} miCorreo={miCorreo} quitar={(persona) => void quitarPersona(persona)} /> : (
       <RegistrosPanel
         titulo={seccion === "notas" ? "Notas del equipo" : "Archivos internos"}
         items={registrosVisibles}
@@ -554,7 +566,7 @@ function RegistrosPanel({ titulo, items, busca, cambiarBusca }: { titulo: string
     </section>
   );
 }
-function EquipoPanel({ equipo }: { equipo: MiembroEquipo[] }) {
+function EquipoPanel({ equipo, miCorreo, quitar }: { equipo: MiembroEquipo[]; miCorreo: string; quitar: (persona: MiembroEquipo) => void }) {
   return (
     <section className="equipo-panel">
       <div className="equipo-intro">
@@ -569,7 +581,12 @@ function EquipoPanel({ equipo }: { equipo: MiembroEquipo[] }) {
         {equipo.map((persona) => (
           <article className="persona-card" key={persona.email}>
             <span className="avatar-persona">{iniciales(persona.nombre || persona.email)}</span>
-            <div><h4>{persona.nombre || "Sin nombre"}</h4><p>{persona.email}</p><small>Acceso de equipo</small></div>
+            <div><h4>{persona.nombre || "Sin nombre"}</h4><p>{persona.email}</p><small>{persona.email.toLowerCase() === miCorreo ? "Tú" : "Acceso de equipo"}</small></div>
+            {persona.email.toLowerCase() !== miCorreo && (
+              <button className="persona-quitar" title={`Quitar a ${persona.nombre || persona.email}`} aria-label={`Quitar a ${persona.nombre || persona.email} del equipo`} onClick={() => quitar(persona)}>
+                {Ico.eliminar({ t: 15 })}
+              </button>
+            )}
           </article>
         ))}
       </div>
