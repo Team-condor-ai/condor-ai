@@ -288,40 +288,7 @@ textarea.campo{resize:vertical;min-height:56px}
   .campo.codigo{font-size:22px;letter-spacing:.22em;padding-left:calc(13px + .22em)}
 }
 
-/* ── Lo que Bárbara aprendió ─────────────────────────────────────────────
-   Sirve para dos listas con la misma forma: las reglas de una marca
-   (`ReglasAprendidas`) y los patrones globales (`PatronesGlobales`). Se
-   comparten los estilos a propósito — son la misma idea a dos escalas, y que
-   se vean igual ayuda a entender que una es la versión global de la otra. */
 .tenue{color:var(--texto-2);font-size:13px;margin:0}
-.regla{display:flex;align-items:flex-start;gap:12px;padding:12px 14px;
-  background:var(--panel);border:1px solid var(--borde);border-radius:12px}
-/* Apagada sigue a la vista, no desaparece: saber que se aprendió algo
-   equivocado —y de dónde salió— es justo lo que sirve para corregirlo. */
-/* El texto original del que salió la regla. Se corta en una línea: es para
-   auditar cuando algo parece raro, no para leerlo siempre. */
-
-@media(max-width:560px){
-  .regla{flex-direction:column;align-items:stretch}
-}
-
-/* ── Plantillas de carrusel ──────────────────────────────────────────────
-   Cada tarjeta muestra una miniatura pintada con los colores REALES de la
-   marca. Elegir a ciegas y ver el resultado recién en Telegram convertiría
-   cada pieza publicada en la prueba. */
-/* Las barras grises son el texto: no se lee, se reconoce la composición. */
-
-/* ── MCP / CLI ────────────────────────────────────────────────────────── */
-
-/* ── Catálogo de plantillas (Agentes IA → Bárbara) ───────────────────────
-   Las miniaturas son renders REALES del motor, no un mockup: lo que se ve
-   acá es lo que le llega al cliente. */
-
-/* ── Módulo Memoria (grafo estilo Obsidian) ──────────────────────────────
-   Layout radial a mano, sin física: 5 categorías fijas alrededor del
-   cliente, sus nodos en abanico. Ver GrafoMemoria.tsx para el porqué. */
-/* No se centra en el medio del todo: ahí vive el nodo del cliente, y el
-   mensaje quedaba escrito encima de su nombre. */
 
 /* ═══════════════════════════════════════════════════════════════════════
    MENÚ EN DOS COLUMNAS + VIDRIO SUTIL
@@ -669,7 +636,7 @@ textarea.campo{resize:vertical;min-height:56px}
       texto de las pestañas sigue en `--texto`: un menú de trabajo se lee
       ocho horas al día y siete tintas compitiendo lo vuelven un semáforo.
    2. El hue SIGNIFICA algo — verde es plata, ámbar son personas, índigo es
-      calendario, lima es Bárbara. Un color decorativo no ayuda a nadie a
+      calendario. Un color decorativo no ayuda a nadie a
       encontrar nada.
    3. La textura se apoya en la esquina y se desvanece con una máscara.
       Tiene que leerse como material, no como un patrón de fondo.        */
@@ -716,7 +683,6 @@ textarea.campo{resize:vertical;min-height:56px}
    oscuro sobre el pill negro cada vez que el portal estaba en tema claro. */
 .portal-app .nav-lista .nav-item{position:relative;z-index:2;color:var(--texto);text-decoration:none}
 .portal-app .nav-lista .nav-item.on{color:var(--pill-tx)}
-.portal-app .agente{text-decoration:none}
 /* El icono de la pestaña toma el tinte de su categoría; el texto no. Es lo
    justo para que el ojo agrupe sin que la fila deje de leerse. */
 .portal-app .nav-lista .nav-item>svg{color:color-mix(in srgb, var(--cat) 62%, var(--texto-3))}
@@ -753,11 +719,6 @@ textarea.campo{resize:vertical;min-height:56px}
     repeating-linear-gradient(0deg, transparent 0 15px, color-mix(in srgb, var(--cat) 15%, transparent) 15px 16px),
     repeating-linear-gradient(90deg, transparent 0 15px, color-mix(in srgb, var(--cat) 15%, transparent) 15px 16px);
 }
-.portal-app .nav-grupo[data-cat="agentes"]{
-  --cat:#5F7A12;                              /* lima: es el color de Bárbara, no una elección */
-  --cat-forma:
-    radial-gradient(70% 120% at 100% 0, color-mix(in srgb, var(--cat) 16%, transparent), transparent 68%);
-}
 .portal-app .nav-grupo[data-cat="operacion"]{
   --cat:#0F7480;                              /* teal: comunicación, flujo que sale */
   --cat-forma:
@@ -791,62 +752,6 @@ textarea.campo{resize:vertical;min-height:56px}
 /* Sobre un lienzo oscuro la misma textura se ve el doble: se baja. */
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .portal-app .nav-grupo::before{opacity:.55}}
 :root[data-theme="dark"] .portal-app .nav-grupo::before{opacity:.55}
-
-/* ── LA FIRMA: la fila de agentes ────────────────────────────────────────
-   Bárbara ocupa dos tercios y Memoria uno. No es capricho de layout: una
-   es la agente y la otra es lo que ella recuerda, y el tamaño lo dice sin
-   necesidad de explicarlo.                                               */
-.portal-app .agente{
-  position:relative;
-  display:flex;
-  flex-direction:column;
-  justify-content:flex-end;
-  min-height:70px;
-  gap:2px;
-  padding:8px 9px 9px;
-  overflow:hidden;
-  border:1px solid transparent;
-  border-radius:12px;
-  cursor:pointer;
-  isolation:isolate;
-  transition:transform .2s cubic-bezier(.2,.8,.3,1), border-color .2s ease, box-shadow .2s ease;
-}
-@media (hover:hover){.portal-app .agente:hover{transform:translateY(-1px)}}
-
-/* BÁRBARA. Su mundo es oscuro en los dos temas: es su marca, y es lo que
-   hace que el boton salte en una barra clara sin gritar. */
-/* El aliento del fondo. Lento y de baja amplitud: tiene que sentirse vivo
-   sin pedir atención cada vez que alguien pasa por el menú. */
-@keyframes agente-respira{
-  0%,100%{opacity:.5;transform:scale(.9)}
-  50%{opacity:1;transform:scale(1.1)}
-}
-
-/* LA SEMILLA. Cambia de silueta por tensión superficial — el mismo lenguaje
-   de la que vive dentro del módulo de Bárbara, en versión de 14 px. Se
-   define acá y no se reutiliza la de `barbara.css` a propósito: el menú no
-   puede depender del orden de carga de la hoja de otro módulo. */
-/* Estando dentro de Bárbara, la semilla late más rápido: el menú refleja
-   que la agente está en pantalla. */
-@keyframes agente-semilla-muta{
-  0%,100%{border-radius:63% 37% 54% 46% / 42% 62% 38% 58%;transform:rotate(0deg) scale(1)}
-  28%{border-radius:42% 58% 36% 64% / 61% 39% 57% 43%;transform:rotate(74deg) scale(.92,1.08)}
-  56%{border-radius:57% 43% 68% 32% / 35% 54% 46% 65%;transform:rotate(168deg) scale(1.06,.94)}
-  78%{border-radius:35% 65% 49% 51% / 58% 33% 67% 42%;transform:rotate(258deg) scale(.95,1.04)}
-}
-
-/* MEMORIA. Misma familia, otra materia: si fuera una copia más chica de
-   Bárbara serían dos botones del mismo agente. Acá el fondo es una
-   constelación — nodos y un hilo entre ellos, que es lo que guarda. */
-
-/* El pill de vidrio deja de pisar a las tarjetas: los agentes traen su
-   propio estado activo y dos indicadores encima del mismo botón se leen
-   como un error de render. */
-
-@media (prefers-reduced-motion: reduce){
-  .portal-app .agente{transition:none}
-  .portal-app .agente:hover{transform:none}
-}
 
 /* ── Monto Ecommerce: tarjeta grande que se expande al apretarla ──────
    Mismo look que .dashboard-egresos (borde+radio+panel), pero el resumen

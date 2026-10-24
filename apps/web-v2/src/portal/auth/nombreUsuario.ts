@@ -42,7 +42,7 @@ export function useNombreUsuario(): string | null {
         .eq("email", sesion.email)
         .maybeSingle();
       // `vivo` evita el warning de actualizar un componente desmontado si el
-      // usuario sale de Bárbara antes de que llegue la respuesta.
+      // usuario sale de la pantalla antes de que llegue la respuesta.
       if (vivo) setNombre((data as { nombre: string | null } | null)?.nombre || null);
     })();
 

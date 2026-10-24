@@ -256,7 +256,7 @@ export type CarpetaBiblioteca = {
  * comercial los llama distinto, se corrigen ACÁ y cambian en todo el portal.
  */
 export const CATALOGO_PLANES: { grupo: string; planes: string[] }[] = [
-  { grupo: "Bárbara", planes: ["Bárbara", "Bárbara Go", "Bárbara Plus"] },
+  { grupo: "Productos", planes: ["Sites", "Ecommerce", "CRM"] },
   { grupo: "Página web", planes: ["Landing", "Completa", "A medida"] },
 ];
 

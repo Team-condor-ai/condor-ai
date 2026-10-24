@@ -324,7 +324,7 @@ export function EditorReunion({ cerrar, guardado, existente = null }: Props) {
         </header>
         <div className="contenido">
           <label className="campo-lbl">Título
-            <input className="campo" autoFocus required placeholder="Kickoff Bárbara — cliente nuevo"
+            <input className="campo" autoFocus required placeholder="Kickoff — cliente nuevo"
               value={titulo} onChange={(e) => setTitulo(e.target.value)} />
           </label>
 

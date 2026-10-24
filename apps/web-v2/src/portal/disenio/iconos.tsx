@@ -186,20 +186,6 @@ export const Ico = {
       <path d="M8 7.6h7M8 11h7M8 14.4h4" />
     </Svg>
   ),
-  /** Bárbara: pelo largo y un destello. Es una persona, no un engranaje —
-   *  el agente tiene cara en el material de marca y acá también. */
-  barbara: (p: Props = {}) => (
-    <Svg {...p} g={1.55}>
-      <path d="M6.1 13.2C5.2 8 7.1 3.7 11.8 3.7c4.8 0 7 4.2 6.1 9.5-.2 1.3-.8 2.3-1.7 3v3.4M7.8 16.2v3.4" />
-      <path d="M6.2 11.7c-.9 2.7-1.2 6.1-.4 9.1M17.7 11.7c.9 2.7 1.2 6.1.4 9.1" />
-      <path d="M8.1 8.7c2.1-.4 3.4-1.7 3.9-3.5.6 1.7 1.8 2.8 3.8 3.4" />
-      <path d="M8.8 10.3c.45-.45 1.15-.45 1.6 0M13.8 10.3c.6-.55 1.4-.35 1.65.15" />
-      <path d="M13.8 10.55l1.7-.1" />
-      <path d="M10.3 13.1c1.1.9 2.3.9 3.4 0" />
-      <path d="M5.2 21c.5-2.5 2.8-4.1 6.8-4.1s6.3 1.6 6.8 4.1" />
-      <path d="M20 3.2l.45 1.15 1.15.45-1.15.45L20 6.4l-.45-1.15-1.15-.45 1.15-.45z" />
-    </Svg>
-  ),
   /** Rat.IA: silueta angular basada en el isotipo real — hocico, oreja y
    *  cola quebrada. Se mantiene monocroma para funcionar en ambos temas. */
   ratia: (p: Props = {}) => (
