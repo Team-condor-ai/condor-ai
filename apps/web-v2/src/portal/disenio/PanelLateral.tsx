@@ -105,7 +105,7 @@ export function PanelLateral({
             {bajada && <p>{bajada}</p>}
           </div>
           <button className="icono-btn" onClick={salir} title="Cerrar" aria-label="Cerrar">
-            {Ico.salir({ t: 15 })}
+            {Ico.cerrar({ t: 15 })}
           </button>
         </header>
         <div className="contenido">{children}</div>

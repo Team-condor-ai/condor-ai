@@ -184,14 +184,14 @@ export function Explorador({ seccion }: { seccion: Seccion }) {
 
       <div className="bv-cuerpo">
         {arbol && (
-          <aside className="bv-arbol" aria-label="Carpetas">
+          <div className="bv-arbol" role="navigation" aria-label="Carpetas">
             <div className={`bv-nodo raiz${!actual ? " on" : ""}${sobre === "raiz" ? " sobre" : ""}`} {...zona(null)}>
               <button className="bv-nom" onClick={() => ir(null)}>{Ico.candado({ t: 14 })}{esArchivos ? "Todos los archivos" : "Todas las claves"}<small>{items.length}</small></button>
             </div>
             <ul>{hijas(null).map((c) => nodo(c, 0))}</ul>
             <button className="bv-agregar" onClick={() => nuevaCarpeta(null)}>{Ico.mas({ t: 13 })} Nueva carpeta</button>
             <span className="bv-borde" onPointerDown={arrastrarBorde} role="separator" aria-orientation="vertical" aria-label="Cambiar ancho" title="Arrastra para cambiar el ancho" />
-          </aside>
+          </div>
         )}
 
         <section className="bv-principal">

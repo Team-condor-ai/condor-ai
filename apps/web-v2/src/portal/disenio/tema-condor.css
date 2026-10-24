@@ -60,7 +60,7 @@ html:has(.portal-app), body:has(.portal-app), #root:has(.portal-app) { backgroun
 @media (max-width: 860px) { .portal-app .barra { padding: 20px 16px 4px; } .portal-app .cuerpo { padding: 12px 16px 40px; } .portal-app .barra h1 { font-size: 1.6rem; } }
 
 /* ── Menú lateral ─────────────────────────────────────────────────────── */
-.portal-app aside { width: 252px; padding: 22px 14px 16px; gap: 18px; background: #fff; border-right: 1px solid var(--borde-suave); }
+.portal-app aside:not(.panel-lat) { width: 252px; padding: 22px 14px 16px; gap: 18px; background: #fff; border-right: 1px solid var(--borde-suave); }
 .portal-app .logo { padding: 2px 10px 6px; gap: 6px; }
 .portal-app .logo .logo-claro { display: block; height: 26px; width: auto; }
 .portal-app .logo small { font-family: var(--cp-mono); letter-spacing: .18em; font-size: 9px; color: var(--texto-3); }
@@ -322,7 +322,16 @@ html:has(.portal-app), body:has(.portal-app), #root:has(.portal-app) { backgroun
 .lateral-velo { display: none; }
 @media (max-width: 860px) {
   .lateral-velo { display: block; position: fixed; inset: 0; z-index: 59; background: rgba(21,22,26,.3); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); animation: dlg-fondo .2s; }
-  .portal-app aside { position: fixed; left: 0; top: 0; z-index: 60; height: 100dvh; transform: translateX(-105%); transition: transform .35s var(--cp-suave); box-shadow: none; border-radius: 0 24px 24px 0; }
-  .portal-app aside.abierto { transform: none; box-shadow: var(--sombra-alta); }
+  .portal-app aside:not(.panel-lat) { position: fixed; left: 0; top: 0; z-index: 60; height: 100dvh; transform: translateX(-105%); transition: transform .35s var(--cp-suave); box-shadow: none; border-radius: 0 24px 24px 0; }
+  .portal-app aside.abierto:not(.panel-lat) { transform: none; box-shadow: var(--sombra-alta); }
   .portal-app .quemenu { display: grid; margin: 14px 0 0 16px; width: 42px; height: 42px; border-radius: 12px; border: 1px solid var(--borde); background: #fff; box-shadow: var(--sombra); }
 }
+
+/* ── Correcciones de la revisión (24-oct, noche) ───────────────────────── */
+.portal-app .panel-lat { z-index: 86; }
+.portal-app .buscador { height: 42px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--borde); background: #fff; box-shadow: var(--sombra); }
+.portal-app .buscador:focus-within { border-color: var(--azul); box-shadow: 0 0 0 4px color-mix(in srgb, var(--azul) 14%, transparent); }
+.portal-app .buscador input { border: 0 !important; box-shadow: none !important; background: none !important; padding: 0; height: 100%; }
+.portal-app .mini-busca { display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--borde); background: #fff; color: var(--texto-3); }
+.portal-app .mini-busca:focus-within { border-color: var(--azul); box-shadow: 0 0 0 4px color-mix(in srgb, var(--azul) 14%, transparent); }
+.portal-app .mini-busca input { border: 0 !important; box-shadow: none !important; background: none !important; padding: 0 !important; height: 100%; }

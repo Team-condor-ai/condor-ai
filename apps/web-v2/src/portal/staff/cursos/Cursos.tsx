@@ -210,7 +210,7 @@ function Leccion({ curso, leccion: l, anterior, siguiente, lista, fases, hechas,
             <button className="btn solido" disabled={!siguiente} onClick={() => siguiente && onIr(siguiente.id)}>Siguiente →</button>
           </div>
         </section>
-        <aside className="cur-lista" aria-label="Temario">
+        <div className="cur-lista" role="navigation" aria-label="Temario">
           {grupos.map((g) => (
             <div key={g.f?.id ?? "sin"} className="cur-lista-fase">
               <p>{g.f?.titulo ?? "Otras lecciones"}</p>
@@ -223,7 +223,7 @@ function Leccion({ curso, leccion: l, anterior, siguiente, lista, fases, hechas,
               </ol>
             </div>
           ))}
-        </aside>
+        </div>
       </div>
     </div>
   );
