@@ -64,8 +64,9 @@ export function Inicio() {
   const anio = new Date().getFullYear();
   const pagadoAnio = pagos.filter((p) => p.estado === "pagado" && (p.fecha ?? p.creado_en).startsWith(String(anio))).reduce((a, p) => a + p.monto, 0);
   const abiertas = sols.filter((s) => s.estado !== "lista").length;
-  const listas = sols.filter((s) => s.lista_en);
-  const horasProm = listas.length ? listas.reduce((a, s) => a + (Date.parse(s.lista_en!) - Date.parse(s.creado_en)), 0) / listas.length / 3600000 : null;
+  const listas = sols.filter((s) => s.estado === "lista");
+  const conFecha = listas.filter((s) => s.lista_en);
+  const horasProm = conFecha.length ? conFecha.reduce((a, s) => a + (Date.parse(s.lista_en!) - Date.parse(s.creado_en)), 0) / conFecha.length / 3600000 : null;
   const tiempo = horasProm === null ? null : horasProm < 24 ? `${Math.max(1, Math.round(horasProm))} h` : `${Math.round(horasProm / 24)} días`;
   const pctCursos = cursos.total ? Math.round((cursos.vistas / cursos.total) * 100) : 0;
   const nombre = c.nombre?.split(" ")[0] || c.negocio || "";
