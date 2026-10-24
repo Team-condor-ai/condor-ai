@@ -53,6 +53,12 @@ export function Dashboard() {
     });
   }, []);
 
+  async function avanzarSolicitud(x: SolicitudP) {
+    const siguiente = x.estado === "nueva" ? "en_curso" : "lista";
+    const { error } = await sb.from("solicitudes").update({ estado: siguiente, actualizado_en: new Date().toISOString() }).eq("id", x.id);
+    if (!error) setSolicitudes((l) => (siguiente === "lista" ? l.filter((y) => y.id !== x.id) : l.map((y) => (y.id === x.id ? { ...y, estado: siguiente } : y))));
+  }
+
   const hoy = new Date();
   const saludo = hoy.getHours() < 12 ? "Buenos días" : hoy.getHours() < 20 ? "Buenas tardes" : "Buenas noches";
   const fecha = hoy.toLocaleDateString("es-CL", { weekday: "long", day: "numeric", month: "long" });
@@ -145,7 +151,7 @@ export function Dashboard() {
             {solicitudes.length === 0 ? <p className="dash-vacio">Ningún cliente ha pedido cambios.</p> : (
               <ul className="dash-lista">
                 {solicitudes.slice(0, 6).map((x) => (
-                  <li key={x.id}><Link to={`/acceso/clientes?ver=${x.cliente_id}`}><div><b>{x.titulo}</b><small>{nombreCliente(x.cliente_id)} · {hace(Math.floor((Date.now() - new Date(x.creado_en).getTime()) / 86400000))}</small></div><span className={`dash-sello${x.estado === "en_curso" ? " azul" : ""}`}>{x.estado === "nueva" ? "Nueva" : "En curso"}</span></Link></li>
+                  <li key={x.id}><Link to={`/acceso/clientes?ver=${x.cliente_id}`}><div><b>{x.titulo}</b><small>{nombreCliente(x.cliente_id)} · {hace(Math.floor((Date.now() - new Date(x.creado_en).getTime()) / 86400000))}</small></div><span className={`dash-sello${x.estado === "en_curso" ? " azul" : ""}`}>{x.estado === "nueva" ? "Nueva" : "En curso"}</span></Link><button className="btn chico" onClick={() => avanzarSolicitud(x)} title={x.estado === "nueva" ? "Marcar en curso" : "Marcar como lista"}>{x.estado === "nueva" ? "Empezar" : "Lista"}</button></li>
                 ))}
               </ul>
             )}

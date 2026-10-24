@@ -80,7 +80,7 @@ ${noindex ? '<meta name="robots" content="noindex,follow">\n' : ""}<link rel="ca
 <meta property="og:url" content="${url}">
 <meta property="og:image" content="${SITIO}${og}">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="icon" type="image/svg+xml" href="/condor/marca/condor-isotipo.svg">
+<link rel="icon" type="image/svg+xml" href="/condor/marca/condor-favicon.svg">
 <link rel="icon" type="image/png" href="/assets/favicon.png">
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
 <link rel="preload" href="/condor/fuentes/InterDisplay-SemiBold.ttf" as="font" type="font/ttf" crossorigin>
