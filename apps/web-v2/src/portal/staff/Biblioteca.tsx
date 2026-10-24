@@ -1,7 +1,7 @@
 import { useSearchParams } from "react-router-dom";
 import { Ico } from "../disenio/iconos";
-import { Cursos } from "./Cursos";
-import { Claves } from "./Claves";
+import { Cursos } from "./cursos/Cursos";
+import { Explorador } from "./boveda/Explorador";
 import { Servicios } from "./Servicios";
 
 const TABS = [
@@ -21,7 +21,7 @@ export function Biblioteca({ tabInicial = "cursos" }: { tabInicial?: Tab }) {
   const [params, setParams] = useSearchParams();
   const pedida = params.get("tab") as Tab | null;
   const tab: Tab = TABS.some((t) => t.id === pedida) ? (pedida as Tab) : tabInicial;
-  const ir = (t: Tab) => { const p = new URLSearchParams(params); p.set("tab", t); setParams(p, { replace: true }); };
+  const ir = (t: Tab) => setParams(new URLSearchParams({ tab: t }));
 
   return (
     <>
@@ -37,8 +37,8 @@ export function Biblioteca({ tabInicial = "cursos" }: { tabInicial?: Tab }) {
           ))}
         </div>
         {tab === "cursos" && <Cursos editable />}
-        {tab === "passwords" && <Claves modo="passwords" embebido />}
-        {tab === "archivos" && <Claves modo="archivos" embebido />}
+        {tab === "passwords" && <Explorador key="claves" seccion="claves" />}
+        {tab === "archivos" && <Explorador key="archivos" seccion="archivos" />}
         {tab === "suscripciones" && <Servicios />}
       </div>
     </>

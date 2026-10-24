@@ -52,10 +52,10 @@ html:has(.portal-app), body:has(.portal-app), #root:has(.portal-app) { backgroun
 .portal-app main { padding: 0; background: #fff; position: relative; }
 .portal-app main::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 340px; pointer-events: none; background: radial-gradient(60% 100% at 85% 0, rgba(1,76,253,.07), transparent 70%), radial-gradient(40% 80% at 10% 0, rgba(122,60,255,.05), transparent 70%); }
 .portal-app .lienzo { position: relative; background: transparent; border: 0; border-radius: 0; box-shadow: none; overflow: visible; min-height: 100vh; max-width: 1280px; }
-.portal-app .barra { padding: 30px 36px 8px; background: transparent; border: 0; gap: 12px; animation: cp-sube .5s var(--cp-suave) both; }
+.portal-app .barra { padding: 30px 36px 8px; background: transparent; border: 0; gap: 12px; animation: cp-sube .5s var(--cp-suave) backwards; }
 .portal-app .barra h1 { font-size: 2rem; font-weight: 600; letter-spacing: -.045em; }
 .portal-app .cuerpo { padding: 14px 36px 56px; }
-.portal-app .cuerpo > * { animation: cp-sube .55s var(--cp-suave) both; }
+.portal-app .cuerpo > * { animation: cp-sube .55s var(--cp-suave) backwards; }
 .portal-app .cuerpo > *:nth-child(2) { animation-delay: .05s; } .portal-app .cuerpo > *:nth-child(3) { animation-delay: .1s; } .portal-app .cuerpo > *:nth-child(4) { animation-delay: .15s; }
 @media (max-width: 860px) { .portal-app .barra { padding: 20px 16px 4px; } .portal-app .cuerpo { padding: 12px 16px 40px; } .portal-app .barra h1 { font-size: 1.6rem; } }
 
@@ -183,7 +183,7 @@ html:has(.portal-app), body:has(.portal-app), #root:has(.portal-app) { backgroun
 .cl-nueva-carpeta { justify-self: start; margin-top: 4px; }
 .cl-principal .lead-busca { max-width: none; }
 .cl-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
-.cl-fila { display: grid; grid-template-columns: auto minmax(0, 1.2fr) minmax(120px, 1fr) 212px; align-items: center; gap: 14px; padding: 12px 16px; border-radius: var(--cp-r-3); background: #fff; border: 1px solid var(--borde); box-shadow: var(--sombra); animation: cp-sube .45s var(--cp-suave) both; transition: transform .25s var(--cp-resorte), box-shadow .2s, border-color .2s; }
+.cl-fila { display: grid; grid-template-columns: auto minmax(0, 1.2fr) minmax(120px, 1fr) 212px; align-items: center; gap: 14px; padding: 12px 16px; border-radius: var(--cp-r-3); background: #fff; border: 1px solid var(--borde); box-shadow: var(--sombra); animation: cp-sube .45s var(--cp-suave) backwards; transition: transform .25s var(--cp-resorte), box-shadow .2s, border-color .2s; }
 .cl-fila:hover { transform: translateY(-2px); border-color: #D8DBE6; box-shadow: 0 14px 28px -18px rgba(21,22,26,.3); }
 .cl-av { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; color: #fff; font: 600 13px/1 var(--cp-display); box-shadow: 0 6px 12px -6px rgba(21,22,26,.4); transition: transform .3s var(--cp-resorte); }
 .cl-fila:hover .cl-av { transform: scale(1.1) rotate(-5deg); }
@@ -253,7 +253,7 @@ html:has(.portal-app), body:has(.portal-app), #root:has(.portal-app) { backgroun
 
 /* ── Tareas: mismo lenguaje que el tablero de Leads ───────────────────── */
 .portal-app .kanban { gap: 14px; }
-.portal-app .kanban-col { border-radius: var(--cp-r-4); background: #F7F8FB; border: 1px solid var(--borde-suave); padding: 14px 12px 12px; animation: cp-sube .55s var(--cp-suave) both; }
+.portal-app .kanban-col { border-radius: var(--cp-r-4); background: #F7F8FB; border: 1px solid var(--borde-suave); padding: 14px 12px 12px; animation: cp-sube .55s var(--cp-suave) backwards; }
 .portal-app .kanban-col:nth-child(2) { animation-delay: .05s; } .portal-app .kanban-col:nth-child(3) { animation-delay: .1s; } .portal-app .kanban-col:nth-child(4) { animation-delay: .15s; }
 .portal-app .kanban-col > header h3, .portal-app .kanban-col > header b { font-family: var(--cp-display); letter-spacing: -.025em; }
 .portal-app .tarea { border-radius: var(--cp-r-3); background: #fff; border: 1px solid var(--borde); box-shadow: var(--sombra); transition: transform .3s var(--cp-resorte), box-shadow .25s, border-color .2s; }
@@ -270,37 +270,7 @@ html:has(.portal-app), body:has(.portal-app), #root:has(.portal-app) { backgroun
 .bib-tabs { display: inline-flex; gap: 4px; padding: 4px; margin-bottom: 20px; border-radius: 999px; background: var(--gris-bg); }
 .bib-tabs button { display: inline-flex; align-items: center; gap: 8px; border: 0; background: none; padding: 9px 18px; border-radius: 999px; font: 500 13.5px/1 var(--cp-texto); color: var(--texto-2); cursor: pointer; transition: all .3s var(--cp-resorte); }
 .bib-tabs button:hover { color: var(--texto); } .bib-tabs button.on { background: #fff; color: var(--texto); box-shadow: var(--sombra); transform: scale(1.03); }
-.cur-barra { display: flex; justify-content: flex-end; margin-bottom: 14px; }
-.cur-rejilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 16px; }
-.cur-tarjeta { display: grid; gap: 0; padding: 0; text-align: left; border: 1px solid var(--borde); border-radius: var(--cp-r-3); background: #fff; overflow: hidden; box-shadow: var(--sombra); cursor: pointer; font: inherit; color: var(--texto); animation: cp-sube .5s var(--cp-suave) both; transition: transform .3s var(--cp-resorte), box-shadow .25s; }
-.cur-tarjeta:hover { transform: translateY(-5px) rotate(-.5deg); box-shadow: 0 22px 36px -22px rgba(21,22,26,.45); }
-.cur-portada { position: relative; height: 112px; display: flex; align-items: flex-end; justify-content: space-between; padding: 12px; }
-.cur-portada::after { content: ""; position: absolute; inset: 0; background: radial-gradient(70% 100% at 100% 0, rgba(255,255,255,.28), transparent 60%); }
-.cur-portada em, .cur-portada i { position: relative; z-index: 1; font: 600 11px/1 var(--cp-texto); font-style: normal; padding: 4px 10px; border-radius: 999px; background: rgba(255,255,255,.9); color: var(--texto); }
-.cur-texto { display: grid; gap: 3px; padding: 14px 16px 12px; } .cur-texto b { font: 600 15px/1.3 var(--cp-display); letter-spacing: -.02em; } .cur-texto small { color: var(--texto-3); }
-.cur-barra-av { display: block; height: 4px; background: var(--gris-bg); } .cur-barra-av i { display: block; height: 100%; background: var(--e-ganado); border-radius: 0 4px 4px 0; transition: width .6s var(--cp-suave); }
-.cur-detalle { display: grid; gap: 16px; }
-.cur-cab { display: flex; justify-content: space-between; align-items: flex-end; gap: 18px; flex-wrap: wrap; padding: 26px 28px; border-radius: var(--cp-r-4); color: #fff; }
-.cur-cab h2 { margin: 6px 0 4px; font-size: 1.8rem; letter-spacing: -.045em; color: #fff; } .cur-cab p { margin: 0; max-width: 52ch; opacity: .9; }
-.cur-cat { font: 500 10.5px/1 var(--cp-mono); letter-spacing: .12em; text-transform: uppercase; opacity: .85; }
-.cur-cab-der { display: grid; justify-items: end; gap: 2px; } .cur-cab-der b { font: 600 2.2rem/1 var(--cp-display); letter-spacing: -.05em; } .cur-cab-der span { opacity: .85; font-size: 12.5px; } .cur-acc { display: flex; gap: 6px; margin-top: 8px; } .cur-cab .btn { background: rgba(255,255,255,.18); border-color: rgba(255,255,255,.4); color: #fff; box-shadow: none; }
-.cur-cuerpo { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 18px; align-items: start; }
-.cur-visor { display: grid; gap: 14px; }
-.cur-video { position: relative; aspect-ratio: 16 / 9; border-radius: var(--cp-r-3); overflow: hidden; background: #000; box-shadow: var(--sombra-alta); } .cur-video iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
-.cur-info h3, .cur-enlace h3 { margin: 0 0 6px; font-size: 1.2rem; } .cur-info p, .cur-enlace p { margin: 0 0 10px; color: var(--texto-2); }
-.cur-enlace { display: grid; gap: 10px; justify-items: start; padding: 28px; border-radius: var(--cp-r-3); background: #F7F8FB; border: 1px solid var(--borde-suave); }
-.cur-lista { padding: 14px; border-radius: var(--cp-r-3); background: #fff; border: 1px solid var(--borde); box-shadow: var(--sombra); }
-.cur-lista > header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; } .cur-lista h3 { margin: 0; font: 500 10.5px/1 var(--cp-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--texto-3); }
-.cur-lista ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; } .cur-lista li { display: flex; align-items: center; border-radius: var(--cp-r-2); transition: background .15s; } .cur-lista li:hover, .cur-lista li.on { background: var(--azul-suave); }
-.cur-lista li > button:first-child { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; padding: 10px; border: 0; background: none; text-align: left; font: inherit; color: var(--texto); cursor: pointer; }
-.cur-n { flex: none; width: 28px; height: 28px; display: grid; place-items: center; border-radius: 50%; background: var(--gris-bg); font: 600 12px/1 var(--cp-mono); color: var(--texto-2); } .cur-lista li.on .cur-n { background: var(--azul); color: #fff; } .cur-lista li.hecha .cur-n { background: var(--ok-bg); color: var(--ok-tx); }
-.cur-t b { display: block; font-weight: 500; font-size: 13.5px; } .cur-t small { color: var(--texto-3); }
-.cur-mini { display: none; padding-right: 6px; gap: 2px; } .cur-lista li:hover .cur-mini { display: flex; } .cur-mini button { width: 24px; height: 24px; border: 0; border-radius: 6px; background: transparent; color: var(--texto-2); cursor: pointer; } .cur-mini button:hover { background: #fff; color: var(--texto); }
-.cur-modal { padding: 24px; max-width: 520px; } .cur-modal h3 { margin: 0 0 14px; font-size: 1.2rem; }
-.cur-form { display: grid; gap: 12px; } .cur-form label { display: grid; gap: 6px; font-size: 12px; font-weight: 500; color: var(--texto-2); } .cur-form input:not([type="checkbox"]), .cur-form textarea { width: 100%; padding: 10px 13px; font-size: 14px; } .cur-form-pie { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
-@media (max-width: 980px) { .cur-cuerpo { grid-template-columns: 1fr; } }
 
-.cur-detalle > .btn { justify-self: start; }
 
 /* ── Cambio de clave y entrega de accesos ─────────────────────────────── */
 .cambiar-clave { display: grid; gap: 12px; } .cambiar-clave h3 { margin: 0; } .cambiar-clave label { display: grid; gap: 6px; font-size: 12px; font-weight: 500; color: var(--texto-2); } .cambiar-clave input:not([type="checkbox"]) { width: 100%; height: 42px; padding: 0 14px; font-size: 14px; }
@@ -317,7 +287,7 @@ html:has(.portal-app), body:has(.portal-app), #root:has(.portal-app) { backgroun
 .srv-resumen .alerta { background: var(--warn-bg); border-color: var(--warn-bd); } .srv-resumen .alerta b { color: var(--warn-tx); }
 .srv-barra { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
 .srv-grupo { margin-bottom: 22px; } .srv-grupo h3 { margin: 0 0 10px 4px; font: 500 10.5px/1 var(--cp-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--texto-3); } .srv-grupo ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
-.srv-fila { display: grid; grid-template-columns: auto minmax(0, 1fr) auto 128px auto; align-items: center; gap: 14px; padding: 12px 16px; border-radius: var(--cp-r-3); background: #fff; border: 1px solid var(--borde); box-shadow: var(--sombra); animation: cp-sube .45s var(--cp-suave) both; transition: transform .25s var(--cp-resorte), box-shadow .2s; }
+.srv-fila { display: grid; grid-template-columns: auto minmax(0, 1fr) auto 128px auto; align-items: center; gap: 14px; padding: 12px 16px; border-radius: var(--cp-r-3); background: #fff; border: 1px solid var(--borde); box-shadow: var(--sombra); animation: cp-sube .45s var(--cp-suave) backwards; transition: transform .25s var(--cp-resorte), box-shadow .2s; }
 .srv-fila:hover { transform: translateY(-2px); box-shadow: 0 14px 28px -18px rgba(21,22,26,.3); }
 .srv-fila.e-desactivar { background: #FFFBF3; border-color: var(--warn-bd); } .srv-fila.e-cancelada { opacity: .6; }
 .srv-av { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; color: #fff; font: 600 12px/1 var(--cp-display); }
@@ -327,3 +297,32 @@ html:has(.portal-app), body:has(.portal-app), #root:has(.portal-app) { backgroun
 .srv-acc { display: flex; gap: 2px; }
 @media (max-width: 980px) { .srv-resumen { grid-template-columns: repeat(2, minmax(0, 1fr)); } .srv-fila { grid-template-columns: auto minmax(0, 1fr) auto; } .srv-costo { display: none; } .srv-estado { grid-column: 2 / 3; } }
 .acceso .cambiar-clave { width: 100%; }
+
+/* ── Ventanas antiguas (EditorCliente, cobros, reuniones…) con el mismo acabado que Dialogos.tsx ── */
+.portal-app .velo { z-index: 85; background: rgba(21,22,26,.32); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); animation: dlg-fondo .2s ease both; }
+.portal-app .panel-modal { background: #fff; -webkit-backdrop-filter: none; backdrop-filter: none; border: 1px solid var(--borde); border-radius: 24px; overflow: hidden; max-height: calc(100dvh - 48px); box-shadow: 0 30px 80px -24px rgba(21,22,26,.35); animation: dlg-entra .32s var(--cp-resorte) both; }
+.portal-app .panel-modal > header { padding: 22px 24px 12px; border-bottom: 1px solid var(--borde-suave); }
+.portal-app .panel-modal > header h2 { font: 600 1.15rem/1.3 var(--cp-display); letter-spacing: -.03em; }
+.portal-app .panel-modal .contenido { padding: 18px 24px; }
+.portal-app .panel-modal > footer { padding: 14px 24px 20px; background: #fff; border-top: 1px solid var(--borde-suave); }
+.portal-app .panel-lat { background: #fff; -webkit-backdrop-filter: none; backdrop-filter: none; border-radius: 26px 0 0 26px; box-shadow: var(--sombra-alta); overflow: hidden; }
+.portal-app .panel-lat > header { padding: 24px 26px 14px; } .portal-app .panel-lat h2 { font: 600 1.4rem/1.25 var(--cp-display); letter-spacing: -.04em; }
+.portal-app .panel-lat .contenido { padding: 16px 26px 28px; }
+.portal-app .campo, .portal-app .campo-lbl .campo { border-radius: var(--cp-r-2); }
+
+/* ── Tarjeta de quien usa el portal + menú en celular ─────────────────── */
+.portal-app .tarjeta-user { display: flex; align-items: center; gap: 4px; padding: 6px; cursor: default; }
+.portal-app .tarjeta-user-yo { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; padding: 4px; border-radius: 12px; color: var(--texto); text-decoration: none; transition: background .15s; }
+.portal-app .tarjeta-user-yo:hover, .portal-app .tarjeta-user-yo.on { background: var(--hover); }
+.portal-app .tarjeta-user-yo img { width: 34px; height: 34px; border-radius: 11px; object-fit: cover; flex: none; }
+.portal-app .tarjeta-user-yo div { min-width: 0; line-height: 1.25; } .portal-app .tarjeta-user-yo b { display: block; font-size: 13px; font-weight: 600; } .portal-app .tarjeta-user-yo small { display: block; font-size: 11.5px; color: var(--texto-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.portal-app .tarjeta-user-salir { flex: none; width: 34px; height: 34px; display: grid; place-items: center; border: 0; border-radius: 10px; background: none; color: var(--texto-3); cursor: pointer; transition: background .15s, color .15s; }
+.portal-app .tarjeta-user-salir:hover { background: var(--mal-bg); color: var(--mal-tx); }
+.portal-app .nav-item img { width: 18px; height: 18px; flex: none; }
+.lateral-velo { display: none; }
+@media (max-width: 860px) {
+  .lateral-velo { display: block; position: fixed; inset: 0; z-index: 59; background: rgba(21,22,26,.3); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); animation: dlg-fondo .2s; }
+  .portal-app aside { position: fixed; left: 0; top: 0; z-index: 60; height: 100dvh; transform: translateX(-105%); transition: transform .35s var(--cp-suave); box-shadow: none; border-radius: 0 24px 24px 0; }
+  .portal-app aside.abierto { transform: none; box-shadow: var(--sombra-alta); }
+  .portal-app .quemenu { display: grid; margin: 14px 0 0 16px; width: 42px; height: 42px; border-radius: 12px; border: 1px solid var(--borde); background: #fff; box-shadow: var(--sombra); }
+}

@@ -13,8 +13,11 @@ import "./disenio/portal.css";
 import "./disenio/acceso.css";
 import "./disenio/tema-condor.css";
 import "./disenio/leads.css";
+import "./disenio/dialogos.css";
+import "./disenio/boveda.css";
+import "./disenio/cursos.css";
 
-import { useSesion, salir } from "./auth/sesion";
+import { useSesion, salir, SesionProvider } from "./auth/sesion";
 import { Login } from "./auth/Login";
 import { ForzarCambio } from "./auth/ForzarCambio";
 import { CambiarClave } from "./auth/CambiarClave";
@@ -27,7 +30,7 @@ import { EQUIPO_CONDOR } from "./staff/tipos";
 import { Leads } from "./staff/Leads";
 import { Equipo } from "./staff/Equipo";
 import { Biblioteca } from "./staff/Biblioteca";
-import { Cursos } from "./staff/Cursos";
+import { Cursos } from "./staff/cursos/Cursos";
 import { Dashboard } from "./staff/Dashboard";
 import { Contabilidad } from "./staff/contabilidad/Contabilidad";
 import { Organizacion } from "./staff/organizacion/Organizacion";
@@ -125,6 +128,7 @@ function Marco({
         nombre={nombre}
         detalle={detalle}
         foto={foto}
+        cuenta={buscador ? "/acceso/mi-cuenta" : "/acceso/cuenta"}
         abierto={abierto}
         cerrar={() => setAbierto(false)}
         onSalir={async () => {
@@ -159,7 +163,7 @@ function Marco({
 export default function Portal() {
   // El confirmador debe vivir DENTRO de `.portal-app`: sus variables de tema y
   // el scope del CSS del portal son los que garantizan contraste en oscuro.
-  return <div className="portal-app"><ConfirmacionProvider><PortalContenido /></ConfirmacionProvider></div>;
+  return <div className="portal-app"><SesionProvider><ConfirmacionProvider><PortalContenido /></ConfirmacionProvider></SesionProvider></div>;
 }
 
 function PortalContenido() {

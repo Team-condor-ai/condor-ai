@@ -1,0 +1,37 @@
+/* Ventanas del portal: Modal (centro) y Cajon (derecha). Bordes limpios: un solo contenedor redondeado que
+   recorta todo lo de adentro, sin bandas grises sueltas en el pie. */
+.dlg-velo { position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; padding: 24px 16px; background: rgba(21,22,26,.32); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); animation: dlg-fondo .2s ease both; }
+.dlg-velo.cajon { place-items: stretch end; padding: 0; }
+@keyframes dlg-fondo { from { opacity: 0; } }
+@keyframes dlg-entra { from { opacity: 0; transform: translateY(10px) scale(.97); } }
+@keyframes dlg-desliza { from { opacity: 0; transform: translateX(36px); } }
+.dlg, .dlg-cajon { display: flex; flex-direction: column; background: #fff; border: 1px solid var(--borde); box-shadow: 0 30px 80px -24px rgba(21,22,26,.35), 0 0 0 1px rgba(255,255,255,.6) inset; overflow: hidden; color: var(--texto); font-family: var(--cp-texto); }
+.dlg { width: 100%; max-height: calc(100dvh - 48px); border-radius: 24px; animation: dlg-entra .32s var(--cp-resorte) both; }
+.dlg-sm { max-width: 440px; } .dlg-md { max-width: 580px; } .dlg-lg { max-width: 820px; }
+.dlg-cajon { height: 100dvh; border-radius: 26px 0 0 26px; border-right: 0; animation: dlg-desliza .38s var(--cp-suave) both; }
+.dlg-cab { flex: none; display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; padding: 22px 24px 10px; }
+.dlg-cab h2 { margin: 0; font: 600 1.15rem/1.3 var(--cp-display); letter-spacing: -.03em; overflow-wrap: anywhere; }
+.dlg-cajon .dlg-cab { padding: 26px 28px 14px; border-bottom: 1px solid var(--borde-suave); } .dlg-cajon .dlg-cab h2 { font-size: 1.5rem; letter-spacing: -.045em; }
+.dlg-cab p { margin: 4px 0 0; font-size: 13px; color: var(--texto-2); }
+.dlg-x { flex: none; width: 34px; height: 34px; display: grid; place-items: center; border: 0; border-radius: 50%; background: var(--gris-bg); color: var(--texto-2); cursor: pointer; transition: transform .25s var(--cp-resorte), background .15s; }
+.dlg-x:hover { background: var(--activo); color: var(--texto); transform: rotate(90deg); }
+.dlg-cuerpo { flex: 1; min-height: 0; overflow-y: auto; padding: 6px 24px 20px; overscroll-behavior: contain; }
+.dlg-cajon .dlg-cuerpo { padding: 18px 28px 28px; }
+.dlg-pie { flex: none; display: flex; justify-content: flex-end; align-items: center; flex-wrap: wrap; gap: 10px; padding: 14px 24px 20px; border-top: 1px solid var(--borde-suave); background: #fff; }
+.dlg-cajon .dlg-pie { padding: 16px 28px 22px; }
+.dlg-pie .izq { margin-right: auto; }
+.dlg-texto { margin: 0 0 4px; font-size: 14px; line-height: 1.55; color: var(--texto-2); white-space: pre-wrap; }
+.dlg-campo { display: grid; gap: 6px; margin-top: 6px; font-size: 12px; font-weight: 500; color: var(--texto-2); }
+.dlg-campo input { height: 44px; padding: 0 14px; font-size: 15px; }
+.portal-app .btn.solido.peligro, .btn.solido.peligro { background: var(--mal-tx); border-color: var(--mal-tx); box-shadow: 0 10px 22px -12px rgba(192,30,42,.7); } .btn.solido.peligro:hover { background: #A0161F; border-color: #A0161F; }
+/* Formularios dentro de ventanas: una rejilla de 2 columnas que se apila en celular */
+.dlg-rejilla { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 14px; }
+.dlg-rejilla .ancho { grid-column: 1 / -1; }
+.dlg-rejilla label { display: grid; gap: 6px; font-size: 12px; font-weight: 500; color: var(--texto-2); min-width: 0; }
+.dlg-rejilla input:not([type="checkbox"]), .dlg-rejilla select, .dlg-rejilla textarea { width: 100%; min-height: 42px; padding: 9px 13px; font-size: 14px; color: var(--texto); }
+.dlg-rejilla textarea { resize: vertical; }
+.dlg-rejilla .check { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+@media (max-width: 600px) { .dlg-rejilla { grid-template-columns: 1fr; } .dlg { border-radius: 22px 22px 0 0; max-height: 92dvh; align-self: end; } .dlg-velo { padding: 0; place-items: end stretch; } .dlg-cajon { border-radius: 0; } }
+@media (prefers-reduced-motion: reduce) { .dlg, .dlg-cajon, .dlg-velo { animation: none; } }
+.portal-capas { min-height: 0 !important; background: none !important; }
+.dlg:focus, .dlg-cajon:focus { outline: none; }

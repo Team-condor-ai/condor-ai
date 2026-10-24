@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { sb } from "../lib/supabase";
 import { useSesion } from "../auth/sesion";
 import { Ico } from "../disenio/iconos";
-import { darAcceso, verClaveInicial } from "../lib/accesos";
+import { darAcceso, verClaveInicial, quitarAcceso } from "../lib/accesos";
 import { useConfirmacion } from "../disenio/Confirmacion";
 
 type Miembro = { email: string; nombre: string | null };
@@ -64,6 +64,7 @@ export function Equipo() {
     if (!(await confirmar(`Quitar a ${m.nombre || m.email}`, "Dejará de entrar a la vista de equipo del portal. Sus datos en la base no se borran.", "Quitar"))) return;
     const { data, error: e } = await sb.from("admins").delete().eq("email", m.email).select("email");
     if (e || !data?.length) { setError(e ? "No se pudo quitar: " + e.message : "No se pudo quitar: la base no lo permitió."); return; }
+    void quitarAcceso(m.email); // borra también su usuario de acceso, para que no pueda seguir entrando
     await cargar();
   }
 

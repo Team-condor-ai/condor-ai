@@ -166,8 +166,6 @@
 }
 .acceso-forma form{width:100%;max-width:268px}   /* 57 % del panel, como el original */
 
-.acceso-logo{display:block;color:var(--ac-azul);margin-bottom:13px;line-height:0}
-
 .acceso-forma h1{
   margin:0 0 9px;
   font-size:28px;line-height:1.18;font-weight:700;letter-spacing:normal;

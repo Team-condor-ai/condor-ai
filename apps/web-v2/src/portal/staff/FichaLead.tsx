@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { sb } from "../lib/supabase";
 import { useSesion } from "../auth/sesion";
 import { Ico } from "../disenio/iconos";
+import { Cajon } from "../disenio/Dialogos";
 import {
   type Lead,
   type EventoLead,
@@ -44,11 +45,6 @@ export function FichaLead({ lead, reunion, onCerrar, onCambio }: { lead: Lead | 
   }
   useEffect(() => { void cargarEventos(); }, [lead?.id, lead?.etapa]);
 
-  useEffect(() => {
-    const tecla = (e: KeyboardEvent) => e.key === "Escape" && onCerrar();
-    window.addEventListener("keydown", tecla);
-    return () => window.removeEventListener("keydown", tecla);
-  }, [onCerrar]);
 
   const poner = <K extends keyof Lead>(k: K, v: Lead[K] | null) => setD((x) => ({ ...x, [k]: v }));
 
@@ -90,17 +86,17 @@ export function FichaLead({ lead, reunion, onCerrar, onCambio }: { lead: Lead | 
   const origen = [lead?.origen, lead?.campana, lead?.utm_source && `utm: ${lead.utm_source}${lead.utm_medium ? "/" + lead.utm_medium : ""}`].filter(Boolean).join(" · ");
 
   return (
-    <div className="ficha-lead-fondo" onMouseDown={(e) => e.target === e.currentTarget && onCerrar()}>
-      <div className="ficha-lead" role="dialog" aria-modal="true" aria-label={lead ? `Lead ${lead.negocio ?? lead.nombre ?? ""}` : "Nuevo lead"}>
-        <header className="ficha-lead-cab">
-          <div>
-            <p className="rotulo-mini">{lead ? `Lead #${lead.id}` : "Nuevo lead"}</p>
-            <h2>{nombreLead({ negocio: d.negocio ?? null, nombre: d.nombre ?? null, email: d.email ?? null, tipo: lead?.tipo ?? null, whatsapp: d.whatsapp ?? null })}</h2>
-            {lead && <p className="ficha-sub">{textoEtapa(lead.etapa)} · {hace(diasEnEtapa(lead))} en esta etapa · entró el {new Date(lead.creado_en).toLocaleDateString("es-CL", { day: "numeric", month: "long" })}</p>}
-          </div>
-          <button className="icono-btn" onClick={onCerrar} aria-label="Cerrar">{Ico.cerrar({ t: 16 })}</button>
-        </header>
-
+    <Cajon
+      ancho={560}
+      titulo={nombreLead({ negocio: d.negocio ?? null, nombre: d.nombre ?? null, email: d.email ?? null, tipo: lead?.tipo ?? null, whatsapp: d.whatsapp ?? null })}
+      subtitulo={lead ? `${textoEtapa(lead.etapa)} · ${hace(diasEnEtapa(lead))} en esta etapa · entró el ${new Date(lead.creado_en).toLocaleDateString("es-CL", { day: "numeric", month: "long" })}` : "Nuevo lead"}
+      onCerrar={onCerrar}
+      pie={<>
+        {error && <p className="aviso-error izq" role="alert">{error}</p>}
+        <button className="btn" onClick={onCerrar}>Cerrar</button>
+        <button className="btn solido" onClick={guardar} disabled={guardando}>{guardando ? "Guardando…" : lead ? "Guardar cambios" : "Crear lead"}</button>
+      </>}
+    >
         <div className="ficha-lead-cuerpo">
           <div className="etapas-barra" role="group" aria-label="Etapa">
             {[...ETAPAS_TABLERO, ...ETAPAS_CAJON].map((e) => (
@@ -193,12 +189,6 @@ export function FichaLead({ lead, reunion, onCerrar, onCambio }: { lead: Lead | 
           )}
         </div>
 
-        <footer className="ficha-lead-pie">
-          {error && <p className="aviso-error" role="alert">{error}</p>}
-          <button className="btn" onClick={onCerrar}>Cerrar</button>
-          <button className="btn solido" onClick={guardar} disabled={guardando}>{guardando ? "Guardando…" : lead ? "Guardar cambios" : "Crear lead"}</button>
-        </footer>
-      </div>
-    </div>
+    </Cajon>
   );
 }

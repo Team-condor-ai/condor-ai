@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { sb } from "../lib/supabase";
 import { Ico } from "../disenio/iconos";
 import { useConfirmacion } from "../disenio/Confirmacion";
+import { Modal } from "../disenio/Dialogos";
 
 type Estado = "activa" | "revisar" | "desactivar" | "cancelada";
 type Servicio = { id: string; nombre: string; proveedor: string | null; categoria: string; uso: string | null; costo: number | null; moneda: string; ciclo: "mensual" | "anual" | "uso" | "gratis"; renovacion: string | null; estado: Estado; necesario: "si" | "quizas" | "no"; responsable: string | null; url: string | null; notas: string | null };
@@ -50,9 +51,10 @@ export function Servicios() {
     if (e) { setError(e.message); void cargar(); }
   }
   async function borrar(s: Servicio) {
-    if (!(await confirmar(`Quitar «${s.nombre}» de la lista`, "Solo se borra el registro; no cancela nada en el proveedor.", "Quitar"))) return;
+    if (!(await confirmar(`Quitar ${s.nombre}`, "Se saca de esta lista. No cancela nada en el proveedor: eso se hace en su panel (botón ↗).", "Quitar de la lista"))) return;
+    setFilas((l) => l.filter((x) => x.id !== s.id));
     const { error: e } = await sb.from("servicios_condor").delete().eq("id", s.id);
-    if (e) setError(e.message); else { setEditando(null); void cargar(); }
+    if (e) { setError(e.message); void cargar(); } else setEditando(null);
   }
 
   if (cargando) return <p className="vacio">Cargando…</p>;
@@ -87,6 +89,7 @@ export function Servicios() {
                 <div className="srv-acc">
                   {s.url && <a className="icono-btn" href={s.url} target="_blank" rel="noreferrer" title="Abrir el panel del proveedor">{Ico.abrirWeb({ t: 15 })}</a>}
                   <button className="icono-btn" onClick={() => setEditando(s)} title="Editar">{Ico.editar({ t: 15 })}</button>
+                  <button className="icono-btn peligro" onClick={() => void borrar(s)} title="Quitar de la lista">{Ico.eliminar({ t: 15 })}</button>
                 </div>
               </li>
             ))}
@@ -101,7 +104,6 @@ export function Servicios() {
 function FormServicio({ s, onCerrar, onListo, onBorrar }: { s: Servicio | null; onCerrar: () => void; onListo: () => void; onBorrar?: () => void }) {
   const [f, setF] = useState({ nombre: s?.nombre ?? "", proveedor: s?.proveedor ?? "", categoria: s?.categoria ?? "otros", uso: s?.uso ?? "", costo: s?.costo?.toString() ?? "", moneda: s?.moneda ?? "USD", ciclo: s?.ciclo ?? "mensual", renovacion: s?.renovacion ?? "", estado: s?.estado ?? "revisar", necesario: s?.necesario ?? "quizas", responsable: s?.responsable ?? "", url: s?.url ?? "", notas: s?.notas ?? "" });
   const [error, setError] = useState("");
-  useEffect(() => { const t = (e: KeyboardEvent) => e.key === "Escape" && onCerrar(); window.addEventListener("keydown", t); return () => window.removeEventListener("keydown", t); }, [onCerrar]);
   const set = (k: string, v: string) => setF((x) => ({ ...x, [k]: v }));
   async function guardar(e: React.FormEvent) {
     e.preventDefault();
@@ -111,27 +113,24 @@ function FormServicio({ s, onCerrar, onListo, onBorrar }: { s: Servicio | null; 
     if (r.error) setError(r.error.message); else onListo();
   }
   return (
-    <div className="bg-fondo" style={{ alignItems: "center", paddingTop: 0 }} onMouseDown={(e) => e.target === e.currentTarget && onCerrar()}>
-      <form className="bg-caja cur-modal" style={{ maxWidth: 600, overflowY: "auto" }} onSubmit={guardar} role="dialog" aria-modal="true">
-        <h3>{s ? "Editar servicio" : "Agregar servicio"}</h3>
-        <div className="ficha-rejilla">
-          <label style={{ gridColumn: "1 / -1" }}>Nombre<input value={f.nombre} onChange={(e) => set("nombre", e.target.value)} autoFocus /></label>
-          <label>Proveedor<input value={f.proveedor} onChange={(e) => set("proveedor", e.target.value)} /></label>
-          <label>Categoría<select value={f.categoria} onChange={(e) => set("categoria", e.target.value)}>{Object.entries(CATEGORIAS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></label>
-          <label style={{ gridColumn: "1 / -1" }}>Para qué sirve<input value={f.uso} onChange={(e) => set("uso", e.target.value)} /></label>
-          <label>Costo<input inputMode="decimal" value={f.costo} onChange={(e) => set("costo", e.target.value.replace(/[^\d.,]/g, ""))} placeholder="0" /></label>
-          <label>Moneda<select value={f.moneda} onChange={(e) => set("moneda", e.target.value)}><option>USD</option><option>CLP</option></select></label>
-          <label>Se paga<select value={f.ciclo} onChange={(e) => set("ciclo", e.target.value)}><option value="mensual">Cada mes</option><option value="anual">Cada año</option><option value="uso">Por uso</option><option value="gratis">Es gratis</option></select></label>
-          <label>Renueva el<input type="date" value={f.renovacion} onChange={(e) => set("renovacion", e.target.value)} /></label>
-          <label>Qué hacer<select value={f.estado} onChange={(e) => set("estado", e.target.value)}>{ESTADOS.map((x) => <option key={x.id} value={x.id}>{x.texto}</option>)}</select></label>
-          <label>¿Lo necesita Cóndor?<select value={f.necesario} onChange={(e) => set("necesario", e.target.value)}><option value="si">Sí</option><option value="quizas">Quizás</option><option value="no">No</option></select></label>
-          <label>Quién lo lleva<input value={f.responsable} onChange={(e) => set("responsable", e.target.value)} /></label>
-          <label>Enlace al panel<input value={f.url} onChange={(e) => set("url", e.target.value)} placeholder="https://" /></label>
-          <label style={{ gridColumn: "1 / -1" }}>Notas<textarea rows={3} value={f.notas} onChange={(e) => set("notas", e.target.value)} /></label>
-        </div>
-        {error && <p className="aviso-error">{error}</p>}
-        <div className="cur-form-pie" style={{ marginTop: 14 }}>{onBorrar && <button type="button" className="btn" style={{ marginRight: "auto" }} onClick={onBorrar}>Quitar</button>}<button type="button" className="btn" onClick={onCerrar}>Cancelar</button><button className="btn solido">Guardar</button></div>
+    <Modal tamano="lg" titulo={s ? s.nombre : "Agregar servicio"} subtitulo={s?.uso ?? undefined} onCerrar={onCerrar}
+      pie={<>{onBorrar && <button type="button" className="btn izq" onClick={onBorrar}>Quitar de la lista</button>}<button type="button" className="btn" onClick={onCerrar}>Cancelar</button><button form="f-servicio" className="btn solido">Guardar</button></>}>
+      <form id="f-servicio" onSubmit={guardar} className="dlg-rejilla">
+        <label className="ancho">Nombre<input value={f.nombre} onChange={(e) => set("nombre", e.target.value)} autoFocus={!s} /></label>
+        <label>Proveedor<input value={f.proveedor} onChange={(e) => set("proveedor", e.target.value)} /></label>
+        <label>Categoría<select value={f.categoria} onChange={(e) => set("categoria", e.target.value)}>{Object.entries(CATEGORIAS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></label>
+        <label className="ancho">Para qué sirve<input value={f.uso} onChange={(e) => set("uso", e.target.value)} /></label>
+        <label>Costo<input inputMode="decimal" value={f.costo} onChange={(e) => set("costo", e.target.value.replace(/[^\d.,]/g, ""))} placeholder="0" /></label>
+        <label>Moneda<select value={f.moneda} onChange={(e) => set("moneda", e.target.value)}><option>USD</option><option>CLP</option></select></label>
+        <label>Se paga<select value={f.ciclo} onChange={(e) => set("ciclo", e.target.value)}><option value="mensual">Cada mes</option><option value="anual">Cada año</option><option value="uso">Por uso</option><option value="gratis">Es gratis</option></select></label>
+        <label>Renueva el<input type="date" value={f.renovacion} onChange={(e) => set("renovacion", e.target.value)} /></label>
+        <label>Qué hacer<select value={f.estado} onChange={(e) => set("estado", e.target.value)}>{ESTADOS.map((x) => <option key={x.id} value={x.id}>{x.texto}</option>)}</select></label>
+        <label>¿Lo necesita Cóndor?<select value={f.necesario} onChange={(e) => set("necesario", e.target.value)}><option value="si">Sí</option><option value="quizas">Quizás</option><option value="no">No</option></select></label>
+        <label>Quién lo lleva<input value={f.responsable} onChange={(e) => set("responsable", e.target.value)} /></label>
+        <label>Enlace al panel<input value={f.url} onChange={(e) => set("url", e.target.value)} placeholder="https://" /></label>
+        <label className="ancho">Notas<textarea rows={3} value={f.notas} onChange={(e) => set("notas", e.target.value)} /></label>
+        {error && <p className="aviso-error ancho">{error}</p>}
       </form>
-    </div>
+    </Modal>
   );
 }

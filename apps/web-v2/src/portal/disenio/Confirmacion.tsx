@@ -1,62 +1,72 @@
-import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useState } from "react";
+import { Modal } from "./Dialogos";
 
-type Pedido = {
-  titulo: string;
-  detalle?: string;
-  accion?: string;
-  resolver: (acepta: boolean) => void;
+type Pedido =
+  | { tipo: "confirmar"; titulo: string; detalle?: string; accion: string; resolver: (v: boolean) => void }
+  | { tipo: "texto"; titulo: string; detalle?: string; accion: string; etiqueta?: string; valor: string; placeholder?: string; resolver: (v: string | null) => void };
+
+type Api = {
+  confirmar: (titulo: string, detalle?: string, accion?: string) => Promise<boolean>;
+  pedirTexto: (o: { titulo: string; detalle?: string; accion?: string; etiqueta?: string; valor?: string; placeholder?: string }) => Promise<string | null>;
 };
 
-const ContextoConfirmacion = createContext<((titulo: string, detalle?: string, accion?: string) => Promise<boolean>) | null>(null);
+const Contexto = createContext<Api | null>(null);
+/** Las acciones que borran o sacan algo se pintan en rojo, para que no se aprieten por costumbre. */
+const esPeligro = (accion: string) => /eliminar|borrar|quitar|cancelar plan/i.test(accion);
 
-/** Confirmación React: no usa el diálogo nativo que Firefox puede bloquear. */
+/** Confirmaciones y preguntas cortas con las ventanas del portal (nunca `confirm()` ni `prompt()` del navegador). */
 export function ConfirmacionProvider({ children }: { children: React.ReactNode }) {
   const [pedido, setPedido] = useState<Pedido | null>(null);
+  const [texto, setTexto] = useState("");
 
-  const confirmar = useCallback((titulo: string, detalle?: string, accion = "Confirmar") =>
-    new Promise<boolean>((resolver) => setPedido({ titulo, detalle, accion, resolver })), []);
+  const confirmar = useCallback<Api["confirmar"]>((titulo, detalle, accion = "Confirmar") =>
+    new Promise<boolean>((resolver) => setPedido({ tipo: "confirmar", titulo, detalle, accion, resolver })), []);
+  const pedirTexto = useCallback<Api["pedirTexto"]>((o) =>
+    new Promise<string | null>((resolver) => { setTexto(o.valor ?? ""); setPedido({ tipo: "texto", accion: "Guardar", valor: "", ...o, resolver }); }), []);
 
   const cerrar = useCallback((acepta: boolean) => {
-    setPedido((actual) => {
-      actual?.resolver(acepta);
+    setPedido((p) => {
+      if (p?.tipo === "confirmar") p.resolver(acepta);
+      if (p?.tipo === "texto") p.resolver(acepta && texto.trim() ? texto.trim() : null);
       return null;
     });
-  }, []);
-
-  useEffect(() => {
-    if (!pedido) return;
-    const tecla = (e: KeyboardEvent) => { if (e.key === "Escape") cerrar(false); };
-    window.addEventListener("keydown", tecla);
-    return () => window.removeEventListener("keydown", tecla);
-  }, [pedido, cerrar]);
+  }, [texto]);
 
   return (
-    <ContextoConfirmacion.Provider value={confirmar}>
+    <Contexto.Provider value={{ confirmar, pedirTexto }}>
       {children}
       {pedido && (
-        <div className="velo" onMouseDown={() => cerrar(false)}>
-          <section
-            className="panel-modal confirmacion-app"
-            role="alertdialog"
-            aria-modal="true"
-            aria-labelledby="confirmacion-titulo"
-            onMouseDown={(e) => e.stopPropagation()}
-          >
-            <header><h2 id="confirmacion-titulo">{pedido.titulo}</h2></header>
-            {pedido.detalle && <div className="contenido"><p style={{ margin: 0, whiteSpace: "pre-wrap" }}>{pedido.detalle}</p></div>}
-            <footer>
-              <button className="btn" autoFocus onClick={() => cerrar(false)}>Cancelar</button>
-              <button className="btn solido" onClick={() => cerrar(true)}>{pedido.accion}</button>
-            </footer>
-          </section>
-        </div>
+        <Modal
+          tamano="sm"
+          titulo={pedido.titulo}
+          onCerrar={() => cerrar(false)}
+          pie={<>
+            <button type="button" className="btn" onClick={() => cerrar(false)}>Cancelar</button>
+            <button type="submit" form="dlg-form" className={`btn solido${pedido.tipo === "confirmar" && esPeligro(pedido.accion) ? " peligro" : ""}`} autoFocus={pedido.tipo === "confirmar"}>{pedido.accion}</button>
+          </>}
+        >
+          <form id="dlg-form" onSubmit={(e) => { e.preventDefault(); cerrar(true); }}>
+            {pedido.detalle && <p className="dlg-texto">{pedido.detalle}</p>}
+            {pedido.tipo === "texto" && (
+              <label className="dlg-campo">{pedido.etiqueta && <span>{pedido.etiqueta}</span>}
+                <input value={texto} onChange={(e) => setTexto(e.target.value)} placeholder={pedido.placeholder} autoFocus />
+              </label>
+            )}
+          </form>
+        </Modal>
       )}
-    </ContextoConfirmacion.Provider>
+    </Contexto.Provider>
   );
 }
 
 export function useConfirmacion() {
-  const confirmar = useContext(ContextoConfirmacion);
-  if (!confirmar) throw new Error("useConfirmacion debe usarse dentro de ConfirmacionProvider");
-  return confirmar;
+  const api = useContext(Contexto);
+  if (!api) throw new Error("useConfirmacion debe usarse dentro de ConfirmacionProvider");
+  return api.confirmar;
+}
+
+export function usePedirTexto() {
+  const api = useContext(Contexto);
+  if (!api) throw new Error("usePedirTexto debe usarse dentro de ConfirmacionProvider");
+  return api.pedirTexto;
 }

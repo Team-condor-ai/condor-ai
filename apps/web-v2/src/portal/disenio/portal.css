@@ -1,4 +1,3 @@
-@import "./proyeccion.css";
 
 /* Piezas propias del portal.
    Todo sale de las variables del ERP (--fondo, --texto, --borde…): nada de
@@ -45,15 +44,6 @@
 .entrada-portal{
   min-height:100vh;display:grid;place-items:center;padding:24px;background:var(--fondo);
 }
-.tarjeta-entrada-portal{
-  width:100%;max-width:340px;background:var(--panel);border:1px solid var(--borde);
-  border-radius:16px;box-shadow:var(--sombra-alta);padding:26px 24px 22px;
-  display:flex;flex-direction:column;gap:11px;
-}
-.marca-portal{margin-bottom:6px;line-height:1.1}
-.marca-portal b{font-size:14px;font-weight:750;letter-spacing:.01em;display:block}
-.marca-portal small{font-size:8.5px;letter-spacing:.16em;color:var(--texto-3);font-weight:600}
-.tarjeta-entrada-portal h1{font-size:21px;font-weight:660;letter-spacing:-.03em;margin:6px 0 0}
 .bajada{color:var(--texto-2);font-size:13px;margin:0 0 4px}
 .campo{
   width:100%;padding:10px 12px;border:1px solid var(--borde);border-radius:9px;
@@ -142,99 +132,14 @@ textarea.campo{resize:vertical;min-height:56px}
    Imita al Finder de macOS: barra de ruta arriba, grilla de iconos grandes,
    selección en azul redondeada y barra de estado abajo. Todo con las
    variables del portal para que claro y oscuro sigan funcionando solos. */
-
-.fnd-barra{
-  display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap;
-  padding-bottom:10px;border-bottom:1px solid var(--borde-suave);
-}
-.fnd-ruta{display:flex;align-items:center;gap:2px;flex:1;min-width:0;overflow-x:auto;
-  scrollbar-width:none}
-.fnd-ruta::-webkit-scrollbar{display:none}
-.fnd-sep-migaja{display:inline-flex;align-items:center;gap:2px;color:var(--texto-3);font-size:13px}
-.fnd-migaja{
-  background:none;border:0;padding:3px 7px;border-radius:6px;cursor:pointer;
-  font-size:13px;color:var(--texto-2);white-space:nowrap;font-family:inherit;
-}
-.fnd-migaja:hover{background:var(--panel-2);color:var(--texto)}
-.fnd-migaja.on{color:var(--texto);font-weight:600}
-.fnd-vistas{display:flex;gap:2px;background:var(--panel-2);border-radius:8px;padding:2px}
-.fnd-vistas .icono-btn.on{background:var(--panel);color:var(--azul);
-  box-shadow:0 1px 2px rgba(0,0,0,.08)}
-
-.fnd-lienzo{
-  min-height:280px;border-radius:12px;padding:6px;
-  border:2px dashed transparent;transition:border-color .15s ease,background .15s ease;
-}
 /* Al arrastrar archivos encima, toda la zona se marca: el objetivo tiene que
    ser obvio, no un rectángulo chico escondido. */
-.fnd-lienzo.soltando{border-color:var(--azul);background:var(--azul-suave)}
-
-.fnd-grilla{
-  display:grid;gap:4px;padding:8px 4px;
-  grid-template-columns:repeat(auto-fill,minmax(108px,1fr));
-}
-.fnd-item{
-  background:none;border:0;padding:10px 6px 8px;border-radius:9px;cursor:default;
-  display:flex;flex-direction:column;align-items:center;gap:6px;
-  font-family:inherit;color:inherit;text-align:center;
-  transition:background .12s ease;
-}
-.fnd-item:hover{background:var(--panel-2)}
 /* La selección del Finder: fondo azul sólido y texto blanco, no un borde. */
-.fnd-item.sel{background:var(--azul)}
-.fnd-item.sel .fnd-nombre{color:#fff}
-.fnd-nombre{
-  font-size:12px;line-height:1.3;color:var(--texto);word-break:break-word;
-  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
-}
-.fnd-miniatura{
-  width:62px;height:62px;border-radius:7px;overflow:hidden;background:var(--panel-2);
-  border:1px solid var(--borde-suave);display:flex;align-items:center;justify-content:center;
-}
 /* `contain`, no `cover`: en una biblioteca de plantillas la miniatura sirve
    para reconocer el archivo, y recortar un logo o una portada por los bordes
    es justo lo que impide reconocerlo. */
-.fnd-miniatura img{width:100%;height:100%;object-fit:contain;padding:3px}
-
-.fnd-renombrar{
-  font-size:12px;text-align:center;width:96px;border:1px solid var(--azul);
-  border-radius:5px;padding:2px 4px;background:var(--panel);color:var(--texto);
-  font-family:inherit;outline:none;
-}
-
-.fnd-tabla tbody tr{cursor:default}
-.fnd-tabla tbody tr.sel{background:var(--azul)}
-.fnd-tabla tbody tr.sel td,.fnd-tabla tbody tr.sel .fnd-nombre{color:#fff}
-.fnd-fila-nombre{display:flex;align-items:center;gap:9px}
-.fnd-fila-nombre svg{flex:none}
-
-.fnd-estado{
-  display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
-  margin-top:10px;padding-top:10px;border-top:1px solid var(--borde-suave);
-  font-size:12px;color:var(--texto-3);
-}
-.fnd-acciones{display:flex;gap:6px;align-items:center}
 
 /* ───── SUSCRIPCIONES ───── */
-.sus-conteo{font-size:11px;color:var(--texto-3)}
-.fnd-item.sel .sus-conteo{color:rgba(255,255,255,.8)}
-.sus-plan{
-  display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap;
-  background:var(--panel-2);border:1px solid var(--borde-suave);border-radius:11px;
-  padding:14px 16px;margin-bottom:10px;
-}
-.sus-plan-txt{flex:1;min-width:240px}
-.sus-plan-txt b{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;margin-bottom:3px}
-.sus-plan-txt>span{display:block;font-size:12.5px;color:var(--texto-2);line-height:1.45}
-.sus-link{margin-top:9px;font-size:12px;font-family:ui-monospace,"SF Mono",Consolas,monospace}
-
-.fnd-pronto{
-  display:flex;align-items:center;justify-content:space-between;gap:14px;
-  background:var(--panel-2);border:1px solid var(--borde-suave);border-radius:11px;
-  padding:14px 16px;
-}
-.fnd-pronto b{display:block;font-size:13.5px;font-weight:600;margin-bottom:3px}
-.fnd-pronto span{font-size:12.5px;color:var(--texto-2);line-height:1.45}
 
 /* ───── MODAL ───── */
 .velo{
@@ -275,13 +180,8 @@ textarea.campo{resize:vertical;min-height:56px}
 @media(prefers-reduced-motion:reduce){aside{transition:none}}
 
 /* ───── HERRAMIENTAS ───── */
-.fila-item{display:flex;gap:8px;margin-bottom:8px;align-items:center}
-.fila-item .campo{flex:1}
 .campo.corto{width:74px;flex:none}
 .campo.medio{width:118px;flex:none}
-.total-linea{display:flex;justify-content:flex-end;gap:14px;align-items:baseline;
-  margin-top:12px;padding-top:11px;border-top:1px solid var(--borde)}
-.total-linea b{font-size:17px;font-weight:650}
 .aviso{background:var(--warn-bg);color:var(--warn-tx);border:1px solid var(--warn-bd);
   border-radius:10px;padding:10px 13px;font-size:12.5px;margin:0 0 16px}
 .aviso code{font-size:11.5px;background:rgba(0,0,0,.06);padding:1px 5px;border-radius:4px}
@@ -293,20 +193,6 @@ textarea.campo{resize:vertical;min-height:56px}
 .botonera{display:flex;gap:5px}
 
 /* ───── CORREOS ───── */
-.dos-cols{display:grid;gap:22px;grid-template-columns:minmax(240px,1fr) 1.4fr}
-.lista-sel{border:1px solid var(--borde);border-radius:11px;max-height:420px;overflow:auto}
-.fila-sel{display:flex;align-items:center;gap:10px;padding:8px 11px;cursor:pointer;
-  border-bottom:1px solid var(--borde-suave)}
-.fila-sel:last-child{border-bottom:0}
-.fila-sel:hover{background:var(--hover)}
-.fila-sel span{display:flex;flex-direction:column;line-height:1.25;min-width:0}
-.fila-sel b{font-size:13px;font-weight:600}
-.fila-sel small{font-size:11.5px;color:var(--texto-3)}
-.caja-previa{margin-top:14px;padding:12px;border:1px dashed var(--borde);
-  border-radius:11px;background:var(--panel-2)}
-.caja-previa small{color:var(--texto-3);font-size:11px;display:block;margin-bottom:6px}
-.caja-previa b{display:block;margin-bottom:6px}
-.caja-previa p{margin:0;font-size:13px;white-space:pre-wrap;color:var(--texto-2)}
 
 /* ───── BAJA CON RETENCIÓN ───── */
 .btn.peligro{background:var(--mal-bg);color:var(--mal-tx);border-color:var(--mal-bd)}
@@ -319,24 +205,13 @@ textarea.campo{resize:vertical;min-height:56px}
 .lista-perdida{margin:0 0 12px;padding-left:18px;font-size:13px;line-height:1.7}
 
 /* ───── MAPA ───── */
-.mapa-caja{position:relative;border:1px solid var(--borde);border-radius:13px;
-  overflow:hidden;background:var(--panel-2)}
 .mapa{display:block;width:100%;height:min(66vh,560px);cursor:grab}
-.mapa-ficha{position:absolute;top:12px;right:12px;background:var(--panel);
-  border:1px solid var(--borde);border-radius:11px;padding:10px 13px;
-  box-shadow:var(--sombra-alta);pointer-events:none;line-height:1.4}
-.mapa-ficha b{display:block;font-size:13px;margin-bottom:3px}
-.mapa-ficha small{display:block;font-size:11.5px;color:var(--texto-2)}
-
-@media(max-width:820px){.dos-cols{grid-template-columns:1fr}}
 
 /* ══════════════ MÓVIL ══════════════
    El portal se usa desde el teléfono más de lo que uno cree: el staff cobra
    desde la calle y el cliente entra desde el correo. */
 @media(max-width:560px){
   .entrada-portal{padding:16px;align-items:flex-start;padding-top:9vh}
-  .tarjeta-entrada-portal{max-width:none;padding:22px 18px 18px;border-radius:18px}
-  .tarjeta-entrada-portal h1{font-size:24px}
   /* 16px o más: bajo eso, iOS hace zoom al enfocar el campo y descuadra
      la pantalla entera. Es la regla que más se olvida en formularios. */
   .campo{font-size:16px;padding:12px 13px}
@@ -360,8 +235,6 @@ textarea.campo{resize:vertical;min-height:56px}
     content:"";position:absolute;top:0;right:0;bottom:0;width:26px;
     background:linear-gradient(90deg,transparent,var(--panel));pointer-events:none;
   }
-  .fila-item{flex-wrap:wrap}
-  .fila-item .campo{min-width:100%}
   .campo.corto,.campo.medio{min-width:0;width:calc(50% - 22px)}
   .mapa{height:52vh}
   .botonera{flex-wrap:wrap}
@@ -376,9 +249,7 @@ textarea.campo{resize:vertical;min-height:56px}
 /* Todo lo de arriba se apaga si el sistema pidió menos movimiento. No es
    opcional: quien lo activó lo hizo por mareo o vértigo, no por gusto. */
 @media(prefers-reduced-motion:reduce){
-  .entrada-portal::before,.entrada-portal::after,
-  .tarjeta-entrada-portal,.tarjeta-entrada-portal > *,
-  .marca-portal .punto,.error,.ok-msg{animation:none!important}
+  .entrada-portal::before,.entrada-portal::after,.error,.ok-msg{animation:none!important}
   .portal-app .btn.solido:hover{transform:none}
 }
 
@@ -388,17 +259,12 @@ textarea.campo{resize:vertical;min-height:56px}
 .paso{display:flex;flex-direction:column;gap:11px;
   animation:paso-entra .34s cubic-bezier(.22,1,.36,1) both}
 @keyframes paso-entra{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}
-.marca-portal .punto + span{line-height:1.1}
 @media(prefers-reduced-motion:reduce){.paso{animation:none}}
 
 /* ───── PESTAÑAS DEL LOGIN ─────
    Código o contraseña, no las dos. La versión anterior ponía el botón de
    código arriba y un enlace "ya tengo contraseña" abajo, y se leía como si
    hubiera que hacer ambas cosas. */
-.pestanas{
-  display:flex;gap:3px;padding:3px;border-radius:11px;
-  background:var(--panel-2);border:1px solid var(--borde);position:relative;
-}
 .pestana{
   flex:1;padding:8px 10px;border:0;background:none;border-radius:8px;
   font:inherit;font-size:12.5px;font-weight:560;color:var(--texto-2);
@@ -428,26 +294,12 @@ textarea.campo{resize:vertical;min-height:56px}
    comparten los estilos a propósito — son la misma idea a dos escalas, y que
    se vean igual ayuda a entender que una es la versión global de la otra. */
 .tenue{color:var(--texto-2);font-size:13px;margin:0}
-
-.lista-reglas{list-style:none;margin:0;padding:0;display:flex;
-  flex-direction:column;gap:8px}
 .regla{display:flex;align-items:flex-start;gap:12px;padding:12px 14px;
   background:var(--panel);border:1px solid var(--borde);border-radius:12px}
 /* Apagada sigue a la vista, no desaparece: saber que se aprendió algo
    equivocado —y de dónde salió— es justo lo que sirve para corregirlo. */
-.regla.apagada{opacity:.5}
-.regla.apagada .regla-txt > span:first-child{text-decoration:line-through}
-.regla-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
-.regla-txt > span:first-child{font-size:14px;line-height:1.45}
-.regla-meta{display:flex;flex-wrap:wrap;align-items:center;gap:7px}
-.etiqueta-cat{font-size:10.5px;font-weight:700;letter-spacing:.04em;
-  text-transform:uppercase;color:#fff;background:#8A8F98;
-  padding:2px 7px;border-radius:999px}
-.regla-meta .veces{font-size:11.5px;color:var(--texto-2)}
 /* El texto original del que salió la regla. Se corta en una línea: es para
    auditar cuando algo parece raro, no para leerlo siempre. */
-.regla-meta .origen{font-size:11.5px;color:var(--texto-3);font-style:italic;
-  max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 @media(max-width:560px){
   .regla{flex-direction:column;align-items:stretch}
@@ -457,114 +309,19 @@ textarea.campo{resize:vertical;min-height:56px}
    Cada tarjeta muestra una miniatura pintada con los colores REALES de la
    marca. Elegir a ciegas y ver el resultado recién en Telegram convertiría
    cada pieza publicada en la prueba. */
-.plantillas{display:grid;gap:10px;margin-top:8px;
-  grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
-.plantilla{display:flex;flex-direction:column;gap:6px;padding:10px;
-  background:var(--panel);border:1px solid var(--borde);border-radius:12px;
-  cursor:pointer;text-align:left;transition:border-color .15s ease}
-.plantilla:hover{border-color:var(--texto-3)}
-.plantilla.on{border-color:var(--azul);box-shadow:0 0 0 2px var(--azul-suave)}
-.plantilla b{font-size:13px}
-.plantilla small{font-size:11.5px;color:var(--texto-2);line-height:1.35}
-
-.mini{display:block;height:76px;border-radius:8px;position:relative;
-  overflow:hidden;border:1px solid var(--borde)}
 /* Las barras grises son el texto: no se lee, se reconoce la composición. */
-.mini::before,.mini::after{content:"";position:absolute;border-radius:2px}
-.mini-editorial{background:var(--c2)}
-.mini-editorial::before{left:12px;top:22px;width:52%;height:8px;background:#141414}
-.mini-editorial::after{left:12px;top:36px;width:38%;height:5px;background:#8b857a}
-.mini-bloque{background:var(--c1)}
-.mini-bloque::before{left:12px;top:24px;width:62%;height:10px;background:#fff;opacity:.92}
-.mini-bloque::after{left:12px;top:40px;width:42%;height:5px;background:#fff;opacity:.6}
-.mini-ficha{background:var(--c1);display:grid;place-items:center}
-.mini-ficha::before{left:14px;top:14px;right:14px;bottom:14px;background:#fff;
-  border-radius:6px;width:auto;height:auto}
-.mini-ficha::after{left:24px;top:34px;width:44%;height:8px;background:#141414;z-index:1}
-.mini-foto{background:linear-gradient(160deg,#9aa39b,#3d4440)}
-.mini-foto::before{left:12px;bottom:24px;width:56%;height:9px;background:#fff;opacity:.95}
-.mini-foto::after{left:12px;bottom:14px;width:34%;height:5px;background:#fff;opacity:.65}
 
 /* ── MCP / CLI ────────────────────────────────────────────────────────── */
-.mcp-copiable{position:relative;background:var(--panel-2);
-  border:1px solid var(--borde-suave);border-radius:10px;
-  padding:12px 76px 12px 13px;overflow-x:auto;
-  font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:12.5px;
-  line-height:1.6;white-space:pre-wrap;word-break:break-all;color:var(--texto)}
-.mcp-copiable button{position:absolute;top:8px;right:8px}
-.mcp-tabla{width:100%;border-collapse:collapse;font-size:13.5px}
-.mcp-tabla td{padding:8px 10px;border-bottom:1px solid var(--borde-suave);
-  vertical-align:top;color:var(--texto-2)}
-.mcp-tabla tr:last-child td{border-bottom:0}
-.mcp-tabla td:first-child{width:46%;color:var(--texto)}
 
 /* ── Catálogo de plantillas (Agentes IA → Bárbara) ───────────────────────
    Las miniaturas son renders REALES del motor, no un mockup: lo que se ve
    acá es lo que le llega al cliente. */
-.plantillas-catalogo{display:grid;gap:14px;
-  grid-template-columns:repeat(auto-fill,minmax(190px,1fr))}
-.plantilla-item{background:var(--panel);border:1px solid var(--borde);
-  border-radius:14px;overflow:hidden}
-.plantilla-item-img{aspect-ratio:4/5;background:var(--panel-2);overflow:hidden}
-.plantilla-item-img img{width:100%;height:100%;object-fit:cover;display:block}
-.plantilla-item-sinimg{width:100%;height:100%;display:grid;place-items:center;
-  color:var(--texto-3);font-size:12px;text-align:center;padding:12px}
-.plantilla-item-info{padding:11px 13px}
-.plantilla-item-info b{font-size:13.5px;display:block;margin-bottom:2px}
-.plantilla-item-info span{font-size:12px;color:var(--texto-2);line-height:1.4}
 
 /* ── Módulo Memoria (grafo estilo Obsidian) ──────────────────────────────
    Layout radial a mano, sin física: 5 categorías fijas alrededor del
    cliente, sus nodos en abanico. Ver GrafoMemoria.tsx para el porqué. */
-.memoria-selector{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
-.memoria-chip{display:flex;align-items:center;padding:8px 14px;
-  border-radius:999px;border:1px solid var(--borde);background:var(--panel);
-  cursor:pointer;font-size:13.5px;color:var(--texto-2);
-  transition:border-color .15s ease,color .15s ease}
-.memoria-chip:hover{border-color:var(--texto-3)}
-.memoria-chip.on{border-color:var(--azul);color:var(--texto);
-  background:var(--azul-suave);font-weight:600}
-
-.grafo-envoltorio{display:grid;grid-template-columns:1fr 300px;gap:16px;
-  align-items:start}
-@media(max-width:860px){.grafo-envoltorio{grid-template-columns:1fr}}
-
-.grafo-caja{position:relative;background:var(--panel);border:1px solid var(--borde);
-  border-radius:16px;padding:8px;min-height:420px}
-.grafo-svg{width:100%;height:auto;display:block}
-.grafo-linea-hub{stroke:var(--borde);stroke-width:1.5}
-.grafo-linea-hoja{stroke:var(--borde);stroke-width:1;opacity:.75}
-.grafo-linea-hoja.on{stroke:var(--azul);opacity:1;stroke-width:1.6}
-.grafo-nodo{cursor:pointer;transition:opacity .12s ease}
-.grafo-nodo:hover{opacity:1 !important}
-.grafo-nodo-centro{fill:var(--panel-2);stroke:var(--texto);stroke-width:2}
-.grafo-etiqueta-centro{font-size:13px;font-weight:700;fill:var(--texto)}
-.grafo-etiqueta-hub{font-size:11px;font-weight:700;letter-spacing:.03em;
-  text-transform:uppercase}
 /* No se centra en el medio del todo: ahí vive el nodo del cliente, y el
    mensaje quedaba escrito encima de su nombre. */
-.grafo-vacio{position:absolute;left:0;right:0;bottom:22px;text-align:center;
-  padding:0 60px;margin:0}
-
-.grafo-panel{background:var(--panel);border:1px solid var(--borde);
-  border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:12px;
-  min-height:420px}
-.grafo-detalle{display:flex;flex-direction:column;gap:8px}
-.grafo-detalle-texto{font-size:14px;line-height:1.5;color:var(--texto)}
-.grafo-sep{border:0;border-top:1px solid var(--borde-suave);margin:2px 0}
-.grafo-acciones{display:flex;gap:6px;flex-wrap:wrap}
-.grafo-form{display:flex;flex-direction:column;gap:10px;
-  padding-top:8px;border-top:1px solid var(--borde-suave)}
-.grafo-propuestas{display:flex;flex-direction:column;gap:8px}
-.grafo-propuestas>p{margin:0 0 2px}
-.grafo-propuesta{display:flex;flex-direction:column;gap:5px;padding:11px;
-  border:1px solid color-mix(in srgb,var(--verde) 35%,var(--borde));
-  border-radius:11px;background:color-mix(in srgb,var(--verde) 5%,var(--panel))}
-.grafo-propuesta small{color:var(--verde);font-weight:700}
-.grafo-propuesta strong{font-size:13px;color:var(--texto)}
-.grafo-propuesta span{font-size:13px;line-height:1.45;color:var(--texto)}
-.grafo-propuesta em{font-size:11px;line-height:1.4;color:var(--muted);font-style:normal}
-.grafo-propuesta>div{display:flex;gap:6px;margin-top:3px}
 
 /* ═══════════════════════════════════════════════════════════════════════
    MENÚ EN DOS COLUMNAS + VIDRIO SUTIL
@@ -630,23 +387,6 @@ textarea.campo{resize:vertical;min-height:56px}
 .portal-app .nav-grupo-tit.cerrado>svg:last-child{transform:rotate(-90deg)}
 
 /* ── El selector: pill de vidrio negro ── */
-.portal-app .pill-glass{
-  /* Las tres capas, y el orden importa:
-       0 · el panel de la categoría (positioned desde que tiene textura)
-       1 · este indicador
-       2 · la fila del menú, con su icono y su texto
-     `.nav-grupo` es `position:relative` pero SIN z-index, así que no abre
-     contexto de apilamiento y sus filas pueden subir por encima del pill.
-     Con `z-index:0` en el grupo, en cambio, quedarían atrapadas debajo. */
-  z-index:1;
-  position:absolute;left:0;top:0;width:100%;border-radius:11px;opacity:0;
-  pointer-events:none;
-  background:var(--pill);
-  border:1px solid var(--pill-borde);
-  backdrop-filter:blur(12px) saturate(1.6);
-  -webkit-backdrop-filter:blur(12px) saturate(1.6);
-  box-shadow:0 8px 20px -10px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.13);
-}
 .portal-app .nav-item.on{color:var(--pill-tx);background:none}
 .portal-app .nav-item.on svg{opacity:1}
 
@@ -658,7 +398,6 @@ textarea.campo{resize:vertical;min-height:56px}
 /* ── Vidrio en lo que flota ── */
 .portal-app .kpi,
 .portal-app .tabla-caja,
-.portal-app .sel-menu,
 .portal-app .panel-modal,
 .portal-app .panel-lat{
   background:rgba(var(--vidrio),.62);
@@ -675,21 +414,9 @@ textarea.campo{resize:vertical;min-height:56px}
 /* Confirmar una acción es una decisión, no una capa decorativa: este panel
    usa el color sólido del tema para que su texto siga siendo legible sobre el
    velo, tanto en claro como en oscuro. */
-.portal-app .confirmacion-app{
-  width:min(460px,100%);color:var(--texto);background:var(--panel);
-  border-color:var(--borde);box-shadow:var(--sombra-alta);backdrop-filter:none;
-  -webkit-backdrop-filter:none;
-}
-.portal-app .confirmacion-app .contenido{color:var(--texto-2);line-height:1.55}
-.portal-app .confirmacion-app>footer{background:var(--panel-2)}
 
 @media (max-width:860px){
   .portal-app aside{width:100%}
-  .portal-app .col-tabs{width:70px}
-}
-
-@media (prefers-reduced-motion: reduce){
-  .portal-app .tab-item{transition:none}
 }
 
 /* ── Datos que se editan donde se leen ──────────────────────────────────
@@ -727,31 +454,14 @@ textarea.campo{resize:vertical;min-height:56px}
 }
 
 /* ── Finanzas, catálogo y organización ─────────────────────────────── */
-.portal-app .dashboard-agenda{border:1px solid var(--borde);border-radius:13px;background:var(--panel);padding:13px 14px;margin-bottom:16px;box-shadow:var(--sombra)}
-.portal-app .dashboard-agenda>header,.portal-app .dashboard-agenda>header>div{display:flex;align-items:center;gap:10px}.portal-app .dashboard-agenda>header{justify-content:space-between;margin-bottom:10px}.portal-app .dashboard-agenda h2,.portal-app .dashboard-agenda p{margin:0}.portal-app .dashboard-agenda h2{font-size:13.5px}.portal-app .dashboard-agenda p{font-size:10.5px;color:var(--texto-3);margin-top:1px}.portal-app .dashboard-agenda-icono{width:34px;height:34px;display:grid;place-items:center;border-radius:10px;background:color-mix(in srgb,#8B5CF6 13%,var(--panel));color:#8B5CF6}
-.portal-app .dashboard-agenda-lista{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.portal-app .dashboard-agenda-lista article{display:flex;align-items:center;gap:9px;min-width:0;border:1px solid var(--borde-suave);border-radius:10px;padding:8px;background:var(--panel-2)}.portal-app .dashboard-agenda-lista article>div{min-width:0;flex:1}.portal-app .dashboard-agenda-lista article>div b,.portal-app .dashboard-agenda-lista article>div small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.portal-app .dashboard-agenda-lista article>div b{font-size:12px}.portal-app .dashboard-agenda-lista article>div small{font-size:10.5px;color:var(--texto-3);margin-top:2px}.portal-app .dashboard-agenda-lista time{width:37px;height:39px;display:grid;place-items:center;align-content:center;flex:none;border-radius:9px;background:var(--panel);border:1px solid var(--borde);line-height:1}.portal-app .dashboard-agenda-lista time b{font-size:15px}.portal-app .dashboard-agenda-lista time span{font-size:8.5px;text-transform:uppercase;color:var(--texto-3);margin-top:3px}.portal-app .dashboard-agenda-lista .icono-btn{width:30px;height:30px}.portal-app .dashboard-agenda-vacia{padding:10px;text-align:center;border:1px dashed var(--borde);border-radius:9px}
-.portal-app .dashboard-seccion-cab{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:12px}.portal-app .dashboard-seccion-cab h3,.portal-app .dashboard-seccion-cab p{margin:0}.portal-app .dashboard-seccion-cab p{font-size:11.5px;color:var(--texto-3);margin-top:3px}.portal-app .dashboard-egresos{border:1px solid var(--borde);border-radius:13px;padding:14px;margin-bottom:18px;background:var(--panel)}.portal-app .dashboard-egresos-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1px solid var(--borde);border-radius:11px;overflow:hidden}.portal-app .dashboard-egresos-grid>div{padding:11px 12px;background:var(--panel-2);border-right:1px solid var(--borde)}.portal-app .dashboard-egresos-grid>div:last-child{border-right:0}.portal-app .dashboard-egresos-grid small,.portal-app .dashboard-egresos-grid b,.portal-app .dashboard-egresos-grid span{display:block}.portal-app .dashboard-egresos-grid small{font-size:9.5px;text-transform:uppercase;letter-spacing:.045em;color:var(--texto-3)}.portal-app .dashboard-egresos-grid b{font-size:17px;margin-top:5px;font-variant-numeric:tabular-nums}.portal-app .dashboard-egresos-grid span{font-size:9.5px;color:var(--texto-3);margin-top:2px}.portal-app .dashboard-egresos-grid .positivo b{color:var(--ok-tx)}.portal-app .dashboard-egresos-grid .negativo b{color:var(--mal-tx)}.portal-app .dashboard-egresos-detalle{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(245px,.7fr);gap:14px;margin-top:14px}.portal-app .dashboard-egresos-detalle h3{margin-bottom:6px}.portal-app .costos-principales{border-left:1px solid var(--borde);padding-left:14px}.portal-app .costos-principales>div{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid var(--borde-suave);font-size:11.5px}.portal-app .costos-principales>div span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--texto-2)}.portal-app .costos-principales>div b{font-variant-numeric:tabular-nums;white-space:nowrap}
 .portal-app .barra>div:first-child{flex:1;min-width:0}
 .portal-app .barra>div:first-child h1{line-height:1.15}
 .portal-app .subtitulo-barra{display:block;color:var(--texto-3);font-size:11.5px;margin-top:3px}
-.portal-app .form-seccion{display:flex;flex-direction:column;gap:2px;padding-top:8px;margin-top:4px;border-top:1px solid var(--borde-suave)}
-.portal-app .form-seccion:first-child{border-top:0;padding-top:0}
-.portal-app .form-seccion>b{font-size:13px;color:var(--texto)}
-.portal-app .form-seccion>span{font-size:11.5px;color:var(--texto-3)}
-.portal-app .tres-campos{display:grid;grid-template-columns:1fr 1fr .72fr;gap:12px}
-.portal-app .margen-preview{display:grid;grid-template-columns:1fr auto;gap:2px 12px;padding:12px 14px;border-radius:11px;border:1px solid var(--borde);background:var(--panel-2)}
-.portal-app .margen-preview>span{font-size:12px;color:var(--texto-2)}
-.portal-app .margen-preview>b{grid-row:1/3;grid-column:2;font-size:22px;align-self:center;font-variant-numeric:tabular-nums}
-.portal-app .margen-preview>small{font-size:11.5px;color:var(--texto-3)}
-.portal-app .margen-preview.sano>b{color:var(--ok-tx)}
-.portal-app .margen-preview.alerta>b{color:var(--warn-tx)}
-.portal-app .barra-filtros,.portal-app .filtros-cobros{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px}
-.portal-app .barra-filtros .mini-busca,.portal-app .filtros-cobros .mini-busca{flex:1;min-width:230px;max-width:none}
-.portal-app .sin-margen{margin:0}
+.portal-app .filtros-cobros{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.portal-app .filtros-cobros .mini-busca{flex:1;min-width:230px;max-width:none}
 .portal-app .campo.compacto{width:auto;min-width:145px;padding:7px 10px}
 .portal-app .filtro-fecha{display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--texto-3)}
 .portal-app table small{display:block;font-size:11.5px;color:var(--texto-3);margin-top:2px}
-.portal-app .acciones-inline{display:flex;justify-content:flex-end;gap:5px}
 .portal-app .nota-auditoria{font-size:11.5px;color:var(--texto-3);margin:12px 2px 0}
 
 /* Organización: el tablero es denso y táctil, no una colección de tarjetas SaaS. */
@@ -781,62 +491,38 @@ textarea.campo{resize:vertical;min-height:56px}
 .portal-app .cal-ayuda{margin:-6px 0 12px;text-align:center;color:var(--texto-3);font-size:10.5px}
 .portal-app .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);border:1px solid var(--borde);border-radius:12px;overflow:hidden;background:var(--borde)}.portal-app .cal-dia{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--texto-3);padding:8px;background:var(--panel-2);text-align:center}.portal-app .cal-semana{position:relative;grid-column:1/-1;min-width:0;--alto-tareas:0px}.portal-app .cal-semana-celdas{display:grid;grid-template-columns:repeat(7,minmax(0,1fr))}.portal-app .cal-celda{position:relative;min-height:calc(112px + var(--alto-tareas));padding:calc(40px + var(--alto-tareas)) 7px 7px;border-top:1px solid var(--borde);border-right:1px solid var(--borde);background:var(--panel);transition:background-color .18s ease,box-shadow .18s ease}.portal-app .cal-celda:nth-child(7n){border-right:0}.portal-app .cal-celda.vacia{background:var(--panel-2)}.portal-app .cal-celda.pasada{background:color-mix(in srgb,var(--panel-2) 76%,var(--panel))}.portal-app .cal-celda.pasada>span{opacity:.58}.portal-app .cal-celda.hoy{z-index:1;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--azul) 58%,transparent);background:color-mix(in srgb,var(--azul-suave) 42%,var(--panel))}.portal-app .cal-celda>span{position:absolute;top:7px;left:7px;display:grid;place-items:center;width:22px;height:22px;border-radius:7px;font-size:11px;color:var(--texto-3);font-variant-numeric:tabular-nums}.portal-app .cal-celda>span[aria-current="date"]{background:var(--azul);color:#fff;font-weight:750;box-shadow:0 0 0 3px color-mix(in srgb,var(--azul) 15%,transparent)}.portal-app .cal-tareas-capa{position:absolute;z-index:3;top:35px;left:0;right:0;height:var(--alto-tareas);pointer-events:none}
 .portal-app .evento{position:relative;display:block;width:100%;text-align:left;text-decoration:none;color:var(--texto);border:0;border-left:3px solid var(--azul);border-radius:5px;background:var(--azul-suave);padding:5px 6px 10px;margin-top:5px;cursor:grab;user-select:none;overflow:hidden;transition:min-height .12s ease,background-color .16s ease,box-shadow .16s ease}.portal-app .evento:active{cursor:grabbing}.portal-app .evento.alta{border-color:var(--warn-tx)}.portal-app .evento.urgente{border-color:var(--mal-tx)}.portal-app .evento.reunion{border-left:0;border-radius:7px;background:color-mix(in srgb,#8B5CF6 13%,var(--panel));box-shadow:inset 0 0 0 1px color-mix(in srgb,#8B5CF6 34%,transparent)}.portal-app .evento.reunion::after{content:"";position:absolute;left:0;bottom:0;height:2px;width:var(--duracion-evento,33%);background:#8B5CF6;opacity:.7;transition:width .12s ease}.portal-app .evento.continua-antes{border-top-left-radius:2px;border-bottom-left-radius:2px}.portal-app .evento.continua-despues{border-top-right-radius:2px;border-bottom-right-radius:2px}.portal-app .evento b,.portal-app .evento small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px}.portal-app .evento small{color:var(--texto-3);margin-top:2px}.portal-app .evento.tarea.calendario-span{position:absolute;pointer-events:auto;display:flex;align-items:center;height:27px;min-width:0;margin:0;padding:3px 15px;border-left:0;border-radius:7px;background:color-mix(in srgb,var(--azul) 12%,var(--panel));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--azul) 28%,transparent),0 1px 2px rgba(0,0,0,.06);overflow:visible;transition:left .14s cubic-bezier(.22,.8,.3,1),width .14s cubic-bezier(.22,.8,.3,1),background-color .16s ease,box-shadow .16s ease}.portal-app .evento.tarea.calendario-span:hover,.portal-app .evento.tarea.calendario-span.ajustando{z-index:4;background:color-mix(in srgb,var(--azul) 18%,var(--panel));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--azul) 44%,transparent),0 4px 12px rgba(0,0,0,.12)}.portal-app .evento-tarea-contenido{display:flex;align-items:center;gap:7px;width:100%;min-width:0;overflow:hidden}.portal-app .evento-tarea-contenido .prioridad{flex:none}.portal-app .evento-tarea-contenido>b{flex:1;min-width:0;font-size:10.5px}.portal-app .evento-tarea-contenido>small{flex:none;max-width:28%;margin:0;font-size:9px}.portal-app .evento-resize{position:absolute;z-index:5;touch-action:none}.portal-app .evento-resize.vertical{left:4px;right:4px;bottom:1px;height:9px;border-radius:4px;cursor:ns-resize}.portal-app .evento-resize.vertical::after{content:"";position:absolute;left:38%;right:38%;bottom:2px;height:2px;border-radius:2px;background:currentColor;opacity:.28;transition:opacity .15s ease}.portal-app .evento-resize.lateral{top:0;bottom:0;width:13px;cursor:ew-resize}.portal-app .evento-resize.lateral.izq{left:0}.portal-app .evento-resize.lateral.der{right:0}.portal-app .evento-resize.lateral::after{content:"";position:absolute;top:7px;bottom:7px;width:2px;border-radius:2px;background:currentColor;opacity:.3;transition:opacity .15s ease}.portal-app .evento-resize.lateral.izq::after{left:4px}.portal-app .evento-resize.lateral.der::after{right:4px}.portal-app .evento-resize:hover::after{opacity:.82}body.cal-redimensionando,body.cal-redimensionando *{cursor:ew-resize!important;user-select:none!important}.portal-app .agenda-reuniones{margin-top:18px}.portal-app .agenda-reuniones td small{display:block;color:var(--texto-3);margin-top:2px}
-.portal-app .metas-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}.portal-app .meta-card{border:1px solid var(--borde);border-radius:12px;padding:15px;cursor:pointer;background:var(--panel)}.portal-app .meta-card:hover{border-color:var(--texto-3)}.portal-app .meta-top{display:flex;justify-content:space-between}.portal-app .meta-icon{width:34px;height:34px;display:grid;place-items:center;border-radius:10px;background:var(--azul-suave);color:var(--azul)}.portal-app .meta-card h3{font-size:14px;margin:14px 0 4px}.portal-app .meta-card p{font-size:11.5px;color:var(--texto-2);min-height:34px}.portal-app .progreso{height:7px;border-radius:999px;background:var(--gris-bg);overflow:hidden;margin:15px 0 8px}.portal-app .progreso i{display:block;height:100%;border-radius:inherit;background:var(--azul)}.portal-app .meta-numeros{display:flex;align-items:baseline;justify-content:space-between;gap:8px}.portal-app .meta-numeros b{font-size:18px}.portal-app .meta-numeros span,.portal-app .meta-card>small{font-size:10.5px;color:var(--texto-3)}
 
 /* Email marketing */
-.portal-app .info-interna-cabecera{display:grid;gap:14px;margin-bottom:14px}.portal-app .info-interna-titulo h3{margin:0}.portal-app .info-interna-titulo p{margin:4px 0 0}.portal-app .info-interna-acciones{display:flex;gap:8px;flex-wrap:wrap}.portal-app .info-interna-filtros{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:13px;border-top:1px solid var(--borde-suave)}.portal-app .info-interna-pestanas{display:flex;gap:5px;flex-wrap:wrap}.portal-app .info-interna-pestana{display:inline-flex;align-items:center;gap:6px;min-height:34px;padding:6px 10px;border:1px solid transparent;border-radius:10px;background:transparent;color:var(--texto-2);font-size:11.5px;cursor:pointer}.portal-app .info-interna-pestana:hover{background:var(--hover);color:var(--texto)}.portal-app .info-interna-pestana.on{border-color:var(--azul-borde);background:var(--azul-suave);color:var(--azul);font-weight:700}.portal-app .info-interna-pestana small{display:grid;place-items:center;min-width:18px;height:18px;padding:0 4px;border-radius:999px;background:var(--gris-bg);color:var(--gris-tx);font-size:9px}.portal-app .info-interna-pestana.on small{background:rgba(255,255,255,.22);color:inherit}.portal-app .info-interna-buscador{width:min(100%,300px)}.portal-app .info-interna-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(275px,1fr));gap:12px}.portal-app .info-interna-tarjeta{display:flex;flex-direction:column;min-height:180px;padding:15px;border:1px solid var(--borde);border-radius:14px;background:var(--panel);box-shadow:0 1px 0 rgba(255,255,255,.02);cursor:pointer;transition:border-color .16s ease,transform .16s ease,box-shadow .16s ease}.portal-app .info-interna-tarjeta:hover{border-color:var(--azul-borde);box-shadow:0 8px 22px rgba(19,27,15,.07);transform:translateY(-1px)}.portal-app .info-interna-tarjeta-cabecera{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}.portal-app .info-interna-meta{display:flex;flex-wrap:wrap;gap:5px;min-width:0}.portal-app .info-interna-tarjeta h3{margin:12px 0 4px;font-size:14px;line-height:1.3}.portal-app .info-interna-resumen{display:-webkit-box;margin:8px 0 0;overflow:hidden;color:var(--texto-2);font-size:12px;line-height:1.5;-webkit-line-clamp:3;-webkit-box-orient:vertical}.portal-app .info-interna-adjuntos{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:7px;margin-top:12px}.portal-app .info-interna-imagen{position:relative;display:block;aspect-ratio:1;border:1px solid var(--borde);border-radius:10px;overflow:hidden;background:var(--panel-2)}.portal-app .info-interna-imagen img{display:block;width:100%;height:100%;object-fit:cover}.portal-app .info-interna-archivo{display:flex;align-items:center;gap:7px;min-width:0;padding:8px;border:1px solid var(--borde);border-radius:10px;background:var(--panel-2);color:var(--texto);font-size:10.5px;text-decoration:none}.portal-app .info-interna-archivo svg{flex:none;color:var(--azul)}.portal-app .info-interna-archivo span{display:grid;min-width:0;gap:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.portal-app .info-interna-archivo small{color:var(--texto-3);font-size:9px}.portal-app .info-interna-fecha{margin:12px 0 0}.portal-app .info-interna-tarjeta .info-interna-fecha{margin-top:auto;padding-top:10px}.portal-app .info-interna-adjuntos.editor{grid-template-columns:repeat(auto-fill,minmax(96px,1fr))}.portal-app .info-interna-adjuntos.editor .info-interna-imagen button{position:absolute;right:4px;bottom:4px;padding:3px 5px;border:0;border-radius:6px;background:rgba(0,0,0,.72);color:#fff;font-size:9px;cursor:pointer}.portal-app .info-interna-adjuntos.editor .info-interna-archivo{grid-column:span 2}.portal-app .info-interna-adjuntos.editor .info-interna-archivo button{margin-left:auto}@media(max-width:680px){.portal-app .info-interna-filtros{align-items:stretch;flex-direction:column}.portal-app .info-interna-buscador{width:100%;max-width:none}.portal-app .info-interna-pestanas{overflow-x:auto;flex-wrap:nowrap;padding-bottom:2px}.portal-app .info-interna-pestana{white-space:nowrap}.portal-app .info-interna-adjuntos{grid-template-columns:repeat(auto-fill,minmax(64px,1fr))}}
 
 /* Centro operativo: navegación lateral + inventario + ficha. Denso porque se
-   usa para operar, no como una galería de tarjetas. */
-.portal-app .centro-cabecera{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;margin-bottom:14px}.portal-app .centro-ceja{margin:0 0 5px;color:var(--texto-3);font-size:9.5px;font-weight:750;letter-spacing:.12em}.portal-app .centro-cabecera h3{margin:0;font-size:18px;letter-spacing:-.025em}.portal-app .centro-cabecera .conteo{max-width:620px;margin:5px 0 0;line-height:1.5}.portal-app .centro-acciones{display:flex;align-items:flex-start;gap:8px;flex-wrap:wrap;justify-content:flex-end}.portal-app .centro-tabs{grid-column:1/-1;display:flex;gap:5px;padding-top:14px;border-top:1px solid var(--borde-suave)}.portal-app .centro-tabs button{display:flex;align-items:center;gap:7px;min-height:34px;padding:6px 10px;border:1px solid transparent;border-radius:9px;background:transparent;color:var(--texto-2);font-size:11.5px;cursor:pointer}.portal-app .centro-tabs button:hover{background:var(--hover);color:var(--texto)}.portal-app .centro-tabs button.on{border-color:var(--azul-borde);background:var(--azul-suave);color:var(--azul);font-weight:700}.portal-app .centro-tabs small{display:grid;place-items:center;min-width:18px;height:18px;padding:0 4px;border-radius:99px;background:var(--gris-bg);color:var(--gris-tx);font-size:9px}.portal-app .centro-tabs .on small{background:rgba(255,255,255,.26);color:inherit}.portal-app .centro-cuentas{display:grid;grid-template-columns:220px minmax(280px,1fr) minmax(250px,.8fr);min-height:530px;border:1px solid var(--borde);border-radius:14px;background:var(--panel);overflow:hidden}.portal-app .modulos-panel{padding:10px;border-right:1px solid var(--borde);background:var(--panel-2)}.portal-app .modulos-panel-titulo{display:flex;justify-content:space-between;align-items:center;padding:6px 7px 10px;color:var(--texto-2);font-size:11px;font-weight:700}.portal-app .modulos-panel-titulo small{font-size:10px;color:var(--texto-3);font-weight:500}.portal-app .modulo{display:grid;grid-template-columns:9px minmax(0,1fr) auto;align-items:center;width:100%;gap:8px;padding:8px 7px;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--texto-2);font-size:11.5px;text-align:left;cursor:pointer}.portal-app .modulo:hover{background:var(--hover);color:var(--texto)}.portal-app .modulo.on{border-color:var(--azul-borde);background:var(--panel);color:var(--texto);font-weight:700}.portal-app .modulo>span:nth-child(2){overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.portal-app .modulo b{min-width:18px;color:var(--texto-3);font-size:10px;text-align:right}.portal-app .modulo-punto,.portal-app .cuenta-fila-marca{width:8px;height:8px;border-radius:99px;background:var(--texto-3)}.portal-app .modulo-punto.azul,.portal-app .cuenta-fila-marca.azul{background:var(--azul)}.portal-app .modulo-punto.violeta,.portal-app .cuenta-fila-marca.violeta{background:#7856c9}.portal-app .modulo-punto.verde,.portal-app .cuenta-fila-marca.verde{background:#1c9265}.portal-app .modulo-punto.naranjo,.portal-app .cuenta-fila-marca.naranjo{background:#d57927}.portal-app .modulo-punto.gris,.portal-app .cuenta-fila-marca.gris{background:#89908a}.portal-app .cuentas-lista-panel{min-width:0;border-right:1px solid var(--borde)}.portal-app .cuentas-lista-cabecera{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px;border-bottom:1px solid var(--borde-suave)}.portal-app .cuentas-lista-cabecera h4,.portal-app .ficha-cuenta h4,.portal-app .registros-cabecera h4,.portal-app .equipo-intro h4,.portal-app .persona-card h4{margin:0;font-size:13px}.portal-app .cuentas-lista-cabecera small,.portal-app .ficha-cuenta small,.portal-app .registros-cabecera small,.portal-app .equipo-intro p{color:var(--texto-3);font-size:10.5px}.portal-app .campo-busqueda{display:flex;align-items:center;gap:6px;min-width:0;padding:0 8px;border:1px solid var(--borde);border-radius:8px;background:var(--panel-2);color:var(--texto-3)}.portal-app .campo-busqueda input{width:175px;min-height:31px;padding:0;border:0;outline:0;background:transparent;color:var(--texto);font:inherit;font-size:11px}.portal-app .cuentas-lista{display:grid}.portal-app .cuenta-fila{display:grid;grid-template-columns:8px minmax(0,1fr) minmax(90px,.52fr);align-items:center;gap:10px;width:100%;padding:12px 14px;border:0;border-bottom:1px solid var(--borde-suave);background:transparent;color:var(--texto);text-align:left;cursor:pointer}.portal-app .cuenta-fila:hover{background:var(--hover)}.portal-app .cuenta-fila.on{background:var(--azul-suave);box-shadow:inset 3px 0 0 var(--azul)}.portal-app .cuenta-fila-principal,.portal-app .cuenta-fila-contexto{display:grid;gap:3px;min-width:0}.portal-app .cuenta-fila b,.portal-app .cuenta-fila small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.portal-app .cuenta-fila b{font-size:11.5px}.portal-app .cuenta-fila small{color:var(--texto-3);font-size:10px}.portal-app .cuenta-fila-contexto{color:var(--texto-2);font-size:10.5px}.portal-app .centro-vacio{display:grid;place-content:center;min-height:220px;padding:28px;text-align:center}.portal-app .centro-vacio b{font-size:12px}.portal-app .centro-vacio p{max-width:320px;margin:6px 0 0;color:var(--texto-3);font-size:11px;line-height:1.5}.portal-app .ficha-cuenta{display:flex;flex-direction:column;gap:17px;padding:16px;background:var(--panel)}.portal-app .ficha-cuenta.vacia{align-items:center;justify-content:center;text-align:center}.portal-app .ficha-cuenta.vacia h4{margin-top:8px}.portal-app .ficha-cuenta.vacia p{max-width:220px;margin:0;color:var(--texto-3);font-size:11px;line-height:1.5}.portal-app .ficha-vacia-icono{display:grid;place-items:center;width:42px;height:42px;border-radius:14px;background:var(--gris-bg);color:var(--texto-3)}.portal-app .ficha-cuenta-cabecera{display:flex;align-items:flex-start;gap:9px}.portal-app .ficha-cuenta-cabecera .modulo-punto{margin-top:4px;flex:none}.portal-app .ficha-cuenta-cabecera h4{margin-top:3px;font-size:14px}.portal-app .ficha-datos{display:grid;gap:11px}.portal-app .dato{display:grid;gap:3px}.portal-app .dato>div{display:flex;align-items:center;gap:4px;min-width:0}.portal-app .dato span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11.5px}.portal-app .dato-vacio{color:var(--texto-3)}.portal-app .secreto{display:flex;align-items:center;gap:5px;min-width:0}.portal-app .secreto code{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px}.portal-app .ficha-url{display:flex;align-items:center;gap:6px;width:max-content;color:var(--azul);font-size:11px;text-decoration:none}.portal-app .ficha-notas{padding-top:12px;border-top:1px solid var(--borde-suave)}.portal-app .ficha-notas p{margin:5px 0 0;color:var(--texto-2);font-size:11px;line-height:1.55;white-space:pre-wrap}.portal-app .ficha-acciones{display:flex;gap:7px;margin-top:auto;padding-top:10px;border-top:1px solid var(--borde-suave)}.portal-app .ficha-acciones .btn{flex:1;justify-content:center}.portal-app .registros-panel,.portal-app .equipo-panel{border:1px solid var(--borde);border-radius:14px;padding:16px;background:var(--panel)}.portal-app .registros-cabecera,.portal-app .equipo-intro{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding-bottom:15px;border-bottom:1px solid var(--borde-suave)}.portal-app .registros-cabecera small{display:block;margin-top:4px}.portal-app .registros-grid,.portal-app .equipo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;padding-top:14px}.portal-app .registro-card,.portal-app .persona-card{display:grid;gap:9px;padding:13px;border:1px solid var(--borde);border-radius:11px;background:var(--panel-2)}.portal-app .registro-card h4{margin:2px 0 0;font-size:12.5px}.portal-app .registro-card p{display:-webkit-box;margin:0;overflow:hidden;color:var(--texto-2);font-size:11px;line-height:1.5;-webkit-line-clamp:3;-webkit-box-orient:vertical}.portal-app .registro-card>small{margin-top:auto;color:var(--texto-3);font-size:9.5px}.portal-app .equipo-intro p{max-width:570px;margin:5px 0 0;line-height:1.5}.portal-app .equipo-intro>span{padding:5px 8px;border-radius:99px;background:var(--azul-suave);color:var(--azul);font-size:10px;font-weight:700;white-space:nowrap}.portal-app .persona-card{grid-template-columns:34px minmax(0,1fr);align-items:center;gap:10px}.portal-app .avatar-persona{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:var(--oscuro);color:var(--sobre-oscuro);font-size:10px;font-weight:750}.portal-app .persona-card p{margin:3px 0;color:var(--texto-2);font-size:10.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.portal-app .persona-card small{color:var(--texto-3);font-size:9.5px}.portal-app .form-centro{display:grid;gap:12px}.portal-app .form-centro>label,.portal-app .form-centro .dos>label{display:grid;gap:5px;color:var(--texto-2);font-size:11px;font-weight:650}.portal-app .form-centro footer{display:flex;justify-content:flex-end;gap:8px;padding-top:4px}.portal-app .form-centro textarea.campo{padding-top:8px}.portal-app .form-centro .tenue{font-weight:400}.portal-app .panel-modal>header small{display:block;margin-top:5px;color:var(--texto-3);font-size:11px;line-height:1.4}.portal-app .panel-modal:has(.form-centro){max-width:540px}@media(max-width:940px){.portal-app .centro-cuentas{grid-template-columns:190px minmax(280px,1fr)}.portal-app .ficha-cuenta{grid-column:1/-1;border-top:1px solid var(--borde);display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.portal-app .ficha-cuenta.vacia{display:none}.portal-app .ficha-cuenta-cabecera,.portal-app .ficha-acciones{grid-column:1/-1}.portal-app .ficha-notas{grid-column:1/-1}}@media(max-width:680px){.portal-app .centro-cabecera{grid-template-columns:1fr}.portal-app .centro-acciones{justify-content:flex-start}.portal-app .centro-tabs{overflow-x:auto}.portal-app .centro-tabs button{white-space:nowrap}.portal-app .centro-cuentas{display:block;border:0;background:transparent;overflow:visible}.portal-app .modulos-panel{display:flex;gap:5px;overflow-x:auto;padding:0 0 8px;border:0;background:transparent}.portal-app .modulos-panel-titulo{display:none}.portal-app .modulo{display:flex;width:max-content;white-space:nowrap;border:1px solid var(--borde);background:var(--panel)}.portal-app .cuentas-lista-panel{border:1px solid var(--borde);border-radius:12px;background:var(--panel);overflow:hidden}.portal-app .cuentas-lista-cabecera{align-items:flex-start;flex-direction:column}.portal-app .campo-busqueda{width:100%}.portal-app .campo-busqueda input{width:100%}.portal-app .cuenta-fila{grid-template-columns:8px minmax(0,1fr)}.portal-app .cuenta-fila-contexto{display:none}.portal-app .ficha-cuenta{display:flex;margin-top:10px;border:1px solid var(--borde);border-radius:12px}.portal-app .registros-cabecera{align-items:stretch;flex-direction:column}.portal-app .equipo-intro{display:block}.portal-app .equipo-intro>span{display:inline-block;margin-top:9px}.portal-app .modulo-fila{padding-left:0!important}.portal-app .modulo-chevron,.portal-app .modulo-chevron-hueco{display:none}}
+   usa para operar, no como una galería de tarjetas. */.portal-app .modulo{display:grid;grid-template-columns:9px minmax(0,1fr) auto;align-items:center;width:100%;gap:8px;padding:8px 7px;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--texto-2);font-size:11.5px;text-align:left;cursor:pointer}.portal-app .modulo:hover{background:var(--hover);color:var(--texto)}.portal-app .modulo.on{border-color:var(--azul-borde);background:var(--panel);color:var(--texto);font-weight:700}.portal-app .modulo>span:nth-child(2){overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.portal-app .modulo b{min-width:18px;color:var(--texto-3);font-size:10px;text-align:right}.portal-app .dato{display:grid;gap:3px}.portal-app .dato>div{display:flex;align-items:center;gap:4px;min-width:0}.portal-app .dato span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11.5px}.portal-app .secreto{display:flex;align-items:center;gap:5px;min-width:0}.portal-app .secreto code{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px}.portal-app .ficha-acciones{display:flex;gap:7px;margin-top:auto;padding-top:10px;border-top:1px solid var(--borde-suave)}.portal-app .ficha-acciones .btn{flex:1;justify-content:center}.portal-app .panel-modal>header small{display:block;margin-top:5px;color:var(--texto-3);font-size:11px;line-height:1.4}@media(max-width:940px){.portal-app .ficha-acciones{grid-column:1/-1}}@media(max-width:680px){.portal-app .modulo{display:flex;width:max-content;white-space:nowrap;border:1px solid var(--borde);background:var(--panel)}}
 
 /* Árbol de módulos: la fila envuelve un chevrón opcional (solo si tiene
    submódulos) + el botón de siempre, para no anidar un botón dentro de otro. */
-.portal-app .modulo-fila{display:flex;align-items:center;gap:2px}
-.portal-app .modulo-fila .modulo{flex:1;min-width:0}
-.portal-app .modulo-chevron,.portal-app .modulo-chevron-hueco{width:18px;height:18px;flex:none}
-.portal-app .modulo-chevron{display:grid;place-items:center;border:0;background:transparent;color:var(--texto-3);padding:0;cursor:pointer;transform:rotate(180deg);transition:transform .15s ease}
-.portal-app .modulo-chevron:hover{color:var(--texto)}
-.portal-app .modulo-chevron.abierto{transform:rotate(-90deg)}
 /* Título del panel de cuentas + acciones del módulo activo (editar / nuevo
    submódulo): viven junto al nombre, no escondidas detrás de un doble clic. */
-.portal-app .cuentas-lista-cabecera h4{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
-.portal-app .modulo-acciones{display:inline-flex;gap:4px}
 /* Fila de cuenta: el lápiz vive fuera del botón de selección — dos controles
    independientes, no uno anidado dentro del otro. */
-.portal-app .cuenta-fila-envoltorio{display:flex;align-items:stretch;border-bottom:1px solid var(--borde-suave)}
-.portal-app .cuenta-fila-envoltorio .cuenta-fila{flex:1;border-bottom:0}
-.portal-app .cuenta-fila-envoltorio .cuenta-fila-editar{flex:none;align-self:center;margin-right:10px}
 /* La sección de notas nunca desaparece: si está vacía, invita a agregarla en
-   vez de dejar un hueco sin explicación. */
-.portal-app .ficha-notas-vacia{color:var(--texto-3)}
-.portal-app .enlace-tenue{display:inline;padding:0;border:0;background:transparent;color:var(--azul);font:inherit;font-size:inherit;cursor:pointer;text-decoration:underline}
-
-.portal-app .campana-layout{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(290px,.75fr);gap:14px}.portal-app .campana-layout>.bloque{border:1px solid var(--borde);border-radius:12px;padding:15px;margin:0}
-.portal-app .programar{display:flex;align-items:end;gap:8px;flex-wrap:wrap;padding-top:12px;border-top:1px solid var(--borde-suave)}.portal-app .programar .campo-lbl{flex:1;min-width:210px}.portal-app .variables{margin-top:8px}.portal-app .editor-email{line-height:1.6}
-.portal-app .email-marketing .audiencia-selector{position:static;width:auto;height:auto;padding:15px;display:block;background:var(--panel);border:1px solid var(--borde);overflow:hidden}
-.portal-app .audiencia-selector h3{margin:0}.portal-app .audiencia-selector .lista-sel{max-height:280px;overflow:auto;border:1px solid var(--borde);border-radius:9px}.portal-app .fila-sel.deshabilitada{opacity:.5}.portal-app .email-preview{margin-top:12px;border:1px solid var(--borde);border-radius:10px;padding:14px;background:var(--panel-2)}.portal-app .email-preview>*{display:block}.portal-app .email-preview>b{font-size:13px;margin:4px 0}.portal-app .email-preview>em{font-size:10.5px;color:var(--texto-3);font-style:normal}.portal-app .email-preview>p{white-space:pre-wrap;font-size:11.5px;color:var(--texto-2);max-height:170px;overflow:hidden}.portal-app .email-preview>a{font-size:9.5px;text-align:center;color:var(--texto-3);text-decoration:underline}.portal-app .audiencia-cab{display:flex;justify-content:space-between;align-items:center;gap:12px}.portal-app .audiencia-cab h3,.portal-app .audiencia-cab p{margin:0}.portal-app .audiencia-cab p{color:var(--texto-3);font-size:11.5px}.portal-app .aviso-consentimiento{display:flex;gap:10px;align-items:flex-start;background:var(--info-bg);color:var(--info-tx);border:1px solid var(--info-bd);border-radius:10px;padding:10px 12px;margin:12px 0}.portal-app .aviso-consentimiento span{font-size:11.5px}
-.portal-app .mapa-leyenda{position:absolute;left:12px;bottom:12px;display:flex;gap:10px;flex-wrap:wrap;padding:7px 9px;border:1px solid var(--borde);border-radius:9px;background:rgba(var(--vidrio),.8);backdrop-filter:blur(10px);font-size:10.5px;color:var(--texto-2)}.portal-app .mapa-leyenda span{display:flex;align-items:center;gap:5px}.portal-app .mapa-leyenda i{width:8px;height:8px;border-radius:50%;background:var(--texto)}.portal-app .mapa-leyenda i.plan{background:#8B5CF6}.portal-app .mapa-leyenda i.cliente{background:#2CA66F}
+   vez de dejar un hueco sin explicación. */.portal-app .variables{margin-top:8px}
 
 .portal-app .cabecera-bloque{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.portal-app .cabecera-bloque h3,.portal-app .cabecera-bloque p{margin:0}.portal-app .cabecera-bloque p{margin-top:3px;color:var(--texto-3);font-size:11.5px}
 
-@media(max-width:900px){.portal-app .campana-layout{grid-template-columns:1fr}.portal-app .kanban{grid-template-columns:repeat(4,260px)}.portal-app .cal-celda{min-height:calc(86px + var(--alto-tareas))}.portal-app .tres-campos{grid-template-columns:1fr}.portal-app .filtros-cobros>*{width:100%!important}.portal-app .filtro-fecha{justify-content:space-between}.portal-app .dashboard-egresos-grid{grid-template-columns:repeat(2,1fr)}.portal-app .dashboard-egresos-grid>div:nth-child(2){border-right:0}.portal-app .dashboard-egresos-grid>div:nth-child(-n+2){border-bottom:1px solid var(--borde)}.portal-app .dashboard-egresos-detalle{grid-template-columns:1fr}.portal-app .costos-principales{border-left:0;border-top:1px solid var(--borde);padding:12px 0 0}}
-@media(max-width:620px){.portal-app .cal-grid{min-width:720px}.portal-app .calendario{overflow-x:auto}.portal-app .programar .btn{width:100%;justify-content:center}.portal-app .subnav-organizacion{display:flex;overflow-x:auto}.portal-app .subnav-organizacion button{white-space:nowrap}.portal-app .barra-filtros .chips{overflow-x:auto;flex-wrap:nowrap;width:100%}.portal-app .dashboard-agenda>header{align-items:flex-start;flex-wrap:wrap}.portal-app .dashboard-agenda-lista{grid-template-columns:1fr}.portal-app .dashboard-egresos-grid{grid-template-columns:1fr}.portal-app .dashboard-egresos-grid>div{border-right:0;border-bottom:1px solid var(--borde)}.portal-app .dashboard-egresos-grid>div:last-child{border-bottom:0}.portal-app .dashboard-seccion-cab{flex-wrap:wrap}}
+@media(max-width:900px){.portal-app .kanban{grid-template-columns:repeat(4,260px)}.portal-app .cal-celda{min-height:calc(86px + var(--alto-tareas))}.portal-app .filtros-cobros>*{width:100%!important}.portal-app .filtro-fecha{justify-content:space-between}}
+@media(max-width:620px){.portal-app .cal-grid{min-width:720px}.portal-app .calendario{overflow-x:auto}.portal-app .subnav-organizacion{display:flex;overflow-x:auto}.portal-app .subnav-organizacion button{white-space:nowrap}}
 @media(max-width:620px){.portal-app .cal-hoy-btn{position:static;margin-left:auto}.portal-app .calendario>header{justify-content:flex-start;min-width:720px}}
 
 /* Desglose de egresos y Meta Ads. La forma recurrente es la pista horizontal:
    permite comparar montos sin convertir la pantalla en una colección de KPIs. */
 .portal-app .meta-titulo{display:flex;align-items:center;gap:10px;min-width:0}.portal-app .meta-titulo h3,.portal-app .meta-titulo p{margin:0}.portal-app .meta-titulo p{font-size:11.5px;color:var(--texto-3);margin-top:3px}.portal-app .meta-marca{width:34px;height:34px;display:grid;place-items:center;flex:none;border-radius:10px;background:var(--azul);color:#fff;font-size:23px;font-family:Arial,sans-serif;font-weight:800;line-height:1;padding-top:5px}
-.portal-app .dashboard-meta{margin-top:15px;padding-top:14px;border-top:1px solid var(--borde)}.portal-app .dashboard-meta>header{display:flex;align-items:center;justify-content:space-between;gap:12px}.portal-app .dashboard-meta-resumen{display:grid;grid-template-columns:1.15fr .8fr .8fr 1.15fr;margin-top:12px;border:1px solid var(--borde);border-radius:11px;overflow:hidden;background:var(--panel-2)}.portal-app .dashboard-meta-resumen>div{padding:10px 12px;border-right:1px solid var(--borde);min-width:0}.portal-app .dashboard-meta-resumen>div:last-child{border-right:0}.portal-app .dashboard-meta-resumen small,.portal-app .dashboard-meta-resumen b,.portal-app .dashboard-meta-resumen em{display:block}.portal-app .dashboard-meta-resumen small{font-size:9.5px;text-transform:uppercase;letter-spacing:.045em;color:var(--texto-3)}.portal-app .dashboard-meta-resumen b{font-size:17px;margin-top:4px;font-variant-numeric:tabular-nums}.portal-app .dashboard-meta-resumen em{font-size:9.5px;color:var(--texto-3);font-style:normal;margin-top:4px}.portal-app .dashboard-meta-resumen .pill{display:inline-flex;margin-top:5px}
-.portal-app .dashboard-meta-campanas{display:grid;gap:8px;margin-top:12px}.portal-app .dashboard-meta-campanas>div{display:grid;grid-template-columns:minmax(170px,.85fr) minmax(160px,1.4fr) 100px;align-items:center;gap:12px}.portal-app .dashboard-meta-campanas span{min-width:0}.portal-app .dashboard-meta-campanas span b,.portal-app .dashboard-meta-campanas span small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.portal-app .dashboard-meta-campanas span b{font-size:11.5px}.portal-app .dashboard-meta-campanas span small{font-size:9.5px;color:var(--texto-3);margin-top:1px}.portal-app .dashboard-meta-campanas>div>i{display:block;height:7px;border-radius:999px;background:var(--gris-bg);overflow:hidden}.portal-app .dashboard-meta-campanas>div>i>i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--azul),var(--azul-fuerte))}.portal-app .dashboard-meta-campanas strong{text-align:right;font-size:11.5px;font-variant-numeric:tabular-nums}.portal-app .dashboard-meta-vacio{margin:12px 0 0;padding:12px;border:1px dashed var(--borde);border-radius:10px;text-align:center;color:var(--texto-3);font-size:11.5px}
 
 .portal-app .desglose-cabecera{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin:2px 0 14px;padding:16px;border:1px solid var(--borde);border-radius:13px;background:linear-gradient(112deg,var(--panel),var(--panel-2));box-shadow:var(--sombra)}.portal-app .desglose-cabecera h2{font-size:20px;letter-spacing:-.035em;margin:3px 0}.portal-app .desglose-cabecera p{font-size:11.5px;color:var(--texto-3);margin:0}.portal-app .sobrelinea{font-size:9.5px;text-transform:uppercase;letter-spacing:.09em;font-weight:750;color:var(--azul)}.portal-app .desglose-periodo{width:190px;flex:none}.portal-app .desglose-periodo .campo{text-transform:capitalize}
 .portal-app .desglose-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1px solid var(--borde);border-radius:12px;overflow:hidden;margin-bottom:16px}.portal-app .desglose-kpis>div{padding:12px 13px;border-right:1px solid var(--borde);background:var(--panel)}.portal-app .desglose-kpis>div:last-child{border-right:0}.portal-app .desglose-kpis>div.meta{box-shadow:inset 0 3px 0 var(--azul)}.portal-app .desglose-kpis small,.portal-app .desglose-kpis b,.portal-app .desglose-kpis span{display:block}.portal-app .desglose-kpis small{font-size:9.5px;text-transform:uppercase;letter-spacing:.045em;color:var(--texto-3)}.portal-app .desglose-kpis b{font-size:18px;margin:5px 0 2px;font-variant-numeric:tabular-nums}.portal-app .desglose-kpis span{font-size:9.5px;color:var(--texto-3)}
 .portal-app .desglose-columnas{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(280px,.85fr);gap:14px}.portal-app .desglose-panel{border:1px solid var(--borde);border-radius:12px;padding:14px;background:var(--panel)}.portal-app .desglose-panel>header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding-bottom:11px;border-bottom:1px solid var(--borde-suave)}.portal-app .desglose-panel>header h3,.portal-app .desglose-panel>header p{margin:0}.portal-app .desglose-panel>header p{font-size:10.5px;color:var(--texto-3);margin-top:2px}.portal-app .desglose-panel>header>b{font-size:13px;font-variant-numeric:tabular-nums}.portal-app .distribucion-lista{display:grid;gap:13px;margin-top:13px}.portal-app .distribucion-fila{min-width:0}.portal-app .distribucion-identidad{display:flex;align-items:center;gap:8px}.portal-app .distribucion-identidad>i{width:8px;height:8px;flex:none;border-radius:3px;background:var(--azul)}.portal-app .distribucion-identidad>i[data-tono="2"]{opacity:.82}.portal-app .distribucion-identidad>i[data-tono="3"]{opacity:.66}.portal-app .distribucion-identidad>i[data-tono="4"]{opacity:.5}.portal-app .distribucion-identidad>i[data-tono="5"]{opacity:.36}.portal-app .distribucion-identidad>span{min-width:0;flex:1}.portal-app .distribucion-identidad b,.portal-app .distribucion-identidad small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.portal-app .distribucion-identidad b{font-size:11.5px}.portal-app .distribucion-identidad small{font-size:9.5px;color:var(--texto-3)}.portal-app .distribucion-identidad strong{font-size:11.5px;font-variant-numeric:tabular-nums}.portal-app .distribucion-pista{height:6px;margin:5px 0 0 16px;border-radius:999px;background:var(--gris-bg);overflow:hidden}.portal-app .distribucion-pista i{display:block;height:100%;border-radius:inherit;background:var(--azul)}.portal-app .distribucion-porcentaje{display:block;text-align:right;margin-top:2px;color:var(--texto-3);font-size:9px}
 .portal-app .meta-contabilidad{border:1px solid var(--borde);border-radius:12px;padding:14px;background:var(--panel)}.portal-app .meta-contabilidad>header{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:12px}.portal-app .meta-estado{text-align:right}.portal-app .meta-estado small{display:block;color:var(--texto-3);font-size:9.5px;margin-top:4px}.portal-app .meta-mini-pista{display:block;width:min(190px,100%);height:7px;border-radius:999px;background:var(--gris-bg);overflow:hidden}.portal-app .meta-mini-pista i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--azul),var(--azul-fuerte))}.portal-app .meta-tabla td:first-child{max-width:390px}.portal-app .meta-tabla td:first-child b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
-@media(max-width:900px){.portal-app .dashboard-meta-resumen,.portal-app .desglose-kpis{grid-template-columns:repeat(2,1fr)}.portal-app .dashboard-meta-resumen>div:nth-child(2),.portal-app .desglose-kpis>div:nth-child(2){border-right:0}.portal-app .dashboard-meta-resumen>div:nth-child(-n+2),.portal-app .desglose-kpis>div:nth-child(-n+2){border-bottom:1px solid var(--borde)}.portal-app .desglose-columnas{grid-template-columns:1fr}}
-@media(max-width:620px){.portal-app .dashboard-meta>header,.portal-app .meta-contabilidad>header,.portal-app .desglose-cabecera{align-items:flex-start;flex-direction:column}.portal-app .dashboard-meta-resumen,.portal-app .desglose-kpis{grid-template-columns:1fr}.portal-app .dashboard-meta-resumen>div,.portal-app .desglose-kpis>div{border-right:0;border-bottom:1px solid var(--borde)}.portal-app .dashboard-meta-resumen>div:last-child,.portal-app .desglose-kpis>div:last-child{border-bottom:0}.portal-app .dashboard-meta-campanas>div{grid-template-columns:minmax(0,1fr) 78px}.portal-app .dashboard-meta-campanas>div>i{grid-column:1/3;grid-row:2}.portal-app .dashboard-meta-campanas strong{grid-column:2;grid-row:1}.portal-app .desglose-periodo{width:100%}.portal-app .meta-estado{text-align:left}.portal-app .meta-tabla{overflow-x:auto}.portal-app .meta-tabla table{min-width:610px}}
+@media(max-width:900px){.portal-app .desglose-kpis{grid-template-columns:repeat(2,1fr)}.portal-app .desglose-kpis>div:nth-child(2){border-right:0}.portal-app .desglose-kpis>div:nth-child(-n+2){border-bottom:1px solid var(--borde)}.portal-app .desglose-columnas{grid-template-columns:1fr}}
+@media(max-width:620px){.portal-app .meta-contabilidad>header,.portal-app .desglose-cabecera{align-items:flex-start;flex-direction:column}.portal-app .desglose-kpis{grid-template-columns:1fr}.portal-app .desglose-kpis>div{border-right:0;border-bottom:1px solid var(--borde)}.portal-app .desglose-kpis>div:last-child{border-bottom:0}.portal-app .desglose-periodo{width:100%}.portal-app .meta-estado{text-align:left}.portal-app .meta-tabla{overflow-x:auto}.portal-app .meta-tabla table{min-width:610px}}
 
 /* Contabilidad avanzada */
 .portal-app .evento.tarea.calendario-span{height:42px;padding:5px 15px}.portal-app .evento-tarea-contenido{display:grid;grid-template-rows:auto auto;align-content:center;gap:2px}.portal-app .evento-tarea-contenido>b{width:100%;font-size:11.5px;line-height:1.2;font-weight:720}.portal-app .evento-tarea-meta{display:flex;align-items:center;gap:7px;min-width:0;overflow:hidden}.portal-app .evento-tarea-meta .prioridad{flex:none}.portal-app .evento-tarea-meta>small{min-width:0;margin:0;font-size:9px}.portal-app .evento-resize.lateral::after{top:10px;bottom:10px}
@@ -852,8 +538,7 @@ textarea.campo{resize:vertical;min-height:56px}
 @media(max-width:760px){.portal-app .tres{grid-template-columns:1fr}.portal-app .reglas-semana{grid-template-columns:repeat(2,minmax(0,1fr))}.portal-app .regla-dia{grid-template-columns:54px 1fr;align-items:center}.portal-app .panel-reunion{width:min(100%,calc(100vw - 18px))}}
 
 /* Créditos API: lectura operativa compacta, no un tablero de tarjetas decorativas. */
-.portal-app .creditos-api{display:flex;flex-direction:column;gap:14px}.portal-app .creditos-resumen{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1px solid var(--borde);border-radius:12px;background:var(--panel);overflow:hidden}.portal-app .creditos-resumen>div{padding:13px 15px;border-right:1px solid var(--borde-suave)}.portal-app .creditos-resumen>div:last-child{border-right:0}.portal-app .creditos-resumen small,.portal-app .creditos-resumen b{display:block}.portal-app .creditos-resumen small{font-size:10.5px;color:var(--texto-3);margin-bottom:5px}.portal-app .creditos-resumen b{font-size:15px;font-weight:660;font-variant-numeric:tabular-nums}.portal-app .tabla-creditos{min-width:850px}.portal-app .tabla-creditos td{vertical-align:top}.portal-app .tabla-creditos td b,.portal-app .tabla-creditos td small{display:block}.portal-app .tabla-creditos td small{max-width:280px;margin-top:3px;color:var(--texto-3);font-size:10.5px;line-height:1.35}.portal-app .estado-api{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:650;white-space:nowrap}.portal-app .estado-api i{width:7px;height:7px;border-radius:50%;background:var(--texto-3)}.portal-app .estado-api.ok i{background:var(--ok-tx);box-shadow:0 0 0 3px var(--ok-bg)}.portal-app .estado-api.advertencia i,.portal-app .estado-api.requiere_configuracion i{background:var(--warn-tx);box-shadow:0 0 0 3px var(--warn-bg)}.portal-app .estado-api.error i{background:var(--mal-tx);box-shadow:0 0 0 3px var(--mal-bg)}.portal-app .creditos-nota{margin:0;color:var(--texto-3);font-size:11px;line-height:1.45}
-@media(max-width:720px){.portal-app .creditos-resumen{grid-template-columns:1fr 1fr}.portal-app .creditos-resumen>div:nth-child(2){border-right:0}.portal-app .creditos-resumen>div:nth-child(-n+2){border-bottom:1px solid var(--borde-suave)}}
+.portal-app .creditos-api{display:flex;flex-direction:column;gap:14px}
 
 .portal-app .plan-cuentas-cab{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:0 0 14px}.portal-app .plan-cuentas-cab b,.portal-app .plan-cuentas-cab small{display:block}.portal-app .plan-cuentas-cab small{font-size:11.5px;color:var(--texto-3);margin-top:2px}
 
@@ -1111,12 +796,6 @@ textarea.campo{resize:vertical;min-height:56px}
    Bárbara ocupa dos tercios y Memoria uno. No es capricho de layout: una
    es la agente y la otra es lo que ella recuerda, y el tamaño lo dice sin
    necesidad de explicarlo.                                               */
-.portal-app .nav-agentes{
-  display:grid;
-  grid-template-columns:1.62fr 1fr;   /* la proporción áurea, que acá cae justo */
-  gap:5px;
-  padding:2px 1px 1px;
-}
 .portal-app .agente{
   position:relative;
   display:flex;
@@ -1132,72 +811,12 @@ textarea.campo{resize:vertical;min-height:56px}
   isolation:isolate;
   transition:transform .2s cubic-bezier(.2,.8,.3,1), border-color .2s ease, box-shadow .2s ease;
 }
-.portal-app .agente-texto{display:grid;gap:1px;min-width:0}
-.portal-app .agente-texto b{
-  overflow:hidden;
-  font-size:12.5px;
-  font-weight:650;
-  letter-spacing:-.01em;
-  line-height:1.1;
-  text-overflow:ellipsis;
-  white-space:nowrap;
-}
-.portal-app .agente-texto small{
-  overflow:hidden;
-  font-size:9px;
-  letter-spacing:.05em;
-  text-overflow:ellipsis;
-  text-transform:uppercase;
-  white-space:nowrap;
-}
 @media (hover:hover){.portal-app .agente:hover{transform:translateY(-1px)}}
 
 /* BÁRBARA. Su mundo es oscuro en los dos temas: es su marca, y es lo que
    hace que el boton salte en una barra clara sin gritar. */
-.portal-app .agente-barbara{
-  background:
-    radial-gradient(78% 120% at 8% 108%, rgba(205,251,62,.17), transparent 62%),
-    linear-gradient(150deg, #14180d 0%, #090b0a 58%, #070809 100%);
-  border-color:rgba(205,251,62,.26);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.05), 0 4px 14px -8px rgba(0,0,0,.5);
-}
-.portal-app .agente-barbara .agente-texto b{
-  color:#f2f5ea;
-  font-family:'Fraunces', Georgia, serif;   /* la display de su marca, ya cargada */
-  font-size:14px;
-  font-weight:600;
-  letter-spacing:-.02em;
-}
-.portal-app .agente-barbara .agente-texto small{color:rgba(205,251,62,.72)}
-.portal-app .agente-barbara.on,
-.portal-app .agente-barbara:hover{
-  border-color:rgba(205,251,62,.5);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.08), 0 0 0 1px rgba(205,251,62,.12), 0 8px 22px -10px rgba(0,0,0,.6);
-}
-.portal-app .agente-cara{
-  position:absolute;
-  top:7px;
-  left:9px;
-  z-index:2;
-  width:23px;
-  height:23px;
-  border-radius:50%;
-  object-fit:cover;
-  box-shadow:0 0 0 1px rgba(205,251,62,.34), 0 0 14px rgba(205,251,62,.16);
-}
 /* El aliento del fondo. Lento y de baja amplitud: tiene que sentirse vivo
    sin pedir atención cada vez que alguien pasa por el menú. */
-.portal-app .agente-halo{
-  position:absolute;
-  top:-42%;
-  right:-32%;
-  z-index:0;
-  width:96px;
-  height:96px;
-  border-radius:50%;
-  background:radial-gradient(circle, rgba(205,251,62,.20), transparent 68%);
-  animation:agente-respira 9s cubic-bezier(.45,0,.55,1) infinite;
-}
 @keyframes agente-respira{
   0%,100%{opacity:.5;transform:scale(.9)}
   50%{opacity:1;transform:scale(1.1)}
@@ -1207,25 +826,8 @@ textarea.campo{resize:vertical;min-height:56px}
    de la que vive dentro del módulo de Bárbara, en versión de 14 px. Se
    define acá y no se reutiliza la de `barbara.css` a propósito: el menú no
    puede depender del orden de carga de la hoja de otro módulo. */
-.portal-app .agente-semilla{
-  position:absolute;
-  top:9px;
-  right:9px;
-  z-index:2;
-  display:grid;
-  width:12px;
-  height:12px;
-  place-items:center;
-  border:1px solid rgba(229,255,148,.5);
-  border-radius:63% 37% 54% 46% / 42% 62% 38% 58%;
-  background:conic-gradient(from 32deg, rgba(238,255,185,.82), #cdfb3e 26%, rgba(144,184,21,.42) 62%, rgba(238,255,185,.82));
-  box-shadow:inset 0 0 5px rgba(255,255,255,.26), 0 0 10px rgba(205,251,62,.3);
-  animation:agente-semilla-muta 7.2s cubic-bezier(.22,.72,.24,1) infinite;
-}
-.portal-app .agente-semilla>i{display:none}
 /* Estando dentro de Bárbara, la semilla late más rápido: el menú refleja
    que la agente está en pantalla. */
-.portal-app .agente-semilla.despierta{animation-duration:2.6s}
 @keyframes agente-semilla-muta{
   0%,100%{border-radius:63% 37% 54% 46% / 42% 62% 38% 58%;transform:rotate(0deg) scale(1)}
   28%{border-radius:42% 58% 36% 64% / 61% 39% 57% 43%;transform:rotate(74deg) scale(.92,1.08)}
@@ -1236,55 +838,12 @@ textarea.campo{resize:vertical;min-height:56px}
 /* MEMORIA. Misma familia, otra materia: si fuera una copia más chica de
    Bárbara serían dos botones del mismo agente. Acá el fondo es una
    constelación — nodos y un hilo entre ellos, que es lo que guarda. */
-.portal-app .agente-memoria{
-  --mem: var(--texto-2);
-  background:linear-gradient(152deg, var(--panel) 0%, var(--panel-2) 100%);
-  border-color:var(--borde);
-  color:var(--texto);
-}
-.portal-app .agente-memoria .agente-texto b{color:var(--texto);font-size:11.5px}
-.portal-app .agente-memoria.on,
-.portal-app .agente-memoria:hover{
-  --mem: var(--texto);
-  border-color:color-mix(in srgb, var(--texto-3) 60%, var(--borde));
-}
-.portal-app .agente-icono{
-  position:absolute;
-  top:8px;
-  left:9px;
-  z-index:2;
-  display:grid;
-  width:20px;
-  height:20px;
-  place-items:center;
-  border:1px solid color-mix(in srgb, var(--mem) 22%, transparent);
-  border-radius:6px;
-  color:var(--mem);
-  transition:color .2s ease, border-color .2s ease;
-}
-.portal-app .agente-constelacion{
-  position:absolute;
-  inset:0 0 auto;
-  z-index:0;
-  height:52%;
-  background-image:
-    radial-gradient(circle at 78% 26%, color-mix(in srgb, var(--mem) 66%, transparent) 0 1.6px, transparent 2px),
-    radial-gradient(circle at 92% 56%, color-mix(in srgb, var(--mem) 42%, transparent) 0 1.3px, transparent 2px),
-    radial-gradient(circle at 64% 62%, color-mix(in srgb, var(--mem) 30%, transparent) 0 1.1px, transparent 2px);
-  opacity:.85;
-  transition:opacity .2s ease;
-}
-.portal-app .agente-memoria:hover .agente-constelacion{opacity:1}
 
 /* El pill de vidrio deja de pisar a las tarjetas: los agentes traen su
    propio estado activo y dos indicadores encima del mismo botón se leen
    como un error de render. */
-.portal-app .nav-agentes .agente.on{background-clip:padding-box}
 
 @media (prefers-reduced-motion: reduce){
-  .portal-app .agente-halo,
-  .portal-app .agente-semilla,
-  .portal-app .agente-semilla>i{animation:none}
   .portal-app .agente{transition:none}
   .portal-app .agente:hover{transform:none}
 }
@@ -1315,5 +874,3 @@ textarea.campo{resize:vertical;min-height:56px}
 .portal-app .ingreso-ecommerce-aviso{margin:0 0 14px;padding:9px 11px;background:var(--warn-bg);color:var(--warn-tx);border:1px solid var(--warn-bd);border-radius:9px;font-size:11.5px}
 .portal-app .ingreso-ecommerce-detalle h3{margin:0 0 6px;font-size:13px}
 @media(max-width:620px){.portal-app .ingreso-ecommerce-resumen .cifra b{font-size:22px}}
-.modulo-fila{display:grid;grid-template-columns:minmax(0,1fr) 28px;gap:4px;align-items:center}.modulo-fila>.modulo{min-width:0}.modulo-editar{display:grid;place-items:center;width:28px;height:30px;padding:0;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--texto-3);cursor:pointer;opacity:.45;transition:.18s}.modulo-editar:hover,.modulo-fila:focus-within .modulo-editar,.modulo-fila:hover .modulo-editar{opacity:1;background:var(--hover);color:var(--texto)}.ficha-mover .campo{min-height:32px}
-.portal-app .persona-card:has(.persona-quitar){grid-template-columns:34px minmax(0,1fr) auto}.portal-app .persona-quitar{display:grid;place-items:center;width:30px;height:30px;padding:0;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--texto-3);cursor:pointer;transition:background .15s,color .15s,border-color .15s}.portal-app .persona-quitar:hover,.portal-app .persona-quitar:focus-visible{border-color:var(--mal-bd);background:var(--mal-bg);color:var(--mal-tx)}

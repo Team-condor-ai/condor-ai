@@ -2,7 +2,6 @@ import { StrictMode, Suspense, lazy, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import "./index.css";
-import "./App.css";
 import RatiaOferta from "./pages/RatiaOferta";
 import { Perdido, Cargando, Salvavidas } from "./Perdido";
 // En diferido a propósito: así Vite deja el portal y el CSS del ERP en un

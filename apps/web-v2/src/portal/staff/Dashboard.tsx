@@ -74,7 +74,8 @@ export function Dashboard() {
   const proximas7 = proximas.filter((r) => new Date(r.fecha_hora).getTime() < Date.now() + 7 * 86400000);
   const porCobrarClp = cobros.filter((c) => c.moneda === "CLP").reduce((a, c) => a + c.monto, 0);
   const nombreCliente = (id: string) => { const c = clientes.find((x) => x.id === id); return c?.negocio || c?.nombre || "Cliente"; };
-  const hoyIso = hoy.toISOString().slice(0, 10);
+  // Fecha LOCAL (Chile): con toISOString un cobro que vence hoy salía «vencido» desde las 21:00.
+  const hoyIso = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, "0")}-${String(hoy.getDate()).padStart(2, "0")}`;
   const telefonoDe = (id: string) => (clientes.find((x) => x.id === id)?.telefono ?? "").replace(/\D/g, "");
   const maxEtapa = Math.max(1, ...ETAPAS_TABLERO.map((e) => leads.filter((l) => l.etapa === e.id).length));
 

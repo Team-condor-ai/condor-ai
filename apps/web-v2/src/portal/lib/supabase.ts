@@ -29,6 +29,8 @@ const ANON =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlsc3F2bWdneWNmaWp6ZnZndXpxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczNjE3OTgsImV4cCI6MjEwMjkzNzc5OH0.w1LABnzrOIgJ-UHelPF2A2kXCqDzDYPQK-5oV_o6VPk";
 
 export const sb = createClient(URL, ANON);
+export const SUPABASE_URL = URL;
+export const SUPABASE_ANON = ANON;
 export const FUNCIONES = URL + "/functions/v1";
 
 /** Plata con formato chileno: 36990 -> "$36.990".

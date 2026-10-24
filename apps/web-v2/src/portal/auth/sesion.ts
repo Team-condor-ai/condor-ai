@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { createContext, createElement, useContext, useEffect, useState, type ReactNode } from "react";
 import { sb, FUNCIONES } from "../lib/supabase";
 
 export type Rol = "staff" | "cliente" | "ninguno";
@@ -26,7 +26,7 @@ export type Sesion = {
  * Dicho de otra forma: si algún día este hook se equivoca y devuelve "staff"
  * para un cliente, la base sigue sin entregarle datos ajenos.
  */
-export function useSesion(): Sesion {
+function useSesionReal(): Sesion {
   const [s, setS] = useState<Sesion>({
     cargando: true,
     email: null,
@@ -65,6 +65,22 @@ export function useSesion(): Sesion {
     };
   }, []);
 
+  return s;
+}
+
+const ContextoSesion = createContext<Sesion | null>(null);
+
+/**
+ * La sesión se resuelve UNA vez para todo el portal (24-oct-2026). Antes cada pantalla llamaba a `useSesion`
+ * por su cuenta y cada una repetía `getUser` + `es_admin` + su propia suscripción a cambios de sesión.
+ */
+export function SesionProvider({ children }: { children: ReactNode }) {
+  return createElement(ContextoSesion.Provider, { value: useSesionReal() }, children);
+}
+
+export function useSesion(): Sesion {
+  const s = useContext(ContextoSesion);
+  if (!s) throw new Error("useSesion debe usarse dentro de SesionProvider");
   return s;
 }
 
