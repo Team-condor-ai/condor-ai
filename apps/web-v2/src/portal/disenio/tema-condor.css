@@ -197,3 +197,18 @@ html:has(.portal-app), body:has(.portal-app), #root:has(.portal-app) { backgroun
 .cl-clave-campo { display: flex; gap: 6px; } .cl-clave-campo input { flex: 1; }
 .cl-accesos { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 13px; } .cl-accesos li { display: flex; justify-content: space-between; gap: 10px; } .cl-accesos small { color: var(--texto-3); }
 @media (max-width: 980px) { .cl-layout { grid-template-columns: 1fr; } .cl-lateral { position: static; } .cl-fila { grid-template-columns: auto minmax(0, 1fr) auto; } .cl-valor { display: none; } }
+
+/* ── Unificación (revisión del 24-oct): mismos filtros, mismos rótulos, mismas tarjetas en todo el portal ── */
+.portal-app .chips { gap: 6px; }
+.portal-app .chip { padding: 7px 15px; border-radius: 999px; font-size: 12.5px; font-weight: 500; background: #fff; border: 1px solid var(--borde); color: var(--texto-2); transition: all .25s var(--cp-resorte); }
+.portal-app .chip:hover { border-color: #CFD2DD; color: var(--texto); background: #fff; transform: translateY(-1px); }
+.portal-app .chip.on { background: var(--cp-tinta); border-color: var(--cp-tinta); color: #fff; }
+.portal-app .chip.on span { color: #fff; }
+.portal-app .bloque h3, .portal-app .cuerpo h3.sub { font: 500 10.5px/1 var(--cp-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--texto-3); margin: 0 0 12px; }
+.portal-app .cuerpo > .bloque { padding: 20px 22px; border-radius: var(--cp-r-3); background: #fff; border: 1px solid var(--borde); box-shadow: var(--sombra); max-width: 760px; width: 100%; }
+.portal-app .calendario h2 { text-transform: none; font-family: var(--cp-display); font-size: 1.1rem; }
+.portal-app .calendario h2::first-letter { text-transform: uppercase; }
+.portal-app .cal-celda.pasada { background-image: none; background-color: #FAFAFC; }
+.portal-app .cal-celda { border-color: var(--borde-suave); }
+.portal-app .subnav-organizacion { background: var(--gris-bg); border-radius: 999px; padding: 4px; border: 0; }
+.portal-app .leyenda i { width: 10px; height: 10px; border-radius: 50%; }
