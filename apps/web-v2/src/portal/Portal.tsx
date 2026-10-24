@@ -16,9 +16,11 @@ import "./disenio/leads.css";
 import "./disenio/dialogos.css";
 import "./disenio/boveda.css";
 import "./disenio/cursos.css";
+import "./disenio/ranking.css";
 
 import { useSesion, salir, SesionProvider } from "./auth/sesion";
 import { Login } from "./auth/Login";
+import { Ranking } from "./staff/Ranking";
 import { ForzarCambio } from "./auth/ForzarCambio";
 import { CambiarClave } from "./auth/CambiarClave";
 import { Lateral, type Entrada, type Grupo } from "./disenio/Lateral";
@@ -71,7 +73,10 @@ const dif = (n: React.ReactNode) => <Suspense fallback={cargando}>{n}</Suspense>
  */
 const MENU_STAFF: Grupo[] = [
   { titulo: "Inicio", clave: "resumen", icono: "panel",
-    entradas: [{ a: "/acceso/dashboard", texto: "Panel", icono: "panel" }] },
+    entradas: [
+      { a: "/acceso/dashboard", texto: "Panel", icono: "panel" },
+      { a: "/acceso/ranking", texto: "Ranking", icono: "trofeo" },
+    ] },
   { titulo: "Comercial", clave: "operacion", icono: "contacto",
     entradas: [{ a: "/acceso/leads", texto: "Leads", icono: "contacto" }] },
   { titulo: "Clientes", clave: "productos", icono: "clientes",
@@ -202,6 +207,7 @@ function PortalContenido() {
       <Marco buscador menu={MENU_STAFF} nombre={nombre} detalle={miembro?.rol ?? "Equipo Cóndor"} foto={miembro?.foto}>
         <Routes>
           <Route path="dashboard" element={<Dashboard />} />
+          <Route path="ranking" element={<Ranking />} />
           {/* "clientes" (sin línea) sigue viva por los links viejos que
               traen `?ver=<id>` desde Cobros/Panel/Mapa -- Productos lee ese
               query param sin importar qué línea muestre. */}

@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { sb } from "../../lib/supabase";
 import { useSesion } from "../../auth/sesion";
@@ -7,6 +7,8 @@ import { useConfirmacion } from "../../disenio/Confirmacion";
 import { type Curso, type Fase, type Leccion, duracion, embed, guardarPosicion, leerPosicion, ordenadas, segDe, useCursos } from "./datos";
 import { VideoHls } from "./VideoHls";
 import { FormCurso, FormFase, FormLeccion } from "./Formularios";
+import { type Companero, useCompaneros } from "./companeros";
+import { iniciales, tono } from "../personas";
 
 const GRADIENTES = ["linear-gradient(135deg,#014CFD,#7A3CFF)", "linear-gradient(135deg,#0A8FE0,#014CFD)", "linear-gradient(135deg,#7A3CFF,#D6336C)", "linear-gradient(135deg,#147A42,#0A8FE0)", "linear-gradient(135deg,#E5602B,#D6336C)", "linear-gradient(135deg,#151517,#014CFD)"];
 
@@ -36,6 +38,15 @@ export function Cursos({ editable }: { editable: boolean }) {
   const [editLeccion, setEditLeccion] = useState<{ curso: Curso; leccion: Leccion | null; faseId: string | null } | null>(null);
 
   const curso = d.cursos.find((c) => c.id === cursoId) ?? null;
+  const cursoDe = useCallback((leccion: string) => d.lecciones.find((l) => l.id === leccion)?.curso_id, [d.lecciones]);
+  const eq = useCompaneros(editable, yo, cursoDe);
+  const { anunciar } = eq;
+  useEffect(() => { anunciar(cursoId, leccionId, 0); }, [anunciar, cursoId, leccionId]);
+  /** Dónde «está» cada compañero en un curso: si lo está viendo ahora, esa lección; si no, la última que tocó. */
+  const dondeVa = (p: Companero, c: string) => (p.vivo?.curso === c && p.vivo.leccion ? p.vivo.leccion : p.ultima.get(c)?.leccion ?? null);
+  const enLeccion = (c: string, leccion: string) => eq.companeros.filter((p) => dondeVa(p, c) === leccion);
+  const enCurso = (c: string) => eq.companeros.filter((p) => p.vivo?.curso === c || p.ultima.has(c));
+  const avanceDe = (p: Companero, c: string) => { const ls = d.lecciones.filter((l) => l.curso_id === c); return ls.length ? Math.round((ls.filter((l) => p.hechas.has(l.id)).length / ls.length) * 100) : 0; };
   const visibles = d.cursos.filter((c) => editable || c.publicado);
   const avance = (id: string) => { const ls = d.lecciones.filter((l) => l.curso_id === id); return ls.length ? Math.round((ls.filter((l) => d.hechas.has(l.id)).length / ls.length) * 100) : 0; };
   const portada = (c: Curso) => {
@@ -63,10 +74,12 @@ export function Cursos({ editable }: { editable: boolean }) {
     if (!l) return <><button className="btn chico" onClick={() => ir(curso.id)}>← Volver al curso</button><p className="vacio">Esa lección ya no existe.</p></>;
     return (
       <>
-        <Leccion curso={curso} leccion={l} anterior={lista[i - 1]} siguiente={lista[i + 1]} lista={lista} fases={d.fases.filter((f) => f.curso_id === curso.id)}
+        <Leccion key={l.id} curso={curso} leccion={l} anterior={lista[i - 1]} siguiente={lista[i + 1]} lista={lista} fases={d.fases.filter((f) => f.curso_id === curso.id)}
           hechas={d.hechas} poster={l.poster_ruta ? d.imagenes[l.poster_ruta] : undefined} avance={avance(curso.id)}
           onIr={(id) => ir(curso.id, id)} onVolver={() => ir(curso.id)} onMarcar={(id, v) => d.marcar(id, yo, v)}
-          editable={editable} onEditar={() => setEditLeccion({ curso, leccion: l, faseId: l.fase_id })} />
+          editable={editable} onEditar={() => setEditLeccion({ curso, leccion: l, faseId: l.fase_id })}
+          companeros={eq.companeros} enLeccion={(id) => enLeccion(curso.id, id)} miSegundo={eq.miSegundo(l.id)}
+          onAvance={(t, total) => { anunciar(curso.id, l.id, t); void eq.guardarAvance(l.id, t, total); }} />
         {formularios}
       </>
     );
@@ -102,6 +115,10 @@ export function Cursos({ editable }: { editable: boolean }) {
           <div className="cur-anillo" style={{ ["--p" as string]: avance(curso.id) }}><b>{avance(curso.id)}%</b><span>completado</span></div>
         </header>
 
+        {editable && <EquipoEnCurso personas={enCurso(curso.id)} total={eq.companeros.length} avance={(p) => avanceDe(p, curso.id)}
+          leccion={(p) => lista.find((l) => l.id === dondeVa(p, curso.id)) ?? null} numero={(id) => lista.findIndex((l) => l.id === id) + 1}
+          onIr={(id) => ir(curso.id, id)} />}
+
         <div className="cur-temario-cab">
           <h3>Contenido del curso</h3>
           {editable && <div className="cur-temario-acc"><button className="btn chico" onClick={() => setEditFase({ curso, fase: null })}>{Ico.mas({ t: 13 })} Fase</button><button className="btn chico" onClick={() => setEditLeccion({ curso, leccion: null, faseId: fs[fs.length - 1]?.id ?? null })}>{Ico.mas({ t: 13 })} Lección</button></div>}
@@ -125,6 +142,7 @@ export function Cursos({ editable }: { editable: boolean }) {
                       <button onClick={() => ir(curso.id, l.id)}>
                         <span className="cur-n">{d.hechas.has(l.id) ? "✓" : n}</span>
                         <span className="cur-t"><b>{l.titulo}</b>{l.descripcion && <small>{l.descripcion}</small>}</span>
+                        <Caritas personas={enLeccion(curso.id, l.id)} />
                         <span className="cur-dur">{l.video_ruta || embed(l.url) ? Ico.video({ t: 13 }) : Ico.documentos({ t: 13 })}{segDe(l) ? duracion(segDe(l)) : ""}</span>
                       </button>
                     </li>
@@ -159,7 +177,8 @@ export function Cursos({ editable }: { editable: boolean }) {
                   <span className="cur-portada-tags">{c.categoria && <em>{c.categoria}</em>}{editable && c.para_clientes && <em>Visible para clientes</em>}{editable && !c.publicado && <em>Borrador</em>}</span>
                   {p > 0 && <span className="cur-portada-p">{p === 100 ? "✓ Completado" : `${p}%`}</span>}
                 </span>
-                <span className="cur-texto"><b>{c.titulo}</b><small>{d.fases.filter((f) => f.curso_id === c.id).length || 1} fases · {lista.length} lecciones{total ? ` · ${duracion(total)}` : ""}</small></span>
+                <span className="cur-texto"><b>{c.titulo}</b><small>{d.fases.filter((f) => f.curso_id === c.id).length || 1} fases · {lista.length} lecciones{total ? ` · ${duracion(total)}` : ""}</small>
+                  {enCurso(c.id).length > 0 && <span className="cur-tarjeta-eq"><Caritas personas={enCurso(c.id)} max={5} /><small>{textoGente(enCurso(c.id), c.id)}</small></span>}</span>
                 <span className="cur-barra-av"><i style={{ width: `${p}%` }} /></span>
               </button>
             );
@@ -171,17 +190,24 @@ export function Cursos({ editable }: { editable: boolean }) {
   );
 }
 
-function Leccion({ curso, leccion: l, anterior, siguiente, lista, fases, hechas, poster, avance, onIr, onVolver, onMarcar, editable, onEditar }: {
+function Leccion({ curso, leccion: l, anterior, siguiente, lista, fases, hechas, poster, avance, onIr, onVolver, onMarcar, editable, onEditar, companeros, enLeccion, miSegundo, onAvance }: {
   curso: Curso; leccion: Leccion; anterior?: Leccion; siguiente?: Leccion; lista: Leccion[]; fases: Fase[]; hechas: Set<string>; poster?: string; avance: number;
   onIr: (id: string) => void; onVolver: () => void; onMarcar: (id: string, v: boolean) => void; editable: boolean; onEditar: () => void;
+  companeros: Companero[]; enLeccion: (id: string) => Companero[]; miSegundo: number; onAvance: (t: number, total: number) => void;
 }) {
-  const inicio = useMemo(() => leerPosicion(l.id), [l.id]);
+  // Retoma donde quedó: lo guardado en este navegador o, si es más adelante, lo guardado en la cuenta (otro computador).
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const inicio = useMemo(() => Math.max(leerPosicion(l.id), miSegundo), [l.id]);
+  const video = useRef<HTMLVideoElement>(null);
+  const ultimoEnvio = useRef(0);
+  const aviso = useAvisoLlegada(l.id, enLeccion(l.id));
   const marcada = useRef(false);
-  marcada.current = hechas.has(l.id);
+  useEffect(() => { marcada.current = hechas.has(l.id); }, [hechas, l.id]);
   const ext = embed(l.url);
   const faseDe = (id: string | null) => fases.find((f) => f.id === id)?.titulo ?? "";
   const tiempo = (t: number, total: number) => {
     if (Math.floor(t) % 5 === 0) guardarPosicion(l.id, total - t < 15 ? 0 : t);
+    if (Math.abs(t - ultimoEnvio.current) >= 10) { ultimoEnvio.current = t; onAvance(t, total); }
     if (!marcada.current && total > 0 && t / total >= 0.9) { marcada.current = true; onMarcar(l.id, true); }
   };
   const grupos = [...[...fases].sort((a, b) => a.orden - b.orden).map((f) => ({ f, ls: lista.filter((x) => x.fase_id === f.id) })), { f: null as Fase | null, ls: lista.filter((x) => !x.fase_id) }].filter((g) => g.ls.length);
@@ -193,10 +219,12 @@ function Leccion({ curso, leccion: l, anterior, siguiente, lista, fases, hechas,
       </div>
       <div className="cur-leccion-cuerpo">
         <section className="cur-visor">
-          {l.video_ruta ? <VideoHls key={l.id} ruta={l.video_ruta} poster={poster} inicio={inicio} onTiempo={tiempo} onFin={() => { guardarPosicion(l.id, 0); if (!marcada.current) onMarcar(l.id, true); }} />
+          {l.video_ruta ? <VideoHls key={l.id} videoRef={video} ruta={l.video_ruta} poster={poster} inicio={inicio} onTiempo={tiempo} onFin={() => { guardarPosicion(l.id, 0); onAvance(segDe(l), segDe(l)); if (!marcada.current) onMarcar(l.id, true); }} />
             : ext ? <div className="cur-video"><iframe src={ext} title={l.titulo} allow="accelerometer; autoplay; clipboard-write; encrypted-media; picture-in-picture; fullscreen" allowFullScreen /></div>
             : l.url || l.archivo_ruta ? <div className="cur-enlace">{Ico.documentos({ t: 28 })}<b>Esta lección es material para leer o descargar</b>{l.url && <a className="btn solido" href={l.url} target="_blank" rel="noreferrer">{Ico.abrirWeb({ t: 15 })} Abrir material</a>}</div>
             : <div className="cur-enlace">{Ico.video({ t: 28 })}<b>El video de esta lección todavía se está subiendo</b><span>Vuelve en unas horas; el resto del curso ya está disponible.</span></div>}
+          {aviso && <p className="cur-llega" role="status"><Caritas personas={[aviso]} />{aviso.nombre} acaba de entrar a esta lección</p>}
+          {editable && <JuntosEnLeccion leccion={l} companeros={companeros} onSaltar={l.video_ruta ? (t) => { const v = video.current; if (v) { v.currentTime = t; void v.play().catch(() => {}); } } : undefined} />}
           <div className="cur-info">
             <p className="rotulo-mini">{faseDe(l.fase_id) || curso.titulo}</p>
             <h2>{l.titulo}</h2>
@@ -217,7 +245,7 @@ function Leccion({ curso, leccion: l, anterior, siguiente, lista, fases, hechas,
               <ol>
                 {g.ls.map((x) => (
                   <li key={x.id} className={`${x.id === l.id ? "on" : ""}${hechas.has(x.id) ? " hecha" : ""}`}>
-                    <button onClick={() => onIr(x.id)}><span className="cur-n">{hechas.has(x.id) ? "✓" : lista.indexOf(x) + 1}</span><span className="cur-t"><b>{x.titulo}</b>{segDe(x) ? <small>{duracion(segDe(x))}</small> : null}</span></button>
+                    <button onClick={() => onIr(x.id)}><span className="cur-n">{hechas.has(x.id) ? "✓" : lista.indexOf(x) + 1}</span><span className="cur-t"><b>{x.titulo}</b>{segDe(x) ? <small>{duracion(segDe(x))}</small> : null}</span><Caritas personas={enLeccion(x.id)} max={3} /></button>
                   </li>
                 ))}
               </ol>
@@ -227,4 +255,122 @@ function Leccion({ curso, leccion: l, anterior, siguiente, lista, fases, hechas,
       </div>
     </div>
   );
+}
+
+/* ── Compañeros ── */
+
+const reloj = (t: number) => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, "0")}`;
+
+/** Una cara por persona (foto o iniciales). Con anillo verde quien está viendo en este momento. */
+function Caritas({ personas, max = 4 }: { personas: Companero[]; max?: number }) {
+  if (!personas.length) return null;
+  const orden = [...personas].sort((a, b) => Number(!!b.vivo) - Number(!!a.vivo));
+  const resto = orden.length - max;
+  return (
+    <span className="caritas" aria-label={orden.map((p) => p.nombre + (p.vivo ? " (viendo ahora)" : "")).join(", ")}>
+      {orden.slice(0, max).map((p) => <Cara key={p.email} p={p} />)}
+      {resto > 0 && <span className="cara mas">+{resto}</span>}
+    </span>
+  );
+}
+function Cara({ p, grande }: { p: Companero; grande?: boolean }) {
+  return (
+    <span className={`cara${p.vivo ? " vivo" : ""}${grande ? " grande" : ""}`} title={p.nombre + (p.vivo ? " · viendo ahora" : "")} style={{ background: p.foto ? undefined : tono(p.email) }}>
+      {p.foto ? <img src={p.foto} alt="" /> : iniciales(p.nombre)}
+    </span>
+  );
+}
+
+function textoGente(ps: Companero[], curso: string) {
+  const vivos = ps.filter((p) => p.vivo?.curso === curso);
+  if (vivos.length) return `${vivos.map((p) => p.nombre).join(" y ")} ${vivos.length === 1 ? "lo está" : "lo están"} viendo ahora`;
+  return ps.length === 1 ? `${ps[0].nombre} va en este curso` : `${ps[0].nombre} y ${ps.length - 1} más van en este curso`;
+}
+
+/** En la página del curso: dónde va cada persona del equipo, con su avance. */
+function EquipoEnCurso({ personas, total, avance, leccion, numero, onIr }: {
+  personas: Companero[]; total: number; avance: (p: Companero) => number; leccion: (p: Companero) => Leccion | null; numero: (id: string) => number; onIr: (id: string) => void;
+}) {
+  const orden = [...personas].sort((a, b) => Number(!!b.vivo) - Number(!!a.vivo) || avance(b) - avance(a));
+  return (
+    <section className="cur-equipo">
+      <div className="cur-equipo-cab"><h3>El equipo en este curso</h3><small>{personas.length} de {total} lo {personas.length === 1 ? "empezó" : "empezaron"}</small></div>
+      {orden.length === 0 ? <p className="conteo">Nadie más lo ha empezado. Puedes ser el primero.</p> : (
+        <ul>
+          {orden.map((p) => {
+            const l = leccion(p), a = avance(p);
+            return (
+              <li key={p.email}>
+                <Cara p={p} grande />
+                <span className="cur-equipo-txt">
+                  <b>{p.nombre}{p.vivo && <em className="en-vivo">viendo ahora</em>}</b>
+                  {l ? <button className="enlace-btn" onClick={() => onIr(l.id)}>{p.vivo ? "En" : "Va en"} la lección {numero(l.id)} · {l.titulo}</button> : <small>Todavía no empieza</small>}
+                </span>
+                <span className="cur-equipo-av"><span className="cur-pista"><i style={{ width: `${a}%` }} /></span><small>{a}%</small></span>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+/** Bajo el video: quién más está (o estuvo) en esta lección y en qué minuto, con un salto a su punto. */
+function JuntosEnLeccion({ leccion: l, companeros, onSaltar }: { leccion: Leccion; companeros: Companero[]; onSaltar?: (t: number) => void }) {
+  const total = segDe(l);
+  const gente = companeros
+    .map((p) => {
+      const vivo = p.vivo?.leccion === l.id ? p.vivo : null;
+      const guardado = p.avance.get(l.id);
+      const t = vivo ? vivo.t : guardado?.segundo ?? (p.hechas.has(l.id) ? total : null);
+      return t === null ? null : { p, t, vivo: !!vivo, vista: p.hechas.has(l.id) };
+    })
+    .filter((x): x is { p: Companero; t: number; vivo: boolean; vista: boolean } => !!x)
+    .sort((a, b) => Number(b.vivo) - Number(a.vivo) || b.t - a.t);
+  if (!gente.length) return null;
+  const vivos = gente.filter((g) => g.vivo);
+  return (
+    <div className="cur-juntos">
+      <p className="cur-juntos-tit">
+        {vivos.length ? <><span className="punto-vivo" />{vivos.map((g) => g.p.nombre).join(" y ")} {vivos.length === 1 ? "está" : "están"} viendo esta lección contigo</> : "El equipo en esta lección"}
+      </p>
+      {total > 0 && (
+        <div className="cur-juntos-pista">
+          {gente.map((g) => (
+            <button key={g.p.email} className="cur-juntos-marca" style={{ left: `${Math.min(100, (g.t / total) * 100)}%` }} disabled={!onSaltar} onClick={() => onSaltar?.(g.t)} title={`${g.p.nombre} · ${g.vista && !g.vivo ? "la terminó" : reloj(g.t)}${onSaltar ? " · ir a ese punto" : ""}`}>
+              <Cara p={g.p} />
+            </button>
+          ))}
+        </div>
+      )}
+      <ul>
+        {gente.map((g) => (
+          <li key={g.p.email}>
+            <b>{g.p.nombre}</b>
+            <span>{g.vivo ? `viendo · min ${reloj(g.t)}` : g.vista ? "ya la vio" : `quedó en el min ${reloj(g.t)}`}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/** Avisa unos segundos cuando otra persona entra a la misma lección mientras uno la está viendo. */
+function useAvisoLlegada(leccion: string, aca: Companero[]): Companero | null {
+  const [aviso, setAviso] = useState<Companero | null>(null);
+  // Solo cuenta quien entró DESPUÉS que uno: el que ya estaba no «acaba de entrar» (su `desde` es anterior).
+  // (La lección se monta con `key` = su id, así esta hora se reinicia al cambiar de lección.)
+  const [entre] = useState(() => Date.now());
+  const nuevo = aca.find((p) => p.vivo?.leccion === leccion && p.vivo.desde > entre);
+  const clave = nuevo ? nuevo.email + nuevo.vivo!.desde : "";
+  useEffect(() => {
+    if (!nuevo) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setAviso(nuevo);
+    const t = window.setTimeout(() => setAviso(null), 7000);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clave]);
+  return aviso;
 }

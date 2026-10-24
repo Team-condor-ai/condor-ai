@@ -1,0 +1,40 @@
+/* Ranking del equipo (24-oct-2026) */
+.rk-periodos { display: inline-flex; gap: 2px; padding: 3px; border-radius: 999px; background: var(--gris-bg); }
+.rk-periodos button { padding: 7px 14px; border: 0; border-radius: 999px; background: none; font: 500 13px/1 var(--cp-texto); color: var(--texto-2); cursor: pointer; transition: background .2s, color .2s; }
+.rk-periodos button.on { background: #fff; color: var(--texto); box-shadow: 0 2px 8px -3px rgba(21,22,26,.3); }
+
+.rk-podio { display: grid; grid-template-columns: repeat(3, minmax(0, 200px)); justify-content: center; align-items: end; gap: 14px; margin: 6px 0 22px; }
+.rk-lugar { position: relative; display: grid; justify-items: center; gap: 6px; text-align: center; animation: cp-sube .55s var(--cp-suave) backwards; }
+.rk-lugar.l1 { animation-delay: .12s; } .rk-lugar.l3 { animation-delay: .06s; }
+.rk-lugar b { font: 600 15px/1.2 var(--cp-display); letter-spacing: -.02em; }
+.rk-pts { font: 500 12.5px/1 var(--cp-mono); color: var(--texto-2); }
+.rk-medalla { position: absolute; top: -6px; left: calc(50% + 22px); z-index: 1; width: 24px; height: 24px; display: grid; place-items: center; border-radius: 50%; border: 2px solid #fff; color: #fff; font: 700 11px/1 var(--cp-texto); }
+.l1 .rk-medalla { background: linear-gradient(135deg, #F5C542, #D9961A); top: -10px; left: calc(50% + 30px); }
+.l2 .rk-medalla { background: linear-gradient(135deg, #C9CDD6, #8D93A1); }
+.l3 .rk-medalla { background: linear-gradient(135deg, #E2A06B, #B4692F); }
+.rk-pedestal { width: 100%; margin-top: 8px; border-radius: 16px 16px 6px 6px; background: linear-gradient(180deg, var(--azul-suave), #F7F8FB); border: 1px solid var(--borde); }
+.l1 .rk-pedestal { height: 110px; background: linear-gradient(180deg, #E6EDFF, #F7F8FB); border-color: var(--azul-borde); }
+.l2 .rk-pedestal { height: 76px; } .l3 .rk-pedestal { height: 54px; }
+.rk-lugar.yo b::after { content: " · tú"; color: var(--azul); font-weight: 500; }
+
+.rk-cara { flex: none; width: 30px; height: 30px; display: grid; place-items: center; border-radius: 50%; overflow: hidden; color: #fff; font: 600 11px/1 var(--cp-texto); }
+.rk-cara img { width: 100%; height: 100%; object-fit: cover; }
+.rk-cara.grande { width: 64px; height: 64px; font-size: 20px; border: 3px solid #fff; box-shadow: 0 12px 24px -12px rgba(21,22,26,.5); }
+.l1 .rk-cara.grande { width: 78px; height: 78px; font-size: 24px; box-shadow: 0 0 0 3px #F5C542, 0 16px 30px -14px rgba(21,22,26,.55); }
+
+.rk-tabla td, .rk-tabla th { white-space: nowrap; }
+.rk-n { width: 36px; color: var(--texto-3); font: 500 12px/1 var(--cp-mono); }
+.rk-persona { display: inline-flex; align-items: center; gap: 10px; } .rk-persona em { font-style: normal; font-size: 11px; padding: 3px 7px; border-radius: 999px; background: var(--azul-suave); color: var(--azul); }
+.rk-yo td { background: #F6F9FF; }
+.rk-tabla td.num b { font-family: var(--cp-display); }
+.rk-barra { display: inline-block; vertical-align: middle; width: 70px; height: 5px; margin-right: 10px; border-radius: 5px; background: var(--gris-bg); overflow: hidden; }
+.rk-barra i { display: block; height: 100%; border-radius: 5px; background: linear-gradient(90deg, var(--azul), #7A3CFF); transition: width .6s var(--cp-suave); }
+
+.rk-reglas { margin-top: 18px; padding: 14px 18px; border: 1px solid var(--borde); border-radius: var(--cp-r-3); background: #fff; }
+.rk-reglas summary { cursor: pointer; font-weight: 600; font-size: 14px; }
+.rk-reglas ul { list-style: none; margin: 12px 0 8px; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 6px 18px; }
+.rk-reglas li { display: flex; justify-content: space-between; gap: 10px; padding: 6px 0; border-bottom: 1px dashed var(--borde); font-size: 13.5px; }
+.rk-reglas li b { color: var(--azul); font-family: var(--cp-mono); }
+@media (max-width: 640px) { .rk-podio { grid-template-columns: repeat(3, 1fr); gap: 8px; } .rk-cara.grande { width: 52px; height: 52px; } .l1 .rk-cara.grande { width: 62px; height: 62px; } }
+.rk-tabla th { padding-left: 10px; padding-right: 10px; } .rk-tabla td { padding-left: 10px; padding-right: 10px; }
+.rk-tabla .rk-barra { width: 56px; }

@@ -59,6 +59,7 @@ export function useCursos() {
       setImagenes(Object.fromEntries((data ?? []).filter((x) => x.signedUrl && x.path).map((x) => [x.path as string, x.signedUrl as string])));
     }
   }, []);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { void cargar(); }, [cargar]);
 
   async function marcar(leccionId: string, email: string | null, hecha: boolean) {
