@@ -75,7 +75,7 @@ span.chat-chip { cursor: default; }
 .chat-busca { display: flex; align-items: center; gap: 8px; margin: 12px 12px 8px; padding: 9px 12px; border-radius: 12px; background: #F4F5F8; color: var(--texto-3); }
 .chat-busca input { flex: 1; border: 0; background: none; outline: none; font: inherit; font-size: 13.5px; color: var(--texto); }
 .chat-filtros { display: flex; gap: 4px; padding: 0 12px 8px; }
-.chat-filtros button { display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px; border: 0; border-radius: 999px; background: none; font: 500 12.5px/1 var(--cp-texto); color: var(--texto-2); cursor: pointer; }
+.chat-filtros button { white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px; border: 0; border-radius: 999px; background: none; font: 500 12.5px/1 var(--cp-texto); color: var(--texto-2); cursor: pointer; }
 .chat-filtros button.on { background: var(--oscuro, #15161A); color: #fff; }
 .chat-filtros em { font-style: normal; min-width: 18px; padding: 2px 5px; border-radius: 999px; background: var(--mal-tx); color: #fff; font-size: 10.5px; text-align: center; }
 .chat-convs { list-style: none; margin: 0; padding: 0 6px 8px; overflow-y: auto; flex: 1; min-height: 0; }

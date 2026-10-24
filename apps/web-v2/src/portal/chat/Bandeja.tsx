@@ -67,7 +67,7 @@ export function Bandeja() {
     <>
       <div className="barra"><h1>Chat con clientes</h1></div>
       <div className={`cuerpo chat-bandeja${abierto ? " con-chat" : ""}`}>
-        <aside className="chat-lado" aria-label="Conversaciones">
+        <div className="chat-lado" role="navigation" aria-label="Conversaciones">
           <label className="chat-busca">{Ico.buscar({ t: 15 })}<input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar cliente" /></label>
           <div className="chat-filtros" role="tablist">
             <button className={filtro === "todos" ? "on" : ""} onClick={() => setFiltro("todos")}>Todos</button>
@@ -91,7 +91,7 @@ export function Bandeja() {
               </li>
             ))}
           </ul>
-        </aside>
+        </div>
         <section className="chat-zona">
           {actual ? (
             <Conversacion key={actual.cliente_id} clienteId={actual.cliente_id} soyEquipo yo={email} nombreYo={apodo} equipo={equipo}
