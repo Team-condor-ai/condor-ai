@@ -10,6 +10,19 @@ type Fila = {
   lecciones: number; cursos: number; minutos: number; dias: number; puntos: number;
 };
 type Periodo = "semana" | "mes" | "todo";
+type Insignia = { email: string; clave: string; titulo: string; detalle: string; ganada_en: string };
+
+/** Las insignias que existen (las calcula `insignias_equipo()` en la base) y cómo se ganan. */
+const INSIGNIAS: { clave: string; icono: string; titulo: string; como: string }[] = [
+  { clave: "primer_cierre", icono: "🚀", titulo: "Primer cierre del mes", como: "Ganar el primer lead del mes" },
+  { clave: "cerrador", icono: "🏆", titulo: "Cerrador", como: "3 leads ganados en el mes" },
+  { clave: "motor", icono: "⚡", titulo: "Motor de la semana", como: "Mover 15 leads de etapa en la semana" },
+  { clave: "racha", icono: "🔥", titulo: "Racha de 5 días", como: "5 días seguidos con actividad" },
+  { clave: "ejecutor", icono: "✅", titulo: "Ejecutor", como: "10 tareas hechas en el mes" },
+  { clave: "estudioso", icono: "📚", titulo: "Estudioso", como: "10 lecciones vistas en la semana" },
+  { clave: "curso_completo", icono: "🎓", titulo: "Curso completo", como: "Terminar un curso entero" },
+];
+const icono = (clave: string) => INSIGNIAS.find((i) => i.clave === clave)?.icono ?? "⭐";
 
 /** Cuánto vale cada cosa. Tiene que calzar con `ranking_equipo()` en la base (migración 20261024d). */
 const PUNTOS: { clave: keyof Fila; texto: string; vale: number }[] = [
@@ -43,6 +56,9 @@ export function Ranking() {
   const [periodo, setPeriodo] = useState<Periodo>("semana");
   const [filas, setFilas] = useState<Fila[] | null>(null);
   const [error, setError] = useState("");
+  const [insignias, setInsignias] = useState<Insignia[]>([]);
+  useEffect(() => { void sb.rpc("insignias_equipo").then(({ data }) => setInsignias((data ?? []) as Insignia[])); }, []);
+  const deQuien = (email: string) => insignias.filter((i) => i.email === email);
 
   useEffect(() => {
     let vivo = true;
@@ -89,6 +105,7 @@ export function Ranking() {
                     <span className="rk-medalla">{i + 1}</span>
                     {cara(podio[i], true)}
                     <b>{podio[i].nombre}</b>
+                    {deQuien(podio[i].email).length > 0 && <span className="rk-insignias">{deQuien(podio[i].email).map((x) => <span key={x.clave} title={`${x.titulo} · ${x.detalle}`}>{icono(x.clave)}</span>)}</span>}
                     <span className="rk-pts">{podio[i].puntos.toLocaleString("es-CL")} pts</span>
                     <span className="rk-pedestal" />
                   </div>
@@ -115,7 +132,8 @@ export function Ranking() {
                   {filas.map((f, i) => (
                     <tr key={f.email} className={f.email === yo ? "rk-yo" : ""}>
                       <td className="rk-n">{i + 1}</td>
-                      <td><span className="rk-persona">{cara(f)}<b>{f.nombre}</b>{f.email === yo && <em>tú</em>}</span></td>
+                      <td><span className="rk-persona">{cara(f)}<b>{f.nombre}</b>{f.email === yo && <em>tú</em>}
+                        {deQuien(f.email).length > 0 && <span className="rk-insignias">{deQuien(f.email).map((i) => <span key={i.clave} title={`${i.titulo} · ${i.detalle}`}>{icono(i.clave)}</span>)}</span>}</span></td>
                       <td className="num"><span className="rk-barra"><i style={{ width: `${(f.puntos / max) * 100}%` }} /></span><b>{f.puntos.toLocaleString("es-CL")}</b></td>
                       <td className="num">{f.leads_avanzados || "—"}</td>
                       <td className="num">{f.leads_ganados || "—"}</td>
@@ -130,6 +148,25 @@ export function Ranking() {
                 </tbody>
               </table>
             </div>
+
+            <section className="rk-vitrina">
+              <h3>Insignias</h3>
+              <div className="rk-vitrina-rejilla">
+                {INSIGNIAS.map((def) => {
+                  const quienes = insignias.filter((i) => i.clave === def.clave);
+                  return (
+                    <div key={def.clave} className={`rk-insignia${quienes.length ? " ganada" : ""}`}>
+                      <span className="rk-insignia-ico" aria-hidden="true">{def.icono}</span>
+                      <b>{def.titulo}</b>
+                      <small>{def.como}</small>
+                      <span className="rk-insignia-quien">
+                        {quienes.length ? quienes.map((q) => (filas.find((f) => f.email === q.email)?.nombre ?? q.email.split("@")[0])).join(", ") : "Nadie todavía"}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
 
             <details className="rk-reglas">
               <summary>Cómo se ganan los puntos</summary>

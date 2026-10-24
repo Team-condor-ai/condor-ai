@@ -10,6 +10,7 @@ import {
   reenviarAvisoReunion,
 } from "../reenviarReunion";
 import type { Cliente, Reunion } from "../tipos";
+import { useEquipo } from "../personas";
 
 type EstadoTarea = "por_hacer" | "en_curso" | "bloqueada" | "hecha";
 type Prioridad = "baja" | "media" | "alta" | "urgente";
@@ -1050,6 +1051,8 @@ function EditorTarea({
   // Responsables: texto libre, pero varios — sin tabla de usuarios detrás.
   const [asignados, setAsignados] = useState<string[]>(tarea?.asignados ?? []);
   const [nuevoAsignado, setNuevoAsignado] = useState("");
+  // El equipo a un clic: escrito a mano («max», «Joaco») no calzaba con el ranking, que cuenta por apodo.
+  const equipo = useEquipo();
   function agregarAsignado() {
     const v = nuevoAsignado.trim();
     if (!v) return;
@@ -1232,6 +1235,13 @@ function EditorTarea({
                 }}
                 onBlur={agregarAsignado}
               />
+              {equipo.some((p) => !asignados.includes(p.nombre)) && (
+                <div className="chips" style={{ marginTop: 6 }}>
+                  {equipo.filter((p) => !asignados.includes(p.nombre)).map((p) => (
+                    <button key={p.email} type="button" className="chip" onClick={() => setAsignados((a) => [...a, p.nombre])}>+ {p.nombre}</button>
+                  ))}
+                </div>
+              )}
             </label>
             <label className="campo-lbl" style={{ position: "relative" }}>
               Cliente

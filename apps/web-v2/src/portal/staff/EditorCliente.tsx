@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { sb } from "../lib/supabase";
 import { CATALOGO_PLANES, MONEDAS, type Cliente } from "./tipos";
+import { guardarNotas, leerNotas } from "./notasCliente";
+import { useSesion } from "../auth/sesion";
 
 type Props = {
   cliente: Cliente | null;
@@ -43,8 +45,14 @@ export function EditorCliente({ cliente, cerrar, guardado, lineaNueva }: Props) 
     concepto: cliente?.concepto ?? "",
     moneda: cliente?.moneda ?? "CLP",
     web_url: cliente?.web_url ?? "",
-    notas: cliente?.notas ?? "",
+    notas: "",
   });
+  const yo = useSesion().email;
+  const [notasAntes, setNotasAntes] = useState("");
+  useEffect(() => {
+    if (!cliente) return;
+    void leerNotas(cliente.id).then((n) => { setNotasAntes(n ?? ""); setF((p) => ({ ...p, notas: n ?? "" })); });
+  }, [cliente]);
 
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState("");
@@ -59,8 +67,9 @@ export function EditorCliente({ cliente, cerrar, guardado, lineaNueva }: Props) 
     setGuardando(true);
     setError("");
 
+    const { notas, ...resto } = f;
     const fila = {
-      ...f,
+      ...resto,
       negocio: f.negocio.trim(),
       // El correo vacío viaja como null, no como "": es lo que distingue
       // "no tiene correo" de "tiene un correo en blanco", y `email` dejó de
@@ -70,15 +79,17 @@ export function EditorCliente({ cliente, cerrar, guardado, lineaNueva }: Props) 
       telefono: f.telefono.trim() || null,
       plan: f.plan.trim() || null,
       linea: f.linea || null,
-      notas: f.notas.trim() || null,
     };
 
     const q = cliente
-      ? sb.from("clientes").update(fila).eq("id", cliente.id)
-      : sb.from("clientes").insert(fila);
-    const { error } = await q;
+      ? sb.from("clientes").update(fila).eq("id", cliente.id).select("id").single()
+      : sb.from("clientes").insert(fila).select("id").single();
+    const { data, error } = await q;
+    let errorNotas: string | null = null;
+    if (!error && data && notas.trim() !== notasAntes.trim()) errorNotas = await guardarNotas(data.id, notas, yo);
     setGuardando(false);
     if (error) setError(error.message);
+    else if (errorNotas) setError("El cliente se guardó, pero las notas no: " + errorNotas);
     else guardado();
   }
 

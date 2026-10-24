@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { sb } from "../../lib/supabase";
 
-export type Curso = { id: string; titulo: string; descripcion: string | null; categoria: string | null; para_clientes: boolean; orden: number; portada_ruta: string | null; profesor: string | null; nivel: string | null; publicado: boolean };
+export type Curso = { id: string; titulo: string; descripcion: string | null; categoria: string | null; para_clientes: boolean; orden: number; portada_ruta: string | null; profesor: string | null; nivel: string | null; publicado: boolean; lineas: string[] };
 export type Fase = { id: string; curso_id: string; titulo: string; descripcion: string | null; orden: number };
 export type Leccion = {
   id: string; curso_id: string; fase_id: string | null; titulo: string; descripcion: string | null; url: string | null;

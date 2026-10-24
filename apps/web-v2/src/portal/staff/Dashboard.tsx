@@ -1,3 +1,6 @@
+import { ResumenSemana, SeguimientoHoy } from "./PanelSemana";
+import { useMiApodo } from "./personas";
+import { useSesion } from "../auth/sesion";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { sb } from "../lib/supabase";
@@ -22,6 +25,8 @@ const cuando = (iso: string) =>
  */
 export function Dashboard() {
   const nombre = useNombreUsuario();
+  const email = useSesion().email;
+  const miApodo = useMiApodo(email);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [reuniones, setReuniones] = useState<ReunionP[]>([]);
   const [cobros, setCobros] = useState<CobroP[]>([]);
@@ -98,6 +103,9 @@ export function Dashboard() {
           <Link to="/acceso/contabilidad?tab=cobros" className="dash-kpi"><span>Por cobrar</span><b>{dinero(porCobrarClp)}</b><small>{cobros.length} cobro{cobros.length === 1 ? "" : "s"} pendiente{cobros.length === 1 ? "" : "s"}</small></Link>
         </div>
 
+        <SeguimientoHoy leads={leads} miApodo={miApodo} email={email} onCambio={(id, c) => setLeads((ls) => ls.map((l) => (l.id === id ? { ...l, ...c } : l)))} />
+        <ResumenSemana />
+
         <section className="dash-card">
           <header><h2>Embudo de leads</h2><Link to="/acceso/leads">Abrir tablero {Ico.galon({ t: 12 })}</Link></header>
           <div className="dash-embudo">
@@ -148,7 +156,7 @@ export function Dashboard() {
           </section>
 
           <section className="dash-card">
-            <header><h2>Pedidos de clientes</h2><Link to="/acceso/clientes">Clientes {Ico.galon({ t: 12 })}</Link></header>
+            <header><h2>Pedidos de clientes</h2><Link to="/acceso/solicitudes">Solicitudes {Ico.galon({ t: 12 })}</Link></header>
             {solicitudes.length === 0 ? <p className="dash-vacio">Ningún cliente ha pedido cambios.</p> : (
               <ul className="dash-lista">
                 {solicitudes.slice(0, 6).map((x) => (

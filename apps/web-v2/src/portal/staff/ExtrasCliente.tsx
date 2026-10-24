@@ -12,7 +12,9 @@ type R = { id: string; titulo: string; fecha_hora: string };
  * Lo que el equipo necesita de un cliente además de su plan y sus cobros: tareas abiertas, claves y archivos
  * de la Bóveda, y reuniones. Va debajo de la ficha para no abrir cuatro pantallas distintas (24-oct-2026).
  */
-export function ExtrasCliente({ id, negocio }: { id: string; negocio: string | null }) {
+export type VistaExtras = "acceso" | "tareas" | "boveda" | "reuniones";
+
+export function ExtrasCliente({ id, negocio, vista }: { id: string; negocio: string | null; vista: VistaExtras }) {
   const [tareas, setTareas] = useState<T[]>([]);
   const [claves, setClaves] = useState<K[]>([]);
   const [reuniones, setReuniones] = useState<R[]>([]);
@@ -22,9 +24,9 @@ export function ExtrasCliente({ id, negocio }: { id: string; negocio: string | n
 
   useEffect(() => {
     void sb.from("clientes").select("email").eq("id", id).maybeSingle().then(({ data }) => setCorreo(data?.email ?? null));
-    void sb.from("tareas").select("id,titulo,estado,vence").eq("cliente_id", id).neq("estado", "hecha").order("vence", { nullsFirst: false }).limit(6).then(({ data }) => setTareas((data ?? []) as T[]));
-    void sb.from("claves").select("id,titulo,tipo").eq("cliente_id", id).order("titulo").limit(8).then(({ data }) => setClaves((data ?? []) as K[]));
-    if (negocio) void sb.from("reuniones").select("id,titulo,fecha_hora").ilike("cliente", `%${negocio.replace(/[%,]/g, "")}%`).order("fecha_hora", { ascending: false }).limit(4).then(({ data }) => setReuniones((data ?? []) as R[]));
+    void sb.from("tareas").select("id,titulo,estado,vence").eq("cliente_id", id).neq("estado", "hecha").order("vence", { nullsFirst: false }).limit(30).then(({ data }) => setTareas((data ?? []) as T[]));
+    void sb.from("claves").select("id,titulo,tipo").eq("cliente_id", id).order("titulo").limit(50).then(({ data }) => setClaves((data ?? []) as K[]));
+    if (negocio) void sb.from("reuniones").select("id,titulo,fecha_hora").ilike("cliente", `%${negocio.replace(/[%,]/g, "")}%`).order("fecha_hora", { ascending: false }).limit(20).then(({ data }) => setReuniones((data ?? []) as R[]));
   }, [id, negocio]);
 
   async function acceso() {
@@ -35,7 +37,7 @@ export function ExtrasCliente({ id, negocio }: { id: string; negocio: string | n
 
   return (
     <div className="extras-cliente">
-      <section>
+      {vista === "acceso" && <section>
         <header><h4>Acceso al portal</h4></header>
         {!correo ? <p>Pon el correo del cliente en su ficha para darle acceso.</p> : (
           <>
@@ -45,19 +47,19 @@ export function ExtrasCliente({ id, negocio }: { id: string; negocio: string | n
             {errorAcceso && <p className="aviso-error">{errorAcceso}</p>}
           </>
         )}
-      </section>
-      <section>
+      </section>}
+      {vista === "tareas" && <section>
         <header><h4>Tareas abiertas</h4><Link to="/acceso/organizacion/tablero">Tablero</Link></header>
         {tareas.length === 0 ? <p>Sin tareas pendientes.</p> : <ul>{tareas.map((t) => <li key={t.id}><b>{t.titulo}</b><small>{t.vence ? new Date(t.vence + "T12:00:00").toLocaleDateString("es-CL", { day: "numeric", month: "short" }) : "Sin fecha"}</small></li>)}</ul>}
-      </section>
-      <section>
+      </section>}
+      {vista === "boveda" && <section>
         <header><h4>Bóveda</h4><Link to={`/acceso/claves?cliente=${id}`}>Abrir</Link></header>
         {claves.length === 0 ? <p>Sin claves ni archivos de este cliente.</p> : <ul>{claves.map((k) => <li key={k.id}><span aria-hidden="true">{k.tipo === "archivo" ? Ico.documentos({ t: 14 }) : Ico.candado({ t: 14 })}</span><b>{k.titulo}</b></li>)}</ul>}
-      </section>
-      <section>
+      </section>}
+      {vista === "reuniones" && <section>
         <header><h4>Reuniones</h4><Link to="/acceso/organizacion/calendario">Calendario</Link></header>
         {reuniones.length === 0 ? <p>Sin reuniones registradas.</p> : <ul>{reuniones.map((r) => <li key={r.id}><b>{r.titulo}</b><small>{new Date(r.fecha_hora).toLocaleDateString("es-CL", { day: "numeric", month: "short" })}</small></li>)}</ul>}
-      </section>
+      </section>}
     </div>
   );
 }

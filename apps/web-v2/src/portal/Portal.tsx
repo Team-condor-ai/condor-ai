@@ -17,10 +17,13 @@ import "./disenio/dialogos.css";
 import "./disenio/boveda.css";
 import "./disenio/cursos.css";
 import "./disenio/ranking.css";
+import "./disenio/mejoras.css";
 
 import { useSesion, salir, SesionProvider } from "./auth/sesion";
 import { Login } from "./auth/Login";
+import { Inicio } from "./cliente/Inicio";
 import { Ranking } from "./staff/Ranking";
+import { PaginaSolicitudes } from "./staff/Solicitudes";
 import { ForzarCambio } from "./auth/ForzarCambio";
 import { CambiarClave } from "./auth/CambiarClave";
 import { Lateral, type Entrada, type Grupo } from "./disenio/Lateral";
@@ -84,6 +87,7 @@ const MENU_STAFF: Grupo[] = [
       { a: "/acceso/productos/sites", texto: "Sites", icono: "sitesProducto", imagen: "/condor/marca/producto-sites-chico.svg" },
       { a: "/acceso/productos/ecommerce", texto: "Ecommerce", icono: "ecommerceProducto", imagen: "/condor/marca/producto-ecommerce-chico.svg" },
       { a: "/acceso/productos/crm", texto: "CRM", icono: "trackProducto", imagen: "/condor/marca/producto-crm-chico.svg" },
+      { a: "/acceso/solicitudes", texto: "Solicitudes", icono: "editar" },
     ] },
   { titulo: "Recursos", clave: "biblioteca", icono: "biblioteca",
     entradas: [{ a: "/acceso/biblioteca", texto: "Biblioteca", icono: "biblioteca" }] },
@@ -99,6 +103,7 @@ const MENU_STAFF: Grupo[] = [
 ];
 
 const MENU_CLIENTE_BASE: Entrada[] = [
+  { a: "/acceso/inicio", texto: "Inicio", icono: "panel" },
   { a: "/acceso/plan", texto: "Mi plan", icono: "plan" },
   { a: "/acceso/solicitudes", texto: "Pedir un cambio", icono: "editar" },
   { a: "/acceso/cursos", texto: "Cursos", icono: "biblioteca" },
@@ -208,6 +213,7 @@ function PortalContenido() {
         <Routes>
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="ranking" element={<Ranking />} />
+          <Route path="solicitudes" element={<PaginaSolicitudes />} />
           {/* "clientes" (sin línea) sigue viva por los links viejos que
               traen `?ver=<id>` desde Cobros/Panel/Mapa -- Productos lee ese
               query param sin importar qué línea muestre. */}
@@ -245,13 +251,14 @@ function PortalContenido() {
   return envolver(
     <Marco menu={menuCliente} nombre={nombre} detalle={correo}>
       <Routes>
+        <Route path="inicio" element={<Inicio />} />
         <Route path="plan" element={<MiPlan />} />
         <Route path="pago/resultado" element={<ResultadoPago />} />
         <Route path="boletas" element={dif(<MisBoletas />)} />
         <Route path="solicitudes" element={<Solicitudes />} />
         <Route path="cursos" element={<><div className="barra"><h1>Cursos</h1></div><div className="cuerpo"><Cursos editable={false} /></div></>} />
         <Route path="cuenta" element={<MiCuenta />} />
-        <Route path="*" element={<Navigate to="/acceso/plan" replace />} />
+        <Route path="*" element={<Navigate to="/acceso/inicio" replace />} />
       </Routes>
     </Marco>,
   );

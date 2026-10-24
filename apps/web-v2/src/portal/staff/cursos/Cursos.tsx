@@ -174,7 +174,7 @@ export function Cursos({ editable }: { editable: boolean }) {
               <button key={c.id} className="cur-tarjeta" onClick={() => ir(c.id)}>
                 <span className="cur-portada" style={{ background: GRADIENTES[i % GRADIENTES.length] }}>
                   {img && <img src={img} alt="" loading="lazy" />}
-                  <span className="cur-portada-tags">{c.categoria && <em>{c.categoria}</em>}{editable && c.para_clientes && <em>Visible para clientes</em>}{editable && !c.publicado && <em>Borrador</em>}</span>
+                  <span className="cur-portada-tags">{c.categoria && <em>{c.categoria}</em>}{editable && c.para_clientes && <em>{c.lineas?.length ? `Clientes ${c.lineas.map((x) => ({ sites: "Sites", ecommerce: "Ecommerce", crm: "CRM" })[x] ?? x).join(" y ")}` : "Visible para clientes"}</em>}{editable && !c.publicado && <em>Borrador</em>}</span>
                   {p > 0 && <span className="cur-portada-p">{p === 100 ? "✓ Completado" : `${p}%`}</span>}
                 </span>
                 <span className="cur-texto"><b>{c.titulo}</b><small>{d.fases.filter((f) => f.curso_id === c.id).length || 1} fases · {lista.length} lecciones{total ? ` · ${duracion(total)}` : ""}</small>

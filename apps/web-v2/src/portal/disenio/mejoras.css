@@ -1,0 +1,113 @@
+/* Ronda de mejoras del 24-oct-2026: solicitudes con estado, ficha con pestañas, seguimiento de leads,
+   resumen de la semana, insignias e inicio del cliente. Mismo lenguaje que el resto (tema Acrílico). */
+
+/* ── Solicitudes (equipo) ── */
+.sol-tablero { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; align-items: start; }
+.sol-tablero.compacto { grid-template-columns: 1fr; gap: 10px; }
+.sol-col { display: grid; gap: 8px; padding: 12px; border-radius: var(--cp-r-3); background: #F6F7FA; border: 1px solid var(--borde-suave); }
+.sol-col > header { display: flex; align-items: center; justify-content: space-between; padding: 2px 4px; }
+.sol-col > header b { font: 600 14px/1 var(--cp-display); letter-spacing: -.02em; }
+.sol-col > header span { min-width: 22px; padding: 3px 7px; border-radius: 999px; background: #fff; border: 1px solid var(--borde); font: 600 11px/1 var(--cp-mono); text-align: center; color: var(--texto-2); }
+.sol-col.nueva > header b::before, .sol-col.en_curso > header b::before, .sol-col.lista > header b::before { content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 8px; border-radius: 50%; vertical-align: 1px; }
+.sol-col.nueva > header b::before { background: var(--azul); } .sol-col.en_curso > header b::before { background: #E5A21B; } .sol-col.lista > header b::before { background: #1DB954; }
+.sol-ayuda { margin: -4px 4px 2px; font-size: 12px; color: var(--texto-3); }
+.sol-tablero.compacto .sol-ayuda { display: none; }
+.sol-vacia { margin: 0; padding: 14px; text-align: center; font-size: 12.5px; color: var(--texto-3); border: 1px dashed var(--borde); border-radius: 12px; }
+.sol-tarjeta { border-radius: 14px; background: #fff; border: 1px solid var(--borde); box-shadow: 0 6px 16px -14px rgba(21,22,26,.5); overflow: hidden; transition: box-shadow .2s, border-color .2s; }
+.sol-tarjeta.atrasada { border-color: #F2C7C9; }
+.sol-tarjeta.abierta { box-shadow: 0 18px 34px -22px rgba(21,22,26,.55); }
+.sol-cab { width: 100%; display: grid; gap: 3px; padding: 11px 13px; border: 0; background: none; text-align: left; font: inherit; color: var(--texto); cursor: pointer; position: relative; }
+.sol-cab b { font-weight: 600; font-size: 13.5px; padding-right: 60px; } .sol-cab small { color: var(--texto-3); font-size: 12px; } .sol-cab small em { font-style: normal; color: var(--mal-tx); font-weight: 600; }
+.sol-resp { position: absolute; top: 10px; right: 11px; padding: 3px 8px; border-radius: 999px; background: var(--azul-suave); color: var(--azul); font-size: 11px; font-weight: 600; }
+.sol-cuerpo { display: grid; gap: 10px; padding: 0 13px 13px; animation: cp-sube .3s var(--cp-suave) backwards; }
+.sol-detalle { margin: 0; padding: 10px 12px; border-radius: 10px; background: #F7F8FB; font-size: 13px; line-height: 1.5; white-space: pre-wrap; color: var(--texto-2); }
+.sol-cuerpo .campo-lbl small { font-weight: 400; color: var(--texto-3); }
+.sol-acciones { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+@media (max-width: 900px) { .sol-tablero { grid-template-columns: 1fr; } }
+
+/* ── Solicitudes (cliente): pasos y respuesta ── */
+.solicitud-lista li.solicitud-item { display: grid; gap: 10px; }
+.solicitud-fila { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
+.solicitud-fila small { display: block; margin-top: 2px; }
+.solicitud-pasos { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 12.5px; color: var(--texto-3); }
+.solicitud-pasos li { display: flex; align-items: center; gap: 7px; padding: 0 !important; border: 0 !important; }
+.solicitud-pasos li i { width: 9px; height: 9px; border-radius: 50%; border: 2px solid var(--borde); }
+.solicitud-pasos li.hecho { color: var(--texto); } .solicitud-pasos li.hecho i { background: #1DB954; border-color: #1DB954; }
+.solicitud-pasos small { color: var(--texto-3); }
+.solicitud-respuesta { margin: 0; padding: 10px 14px; border-radius: 12px; background: var(--azul-suave); color: var(--texto); font-size: 13.5px; line-height: 1.5; }
+.solicitud-respuesta b { color: var(--azul); }
+
+/* ── Ficha del cliente con pestañas ── */
+.ficha-pestanas { position: sticky; top: -1px; z-index: 2; display: flex; gap: 2px; margin: 0 0 14px; padding: 4px; border-radius: 999px; background: var(--gris-bg); overflow-x: auto; scrollbar-width: none; }
+.ficha-pestanas::-webkit-scrollbar { display: none; }
+.ficha-pestanas button { flex: none; padding: 7px 13px; border: 0; border-radius: 999px; background: none; font: 500 13px/1 var(--cp-texto); color: var(--texto-2); cursor: pointer; transition: background .2s, color .2s; }
+.ficha-pestanas button.on { background: #fff; color: var(--texto); box-shadow: 0 2px 8px -3px rgba(21,22,26,.3); }
+
+/* ── Curso: líneas de clientes ── */
+.dlg-lineas { display: flex; flex-wrap: wrap; gap: 8px 18px; margin: 0; padding: 10px 14px; border: 1px solid var(--borde); border-radius: 12px; }
+.dlg-lineas legend { padding: 0 6px; font-size: 13px; font-weight: 600; } .dlg-lineas legend small { font-weight: 400; color: var(--texto-3); }
+
+/* ── Leads: próxima acción en la tarjeta ── */
+.lead-proxima { margin: 6px 0 0; padding: 5px 9px; border-radius: 8px; background: #F4F5F8; font-size: 12px; color: var(--texto-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lead-proxima.hoy { background: #FFF6E0; color: #8A5A00; }
+.lead-proxima.vencida { background: #FDECEC; color: var(--mal-tx); font-weight: 600; }
+
+/* ── Panel: seguimiento de hoy ── */
+.seg-hoy { border-color: var(--azul-borde); background: linear-gradient(180deg, #F6F9FF, #fff 60%); }
+.seg-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.seg-lista li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border-radius: 12px; background: #fff; border: 1px solid var(--borde); }
+.seg-lista li.vencido { border-color: #F2C7C9; background: #FFF8F8; }
+.seg-quien { min-width: 0; display: grid; gap: 2px; color: inherit; text-decoration: none; }
+.seg-quien b { font-weight: 600; font-size: 14px; } .seg-quien small { font-size: 12.5px; color: var(--texto-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.seg-lista li.vencido .seg-quien small { color: var(--mal-tx); }
+.seg-acc { flex: none; display: flex; gap: 6px; }
+.seg-avisos { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 10px 0 0; font-size: 12.5px; }
+.seg-avisos a { color: var(--texto-2); } .seg-avisos a:hover { color: var(--azul); }
+@media (max-width: 640px) { .seg-lista li { flex-direction: column; align-items: stretch; } .seg-acc { justify-content: flex-end; } }
+
+/* ── Panel: así va la semana ── */
+.semana-cuerpo { display: grid; grid-template-columns: minmax(200px, 1fr) 2.2fr; gap: 18px; align-items: center; }
+.semana-podio { display: grid; gap: 8px; }
+.semana-podio span { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 12px; background: #F7F8FB; }
+.semana-podio em { font-style: normal; font-size: 18px; } .semana-podio b { flex: 1; font-weight: 600; } .semana-podio small { font: 500 12px/1 var(--cp-mono); color: var(--texto-2); }
+.semana-cifras { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.semana-cifras a { display: grid; gap: 3px; padding: 12px 14px; border-radius: 14px; border: 1px solid var(--borde); color: inherit; text-decoration: none; transition: transform .25s var(--cp-resorte), box-shadow .2s; }
+.semana-cifras a:hover { transform: translateY(-2px); box-shadow: 0 12px 24px -18px rgba(21,22,26,.5); }
+.semana-cifras b { font: 600 1.45rem/1 var(--cp-display); letter-spacing: -.03em; } .semana-cifras span { font-size: 12px; color: var(--texto-3); }
+.semana-cifras a.mal { border-color: #F2C7C9; background: #FFF8F8; } .semana-cifras a.mal b { color: var(--mal-tx); }
+.semana-cifras a.ojo { border-color: #F5DFA6; background: #FFFBF0; }
+@media (max-width: 900px) { .semana-cuerpo { grid-template-columns: 1fr; } .semana-cifras { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* ── Ranking: insignias ── */
+.rk-insignias { display: inline-flex; gap: 2px; margin-left: 4px; font-size: 14px; line-height: 1; }
+.rk-insignias span { cursor: default; }
+.rk-lugar .rk-insignias { margin: 0; font-size: 16px; }
+.rk-vitrina { margin-top: 18px; }
+.rk-vitrina h3 { margin: 0 0 10px; font-size: 1.05rem; }
+.rk-vitrina-rejilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
+.rk-insignia { display: grid; gap: 4px; padding: 14px; border-radius: 16px; border: 1px dashed var(--borde); background: #FAFBFC; color: var(--texto-3); }
+.rk-insignia-ico { font-size: 26px; filter: grayscale(1); opacity: .45; }
+.rk-insignia b { color: var(--texto-2); font-size: 13.5px; } .rk-insignia small { font-size: 12px; }
+.rk-insignia-quien { margin-top: 4px; font-size: 12px; font-weight: 600; }
+.rk-insignia.ganada { border-style: solid; border-color: var(--azul-borde); background: linear-gradient(180deg, #F3F7FF, #fff); color: var(--texto-2); }
+.rk-insignia.ganada .rk-insignia-ico { filter: none; opacity: 1; }
+.rk-insignia.ganada b { color: var(--texto); } .rk-insignia.ganada .rk-insignia-quien { color: var(--azul); }
+
+/* ── Inicio del cliente ── */
+.ini-cliente { display: grid; gap: 14px; }
+.ini-hola { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; flex-wrap: wrap; padding: 26px 28px; border-radius: var(--cp-r-4); color: #fff; background: radial-gradient(120% 140% at 100% 0, #7A3CFF 0%, transparent 55%), linear-gradient(135deg, #0A1B4D, #014CFD); box-shadow: 0 30px 60px -36px rgba(1,76,253,.7); }
+.ini-hola h2 { margin: 4px 0 6px; color: #fff; font-size: clamp(1.5rem, 3vw, 2.1rem); letter-spacing: -.04em; }
+.ini-hola p { margin: 0; opacity: .85; font-size: 14.5px; }
+.ini-hola .rotulo-mini { color: rgba(255,255,255,.7); }
+.ini-estado { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px; background: rgba(255,255,255,.14); font-size: 13px; font-weight: 600; -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+.ini-estado i { width: 8px; height: 8px; border-radius: 50%; background: #3BE07A; } .ini-estado.mal i { background: #FF6B6B; }
+.ini-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.ini-kpis a, .ini-kpis div { display: grid; gap: 4px; padding: 16px; border-radius: var(--cp-r-3); background: #fff; border: 1px solid var(--borde); box-shadow: var(--sombra); color: inherit; text-decoration: none; }
+.ini-kpis span { font-size: 12px; color: var(--texto-3); } .ini-kpis b { font: 600 1.4rem/1.1 var(--cp-display); letter-spacing: -.03em; } .ini-kpis small { font-size: 12px; color: var(--texto-2); }
+.ini-kpis .mal b { color: var(--mal-tx); }
+.ini-dos { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.ini-web { display: flex; align-items: center; gap: 14px; }
+.ini-web-ico { width: 44px; height: 44px; flex: none; display: grid; place-items: center; border-radius: 14px; background: var(--azul-suave); color: var(--azul); }
+.ini-web div { min-width: 0; flex: 1; display: grid; gap: 2px; } .ini-web b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .ini-web small { color: var(--texto-3); }
+.ini-web .en-linea { color: #147A42; font-weight: 600; } .ini-web .caida { color: var(--mal-tx); font-weight: 600; }
+@media (max-width: 900px) { .ini-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } .ini-dos { grid-template-columns: 1fr; } }

@@ -34,3 +34,14 @@ export function useEquipo() {
   }, []);
   return personas;
 }
+
+/** Mi nombre corto en el equipo (el que usan `leads.responsable` y `tareas.asignados`). */
+export function useMiApodo(email: string | null): string | null {
+  const equipo = useEquipo();
+  return equipo.find((p) => p.email === email?.toLowerCase())?.nombre ?? null;
+}
+
+/** Fecha de hoy en hora local (Chile) como AAAA-MM-DD. */
+export function hoyLocal(d = new Date()) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}

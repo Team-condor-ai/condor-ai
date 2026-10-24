@@ -4,6 +4,9 @@ import { Modal } from "../../disenio/Dialogos";
 import { useConfirmacion } from "../../disenio/Confirmacion";
 import type { Curso, Fase, Leccion } from "./datos";
 
+/** Un curso para clientes se puede dejar solo para una línea (p. ej. «Cómo usar tu CRM» solo para clientes CRM). */
+const LINEAS = [{ id: "sites", texto: "Sites" }, { id: "ecommerce", texto: "Ecommerce" }, { id: "crm", texto: "CRM" }];
+
 const limpio = (n: string) => n.replace(/[^\w.-]+/g, "_");
 async function subir(ruta: string, f: File) {
   const { error } = await sb.storage.from("cursos").upload(ruta, f, { upsert: true, contentType: f.type || undefined });
@@ -11,7 +14,7 @@ async function subir(ruta: string, f: File) {
 }
 
 export function FormCurso({ curso, yo, onCerrar, onListo }: { curso: Curso | null; yo: string | null; onCerrar: () => void; onListo: (id?: string) => void }) {
-  const [f, setF] = useState({ titulo: curso?.titulo ?? "", descripcion: curso?.descripcion ?? "", categoria: curso?.categoria ?? "", nivel: curso?.nivel ?? "", profesor: curso?.profesor ?? "", para_clientes: curso?.para_clientes ?? false, publicado: curso?.publicado ?? true });
+  const [f, setF] = useState({ titulo: curso?.titulo ?? "", descripcion: curso?.descripcion ?? "", categoria: curso?.categoria ?? "", nivel: curso?.nivel ?? "", profesor: curso?.profesor ?? "", para_clientes: curso?.para_clientes ?? false, publicado: curso?.publicado ?? true, lineas: curso?.lineas ?? [] as string[] });
   const [portada, setPortada] = useState<File | null>(null);
   const [error, setError] = useState(""); const [guardando, setGuardando] = useState(false);
   const set = (k: string, v: unknown) => setF((x) => ({ ...x, [k]: v }));
@@ -20,7 +23,7 @@ export function FormCurso({ curso, yo, onCerrar, onListo }: { curso: Curso | nul
     if (!f.titulo.trim()) { setError("Ponle un título."); return; }
     setGuardando(true); setError("");
     try {
-      const datos = { titulo: f.titulo.trim(), descripcion: f.descripcion.trim() || null, categoria: f.categoria.trim() || null, nivel: f.nivel.trim() || null, profesor: f.profesor.trim() || null, para_clientes: f.para_clientes, publicado: f.publicado };
+      const datos = { titulo: f.titulo.trim(), descripcion: f.descripcion.trim() || null, categoria: f.categoria.trim() || null, nivel: f.nivel.trim() || null, profesor: f.profesor.trim() || null, para_clientes: f.para_clientes, publicado: f.publicado, lineas: f.para_clientes ? f.lineas : [] };
       let id = curso?.id;
       if (curso) { const r = await sb.from("cursos").update(datos).eq("id", curso.id); if (r.error) throw new Error(r.error.message); }
       else { const r = await sb.from("cursos").insert({ ...datos, creado_por: yo }).select("id").single(); if (r.error) throw new Error(r.error.message); id = r.data.id; }
@@ -41,6 +44,14 @@ export function FormCurso({ curso, yo, onCerrar, onListo }: { curso: Curso | nul
         <label>Portada (imagen)<input type="file" accept="image/*" onChange={(e) => setPortada(e.target.files?.[0] ?? null)} /></label>
         <label className="check ancho"><input type="checkbox" checked={f.publicado} onChange={(e) => set("publicado", e.target.checked)} /> Publicado (si no, solo lo ve el equipo como borrador)</label>
         <label className="check ancho"><input type="checkbox" checked={f.para_clientes} onChange={(e) => set("para_clientes", e.target.checked)} /> Visible también para los clientes en su portal</label>
+        {f.para_clientes && (
+          <fieldset className="ancho dlg-lineas">
+            <legend>¿Para qué clientes? <small>Sin marcar ninguno = todos los clientes</small></legend>
+            {LINEAS.map((l) => (
+              <label key={l.id} className="check"><input type="checkbox" checked={f.lineas.includes(l.id)} onChange={(e) => set("lineas", e.target.checked ? [...f.lineas, l.id] : f.lineas.filter((x) => x !== l.id))} /> Clientes {l.texto}</label>
+            ))}
+          </fieldset>
+        )}
         {error && <p className="aviso-error ancho">{error}</p>}
       </form>
     </Modal>

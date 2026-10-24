@@ -29,7 +29,6 @@ export type Cliente = {
   archivado: boolean | null;
   cobra_setup: boolean | null;
   cobra_mensual: boolean | null;
-  notas: string | null;
   creado_en: string | null;
 };
 

@@ -3,6 +3,8 @@ import { useSearchParams } from "react-router-dom";
 import { sb } from "../lib/supabase";
 import { Ico } from "../disenio/iconos";
 import { FichaLead } from "./FichaLead";
+import { useSesion } from "../auth/sesion";
+import { hoyLocal, useMiApodo } from "./personas";
 import { useConfirmacion } from "../disenio/Confirmacion";
 import {
   type Lead,
@@ -67,14 +69,18 @@ export function Leads() {
   useEffect(() => { void cargar(); }, []);
   useEffect(() => { const id = Number(params.get("lead")); if (id) setAbierto(id); }, [params]);
 
+  const miApodo = useMiApodo(useSesion().email);
+  const [mios, setMios] = useState(false);
+  const hoy = hoyLocal();
   const visibles = useMemo(() => {
     const q = busca.trim().toLowerCase();
     return leads.filter((l) => {
       if (servicio && l.servicio_interes !== servicio) return false;
+      if (mios && l.responsable !== miApodo) return false;
       if (!q) return true;
       return [l.negocio, l.nombre, l.email, l.whatsapp, l.origen, l.campana].some((v) => (v ?? "").toLowerCase().includes(q));
     });
-  }, [leads, busca, servicio]);
+  }, [leads, busca, servicio, mios, miApodo]);
 
   const porEtapa = (e: EtapaLead) => visibles.filter((l) => l.etapa === e);
 
@@ -143,6 +149,11 @@ export function Leads() {
           {frio && <span className="lead-chip frio">Frío</span>}
           {l.valor_estimado ? <span className="lead-valor">{dinero(l.valor_estimado)}</span> : null}
         </div>
+        {l.proxima_accion_en && !["ganado", "perdido", "sin_respuesta"].includes(l.etapa) && (
+          <p className={`lead-proxima${l.proxima_accion_en < hoy ? " vencida" : l.proxima_accion_en === hoy ? " hoy" : ""}`}>
+            → {l.proxima_accion || "Seguimiento"} · {l.proxima_accion_en < hoy ? "venció " : l.proxima_accion_en === hoy ? "hoy " : ""}{l.proxima_accion_en === hoy ? "" : new Date(l.proxima_accion_en + "T12:00:00").toLocaleDateString("es-CL", { day: "numeric", month: "short" })}
+          </p>
+        )}
         <div className="lead-pie">
           <span title={new Date(l.etapa_en).toLocaleString("es-CL")}>{hace(diasEnEtapa(l))}</span>
           {atraso && <span className="lead-atraso">{atraso}</span>}
@@ -203,6 +214,7 @@ export function Leads() {
             <button className={!servicio ? "on" : ""} onClick={() => setServicio("")}>Todos</button>
             {SERVICIOS_LEAD.map((s) => <button key={s.id} className={servicio === s.id ? "on" : ""} onClick={() => setServicio(servicio === s.id ? "" : s.id)}>{s.texto}</button>)}
           </div>
+          {miApodo && <div className="lead-chips"><button className={mios ? "on" : ""} onClick={() => setMios(!mios)} title={`Solo los leads con responsable ${miApodo}`}>Solo míos</button></div>}
         </div>
 
         {frios.length > 0 && (

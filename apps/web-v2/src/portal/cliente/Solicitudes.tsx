@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { sb } from "../lib/supabase";
 
-type Solicitud = { id: string; titulo: string; detalle: string | null; estado: "nueva" | "en_curso" | "lista"; creado_en: string };
+type Solicitud = { id: string; titulo: string; detalle: string | null; estado: "nueva" | "en_curso" | "lista"; creado_en: string; respuesta: string | null; responsable: string | null; en_curso_en: string | null; lista_en: string | null };
 const ESTADOS = { nueva: "Recibida", en_curso: "En curso", lista: "Lista" } as const;
+const dia = (iso: string) => new Date(iso).toLocaleDateString("es-CL", { day: "numeric", month: "short" });
 
 /**
  * «Pedir un cambio» (24-oct-2026): el cliente deja lo que necesita y ve en qué va. Al equipo le aparece en el Panel.
@@ -60,9 +61,17 @@ export function Solicitudes() {
           {lista.length === 0 ? <p className="vacio-linea">Todavía no has pedido nada.</p> : (
             <ul className="solicitud-lista">
               {lista.map((s) => (
-                <li key={s.id}>
-                  <div><b>{s.titulo}</b><small>{new Date(s.creado_en).toLocaleDateString("es-CL", { day: "numeric", month: "long" })}{s.detalle ? ` · ${s.detalle.slice(0, 80)}` : ""}</small></div>
-                  <span className={`solicitud-estado ${s.estado}`}>{ESTADOS[s.estado]}</span>
+                <li key={s.id} className="solicitud-item">
+                  <div className="solicitud-fila">
+                    <div><b>{s.titulo}</b>{s.detalle && <small>{s.detalle.slice(0, 120)}</small>}</div>
+                    <span className={`solicitud-estado ${s.estado}`}>{ESTADOS[s.estado]}</span>
+                  </div>
+                  <ol className="solicitud-pasos" aria-label="Avance">
+                    <li className="hecho"><i />Recibida <small>{dia(s.creado_en)}</small></li>
+                    <li className={s.en_curso_en || s.estado === "lista" ? "hecho" : ""}><i />En curso{s.responsable ? ` con ${s.responsable}` : ""} {s.en_curso_en && <small>{dia(s.en_curso_en)}</small>}</li>
+                    <li className={s.estado === "lista" ? "hecho" : ""}><i />Lista {s.lista_en && <small>{dia(s.lista_en)}</small>}</li>
+                  </ol>
+                  {s.respuesta && <p className="solicitud-respuesta"><b>Cóndor:</b> {s.respuesta}</p>}
                 </li>
               ))}
             </ul>

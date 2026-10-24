@@ -3,6 +3,8 @@ import { sb, invocar, plata, fecha, enlaceWeb } from "../lib/supabase";
 import { Ico } from "../disenio/iconos";
 import { useConfirmacion } from "../disenio/Confirmacion";
 import { CampoVivo } from "./CampoVivo";
+import { guardarNotas, leerNotas } from "./notasCliente";
+import { useSesion } from "../auth/sesion";
 import { EditorCobro } from "./EditorCobro";
 import { AnotarPago } from "./AnotarPago";
 import { CrearLinkCobro } from "./CrearLinkCobro";
@@ -50,8 +52,11 @@ function EstadoCobro({ c }: { c: Cobro }) {
 export function ContenidoCliente({
   id,
   alCargar,
+  vista = "todo",
 }: {
   id: string;
+  /** Qué parte mostrar (pestañas de la ficha): los datos, los cobros o nada (solo mantiene cargado al cliente). */
+  vista?: "todo" | "datos" | "cobros" | "nada";
   /** Avisa quién es el cliente, para que el encabezado de arriba lo muestre. */
   alCargar?: (c: Cliente | null) => void;
 }) {
@@ -135,6 +140,10 @@ export function ContenidoCliente({
 
   /** Guarda un campo suelto del cliente. Devuelve el error para que el propio
    *  campo lo muestre en su lugar, en vez de un cartel arriba de todo. */
+  const yo = useSesion().email;
+  const [notas, setNotas] = useState<string | null>(null);
+  useEffect(() => { void leerNotas(id).then(setNotas); }, [id]);
+
   async function guardarCampo(campos: Partial<Cliente>) {
     const { error } = await sb.from("clientes").update(campos).eq("id", id);
     if (error) return error.message;
@@ -208,6 +217,8 @@ export function ContenidoCliente({
     <>
       {error && <p className="error">{error}</p>}
 
+      {(vista === "todo" || vista === "datos") && (
+        <>
       <section className="bloque">
         <h3>Datos</h3>
         <div className="rejilla-datos">
@@ -311,14 +322,19 @@ export function ContenidoCliente({
         <div style={{ marginTop: 12 }}>
           <CampoVivo
             etiqueta="Notas internas"
-            valor={c.notas}
+            valor={notas}
             multilinea
-            guardar={(v) => guardarCampo({ notas: v })}
+            guardar={async (v) => { const e = await guardarNotas(id, v, yo); if (!e) setNotas(v?.trim() || null); return e; }}
             ayuda="Solo las ve el equipo; el cliente nunca las lee."
           />
         </div>
       </section>
 
+        </>
+      )}
+
+      {(vista === "todo" || vista === "cobros") && (
+        <>
       <section className="bloque">
         <div
           style={{
@@ -621,6 +637,9 @@ export function ContenidoCliente({
             void cargar(true);
           }}
         />
+      )}
+
+        </>
       )}
 
       {anotandoEn && (
