@@ -186,7 +186,7 @@ export function Marketing() {
     if (error) { setError(error.message); void cargar(true); }
   }
 
-  // Cumplimiento de Joaquín/Max en contenido, para el resumen de fin de semana.
+  // Cumplimiento de Max/Ale en contenido, para el resumen de fin de semana.
   const cumplimientoContenido = useMemo(() => {
     const personas = [...new Set(CALENDARIO_CONTENIDO.map((c) => c.email))];
     return personas.map((email) => {
@@ -223,7 +223,7 @@ export function Marketing() {
           <div className="kpi">
             <div className="tile">{Ico.chat({ t: 18 })}</div>
             <div className="cifra"><b>{totalSeguidosSemana}</b>/{META_SEGUIDOS_SEMANA}</div>
-            <p>Cuentas seguidas esta semana (marcado a mano por Samuel/Alejandro)</p>
+            <p>Cuentas seguidas esta semana (marcado a mano por el equipo)</p>
           </div>
           <div className="kpi">
             <div className="tile">{Ico.repetir({ t: 18 })}</div>
@@ -307,7 +307,7 @@ export function Marketing() {
 
         <h3>Seguimiento diario — seguir {META_SEGUIDOS_DIA} cuentas desde @condor.ai</h3>
         <p className="conteo" style={{ marginBottom: 8 }}>
-          Samuel de lunes a jueves, Alejandro de viernes a domingo. Meta: {META_SEGUIDOS_SEMANA} seguidos/semana,
+          Meta: {META_SEGUIDOS_SEMANA} seguidos/semana,
           {" "}{META_SEGUIDORES_NUEVOS_SEMANA} seguidores nuevos/semana.
           {" "}"Hecho" y "Cantidad" se verifican solos contra el contador real de Instagram cada 2 horas — no hace
           falta marcarlos a mano, aunque el casillero sigue disponible por si la conexión falla algún día.

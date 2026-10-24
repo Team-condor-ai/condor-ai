@@ -1,5 +1,5 @@
 import { Suspense, lazy, useState } from "react";
-import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
+import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 
 // El CSS del ERP de Planeta, copiado sin tocar. Se importa SOLO acá y no en
 // main.tsx a propósito: define variables globales (--fondo, --texto…) y un
@@ -11,7 +11,6 @@ import "./disenio/estilo.css";
 import "./disenio/piezas.css";
 import "./disenio/portal.css";
 import "./disenio/acceso.css";
-import "./disenio/barbara.css";
 import "./disenio/tema-condor.css";
 import "./disenio/leads.css";
 
@@ -33,15 +32,9 @@ import { CorreoTecnobox } from "./staff/CorreoTecnobox";
 import { Mcp } from "./staff/Mcp";
 import { CreditosApi } from "./staff/CreditosApi";
 import { Mapa } from "./staff/Mapa";
-import { AgentesIA } from "./staff/agentes-ia/AgentesIA";
-import { Memoria } from "./staff/memoria/Memoria";
-import { FichaBarbaraCliente } from "./staff/agentes-ia/FichaBarbaraCliente";
-import { BarbaraClientePortal } from "./staff/agentes-ia/BarbaraClientePortal";
 
 import { MiPlan } from "./cliente/MiPlan";
 import { ResultadoPago } from "./cliente/ResultadoPago";
-import { Barbara } from "./cliente/Barbara";
-import { useTieneBarbara } from "./agentes-ia/useTieneBarbara";
 
 import { MiCuenta } from "./cliente/MiCuenta";
 
@@ -109,11 +102,7 @@ const MENU_STAFF: Grupo[] = [
     entradas: [
       { a: "/acceso/productos/sites", texto: "Sites", icono: "sitesProducto", imagen: "/assets/productos/condor-sites.png" },
       { a: "/acceso/productos/ecommerce", texto: "Ecommerce", icono: "ecommerceProducto", imagen: "/assets/productos/condor-ecommerce.png" },
-      { a: "/acceso/productos/track", texto: "Track", icono: "trackProducto", imagen: "/assets/productos/condor-track.png" },
-      // Media es nueva (2-sept-2026): todavía no tiene modelo comercial
-      // definido -- Productos.tsx la muestra con la cartera vacía, mismo
-      // comportamiento que Sites/Track antes de tener clientes reales.
-      { a: "/acceso/productos/media", texto: "Media", icono: "sitesProducto", imagen: "/assets/productos/condor-media.png" },
+      { a: "/acceso/productos/crm", texto: "CRM", icono: "trackProducto", imagen: "/assets/productos/condor-track.png" },
     ],
   },
   {
@@ -134,26 +123,6 @@ const MENU_STAFF: Grupo[] = [
     ],
   },
   {
-    titulo: "Agentes IA",
-    clave: "agentes",
-    icono: "barbara",
-    // En fila, no apiladas: Memoria no es otra sección del menú, es lo que
-    // Bárbara recuerda. Juntas se leen como una sola cosa con dos puertas.
-    fila: true,
-    entradas: [
-      // "Bárbara" abre EL portal directo (Cóndor.AI, como cualquier cliente
-      // usando su propio producto) — pedido explícito de Joaquín (24-ago):
-      // sin pasos intermedios, sin lista, sin botón "Ver portal". La lista
-      // completa de clientes de Bárbara (administrar, dar de alta) sigue en
-      // /acceso/agentes-ia, alcanzable desde dentro del portal en Ajustes.
-      { a: "/acceso/barbara", texto: "Bárbara", icono: "barbara", transicion: true,
-        agente: "barbara", oficio: "Contenido" },
-      // Sin bajada: en 71 px "LO QUE SABE" se corta en "LO QUE S…", y una
-      // etiqueta cortada comunica menos que ninguna.
-      { a: "/acceso/memoria", texto: "Memoria", icono: "memoria", agente: "memoria" },
-    ],
-  },
-  {
     titulo: "Sistema",
     clave: "sistema",
     icono: "ajustes",
@@ -171,7 +140,6 @@ const MENU_CLIENTE_BASE: Entrada[] = [
 ];
 
 const ITEM_CUENTA: Entrada = { a: "/acceso/cuenta", texto: "Mi cuenta", icono: "ajustes" };
-const ITEM_BARBARA: Entrada = { a: "/acceso/barbara", texto: "Bárbara", icono: "agentesia", transicion: true };
 
 function Marco({
   menu,
@@ -234,10 +202,6 @@ export default function Portal() {
 
 function PortalContenido() {
   const s = useSesion();
-  // Se consulta siempre (staff incluido) porque los hooks no pueden ser
-  // condicionales — para staff simplemente no se usa el resultado.
-  const { tiene: tieneBarbara } = useTieneBarbara();
-  const ubicacion = useLocation();
 
   // `.portal-app` no es decorativo: es el scope del CSS del ERP. Sin este
   // div, las reglas de fondo, tipografía e iconos no se aplican — ver el
@@ -265,23 +229,6 @@ function PortalContenido() {
   const miembro = EQUIPO_CONDOR.find((m) => m.email === correo);
   const nombre = miembro?.nombre ?? correo.split("@")[0];
 
-  // BÁRBARA ES SU PROPIA APP DENTRO DEL PORTAL, NO UNA PÁGINA MÁS.
-  // ---------------------------------------------------------------------------
-  // Pedido explícito de Joaquín (24-ago-2026): al entrar a Bárbara, el menú y
-  // el chrome de Cóndor desaparecen del todo — se siente como entrar a otra
-  // app, con su propio riel de navegación oscuro y un botón propio para
-  // volver. Por eso estas dos rutas se resuelven ACÁ, antes que `Marco`, en
-  // vez de vivir anidadas dentro de él como el resto de las páginas de staff
-  // o de cliente. `BarbaraModulo` trae su propio botón de "Volver a Cóndor".
-  const enBarbara = /^\/acceso\/(barbara|agentes-ia\/[^/]+\/portal)(\/|$)/.test(ubicacion.pathname);
-  if (enBarbara)
-    return envolver(
-      <Routes>
-        <Route path="barbara" element={<Barbara />} />
-        <Route path="agentes-ia/:id/portal" element={<BarbaraClientePortal />} />
-      </Routes>,
-    );
-
   if (s.rol === "staff")
     return envolver(
       <Marco menu={MENU_STAFF} nombre={nombre} detalle={miembro?.rol ?? "Equipo Cóndor"} foto={miembro?.foto}>
@@ -308,26 +255,18 @@ function PortalContenido() {
           <Route path="mcp" element={<Mcp />} />
           <Route path="creditos-api" element={<CreditosApi />} />
           <Route path="mapa" element={<Mapa />} />
-          <Route path="agentes-ia" element={<AgentesIA />} />
-          <Route path="memoria" element={<Memoria />} />
-          <Route path="agentes-ia/:id" element={<FichaBarbaraCliente />} />
-          {/* agentes-ia/:id/portal se resuelve más arriba, fuera de Marco */}
+          {/* Bárbara y Memoria salieron del portal el 24-oct-2026 (Max): los enlaces viejos caen al panel. */}
           <Route path="*" element={<Navigate to="/acceso/dashboard" replace />} />
         </Routes>
       </Marco>,
     );
 
-  // El ítem "Bárbara" en el menú del cliente solo aparece si tiene la fila
-  // activa en `barbara_clientes` — no aparece deshabilitado, directamente no
-  // está (pedido explícito). La ruta igual queda montada: si alguien la
-  // visita a mano sin tener Bárbara, `Barbara.tsx` muestra su propio
-  // mensaje de "todavía no tienes Bárbara activada" en vez de romper.
   const menuCliente: Grupo[] = [
     {
       titulo: "Mi servicio",
       clave: "operacion",
       icono: "plan",
-      entradas: tieneBarbara ? [...MENU_CLIENTE_BASE, ITEM_BARBARA] : MENU_CLIENTE_BASE,
+      entradas: MENU_CLIENTE_BASE,
     },
     { titulo: "Cuenta", clave: "resumen", icono: "ajustes", entradas: [ITEM_CUENTA] },
   ];
@@ -338,7 +277,6 @@ function PortalContenido() {
         <Route path="plan" element={<MiPlan />} />
         <Route path="pago/resultado" element={<ResultadoPago />} />
         <Route path="boletas" element={dif(<MisBoletas />)} />
-        {/* barbara se resuelve más arriba, fuera de Marco */}
         <Route path="cuenta" element={<MiCuenta />} />
         <Route path="*" element={<Navigate to="/acceso/plan" replace />} />
       </Routes>

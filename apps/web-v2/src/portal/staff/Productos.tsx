@@ -9,13 +9,12 @@ import { IngresoEcommerce, CLIENTES_ECOMMERCE, LogoShopify } from "./contabilida
 import type { Cliente, Cobro } from "./tipos";
 import type { IngresoCliente } from "./contabilidad/tipos";
 
-type Linea = "sites" | "ecommerce" | "track" | "media";
+type Linea = "sites" | "ecommerce" | "crm";
 
 const LINEAS: { id: Linea; texto: string; logo: string }[] = [
   { id: "sites", texto: "Cóndor Sites", logo: "/assets/productos/condor-sites.png" },
   { id: "ecommerce", texto: "Cóndor Ecommerce", logo: "/assets/productos/condor-ecommerce.png" },
-  { id: "track", texto: "Cóndor Track", logo: "/assets/productos/condor-track.png" },
-  { id: "media", texto: "Cóndor Media", logo: "/assets/productos/condor-media.png" },
+  { id: "crm", texto: "Cóndor CRM", logo: "/assets/productos/condor-track.png" },
 ];
 
 /**

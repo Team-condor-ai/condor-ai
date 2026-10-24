@@ -382,17 +382,8 @@ export function diasParaSeguimiento(p: Pick<Prospecto, "estado" | "ultima_activi
  * Prospección, y el cálculo de cumplimiento diario/semanal.
  */
 export const EQUIPO_CONDOR: { email: string; nombre: string; rol: string; foto: string; metaSemanal: number }[] = [
-  { email: "j.ignaciomunozsilva@gmail.com", nombre: "Joaquín", rol: "Cofundador & CEO", foto: "/assets/avatares/joaquin-mini.jpg", metaSemanal: 50 },
-  { email: "maximilianopinocv@gmail.com", nombre: "Maximiliano", rol: "Cofundador · Ing. Comercial y Desarrollo", foto: "/assets/avatares/maximiliano-mini.jpg", metaSemanal: 50 },
-  { email: "alejandrotobarq@gmail.com", nombre: "Alejandro", rol: "Cofundador & Backend", foto: "/assets/avatares/alejandro-mini.jpg", metaSemanal: 30 },
-  // Samuel se suma a prospección el 2-sept-2026 (pedido explícito de
-  // Joaquín). Sin foto real todavía -- placeholder anónimo genérico
-  // (mismo lenguaje visual que el "sin foto de perfil" de WhatsApp/otras
-  // apps, no es el asset real de ninguna). `metaSemanal: 10` es
-  // PROVISORIO: Joaquín solo dio un número para "esta semana" (ver
-  // METAS_SEMANA_ESPECIAL) y no una meta de régimen normal -- se usa el
-  // mismo valor acá hasta que confirme una meta de semana completa.
-  { email: "samuelisaacospitiaquintero@gmail.com", nombre: "Samuel", rol: "Arquitecto de Software", foto: "/assets/avatares/samuel-mini.jpg", metaSemanal: 10 },
+  { email: "maximilianopinocv@gmail.com", nombre: "Max", rol: "Presidente", foto: "/assets/avatares/maximiliano-mini.jpg", metaSemanal: 50 },
+  { email: "alejandrotobarq@gmail.com", nombre: "Ale", rol: "CEO", foto: "/assets/avatares/alejandro-mini.jpg", metaSemanal: 30 },
 ];
 
 /** Compatibilidad: mismo contenido que se usaba antes bajo este nombre. */
@@ -411,10 +402,8 @@ export const METAS_SEMANA_ESPECIAL: { lunes: string; metas: Record<string, numbe
   {
     lunes: "2026-08-31",
     metas: {
-      "j.ignaciomunozsilva@gmail.com": 20,
       "maximilianopinocv@gmail.com": 15,
       "alejandrotobarq@gmail.com": 10,
-      "samuelisaacospitiaquintero@gmail.com": 10,
     },
   },
 ];
@@ -520,8 +509,8 @@ export const TEMAS_CONTENIDO: Record<TemaContenido, string> = {
  *  en Marketing.tsx la leen para crear las filas de cada semana nueva. */
 export const CALENDARIO_CONTENIDO: { dow: number; tema: TemaContenido; email: string }[] = [
   { dow: 1, tema: "noticias_ia", email: "maximilianopinocv@gmail.com" },
-  { dow: 2, tema: "carrusel_educativo", email: "j.ignaciomunozsilva@gmail.com" },
-  { dow: 4, tema: "frase_motivacional", email: "j.ignaciomunozsilva@gmail.com" },
+  { dow: 2, tema: "carrusel_educativo", email: "alejandrotobarq@gmail.com" },
+  { dow: 4, tema: "frase_motivacional", email: "alejandrotobarq@gmail.com" },
   { dow: 5, tema: "digitalizar_nicho", email: "maximilianopinocv@gmail.com" },
 ];
 
@@ -552,12 +541,10 @@ export const CUENTAS_MARKETING = [
   { id: "facebook", texto: "Facebook" },
 ] as const;
 
-/** Quién sigue cuentas hoy: Samuel lunes-jueves (1-4), Alejandro viernes-domingo (5,6,0). */
+/** Quién sigue cuentas hoy: Max lunes-jueves (1-4), Ale viernes-domingo (5,6,0) — reasignado el 24-oct-2026 al salir Samuel. */
 export function responsableSeguimiento(fecha: Date): string {
   const dow = fecha.getDay();
-  return dow >= 1 && dow <= 4
-    ? "samuelisaacospitiaquintero@gmail.com"
-    : "alejandrotobarq@gmail.com";
+  return dow >= 1 && dow <= 4 ? "maximilianopinocv@gmail.com" : "alejandrotobarq@gmail.com";
 }
 
 export const META_SEGUIDOS_DIA = 200;
