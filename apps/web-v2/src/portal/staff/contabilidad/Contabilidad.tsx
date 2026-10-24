@@ -33,6 +33,9 @@ const PESTANAS = [
 
 type Pestana = (typeof PESTANAS)[number]["id"];
 
+/** Lo cotidiano a la vista; lo contable fino, detrás de «Avanzado» (revisión 24-oct-2026). */
+const BASICAS: readonly string[] = ["resumen", "cobros", "fijos"];
+
 /**
  * Contabilidad con partida doble.
  *
@@ -77,6 +80,8 @@ export function Contabilidad() {
   );
   const [asientoManual, setAsientoManual] = useState(false);
   const [cartolaAbierta, setCartolaAbierta] = useState(false);
+  const [avanzado, setAvanzado] = useState(() => { try { return localStorage.getItem("portal:conta:avanzado") === "1"; } catch { return false; } });
+  const alternarAvanzado = () => setAvanzado((v) => { const n = !v; try { localStorage.setItem("portal:conta:avanzado", n ? "1" : "0"); } catch { /* modo privado */ } if (!n && !BASICAS.includes(pestana)) setPestana("resumen"); return n; });
   const [transfiriendo, setTransfiriendo] = useState(false);
   const [cuentaEditando, setCuentaEditando] = useState<Cuenta | "nueva" | null>(
     null,
@@ -232,16 +237,20 @@ export function Contabilidad() {
   return (
     <>
       <div className="barra">
-        <h1>Contabilidad</h1>
-        <button className="btn" onClick={() => setAsientoManual(true)}>
-          {Ico.libro({ t: 14 })} Asiento manual
-        </button>
-        <button className="btn" onClick={() => setCartolaAbierta(true)}>
-          {Ico.subir({ t: 14 })} Cartola
-        </button>
-        <button className="btn" onClick={() => setTransfiriendo(true)}>
-          {Ico.traspaso({ t: 14 })} Mover fondos
-        </button>
+        <h1>Contabilidad y cobros</h1>
+        {avanzado && (
+          <>
+            <button className="btn" onClick={() => setAsientoManual(true)}>
+              {Ico.libro({ t: 14 })} Asiento manual
+            </button>
+            <button className="btn" onClick={() => setCartolaAbierta(true)}>
+              {Ico.subir({ t: 14 })} Cartola
+            </button>
+            <button className="btn" onClick={() => setTransfiriendo(true)}>
+              {Ico.traspaso({ t: 14 })} Mover fondos
+            </button>
+          </>
+        )}
         <button className="btn" onClick={() => setRegistrando("ingreso")}>
           {Ico.mas({ t: 14 })} Ingreso
         </button>
@@ -267,7 +276,7 @@ export function Contabilidad() {
         )}
 
         <div className="chips" style={{ marginBottom: 14 }}>
-          {PESTANAS.map((p) => (
+          {PESTANAS.filter((p) => avanzado || BASICAS.includes(p.id)).map((p) => (
             <button
               key={p.id}
               className={"chip" + (pestana === p.id ? " on" : "")}
@@ -276,6 +285,9 @@ export function Contabilidad() {
               {p.texto}
             </button>
           ))}
+          <button className="chip" onClick={alternarAvanzado} style={{ marginLeft: "auto" }}>
+            {avanzado ? "Ocultar avanzado" : "Avanzado"}
+          </button>
         </div>
 
         {pestana === "resumen" && (

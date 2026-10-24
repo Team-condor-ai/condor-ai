@@ -46,6 +46,7 @@ type Props = {
    *  `EQUIPO_CONDOR` en staff/tipos.ts). Sin foto, cae a las iniciales. */
   foto?: string;
   onSalir: () => void;
+  buscador?: boolean;
   abierto: boolean;
   cerrar: () => void;
 };
@@ -80,7 +81,7 @@ function iniciales(t: string) {
  *
  * Cada categoría se pliega si estorba, y esa elección se recuerda por persona.
  */
-export function Lateral({ grupos, nombre, detalle, foto, onSalir, abierto, cerrar }: Props) {
+export function Lateral({ grupos, nombre, detalle, foto, onSalir, abierto, cerrar, buscador }: Props) {
   const menuRef = useRef<HTMLElement>(null);
   const marcaRef = useRef<HTMLSpanElement>(null);
   const sitio = useLocation();
@@ -165,6 +166,12 @@ export function Lateral({ grupos, nombre, detalle, foto, onSalir, abierto, cerra
         <img className="logo-oscuro" src="/condor/marca/condor-logo-horizontal-blanco.svg" alt="" aria-hidden="true" width="124" height="26" />
         <small>PORTAL</small>
       </div>
+
+      {buscador && (
+        <button className="buscar-global" onClick={() => window.dispatchEvent(new Event("portal:buscar"))}>
+          {Ico.buscar({ t: 15 })}<span>Buscar</span><kbd>⌘K</kbd>
+        </button>
+      )}
 
       <nav className="menu" ref={menuRef} style={{ position: "relative" }}>
         <span ref={marcaRef} aria-hidden="true" className="pill-glass" />

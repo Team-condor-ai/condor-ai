@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { PanelLateral } from "../disenio/PanelLateral";
 import { ContenidoCliente } from "./FichaCliente";
+import { ExtrasCliente } from "./ExtrasCliente";
 import type { Cliente } from "./tipos";
 
 /**
@@ -43,6 +44,7 @@ export function PanelCliente({
       cerrar={cerrar}
     >
       <ContenidoCliente id={id} alCargar={recibir} />
+      <ExtrasCliente id={id} negocio={c?.negocio ?? null} />
     </PanelLateral>
   );
 }

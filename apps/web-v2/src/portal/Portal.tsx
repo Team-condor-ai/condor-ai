@@ -18,6 +18,7 @@ import { useSesion, salir } from "./auth/sesion";
 import { Login } from "./auth/Login";
 import { Lateral, type Entrada, type Grupo } from "./disenio/Lateral";
 import { Ico } from "./disenio/iconos";
+import { BuscadorGlobal } from "./disenio/BuscadorGlobal";
 import { ConfirmacionProvider } from "./disenio/Confirmacion";
 import { Productos } from "./staff/Productos";
 import { EQUIPO_CONDOR } from "./staff/tipos";
@@ -27,12 +28,12 @@ import { Claves } from "./staff/Claves";
 import { Dashboard } from "./staff/Dashboard";
 import { Contabilidad } from "./staff/contabilidad/Contabilidad";
 import { Organizacion } from "./staff/organizacion/Organizacion";
-import { Biblioteca } from "./staff/Biblioteca";
 
 import { MiPlan } from "./cliente/MiPlan";
 import { ResultadoPago } from "./cliente/ResultadoPago";
 
 import { MiCuenta } from "./cliente/MiCuenta";
+import { Solicitudes } from "./cliente/Solicitudes";
 
 // EL MOTOR DE PDF VA APARTE, Y NO ES UN DETALLE
 // @react-pdf/renderer pesa ~1,1 MB. Importado de frente, el portal entero
@@ -79,14 +80,14 @@ const MENU_STAFF: Grupo[] = [
     entradas: [
       { a: "/acceso/organizacion/tablero", texto: "Tareas", icono: "tablero" },
       { a: "/acceso/organizacion/calendario", texto: "Calendario", icono: "reuniones" },
-      { a: "/acceso/claves", texto: "Passwords", icono: "candado" },
-      { a: "/acceso/biblioteca", texto: "Biblioteca", icono: "biblioteca" },
+      { a: "/acceso/claves", texto: "Bóveda", icono: "candado" },
       { a: "/acceso/equipo", texto: "Personas", icono: "clientes" },
     ] },
 ];
 
 const MENU_CLIENTE_BASE: Entrada[] = [
   { a: "/acceso/plan", texto: "Mi plan", icono: "plan" },
+  { a: "/acceso/solicitudes", texto: "Pedir un cambio", icono: "editar" },
   { a: "/acceso/boletas", texto: "Comprobantes", icono: "boletas" },
 ];
 
@@ -97,8 +98,10 @@ function Marco({
   nombre,
   detalle,
   foto,
+  buscador,
   children,
 }: {
+  buscador?: boolean;
   menu: Grupo[];
   nombre: string;
   detalle: string;
@@ -111,6 +114,7 @@ function Marco({
   return (
     <div className="app">
       <Lateral
+        buscador={buscador}
         grupos={menu}
         nombre={nombre}
         detalle={detalle}
@@ -134,6 +138,7 @@ function Marco({
           {children}
         </div>
       </main>
+      {buscador && <BuscadorGlobal grupos={menu} />}
     </div>
   );
 }
@@ -182,7 +187,7 @@ function PortalContenido() {
 
   if (s.rol === "staff")
     return envolver(
-      <Marco menu={MENU_STAFF} nombre={nombre} detalle={miembro?.rol ?? "Equipo Cóndor"} foto={miembro?.foto}>
+      <Marco buscador menu={MENU_STAFF} nombre={nombre} detalle={miembro?.rol ?? "Equipo Cóndor"} foto={miembro?.foto}>
         <Routes>
           <Route path="dashboard" element={<Dashboard />} />
           {/* "clientes" (sin línea) sigue viva por los links viejos que
@@ -200,7 +205,7 @@ function PortalContenido() {
           <Route path="suscripciones" element={<Navigate to="/acceso/contabilidad?tab=cobros" replace />} />
           <Route path="cobros" element={<Navigate to="/acceso/contabilidad?tab=cobros" replace />} />
           <Route path="ratia" element={<Navigate to="/acceso/clientes" replace />} />
-          <Route path="biblioteca" element={<Biblioteca />} />
+          <Route path="biblioteca" element={<Navigate to="/acceso/claves" replace />} />
           <Route path="equipo" element={<Equipo />} />
           <Route path="claves" element={<Claves />} />
           <Route path="*" element={<Navigate to="/acceso/dashboard" replace />} />
@@ -224,6 +229,7 @@ function PortalContenido() {
         <Route path="plan" element={<MiPlan />} />
         <Route path="pago/resultado" element={<ResultadoPago />} />
         <Route path="boletas" element={dif(<MisBoletas />)} />
+        <Route path="solicitudes" element={<Solicitudes />} />
         <Route path="cuenta" element={<MiCuenta />} />
         <Route path="*" element={<Navigate to="/acceso/plan" replace />} />
       </Routes>

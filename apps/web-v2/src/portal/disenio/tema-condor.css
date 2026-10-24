@@ -212,3 +212,56 @@ html:has(.portal-app), body:has(.portal-app), #root:has(.portal-app) { backgroun
 .portal-app .cal-celda { border-color: var(--borde-suave); }
 .portal-app .subnav-organizacion { background: var(--gris-bg); border-radius: 999px; padding: 4px; border: 0; }
 .portal-app .leyenda i { width: 10px; height: 10px; border-radius: 50%; }
+
+/* ── Extras de la ficha del cliente ───────────────────────────────────── */
+.extras-cliente { display: grid; gap: 12px; padding: 4px 0 24px; }
+.extras-cliente section { padding: 14px 16px; border-radius: var(--cp-r-2); background: #F8F9FC; border: 1px solid var(--borde-suave); }
+.extras-cliente header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.extras-cliente h4 { margin: 0; font: 500 10.5px/1 var(--cp-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--texto-3); }
+.extras-cliente header a { font-size: 12px; color: var(--texto-2); text-decoration: none; } .extras-cliente header a:hover { color: var(--azul); }
+.extras-cliente ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; } .extras-cliente li { display: flex; align-items: center; gap: 8px; font-size: 13px; } .extras-cliente li b { font-weight: 500; flex: 1; min-width: 0; overflow-wrap: anywhere; } .extras-cliente li small { color: var(--texto-3); } .extras-cliente p { margin: 0; font-size: 13px; color: var(--texto-3); }
+.aviso-filtro { margin: 10px 4px 0; padding: 8px 14px; border-radius: 999px; background: var(--azul-suave); color: var(--info-tx); font-size: 12.5px; display: inline-block; } .aviso-filtro a { color: inherit; font-weight: 600; }
+
+/* ── Solicitudes del cliente ──────────────────────────────────────────── */
+.solicitud-form { display: grid; gap: 10px; } .solicitud-form input, .solicitud-form textarea { width: 100%; padding: 11px 14px; font-size: 14px; } .solicitud-form textarea { resize: vertical; min-height: 84px; }
+.solicitud-pie { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; } .solicitud-pie small { color: var(--texto-3); max-width: 46ch; }
+.solicitud-ok { margin: 0; padding: 10px 14px; border-radius: var(--cp-r-2); background: var(--ok-bg); color: var(--ok-tx); font-size: 13.5px; animation: cp-pop .4s var(--cp-resorte); }
+.solicitud-lista { list-style: none; margin: 0; padding: 0; display: grid; } .solicitud-lista li { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 12px 0; border-top: 1px solid var(--borde-suave); } .solicitud-lista li:first-child { border-top: 0; }
+.solicitud-lista b { display: block; font-weight: 600; } .solicitud-lista small { color: var(--texto-3); }
+.solicitud-estado { flex: none; padding: 3px 12px; border-radius: 999px; font-size: 12px; font-weight: 600; background: var(--info-bg); color: var(--info-tx); } .solicitud-estado.en_curso { background: var(--warn-bg); color: var(--warn-tx); } .solicitud-estado.lista { background: var(--ok-bg); color: var(--ok-tx); }
+
+/* ── Panel: recordar cobro y actividad ────────────────────────────────── */
+.dash-lista li { display: flex; align-items: center; gap: 4px; } .dash-lista li > a:first-child { flex: 1; min-width: 0; }
+.dash-recordar { flex: none; width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; color: var(--ok-tx); background: var(--ok-bg); transition: transform .25s var(--cp-resorte); text-decoration: none; margin: 0 !important; padding: 0 !important; } .dash-recordar:hover { transform: scale(1.12) rotate(-6deg); background: var(--ok-bg) !important; }
+.dash-actividad { list-style: none; margin: 0; padding: 0; display: grid; } .dash-actividad li { display: flex; align-items: center; gap: 12px; padding: 9px 0; border-top: 1px solid var(--borde-suave); } .dash-actividad li:first-child { border-top: 0; }
+.dash-actividad p { margin: 0; flex: 1; font-size: 13.5px; } .dash-actividad small { color: var(--texto-3); font-size: 12px; white-space: nowrap; }
+.dash-punto { width: 9px; height: 9px; border-radius: 50%; background: var(--texto-3); flex: none; } .dash-punto.m-leads { background: var(--e-nuevo); } .dash-punto.m-boveda { background: var(--e-propuesta); } .dash-punto.m-solicitudes { background: var(--e-reunion); }
+
+/* ── Buscador global ──────────────────────────────────────────────────── */
+.portal-app .buscar-global { display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 12px; border-radius: var(--cp-r-2); border: 1px solid var(--borde); background: #fff; color: var(--texto-3); font: 500 13.5px/1 var(--cp-texto); cursor: pointer; box-shadow: var(--sombra); transition: transform .25s var(--cp-resorte), border-color .15s; }
+.portal-app .buscar-global:hover { border-color: #CFD2DD; transform: translateY(-1px); color: var(--texto-2); } .portal-app .buscar-global span { flex: 1; text-align: left; }
+.portal-app kbd { font: 500 10.5px/1 var(--cp-mono); padding: 3px 6px; border-radius: 6px; background: var(--gris-bg); color: var(--texto-3); border: 1px solid var(--borde); }
+.bg-fondo { position: fixed; inset: 0; z-index: 80; display: flex; justify-content: center; align-items: flex-start; padding: 12vh 16px 0; background: rgba(21,22,26,.3); -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); animation: fl-fondo .2s; }
+.bg-caja { width: min(620px, 100%); max-height: 70vh; display: flex; flex-direction: column; border-radius: var(--cp-r-4); background: #fff; box-shadow: var(--sombra-alta); overflow: hidden; animation: cp-sube .3s var(--cp-suave); }
+.bg-entrada { display: flex; align-items: center; gap: 12px; padding: 0 20px; height: 62px; border-bottom: 1px solid var(--borde-suave); color: var(--texto-3); }
+.bg-entrada input { flex: 1; border: 0 !important; box-shadow: none !important; background: none !important; font-size: 16px; color: var(--texto); height: 100%; padding: 0; outline: none; }
+.bg-lista { list-style: none; margin: 0; padding: 8px; overflow-y: auto; }
+.bg-grupo { margin: 10px 10px 4px; font: 500 10.5px/1 var(--cp-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--texto-3); }
+.bg-lista button { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border: 0; border-radius: var(--cp-r-2); background: none; text-align: left; cursor: pointer; font: inherit; color: var(--texto); }
+.bg-lista button.on { background: var(--azul-suave); } .bg-lista button b { font-weight: 500; } .bg-lista button small { color: var(--texto-3); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 45%; }
+.bg-vacio { padding: 28px; text-align: center; color: var(--texto-3); }
+
+/* ── Tareas: mismo lenguaje que el tablero de Leads ───────────────────── */
+.portal-app .kanban { gap: 14px; }
+.portal-app .kanban-col { border-radius: var(--cp-r-4); background: #F7F8FB; border: 1px solid var(--borde-suave); padding: 14px 12px 12px; animation: cp-sube .55s var(--cp-suave) both; }
+.portal-app .kanban-col:nth-child(2) { animation-delay: .05s; } .portal-app .kanban-col:nth-child(3) { animation-delay: .1s; } .portal-app .kanban-col:nth-child(4) { animation-delay: .15s; }
+.portal-app .kanban-col > header h3, .portal-app .kanban-col > header b { font-family: var(--cp-display); letter-spacing: -.025em; }
+.portal-app .tarea { border-radius: var(--cp-r-3); background: #fff; border: 1px solid var(--borde); box-shadow: var(--sombra); transition: transform .3s var(--cp-resorte), box-shadow .25s, border-color .2s; }
+.portal-app .tarea:hover { transform: translateY(-3px) rotate(-.4deg); border-color: #D8DBE6; box-shadow: 0 18px 32px -18px rgba(21,22,26,.35); }
+.portal-app .persona-mini { border-radius: 10px; }
+
+/* ── Productos / tablas de clientes ───────────────────────────────────── */
+.portal-app .tabla-caja { border-radius: var(--cp-r-3); border: 1px solid var(--borde); box-shadow: var(--sombra); background: #fff; overflow: hidden; }
+.portal-app .tabla-caja tbody tr { transition: background .12s; } .portal-app .tabla-caja tbody tr:hover { background: var(--hover); }
+.portal-app .kpi { border-radius: var(--cp-r-3); background: #fff; border: 1px solid var(--borde); box-shadow: var(--sombra); transition: transform .25s var(--cp-resorte); } .portal-app .kpi:hover { transform: translateY(-3px); }
+.portal-app .kpi .tile { border-radius: 12px; background: var(--azul-suave); color: var(--azul); }

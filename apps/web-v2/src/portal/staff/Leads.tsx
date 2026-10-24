@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type DragEvent } from "react";
+import { useSearchParams } from "react-router-dom";
 import { sb } from "../lib/supabase";
 import { Ico } from "../disenio/iconos";
 import { FichaLead } from "./FichaLead";
@@ -62,7 +63,9 @@ export function Leads() {
     setError("");
     setCargando(false);
   }
+  const [params] = useSearchParams();
   useEffect(() => { void cargar(); }, []);
+  useEffect(() => { const id = Number(params.get("lead")); if (id) setAbierto(id); }, [params]);
 
   const visibles = useMemo(() => {
     const q = busca.trim().toLowerCase();

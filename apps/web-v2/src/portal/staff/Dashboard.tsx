@@ -8,7 +8,9 @@ import { ETAPAS_TABLERO, atrasoLead, dinero, diasEnEtapa, hace, nombreLead, type
 type ReunionP = { id: string; titulo: string; fecha_hora: string; cliente: string | null; asistio: boolean | null; meet_url: string | null };
 type CobroP = { id: string; titulo: string; monto: number; moneda: string; estado: string; tipo: string; proximo_cobro: string | null; cliente_id: string };
 type TareaP = { id: string; titulo: string; estado: string; prioridad: string | null; vence: string | null };
-type ClienteP = { id: string; negocio: string | null; nombre: string | null };
+type ClienteP = { id: string; negocio: string | null; nombre: string | null; telefono: string | null };
+type SolicitudP = { id: string; cliente_id: string; titulo: string; estado: string; creado_en: string };
+type ActividadP = { id: string; creado_en: string; quien: string; accion: string; modulo: string };
 
 const cuando = (iso: string) =>
   new Date(iso).toLocaleString("es-CL", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
@@ -25,6 +27,8 @@ export function Dashboard() {
   const [cobros, setCobros] = useState<CobroP[]>([]);
   const [tareas, setTareas] = useState<TareaP[]>([]);
   const [clientes, setClientes] = useState<ClienteP[]>([]);
+  const [solicitudes, setSolicitudes] = useState<SolicitudP[]>([]);
+  const [actividad, setActividad] = useState<ActividadP[]>([]);
   const [cargando, setCargando] = useState(true);
 
   useEffect(() => {
@@ -34,13 +38,17 @@ export function Dashboard() {
       sb.from("reuniones").select("id,titulo,fecha_hora,cliente,asistio,meet_url").gte("fecha_hora", desde).order("fecha_hora").limit(60),
       sb.from("cobros").select("id,titulo,monto,moneda,estado,tipo,proximo_cobro,cliente_id").eq("estado", "pendiente").limit(100),
       sb.from("tareas").select("id,titulo,estado,prioridad,vence").neq("estado", "hecha").order("vence", { ascending: true, nullsFirst: false }).limit(40),
-      sb.from("clientes").select("id,negocio,nombre").eq("archivado", false),
-    ]).then(([l, r, c, t, cl]) => {
+      sb.from("clientes").select("id,negocio,nombre,telefono").eq("archivado", false),
+      sb.from("solicitudes").select("id,cliente_id,titulo,estado,creado_en").neq("estado", "lista").order("creado_en", { ascending: false }).limit(8),
+      sb.from("actividad_reciente").select("*").order("creado_en", { ascending: false }).limit(8),
+    ]).then(([l, r, c, t, cl, so, ac]) => {
       setLeads((l.data ?? []) as Lead[]);
       setReuniones((r.data ?? []) as ReunionP[]);
       setCobros((c.data ?? []) as CobroP[]);
       setTareas((t.data ?? []) as TareaP[]);
       setClientes((cl.data ?? []) as ClienteP[]);
+      setSolicitudes((so.data ?? []) as SolicitudP[]);
+      setActividad((ac.data ?? []) as ActividadP[]);
       setCargando(false);
     });
   }, []);
@@ -61,6 +69,7 @@ export function Dashboard() {
   const porCobrarClp = cobros.filter((c) => c.moneda === "CLP").reduce((a, c) => a + c.monto, 0);
   const nombreCliente = (id: string) => { const c = clientes.find((x) => x.id === id); return c?.negocio || c?.nombre || "Cliente"; };
   const hoyIso = hoy.toISOString().slice(0, 10);
+  const telefonoDe = (id: string) => (clientes.find((x) => x.id === id)?.telefono ?? "").replace(/\D/g, "");
   const maxEtapa = Math.max(1, ...ETAPAS_TABLERO.map((e) => leads.filter((l) => l.etapa === e.id).length));
 
   if (cargando) return (<><div className="barra"><h1>Panel</h1></div><div className="cuerpo"><p className="vacio">Cargando…</p></div></>);
@@ -125,7 +134,18 @@ export function Dashboard() {
             {cobros.length === 0 ? <p className="dash-vacio">No hay cobros pendientes.</p> : (
               <ul className="dash-lista">
                 {cobros.slice(0, 6).map((c) => (
-                  <li key={c.id}><Link to={`/acceso/clientes?ver=${c.cliente_id}`}><div><b>{nombreCliente(c.cliente_id)}</b><small>{c.titulo}{c.tipo === "mensual" ? " · mensual" : ""}</small></div><span className="dash-monto">{c.moneda === "CLP" ? dinero(c.monto) : `${c.monto.toLocaleString("es-CL")} ${c.moneda}`}</span></Link></li>
+                  <li key={c.id}><Link to={`/acceso/clientes?ver=${c.cliente_id}`}><div><b>{nombreCliente(c.cliente_id)}</b><small>{c.titulo}{c.tipo === "mensual" ? " · mensual" : ""}{c.proximo_cobro ? ` · ${c.proximo_cobro < hoyIso ? "venció" : "vence"} ${new Date(c.proximo_cobro + "T12:00:00").toLocaleDateString("es-CL", { day: "numeric", month: "short" })}` : ""}</small></div>{c.proximo_cobro && c.proximo_cobro < hoyIso && <span className="dash-sello">Vencido</span>}<span className="dash-monto">{c.moneda === "CLP" ? dinero(c.monto) : `${c.monto.toLocaleString("es-CL")} ${c.moneda}`}</span></Link>{telefonoDe(c.cliente_id) && <a className="dash-recordar" target="_blank" rel="noreferrer" title="Recordarle por WhatsApp" href={`https://wa.me/${telefonoDe(c.cliente_id)}?text=${encodeURIComponent(`Hola, te escribo de Cóndor. Te recuerdo que está pendiente: ${c.titulo}. Cualquier duda, me avisas.`)}`}>{Ico.chat({ t: 15 })}</a>}</li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          <section className="dash-card">
+            <header><h2>Pedidos de clientes</h2><Link to="/acceso/clientes">Clientes {Ico.galon({ t: 12 })}</Link></header>
+            {solicitudes.length === 0 ? <p className="dash-vacio">Ningún cliente ha pedido cambios.</p> : (
+              <ul className="dash-lista">
+                {solicitudes.slice(0, 6).map((x) => (
+                  <li key={x.id}><Link to={`/acceso/clientes?ver=${x.cliente_id}`}><div><b>{x.titulo}</b><small>{nombreCliente(x.cliente_id)} · {hace(Math.floor((Date.now() - new Date(x.creado_en).getTime()) / 86400000))}</small></div><span className={`dash-sello${x.estado === "en_curso" ? " azul" : ""}`}>{x.estado === "nueva" ? "Nueva" : "En curso"}</span></Link></li>
                 ))}
               </ul>
             )}
@@ -142,6 +162,17 @@ export function Dashboard() {
             )}
           </section>
         </div>
+
+        <section className="dash-card">
+          <header><h2>Actividad reciente</h2></header>
+          {actividad.length === 0 ? <p className="dash-vacio">Todavía no hay movimientos.</p> : (
+            <ul className="dash-actividad">
+              {actividad.map((a) => (
+                <li key={a.id}><span className={`dash-punto m-${a.modulo}`} aria-hidden="true" /><p><b>{a.quien.split("@")[0]}</b> {a.accion}</p><small>{new Date(a.creado_en).toLocaleString("es-CL", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</small></li>
+              ))}
+            </ul>
+          )}
+        </section>
       </div>
     </>
   );
