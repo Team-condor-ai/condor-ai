@@ -7,9 +7,7 @@ import { quitarAcceso } from "../lib/accesos";
 import { EditorCliente } from "./EditorCliente";
 import { PanelCliente } from "./PanelCliente";
 import { Resumen, type PagoResumen } from "./Resumen";
-import { IngresoEcommerce, CLIENTES_ECOMMERCE, LogoShopify } from "./contabilidad/IngresoEcommerce";
 import type { Cliente, Cobro } from "./tipos";
-import type { IngresoCliente } from "./contabilidad/tipos";
 
 type Linea = "sites" | "ecommerce" | "crm";
 
@@ -35,14 +33,11 @@ const LINEAS: { id: Linea; texto: string; logo: string }[] = [
  * URL (`useParams`), así que el link del menú y lo que se ve nunca pueden
  * desincronizarse.
  *
- * POR QUÉ ECOMMERCE NO USA `clientes` COMO LAS OTRAS DOS
+ * ECOMMERCE ES UNA LÍNEA MÁS (24-oct-2026)
  * ---------------------------------------------------------------------------
- * Tecnobox y Silver and Co no son filas de `public.clientes`: se cobran por
- * comisión en tiempo real desde Shopify y viven en `ingresos_clientes` (ver
- * `contabilidad/IngresoEcommerce.tsx`, que ya hacía exactamente este
- * resumen — se reusa tal cual en vez de duplicarlo). Forzarlos a la tabla de
- * clientes solo para que esta pantalla luzca uniforme habría sido peor:
- * dos fuentes de verdad para la misma plata.
+ * Antes mostraba fijos a Tecnobox y Silver & Co (ligados a Shopify, con sus
+ * comisiones en `ingresos_clientes`). Max los sacó: ahora Ecommerce lista los
+ * clientes con `linea = 'ecommerce'`, igual que Sites y CRM.
  *
  * Rat.IA se sacó del todo de este archivo (y del menú) el mismo día: era un
  * producto B2C aparte, no una línea de Cóndor.ai, y ya tenía su propia
@@ -54,7 +49,6 @@ export function Productos() {
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [cobros, setCobros] = useState<Cobro[]>([]);
   const [pagos, setPagos] = useState<PagoResumen[]>([]);
-  const [ingresos, setIngresos] = useState<IngresoCliente[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
   // Enlaces viejos de Cobros/Panel/Mapa siguen apuntando a
@@ -84,18 +78,16 @@ export function Productos() {
 
   async function cargar(silencioso = false) {
     if (!silencioso) setCargando(true);
-    const [{ data: cl, error: ecl }, { data: co }, { data: pa }, { data: ing }] = await Promise.all([
+    const [{ data: cl, error: ecl }, { data: co }, { data: pa }] = await Promise.all([
       sb.from("clientes").select("*").order("creado_en", { ascending: false }),
       sb.from("cobros").select("*"),
       sb.from("pagos").select("cliente_id,cobro_id,monto,estado,fecha,creado_en"),
-      sb.from("ingresos_clientes").select("*").order("mes"),
     ]);
     if (ecl) setError(ecl.message);
     else setError("");
     setClientes((cl ?? []) as Cliente[]);
     setCobros((co ?? []) as Cobro[]);
     setPagos((pa ?? []) as PagoResumen[]);
-    setIngresos((ing ?? []) as IngresoCliente[]);
     if (!silencioso) setCargando(false);
   }
 
@@ -129,11 +121,9 @@ export function Productos() {
           )}
           {tituloLinea}
         </h1>
-        {linea !== "ecommerce" && (
-          <button className="btn solido" onClick={() => setEditando("nuevo")}>
-            {Ico.mas({ t: 15 })} Nuevo cliente
-          </button>
-        )}
+        <button className="btn solido" onClick={() => setEditando("nuevo")}>
+          {Ico.mas({ t: 15 })} Nuevo cliente
+        </button>
       </div>
 
       <div className="cuerpo">
@@ -141,35 +131,6 @@ export function Productos() {
 
         {cargando ? (
           <p className="vacio">Cargando…</p>
-        ) : linea === "ecommerce" ? (
-          <>
-            <IngresoEcommerce ingresos={ingresos} />
-            <h3 style={{ marginTop: 18 }}>Cartera Ecommerce</h3>
-            <p className="conteo">
-              Tecnobox y Silver and Co se administran ligados directamente a Shopify, no como fichas de cliente —
-              por eso no tienen botón de editar acá.
-            </p>
-            <div className="tabla-caja">
-              <table>
-                <thead><tr><th>Cliente</th><th>Plataforma</th><th className="num">Ingreso este mes</th></tr></thead>
-                <tbody>
-                  {CLIENTES_ECOMMERCE.map((c) => {
-                    const mesActual = new Date().toISOString().slice(0, 7);
-                    const comision = ingresos
-                      .filter((i) => i.cliente === c.clave && i.mes === mesActual)
-                      .reduce((t, i) => t + i.comision_calculada, 0);
-                    return (
-                      <tr key={c.clave}>
-                        <td><b>{c.nombre}</b></td>
-                        <td>{c.plataforma === "shopify" ? <LogoShopify /> : <span className="conteo">—</span>}</td>
-                        <td className="num">{plata(comision)}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </>
         ) : (
           <>
             {(() => {
@@ -221,6 +182,7 @@ export function Productos() {
       {editando && (
         <EditorCliente
           cliente={editando === "nuevo" ? null : editando}
+          lineaNueva={linea}
           cerrar={() => setEditando(null)}
           guardado={() => { setEditando(null); void cargar(true); }}
         />

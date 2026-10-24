@@ -6,6 +6,8 @@ type Props = {
   cliente: Cliente | null;
   cerrar: () => void;
   guardado: () => void;
+  /** Línea con la que parte un cliente nuevo (la pestaña de Productos desde donde se creó). */
+  lineaNueva?: string;
 };
 
 /**
@@ -28,7 +30,7 @@ type Props = {
  *
  * Los cobros NO viven acá: son una tabla propia y se agregan desde la ficha.
  */
-export function EditorCliente({ cliente, cerrar, guardado }: Props) {
+export function EditorCliente({ cliente, cerrar, guardado, lineaNueva }: Props) {
   const esNuevo = !cliente;
 
   const [f, setF] = useState({
@@ -37,7 +39,7 @@ export function EditorCliente({ cliente, cerrar, guardado }: Props) {
     email: cliente?.email ?? "",
     telefono: cliente?.telefono ?? "",
     plan: cliente?.plan ?? "",
-    linea: cliente?.linea ?? "",
+    linea: cliente ? cliente.linea ?? "" : lineaNueva ?? "",
     concepto: cliente?.concepto ?? "",
     moneda: cliente?.moneda ?? "CLP",
     web_url: cliente?.web_url ?? "",
@@ -178,13 +180,9 @@ export function EditorCliente({ cliente, cerrar, guardado }: Props) {
             >
               <option value="">Sin clasificar</option>
               <option value="sites">Cóndor Sites</option>
+              <option value="ecommerce">Cóndor Ecommerce</option>
               <option value="crm">Cóndor CRM</option>
             </select>
-            {/* Cóndor Ecommerce no está acá a propósito: Tecnobox y Silver
-                and Co no son filas de `clientes` -- se administran aparte,
-                ligadas a Shopify (ver IngresoEcommerce.tsx). Ofrecer
-                "ecommerce" acá crearía un cliente que nunca aparecería en
-                la pestaña de Ecommerce de Productos. */}
             <small>Decide en qué pestaña de "Productos" aparece este cliente.</small>
           </label>
 
