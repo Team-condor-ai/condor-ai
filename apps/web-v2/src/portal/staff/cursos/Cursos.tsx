@@ -78,7 +78,7 @@ export function Cursos({ editable }: { editable: boolean }) {
           hechas={d.hechas} poster={l.poster_ruta ? d.imagenes[l.poster_ruta] : undefined} avance={avance(curso.id)}
           onIr={(id) => ir(curso.id, id)} onVolver={() => ir(curso.id)} onMarcar={(id, v) => d.marcar(id, yo, v)}
           editable={editable} onEditar={() => setEditLeccion({ curso, leccion: l, faseId: l.fase_id })}
-          companeros={eq.companeros} enLeccion={(id) => enLeccion(curso.id, id)} miSegundo={eq.miSegundo(l.id)}
+          companeros={eq.companeros.filter((p) => !p.yo)} enLeccion={(id) => enLeccion(curso.id, id)} miSegundo={eq.miSegundo(l.id)}
           onAvance={(t, total) => { anunciar(curso.id, l.id, t); void eq.guardarAvance(l.id, t, total); }} />
         {formularios}
       </>
@@ -264,7 +264,7 @@ const reloj = (t: number) => `${Math.floor(t / 60)}:${String(Math.floor(t % 60))
 /** Una cara por persona (foto o iniciales). Con anillo verde quien está viendo en este momento. */
 function Caritas({ personas, max = 4 }: { personas: Companero[]; max?: number }) {
   if (!personas.length) return null;
-  const orden = [...personas].sort((a, b) => Number(!!b.vivo) - Number(!!a.vivo));
+  const orden = [...personas].sort((a, b) => Number(!!b.vivo) - Number(!!a.vivo) || Number(b.yo) - Number(a.yo));
   const resto = orden.length - max;
   return (
     <span className="caritas" aria-label={orden.map((p) => p.nombre + (p.vivo ? " (viendo ahora)" : "")).join(", ")}>
@@ -275,8 +275,8 @@ function Caritas({ personas, max = 4 }: { personas: Companero[]; max?: number })
 }
 function Cara({ p, grande }: { p: Companero; grande?: boolean }) {
   return (
-    <span className={`cara${p.vivo ? " vivo" : ""}${grande ? " grande" : ""}`} title={p.nombre + (p.vivo ? " · viendo ahora" : "")} style={{ background: p.foto ? undefined : tono(p.email) }}>
-      {p.foto ? <img src={p.foto} alt="" /> : iniciales(p.nombre)}
+    <span className={`cara${p.vivo ? " vivo" : ""}${p.yo ? " yo" : ""}${grande ? " grande" : ""}`} title={p.yo ? "Tú quedaste acá" : p.nombre + (p.vivo ? " · viendo ahora" : "")} style={{ background: p.foto ? undefined : tono(p.email) }}>
+      {p.foto ? <img src={p.foto} alt="" /> : iniciales(p.apodo)}
     </span>
   );
 }
@@ -284,7 +284,11 @@ function Cara({ p, grande }: { p: Companero; grande?: boolean }) {
 function textoGente(ps: Companero[], curso: string) {
   const vivos = ps.filter((p) => p.vivo?.curso === curso);
   if (vivos.length) return `${vivos.map((p) => p.nombre).join(" y ")} ${vivos.length === 1 ? "lo está" : "lo están"} viendo ahora`;
-  return ps.length === 1 ? `${ps[0].nombre} va en este curso` : `${ps[0].nombre} y ${ps.length - 1} más van en este curso`;
+  const otros = ps.filter((p) => !p.yo), yoVoy = ps.some((p) => p.yo);
+  if (!otros.length) return "Vas en este curso";
+  const quienes = otros.length === 1 ? otros[0].nombre : `${otros[0].nombre} y ${otros.length - 1} más`;
+  if (yoVoy) return `${quienes} y tú van en este curso`;
+  return `${quienes} ${otros.length === 1 ? "va" : "van"} en este curso`;
 }
 
 /** En la página del curso: dónde va cada persona del equipo, con su avance. */
@@ -292,10 +296,12 @@ function EquipoEnCurso({ personas, total, avance, leccion, numero, onIr }: {
   personas: Companero[]; total: number; avance: (p: Companero) => number; leccion: (p: Companero) => Leccion | null; numero: (id: string) => number; onIr: (id: string) => void;
 }) {
   const orden = [...personas].sort((a, b) => Number(!!b.vivo) - Number(!!a.vivo) || avance(b) - avance(a));
+  const otros = personas.filter((p) => !p.yo).length;
   return (
     <section className="cur-equipo">
       <div className="cur-equipo-cab"><h3>El equipo en este curso</h3><small>{personas.length} de {total} lo {personas.length === 1 ? "empezó" : "empezaron"}</small></div>
-      {orden.length === 0 ? <p className="conteo">Nadie más lo ha empezado. Puedes ser el primero.</p> : (
+      {otros === 0 && <p className="conteo">Nadie más del equipo lo ha empezado todavía.</p>}
+      {orden.length > 0 && (
         <ul>
           {orden.map((p) => {
             const l = leccion(p), a = avance(p);
@@ -304,7 +310,7 @@ function EquipoEnCurso({ personas, total, avance, leccion, numero, onIr }: {
                 <Cara p={p} grande />
                 <span className="cur-equipo-txt">
                   <b>{p.nombre}{p.vivo && <em className="en-vivo">viendo ahora</em>}</b>
-                  {l ? <button className="enlace-btn" onClick={() => onIr(l.id)}>{p.vivo ? "En" : "Va en"} la lección {numero(l.id)} · {l.titulo}</button> : <small>Todavía no empieza</small>}
+                  {l ? <button className="enlace-btn" onClick={() => onIr(l.id)}>{p.vivo ? "En" : p.yo ? "Vas en" : "Va en"} la lección {numero(l.id)} · {l.titulo}</button> : <small>Todavía no empieza</small>}
                 </span>
                 <span className="cur-equipo-av"><span className="cur-pista"><i style={{ width: `${a}%` }} /></span><small>{a}%</small></span>
               </li>

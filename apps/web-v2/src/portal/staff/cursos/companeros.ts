@@ -22,6 +22,10 @@ export type Companero = Persona & {
   /** La última lección que tocó (vista o empezada): ahí «está» en el curso. */
   ultima: Map<string, { leccion: string; cuando: number }>;
   vivo: EnVivo | null;
+  /** Uno mismo: se muestra en el temario («dónde quedé») pero nunca «en vivo» ni en el aviso de llegada. */
+  yo: boolean;
+  /** El nombre de verdad (en `nombre` uno mismo aparece como «Tú»); de acá salen las iniciales. */
+  apodo: string;
 };
 
 const CANAL = "cursos-equipo";
@@ -93,7 +97,9 @@ export function useCompaneros(activo: boolean, yo: string | null, cursoDe: (lecc
 
   const companeros = useMemo<Companero[]>(() => {
     if (!activo) return [];
-    return equipo.filter((p) => p.email !== yo?.toLowerCase()).map((p) => {
+    const mio = yo?.toLowerCase();
+    return equipo.map((p) => {
+      const soyYo = p.email === mio;
       const hechas = new Set(progreso.filter((x) => x.email.toLowerCase() === p.email).map((x) => x.leccion_id));
       const avance = new Map(avances.filter((x) => x.email.toLowerCase() === p.email).map((x) => [x.leccion_id, x]));
       const ultima = new Map<string, { leccion: string; cuando: number }>();
@@ -103,8 +109,8 @@ export function useCompaneros(activo: boolean, yo: string | null, cursoDe: (lecc
       };
       progreso.filter((x) => x.email.toLowerCase() === p.email).forEach((x) => tocar(x.leccion_id, Date.parse(x.hecha_en)));
       avance.forEach((x) => tocar(x.leccion_id, Date.parse(x.actualizado_en)));
-      const vivo = vivos.find((v) => v.email.toLowerCase() === p.email) ?? null;
-      return { ...p, hechas, avance, ultima, vivo };
+      const vivo = soyYo ? null : vivos.find((v) => v.email.toLowerCase() === p.email) ?? null;
+      return { ...p, nombre: soyYo ? "Tú" : p.nombre, apodo: p.nombre, hechas, avance, ultima, vivo, yo: soyYo };
     });
   }, [activo, equipo, yo, progreso, avances, vivos, cursoDe]);
 
