@@ -10,27 +10,27 @@ export const FECHA_LEGAL = "23 de octubre de 2026";
 export const wsp = (texto) => `https://wa.me/${WSP}?text=${encodeURIComponent(texto)}`;
 
 /* ── Países y precios ─────────────────────────────────────────────────
-   Precios publicados hoy: Sites en CL/PE/CO y Ecommerce en CL (los mismos que tenía el
-   sitio anterior). México y Argentina aparecen en el selector y se cotizan por WhatsApp
-   hasta que Max defina sus precios. */
+   Precios por país (24-oct-2026), con el remate comercial de cada mercado: CL 34.990 · PE S/ 119 ·
+   CO 116.900 · MX $649 · AR $49.999. Chile es la referencia; los demás se ajustan por poder de
+   compra sin bajar de ~90 % del precio chileno al cambio. Argentina: revisar cada mes (inflación). */
 export const PAISES = [
   { id: "cl", nombre: "Chile", moneda: "CLP", impuesto: "IVA incluido", simbolo: "$", decimales: 0 },
-  { id: "pe", nombre: "Perú", moneda: "PEN", impuesto: "IGV incluido", simbolo: "S/", decimales: 2 },
+  { id: "pe", nombre: "Perú", moneda: "PEN", impuesto: "IGV incluido", simbolo: "S/", decimales: 0 },
   { id: "co", nombre: "Colombia", moneda: "COP", impuesto: "IVA incluido", simbolo: "$", decimales: 0 },
-  { id: "mx", nombre: "México", moneda: "MXN", impuesto: "", simbolo: "$", decimales: 2 },
-  { id: "ar", nombre: "Argentina", moneda: "ARS", impuesto: "", simbolo: "$", decimales: 0 },
+  { id: "mx", nombre: "México", moneda: "MXN", impuesto: "IVA incluido", simbolo: "$", decimales: 0, miles: "," },
+  { id: "ar", nombre: "Argentina", moneda: "ARS", impuesto: "IVA incluido", simbolo: "$", decimales: 0 },
 ];
 export const DESCUENTO_ANUAL = 0.25;
 export const PRECIOS = {
-  sites: { cl: 34990, pe: 99, co: 116900 },
-  ecommerce: { cl: 54990 },
+  sites: { cl: 34990, pe: 119, co: 116900, mx: 649, ar: 49999 },
+  ecommerce: { cl: 54990, pe: 189, co: 179900, mx: 999, ar: 79999 },
 };
 export const COMISION_ECOMMERCE = "6,7 %";
 
 export function dinero(valor, paisId) {
   const p = PAISES.find((x) => x.id === paisId);
   const [entero, dec] = valor.toFixed(p.decimales).split(".");
-  return p.simbolo + entero.replace(/\B(?=(\d{3})+(?!\d))/g, ".") + (dec ? "," + dec : "");
+  return p.simbolo + entero.replace(/\B(?=(\d{3})+(?!\d))/g, p.miles || ".") + (dec ? "," + dec : "");
 }
 export const anual = (mensual) => Math.round(mensual * 12 * (1 - DESCUENTO_ANUAL) * 100) / 100;
 
@@ -143,7 +143,7 @@ export const FAQ = [
   { id: "contrato", q: "¿Hay contrato o permanencia mínima?",
     a: ["Las condiciones de cada servicio (plazo, alcance y valor) quedan por escrito en la propuesta que aceptas. El plan mensual se paga mes a mes; el anual se paga por adelantado y tiene 25 % de descuento."] },
   { id: "paises", q: "¿Trabajan solo en Chile?",
-    a: ["Atendemos desde Santiago a clientes de Chile, Perú y Colombia, con precios en su moneda. Si estás en otro país de la región, escríbenos y te cotizamos."] },
+    a: ["Atendemos desde Santiago a clientes de Chile, Perú, Colombia, México y Argentina, con precios en su moneda. Si estás en otro país de la región, escríbenos y te cotizamos."] },
   { id: "tecnologia", q: "¿Tengo que saber de tecnología?",
     a: ["No. Tú nos cuentas qué hace tu negocio y qué quieres lograr; nosotros diseñamos, publicamos y administramos."] },
 ];
