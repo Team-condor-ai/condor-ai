@@ -21,3 +21,8 @@ export async function verClaveInicial(): Promise<string> {
   if (error) throw new Error(error.message);
   return (data as { clave: string }).clave;
 }
+
+/** Borra el usuario de acceso de un cliente eliminado (la función se niega si el correo es del equipo). */
+export async function quitarAcceso(email: string): Promise<void> {
+  await sb.functions.invoke("crear-acceso", { body: { email, rol: "cliente", accion: "quitar" } });
+}

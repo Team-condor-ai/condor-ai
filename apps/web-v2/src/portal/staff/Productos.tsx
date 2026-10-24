@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { sb, plata } from "../lib/supabase";
 import { Ico } from "../disenio/iconos";
+import { useConfirmacion } from "../disenio/Confirmacion";
+import { quitarAcceso } from "../lib/accesos";
 import { EditorCliente } from "./EditorCliente";
 import { PanelCliente } from "./PanelCliente";
 import { Resumen, type PagoResumen } from "./Resumen";
@@ -12,9 +14,9 @@ import type { IngresoCliente } from "./contabilidad/tipos";
 type Linea = "sites" | "ecommerce" | "crm";
 
 const LINEAS: { id: Linea; texto: string; logo: string }[] = [
-  { id: "sites", texto: "Cóndor Sites", logo: "/assets/productos/condor-sites.png" },
-  { id: "ecommerce", texto: "Cóndor Ecommerce", logo: "/assets/productos/condor-ecommerce.png" },
-  { id: "crm", texto: "Cóndor CRM", logo: "/assets/productos/condor-track.png" },
+  { id: "sites", texto: "Cóndor Sites", logo: "/condor/marca/producto-sites.svg" },
+  { id: "ecommerce", texto: "Cóndor Ecommerce", logo: "/condor/marca/producto-ecommerce.svg" },
+  { id: "crm", texto: "Cóndor CRM", logo: "/condor/marca/producto-crm.svg" },
 ];
 
 /**
@@ -59,9 +61,26 @@ export function Productos() {
   // `/acceso/clientes?ver=<id>` sin saber a qué línea pertenece ese
   // cliente -- por eso esto se lee sin importar la línea activa, y abre el
   // panel igual (PanelCliente solo necesita el id, no la línea).
+  const confirmar = useConfirmacion();
   const [params] = useSearchParams();
   const [viendo, setViendo] = useState<string | null>(() => params.get("ver"));
   const [editando, setEditando] = useState<Cliente | "nuevo" | null>(null);
+
+  async function archivar(c: Cliente) {
+    if (!(await confirmar(`Archivar a ${c.negocio || c.nombre}`, "Deja de aparecer en la lista y pierde el acceso al portal, pero se conservan sus pagos y su historia. Se puede recuperar.", "Archivar"))) return;
+    const { error: e } = await sb.from("clientes").update({ archivado: true }).eq("id", c.id).select("id");
+    if (e) setError("No se pudo archivar: " + e.message); else void cargar(true);
+  }
+  async function eliminar(c: Cliente) {
+    const nc = cobros.filter((x) => x.cliente_id === c.id).length;
+    const np = pagos.filter((x) => x.cliente_id === c.id).length;
+    const nombre = c.negocio || c.nombre || "este cliente";
+    if (!(await confirmar(`Eliminar a ${nombre} para siempre`, `Se borran su ficha, ${nc} cobro${nc === 1 ? "" : "s"} y ${np} pago${np === 1 ? "" : "s"} registrados, y pierde el acceso al portal. Esto NO se puede deshacer. Si solo quieres sacarlo de la lista, usa «Archivar».`, "Eliminar"))) return;
+    const { data, error: e } = await sb.from("clientes").delete().eq("id", c.id).select("id");
+    if (e || !data?.length) { setError(e ? "No se pudo eliminar: " + e.message : "La base no permitió eliminarlo."); return; }
+    if (c.email) void quitarAcceso(c.email);
+    void cargar(true);
+  }
 
   async function cargar(silencioso = false) {
     if (!silencioso) setCargando(true);
@@ -105,8 +124,8 @@ export function Productos() {
       <div className="barra">
         <h1 style={{ display: "flex", alignItems: "center", gap: 10 }}>
           {infoLinea && (
-            <img src={infoLinea.logo} alt="" width={28} height={28}
-              style={{ width: 28, height: 28, borderRadius: 7, objectFit: "cover" }} />
+            <img src={infoLinea.logo} alt="" width={34} height={34}
+              style={{ width: 34, height: 34, borderRadius: 9, objectFit: "cover", boxShadow: "0 6px 12px -6px rgba(21,22,26,.45)" }} />
           )}
           {tituloLinea}
         </h1>
@@ -180,6 +199,8 @@ export function Productos() {
                               <td className="num">{plata(recibidoDe(c.id), c.moneda)}</td>
                               <td className="acciones">
                                 <button className="btn chico" onClick={() => setViendo(c.id)}>Ver</button>
+                                <button className="icono-btn" title="Archivar (se puede recuperar)" onClick={() => void archivar(c)}>{Ico.archivar({ t: 15 })}</button>
+                                <button className="icono-btn peligro" title="Eliminar para siempre" onClick={() => void eliminar(c)}>{Ico.eliminar({ t: 15 })}</button>
                               </td>
                             </tr>
                           ))}

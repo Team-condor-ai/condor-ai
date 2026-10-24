@@ -4,7 +4,8 @@
 // (marca `cambiar_clave` en su perfil). No depende del correo: sirve aunque Resend no esté verificado.
 //
 // Solo lo puede llamar el equipo (el correo del JWT tiene que estar en `admins`).
-// Body: { email, rol: "equipo" | "cliente", nombre?, accion?: "crear" | "restablecer" | "ver_clave" }
+// Body: { email, rol: "equipo" | "cliente", nombre?, accion?: "crear" | "restablecer" | "ver_clave" | "quitar" }
+// «quitar» borra el usuario de acceso de un cliente ya eliminado (nunca el de alguien del equipo).
 // Secreto opcional: CLAVE_INICIAL (si no existe se usa la de abajo).
 // Deploy: supabase functions deploy crear-acceso   (verify_jwt = true)
 
@@ -13,6 +14,18 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "POST, OPTIONS", "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info" };
 const json = (o: unknown, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "Content-Type": "application/json", ...CORS } });
 const CLAVE_INICIAL = Deno.env.get("CLAVE_INICIAL") || "Condor-Inicio-2026";
+
+// deno-lint-ignore no-explicit-any
+async function buscarUsuario(sb: any, email: string): Promise<{ id: string; user_metadata?: Record<string, unknown> } | null> {
+  for (let pag = 1; pag <= 10; pag++) {
+    const { data } = await sb.auth.admin.listUsers({ page: pag, perPage: 200 });
+    // deno-lint-ignore no-explicit-any
+    const u = (data?.users ?? []).find((x: any) => (x.email || "").toLowerCase() === email);
+    if (u) return u;
+    if (!data?.users?.length || data.users.length < 200) break;
+  }
+  return null;
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
@@ -31,6 +44,17 @@ Deno.serve(async (req) => {
 
   const email = String(b.email || "").trim().toLowerCase();
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return json({ error: "correo inválido" }, 400);
+
+  if (b.accion === "quitar") {
+    const { data: esEquipo } = await sb.from("admins").select("email").ilike("email", email).maybeSingle();
+    if (esEquipo) return json({ error: "Ese correo es del equipo; se quita desde Personas." }, 400);
+    const { data: sigue } = await sb.from("clientes").select("id").ilike("email", email).limit(1).maybeSingle();
+    if (sigue) return json({ error: "Todavía hay un cliente con ese correo." }, 400);
+    const u = await buscarUsuario(sb, email);
+    if (u) await sb.auth.admin.deleteUser(u.id);
+    console.log(`[crear-acceso] ${user.email} quitó el acceso de ${email}`);
+    return json({ ok: true, quitado: Boolean(u) });
+  }
   const rol = b.rol === "cliente" ? "cliente" : "equipo";
 
   if (rol === "equipo") {
@@ -45,12 +69,7 @@ Deno.serve(async (req) => {
   }
 
   // ¿ya existe el usuario de acceso?
-  let existente: { id: string; user_metadata?: Record<string, unknown> } | null = null;
-  for (let pag = 1; pag <= 10 && !existente; pag++) {
-    const { data } = await sb.auth.admin.listUsers({ page: pag, perPage: 200 });
-    existente = (data?.users ?? []).find((u) => (u.email || "").toLowerCase() === email) ?? null;
-    if (!data?.users?.length || data.users.length < 200) break;
-  }
+  const existente = await buscarUsuario(sb, email);
   const meta = { ...(existente?.user_metadata ?? {}), password_set: true, cambiar_clave: true };
   if (existente) {
     const { error } = await sb.auth.admin.updateUserById(existente.id, { password: CLAVE_INICIAL, email_confirm: true, user_metadata: meta });

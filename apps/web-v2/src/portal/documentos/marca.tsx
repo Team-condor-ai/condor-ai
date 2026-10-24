@@ -18,7 +18,7 @@ import { Font, Image, StyleSheet, Text, View } from "@react-pdf/renderer";
  * era. Estas son las tres fuentes del sitio, así que el PDF que descarga el
  * cliente y la página de la que lo descargó por fin hablan el mismo idioma.
  *
- * Los .ttf viven en `public/assets/fuentes/` (344 KB las cinco). Tienen que
+ * Los .ttf viven en `public/condor/fuentes/` (Inter Display, las del guion visual). Tienen que
  * ser .ttf u .otf: react-pdf NO lee woff2, que es lo que sirve el CDN por
  * defecto. Se descargan una vez y quedan versionados; no se piden a Fontshare
  * ni a Google en tiempo de ejecución, porque un PDF que depende de una CDN
@@ -26,23 +26,24 @@ import { Font, Image, StyleSheet, Text, View } from "@react-pdf/renderer";
  */
 
 Font.register({
-  family: "GeneralSans",
+  family: "Inter",
   fonts: [
-    { src: "/assets/fuentes/GeneralSans-Regular.ttf", fontWeight: 400 },
-    { src: "/assets/fuentes/GeneralSans-Semibold.ttf", fontWeight: 600 },
+    { src: "/condor/fuentes/InterDisplay-Medium.ttf", fontWeight: 400 },
+    { src: "/condor/fuentes/InterDisplay-SemiBold.ttf", fontWeight: 600 },
   ],
 });
 
 Font.register({
-  family: "ClashDisplay",
-  fonts: [{ src: "/assets/fuentes/ClashDisplay-Semibold.ttf", fontWeight: 600 }],
+  family: "InterDisplay",
+  fonts: [{ src: "/condor/fuentes/InterDisplay-SemiBold.ttf", fontWeight: 600 }],
 });
 
+// Los números van en la misma Inter (la fuente mono del sitio solo existe en woff2 y react-pdf no lo lee).
 Font.register({
-  family: "SpaceMono",
+  family: "InterMono",
   fonts: [
-    { src: "/assets/fuentes/SpaceMono-Regular.ttf", fontWeight: 400 },
-    { src: "/assets/fuentes/SpaceMono-Bold.ttf", fontWeight: 700 },
+    { src: "/condor/fuentes/InterDisplay-Medium.ttf", fontWeight: 400 },
+    { src: "/condor/fuentes/InterDisplay-SemiBold.ttf", fontWeight: 700 },
   ],
 });
 
@@ -74,9 +75,9 @@ export const EMPRESA = {
  * reembolsado. Si se usa de adorno deja de significar "algo pasó acá".
  */
 export const T = {
-  tinta: "#101418",
-  navy: "#0A1F5C",
-  azul: "#0C44D6",
+  tinta: "#151517",
+  navy: "#151517",
+  azul: "#014CFD",
   rojo: "#9F2936",
   suave: "#6B7472",
   /** Solo decorativo. A 7,5 pt sobre blanco da 2,65:1 y NO pasa AA, así que
@@ -84,8 +85,8 @@ export const T = {
   tenue: "#98A19E",
   linea: "#E4E8EC",
   fondo: "#F7F9FB",
-  selloBg: "#EAF0FF",
-  selloBd: "#C7D8FF",
+  selloBg: "#EEF3FF",
+  selloBd: "#C9D8FF",
 };
 
 /** Escala modular 1.25 sobre 9.5pt. Ningún tamaño va "al ojo". */
@@ -99,7 +100,7 @@ export const hoja = StyleSheet.create({
     fontSize: P.base,
     lineHeight: 1.55,
     color: T.tinta,
-    fontFamily: "GeneralSans",
+    fontFamily: "Inter",
   },
 
   // ── Membrete ────────────────────────────────────────────────────────────
@@ -113,11 +114,11 @@ export const hoja = StyleSheet.create({
     marginBottom: 20,
   },
   logo: { width: 92, height: 25, objectFit: "contain" },
-  marca: { fontSize: P.h1, fontFamily: "ClashDisplay", fontWeight: 600, color: T.navy },
+  marca: { fontSize: P.h1, fontFamily: "InterDisplay", fontWeight: 600, color: T.navy },
   marcaSub: { fontSize: P.micro, color: T.tenue, letterSpacing: 1.4, marginTop: 3 },
   tipoDoc: {
     fontSize: P.micro,
-    fontFamily: "GeneralSans",
+    fontFamily: "Inter",
     fontWeight: 600,
     letterSpacing: 1.5,
     color: T.suave,
@@ -125,7 +126,7 @@ export const hoja = StyleSheet.create({
   },
   folio: {
     fontSize: P.dato,
-    fontFamily: "SpaceMono",
+    fontFamily: "InterMono",
     fontWeight: 700,
     color: T.navy,
     textAlign: "right",
@@ -138,7 +139,7 @@ export const hoja = StyleSheet.create({
   // corto — el título terminaba pisando la fecha de abajo.
   h1: {
     fontSize: P.titulo,
-    fontFamily: "ClashDisplay",
+    fontFamily: "InterDisplay",
     fontWeight: 600,
     color: T.navy,
     lineHeight: 1.25,
@@ -146,7 +147,7 @@ export const hoja = StyleSheet.create({
   },
   h2: {
     fontSize: P.etiqueta,
-    fontFamily: "GeneralSans",
+    fontFamily: "Inter",
     fontWeight: 600,
     letterSpacing: 1.1,
     color: T.suave,
@@ -170,7 +171,7 @@ export const hoja = StyleSheet.create({
   },
   fila: { flexDirection: "row", justifyContent: "space-between" },
   etiqueta: { color: T.suave, fontSize: P.etiqueta, letterSpacing: 0.6, textTransform: "uppercase" },
-  dato: { fontFamily: "GeneralSans", fontWeight: 600, color: T.tinta },
+  dato: { fontFamily: "Inter", fontWeight: 600, color: T.tinta },
 
   // ── Tabla ───────────────────────────────────────────────────────────────
   th: {
@@ -183,12 +184,12 @@ export const hoja = StyleSheet.create({
   tr: { flexDirection: "row", borderBottomWidth: 1, borderBottomColor: T.linea, paddingVertical: 7 },
   thTxt: {
     fontSize: P.micro,
-    fontFamily: "GeneralSans",
+    fontFamily: "Inter",
     fontWeight: 600,
     letterSpacing: 1,
     color: T.suave,
   },
-  num: { textAlign: "right", fontFamily: "SpaceMono" },
+  num: { textAlign: "right", fontFamily: "InterMono" },
   total: {
     flexDirection: "row",
     justifyContent: "flex-end",
@@ -225,7 +226,7 @@ export const hoja = StyleSheet.create({
 export function Cabecera({ tipo, folio }: { tipo: string; folio?: string }) {
   return (
     <View style={hoja.cabecera}>
-      <Image style={hoja.logo} src="/assets/logo.png" />
+      <Image style={hoja.logo} src="/condor/marca/condor-logo-horizontal.png" />
       <View>
         <Text style={hoja.tipoDoc}>{tipo}</Text>
         {folio ? <Text style={hoja.folio}>{folio}</Text> : null}
@@ -265,7 +266,7 @@ export function Pie() {
   return (
     <View style={hoja.pie} fixed>
       <Text>{partes}</Text>
-      <Text style={{ fontFamily: "SpaceMono" }}>{EMPRESA.web}</Text>
+      <Text style={{ fontFamily: "InterMono" }}>{EMPRESA.web}</Text>
     </View>
   );
 }

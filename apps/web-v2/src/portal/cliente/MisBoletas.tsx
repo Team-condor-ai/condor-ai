@@ -33,7 +33,7 @@ function Verif({ etiqueta, valor }: { etiqueta: string; valor: string }) {
   return (
     <View style={{ flexDirection: "row", marginBottom: 3 }}>
       <Text style={{ width: "38%", color: T.suave, fontSize: P.etiqueta }}>{etiqueta}</Text>
-      <Text style={{ width: "62%", fontFamily: "SpaceMono", fontSize: P.etiqueta, color: T.tinta }}>
+      <Text style={{ width: "62%", fontFamily: "InterMono", fontSize: P.etiqueta, color: T.tinta }}>
         {valor}
       </Text>
     </View>
@@ -109,7 +109,7 @@ function Comprobante({ c, p }: { c: Cliente; p: Pago }) {
             </Text>
             <Text
               style={{
-                fontFamily: "ClashDisplay",
+                fontFamily: "InterDisplay",
                 fontWeight: 600,
                 fontSize: P.cifra,
                 color: acento,
@@ -168,7 +168,7 @@ function Comprobante({ c, p }: { c: Cliente; p: Pago }) {
           </Text>
           <Text
             style={{
-              fontFamily: "SpaceMono",
+              fontFamily: "InterMono",
               fontWeight: 700,
               fontSize: P.h2,
               color: T.navy,
@@ -180,7 +180,7 @@ function Comprobante({ c, p }: { c: Cliente; p: Pago }) {
         {parcial ? (
           <View style={[hoja.fila, { justifyContent: "flex-end", marginTop: 4 }]}>
             <Text style={{ marginRight: 14, color: T.suave, fontSize: P.legal }}>Reembolsado</Text>
-            <Text style={{ fontFamily: "SpaceMono", fontSize: P.legal, color: T.rojo }}>
+            <Text style={{ fontFamily: "InterMono", fontSize: P.legal, color: T.rojo }}>
               −{plataPdf(reembolso, moneda)}
             </Text>
           </View>
