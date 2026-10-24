@@ -53,7 +53,9 @@ function useSesionReal(): Sesion {
         email: user.email ?? null,
         rol: admin ? "staff" : "cliente",
         tieneClave: Boolean(user.user_metadata?.password_set),
-        debeCambiarClave: Boolean(user.user_metadata?.cambiar_clave),
+        // También quien entró con código y nunca eligió contraseña: sin esto seguía dependiendo del correo
+        // (que hoy no sale) y quedaba afuera la vez siguiente (Kalfu y Alejandro, 24-oct-2026).
+        debeCambiarClave: Boolean(user.user_metadata?.cambiar_clave) || !user.user_metadata?.password_set,
       });
     }
 
@@ -112,7 +114,7 @@ export async function entrarConCodigo(email: string, codigo: string) {
     token: codigo.trim(),
     type: "email",
   });
-  if (error) throw error;
+  if (error) throw new Error(traducir(error.message));
 }
 
 export async function entrarConClave(email: string, clave: string) {
@@ -120,7 +122,7 @@ export async function entrarConClave(email: string, clave: string) {
     email: email.trim().toLowerCase(),
     password: clave,
   });
-  if (error) throw error;
+  if (error) throw new Error(traducir(error.message));
 }
 
 export async function fijarClave(clave: string) {
@@ -128,7 +130,20 @@ export async function fijarClave(clave: string) {
     password: clave,
     data: { password_set: true, cambiar_clave: false },
   });
-  if (error) throw error;
+  if (error) throw new Error(traducir(error.message));
+}
+
+/** Supabase responde en inglés; acá se dice qué pasó y qué hacer. */
+export function traducir(m: string): string {
+  if (/invalid login credentials/i.test(m))
+    return "El correo o la contraseña no coinciden. Si es tu primera vez, entra con la clave inicial que te dio el equipo.";
+  if (/expired|invalid.*(otp|token)/i.test(m)) return "El código no es válido o ya venció. Pide uno nuevo.";
+  if (/email not confirmed/i.test(m)) return "Tu correo todavía no está confirmado. Pídele al equipo que te restablezca el acceso.";
+  if (/rate limit|too many/i.test(m)) return "Demasiados intentos seguidos. Espera un minuto y vuelve a probar.";
+  if (/should be different/i.test(m)) return "La nueva contraseña tiene que ser distinta de la actual.";
+  if (/weak|pwned|leaked|at least/i.test(m)) return "Esa contraseña es muy débil o apareció en filtraciones. Elige otra más larga.";
+  if (/failed to fetch|network/i.test(m)) return "No hay conexión con el servidor. Revisa tu internet y vuelve a probar.";
+  return m;
 }
 
 export async function salir() {

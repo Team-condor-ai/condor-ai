@@ -38,6 +38,9 @@ console.log("prerender: /colombia/index.html → inicio (campaña retirada)");
 const cascaraSPA = readFileSync(join(dist, "index.html"), "utf8");
 writeFileSync(join(dist, "404.html"), cascaraSPA, "utf8");
 console.log("prerender: /404.html  ← cáscara del SPA (fallback de rutas del router)");
+// /acceso con su propio archivo: antes entraba por el 404 y el navegador recibía estado 404 en la puerta del portal.
+mkdirSync(join(dist, "acceso"), { recursive: true });
+writeFileSync(join(dist, "acceso", "index.html"), cascaraSPA, "utf8");
 
 const homeEstatica = readFileSync(join(dist, "rediseno", "inicio.html"), "utf8");
 writeFileSync(join(dist, "index.html"), homeEstatica, "utf8");

@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { entrarConClave, entrarConCodigo, fijarClave, pedirCodigo } from "./sesion";
+import { entrarConClave, entrarConCodigo, pedirCodigo } from "./sesion";
 
-type Paso = "entrar" | "verificar" | "crear";
+type Paso = "entrar" | "verificar";
 
 /**
  * La única puerta del portal.
@@ -63,7 +63,6 @@ export function Login() {
   const [paso, setPaso] = useState<Paso>("entrar");
   const [email, setEmail] = useState("");
   const [clave, setClave] = useState("");
-  const [clave2, setClave2] = useState("");
   const [codigo, setCodigo] = useState("");
   const [verClave, setVerClave] = useState(false);
   const [cargando, setCargando] = useState(false);
@@ -95,29 +94,20 @@ export function Login() {
   function enviar(ev: React.FormEvent) {
     ev.preventDefault();
     if (paso === "entrar") return envolver(() => entrarConClave(email, clave));
-    if (paso === "verificar")
-      return envolver(async () => {
-        await entrarConCodigo(email, codigo);
-        setPaso("crear");
-      });
-    return envolver(async () => {
-      if (clave.length < 8)
-        throw new Error("La contraseña necesita al menos 8 caracteres.");
-      if (clave !== clave2) throw new Error("Las dos contraseñas no coinciden.");
-      await fijarClave(clave);
-    });
+    // Quien entra con código y no tiene contraseña la elige al tiro en `ForzarCambio` (el portal reemplaza
+    // esta pantalla apenas hay sesión, por eso el antiguo paso «crear» de acá nunca se alcanzaba).
+    return envolver(() => entrarConCodigo(email, codigo));
   }
 
   const titulo =
-    paso === "verificar" ? "Revisa tu correo"
-    : paso === "crear" ? "Crea tu contraseña"
-    : "Entra a tu portal";
+    paso === "verificar" ? "Revisa tu correo" : "Entra a tu portal";
 
   const bajada =
     paso === "verificar" ? (
-      <>Te enviamos un código a <b>{email}</b>. Escríbelo acá abajo para entrar.</>
-    ) : paso === "crear" ? (
-      "Así entras directo la próxima vez, sin esperar el correo."
+      <>
+        Si <b>{email}</b> tiene acceso, le enviamos un código. Escríbelo acá abajo para entrar. Si no llega en un
+        par de minutos (revisa spam), pídele al equipo la clave inicial y entra con contraseña.
+      </>
     ) : (
       "Tus planes, tus pagos y tus documentos, todo en un solo lugar."
     );
@@ -257,39 +247,6 @@ export function Login() {
                     Volver
                   </button>
                 </p>
-              </div>
-            )}
-
-            {paso === "crear" && (
-              <div key="crear" className="paso">
-                <div className="campo-grupo">
-                  <label className="rotulo" htmlFor="ac-nueva">Nueva contraseña</label>
-                  <input
-                    id="ac-nueva"
-                    className="campo"
-                    type="password"
-                    autoFocus
-                    autoComplete="new-password"
-                    placeholder="Mínimo 8 caracteres"
-                    value={clave}
-                    onChange={(e) => setClave(e.target.value)}
-                  />
-                </div>
-                <div className="campo-grupo">
-                  <label className="rotulo" htmlFor="ac-nueva2">Repítela</label>
-                  <input
-                    id="ac-nueva2"
-                    className="campo"
-                    type="password"
-                    autoComplete="new-password"
-                    placeholder="••••••••"
-                    value={clave2}
-                    onChange={(e) => setClave2(e.target.value)}
-                  />
-                </div>
-                <button className="btn-acceso" disabled={cargando}>
-                  {cargando ? "Guardando…" : "Guardar y entrar"}
-                </button>
               </div>
             )}
 

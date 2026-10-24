@@ -1,7 +1,7 @@
 import { CambiarClave } from "./CambiarClave";
 import { salir } from "./sesion";
 
-/** Pantalla completa que ve quien entró con la clave inicial: elige la suya y sigue (24-oct-2026). */
+/** Pantalla completa que ve quien entró con la clave inicial o con código sin tener contraseña: elige la suya y sigue. */
 export function ForzarCambio({ email }: { email: string }) {
   return (
     <div className="acceso">
@@ -10,7 +10,7 @@ export function ForzarCambio({ email }: { email: string }) {
           <div style={{ width: "100%", display: "block" }}>
           <img src="/condor/marca/condor-logo-horizontal.svg" alt="condor.ai" width="124" height="26" style={{ marginBottom: 22 }} />
           <h1>Elige tu contraseña</h1>
-          <p className="acceso-bajada">Entraste con la clave inicial. Elige una tuya para <b>{email}</b>; con ella entras la próxima vez sin esperar ningún correo.</p>
+          <p className="acceso-bajada">Antes de seguir, elige una contraseña tuya para <b>{email}</b>. Con ella entras directo la próxima vez, sin clave inicial ni códigos por correo.</p>
           <CambiarClave titulo="" />
           <p className="acceso-pie"><a href="#salir" className="enlace-fuerte" onClick={(e) => { e.preventDefault(); void salir(); }}>Salir</a></p>
           </div>
