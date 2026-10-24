@@ -115,7 +115,7 @@ export function Cursos({ editable }: { editable: boolean }) {
           <div className="cur-anillo" style={{ ["--p" as string]: avance(curso.id) }}><b>{avance(curso.id)}%</b><span>completado</span></div>
         </header>
 
-        {editable && <EquipoEnCurso personas={enCurso(curso.id)} total={eq.companeros.length} avance={(p) => avanceDe(p, curso.id)}
+        {editable && <EquipoEnCurso personas={[...enCurso(curso.id), ...eq.companeros.filter((p) => p.yo && !enCurso(curso.id).includes(p))]} total={eq.companeros.length} avance={(p) => avanceDe(p, curso.id)}
           leccion={(p) => lista.find((l) => l.id === dondeVa(p, curso.id)) ?? null} numero={(id) => lista.findIndex((l) => l.id === id) + 1}
           onIr={(id) => ir(curso.id, id)} />}
 
@@ -297,9 +297,11 @@ function EquipoEnCurso({ personas, total, avance, leccion, numero, onIr }: {
 }) {
   const orden = [...personas].sort((a, b) => Number(!!b.vivo) - Number(!!a.vivo) || avance(b) - avance(a));
   const otros = personas.filter((p) => !p.yo).length;
+  // Uno mismo aparece siempre en la lista (aunque no haya empezado); en la cuenta solo entra quien empezó.
+  const empezaron = personas.filter((p) => !p.yo || leccion(p)).length;
   return (
     <section className="cur-equipo">
-      <div className="cur-equipo-cab"><h3>El equipo en este curso</h3><small>{personas.length} de {total} lo {personas.length === 1 ? "empezó" : "empezaron"}</small></div>
+      <div className="cur-equipo-cab"><h3>El equipo en este curso</h3><small>{empezaron} de {total} lo {empezaron === 1 ? "empezó" : "empezaron"}</small></div>
       {otros === 0 && <p className="conteo">Nadie más del equipo lo ha empezado todavía.</p>}
       {orden.length > 0 && (
         <ul>
@@ -310,7 +312,7 @@ function EquipoEnCurso({ personas, total, avance, leccion, numero, onIr }: {
                 <Cara p={p} grande />
                 <span className="cur-equipo-txt">
                   <b>{p.nombre}{p.vivo && <em className="en-vivo">viendo ahora</em>}</b>
-                  {l ? <button className="enlace-btn" onClick={() => onIr(l.id)}>{p.vivo ? "En" : p.yo ? "Vas en" : "Va en"} la lección {numero(l.id)} · {l.titulo}</button> : <small>Todavía no empieza</small>}
+                  {l ? <button className="enlace-btn" onClick={() => onIr(l.id)}>{p.vivo ? "En" : p.yo ? "Vas en" : "Va en"} la lección {numero(l.id)} · {l.titulo}</button> : <small>{p.yo ? "Todavía no empiezas: dale a «Empezar el curso»" : "Todavía no empieza"}</small>}
                 </span>
                 <span className="cur-equipo-av"><span className="cur-pista"><i style={{ width: `${a}%` }} /></span><small>{a}%</small></span>
               </li>
