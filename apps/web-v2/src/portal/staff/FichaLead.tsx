@@ -11,6 +11,7 @@ import {
   SERVICIOS_LEAD,
   RESPONSABLES,
   textoEtapa,
+  nombreLead,
   diasEnEtapa,
   hace,
 } from "./leadsTipos";
@@ -94,7 +95,7 @@ export function FichaLead({ lead, reunion, onCerrar, onCambio }: { lead: Lead | 
         <header className="ficha-lead-cab">
           <div>
             <p className="rotulo-mini">{lead ? `Lead #${lead.id}` : "Nuevo lead"}</p>
-            <h2>{d.negocio || d.nombre || "Sin nombre"}</h2>
+            <h2>{nombreLead({ negocio: d.negocio ?? null, nombre: d.nombre ?? null, email: d.email ?? null, tipo: lead?.tipo ?? null, whatsapp: d.whatsapp ?? null })}</h2>
             {lead && <p className="ficha-sub">{textoEtapa(lead.etapa)} · {hace(diasEnEtapa(lead))} en esta etapa · entró el {new Date(lead.creado_en).toLocaleDateString("es-CL", { day: "numeric", month: "long" })}</p>}
           </div>
           <button className="icono-btn" onClick={onCerrar} aria-label="Cerrar">{Ico.cerrar({ t: 16 })}</button>

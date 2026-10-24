@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { sb } from "../lib/supabase";
 import { useNombreUsuario } from "../auth/nombreUsuario";
 import { Ico } from "../disenio/iconos";
-import { ETAPAS_TABLERO, atrasoLead, dinero, diasEnEtapa, hace, type Lead } from "./leadsTipos";
+import { ETAPAS_TABLERO, atrasoLead, dinero, diasEnEtapa, hace, nombreLead, type Lead } from "./leadsTipos";
 
 type ReunionP = { id: string; titulo: string; fecha_hora: string; cliente: string | null; asistio: boolean | null; meet_url: string | null };
 type CobroP = { id: string; titulo: string; monto: number; moneda: string; estado: string; tipo: string; proximo_cobro: string | null; cliente_id: string };
@@ -103,7 +103,7 @@ export function Dashboard() {
             {pidenAtencion.length === 0 ? <p className="dash-vacio">Nadie espera respuesta. Buen trabajo.</p> : (
               <ul className="dash-lista">
                 {pidenAtencion.slice(0, 6).map(({ l, motivo }) => (
-                  <li key={l.id}><Link to="/acceso/leads"><div><b>{l.negocio || l.nombre || "Sin nombre"}</b><small>{l.nombre && l.negocio ? l.nombre + " · " : ""}{hace(diasEnEtapa(l))} en esta etapa</small></div><span className="dash-sello">{motivo}</span></Link></li>
+                  <li key={l.id}><Link to="/acceso/leads"><div><b>{nombreLead(l)}</b><small>{l.tipo ? l.tipo + " · " : ""}{hace(diasEnEtapa(l))} en esta etapa</small></div><span className="dash-sello">{motivo}</span></Link></li>
                 ))}
               </ul>
             )}

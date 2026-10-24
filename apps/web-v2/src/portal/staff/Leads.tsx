@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type DragEvent } from "react";
 import { sb } from "../lib/supabase";
 import { Ico } from "../disenio/iconos";
 import { FichaLead } from "./FichaLead";
+import { useConfirmacion } from "../disenio/Confirmacion";
 import {
   type Lead,
   type EtapaLead,
@@ -13,6 +14,11 @@ import {
   atrasoLead,
   dinero,
   hace,
+  nombreLead,
+  inicialesLead,
+  colorLead,
+  esFrio,
+  DIAS_FRIO,
 } from "./leadsTipos";
 
 /**
@@ -29,6 +35,7 @@ import {
  * no acá: cualquier función del sitio que cree o actualice un lead las cumple.
  */
 export function Leads() {
+  const confirmar = useConfirmacion();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [reuniones, setReuniones] = useState<Record<string, { fecha_hora: string; asistio: boolean | null }>>({});
   const [cargando, setCargando] = useState(true);
@@ -84,7 +91,14 @@ export function Leads() {
     setLeads((ls) => ls.map((l) => (l.id === id ? { ...l, etapa, etapa_en: new Date().toISOString() } : l)));
     const { error: e } = await sb.from("leads").update({ etapa }).eq("id", id);
     if (e) { setLeads(antes); setError("No se pudo mover el lead: " + e.message); }
-    else { setError(""); void cargar(); }
+    else { setError(""); if (etapa === "ganado") confeti(); void cargar(); }
+  }
+
+  const frios = useMemo(() => leads.filter(esFrio), [leads]);
+  async function enfriar() {
+    if (!(await confirmar(`Mandar ${frios.length} leads a «Sin respuesta»`, `Llevan más de ${DIAS_FRIO} días sin avanzar. No se borran: quedan en el cajón y se pueden recuperar arrastrándolos.`, "Mandarlos"))) return;
+    const { error: e } = await sb.from("leads").update({ etapa: "sin_respuesta" }).in("id", frios.map((l) => l.id));
+    if (e) setError("No se pudo mover: " + e.message); else void cargar();
   }
 
   function soltar(ev: DragEvent, etapa: EtapaLead) {
@@ -96,11 +110,14 @@ export function Leads() {
 
   const tarjeta = (l: Lead) => {
     const atraso = atrasoLead(l, reuniones[l.reunion_id ?? ""]);
-    const sv = SERVICIOS_LEAD.find((s) => s.id === l.servicio_interes);
+    const frio = esFrio(l);
+    const sv = SERVICIOS_LEAD.find((x) => x.id === l.servicio_interes);
+    const sinWeb = /no tengo/i.test(l.web ?? "");
     return (
       <article
         key={l.id}
-        className={`lead-tarjeta${arrastrando === l.id ? " arrastrando" : ""}${atraso ? " atrasada" : ""}`}
+        className={`lead-tarjeta${arrastrando === l.id ? " arrastrando" : ""}${atraso ? " atrasada" : ""}${frio ? " fria" : ""}`}
+        style={{ ["--av" as string]: colorLead(l.id) }}
         draggable
         onDragStart={(e) => { e.dataTransfer.setData("text/plain", String(l.id)); e.dataTransfer.effectAllowed = "move"; setArrastrando(l.id); }}
         onDragEnd={() => { setArrastrando(null); setSobre(null); }}
@@ -108,17 +125,23 @@ export function Leads() {
         tabIndex={0}
         onKeyDown={(e) => { if (e.key === "Enter") setAbierto(l.id); }}
       >
-        <div className="lead-tarjeta-cab">
-          <b>{l.negocio || l.nombre || "Sin nombre"}</b>
-          {l.requiere_humano && <span className="lead-sello humano" title="Lo atiende una persona">Humano</span>}
+        <div className="lead-top">
+          <span className="lead-av" aria-hidden="true">{inicialesLead(l)}</span>
+          <div className="lead-quien">
+            <b>{nombreLead(l)}</b>
+            <span className="lead-sub">{[l.tipo, l.pais].filter(Boolean).join(" · ") || "—"}</span>
+          </div>
         </div>
-        {l.nombre && l.negocio && <span className="lead-sub">{l.nombre}{l.pais ? ` · ${l.pais}` : ""}</span>}
+        {l.problema && <p className="lead-nota">{l.problema}</p>}
         <div className="lead-meta">
+          {l.requiere_humano && <span className="lead-sello humano" title="Lo atiende una persona">Humano</span>}
           {sv && <span className={`lead-chip ${sv.id}`}>{sv.texto}</span>}
+          {sinWeb && <span className="lead-chip aviso">Sin web</span>}
+          {frio && <span className="lead-chip frio">Frío</span>}
           {l.valor_estimado ? <span className="lead-valor">{dinero(l.valor_estimado)}</span> : null}
         </div>
         <div className="lead-pie">
-          <span title={new Date(l.etapa_en).toLocaleString("es-CL")}>{hace(diasEnEtapa(l))} en esta etapa</span>
+          <span title={new Date(l.etapa_en).toLocaleString("es-CL")}>{hace(diasEnEtapa(l))}</span>
           {atraso && <span className="lead-atraso">{atraso}</span>}
           {l.responsable && <span className="lead-resp">{l.responsable}</span>}
         </div>
@@ -144,7 +167,7 @@ export function Leads() {
         </header>
         {suma > 0 && <div className="lead-suma">{dinero(suma)}</div>}
         <div className="lead-lista">
-          {filas.length === 0 ? <p className="lead-vacio">Nada por aquí.</p> : filas.map(tarjeta)}
+          {filas.length === 0 ? <p className="lead-vacio">Suelta un lead aquí</p> : filas.map(tarjeta)}
         </div>
       </section>
     );
@@ -179,6 +202,13 @@ export function Leads() {
           </div>
         </div>
 
+        {frios.length > 0 && (
+          <div className="lead-frios">
+            <span aria-hidden="true">❄</span>
+            <p><b>{frios.length} leads llevan más de {DIAS_FRIO} días sin avanzar.</b> Ya no cuentan como urgentes. Mándalos a «Sin respuesta» para dejar el tablero limpio.</p>
+            <button className="btn" onClick={enfriar}>Mandarlos</button>
+          </div>
+        )}
         {error && <p className="aviso-error" role="alert">{error}</p>}
         {cargando ? <p className="vacio">Cargando…</p> : vista === "tablero" ? (
           <>
@@ -208,7 +238,7 @@ export function Leads() {
               <tbody>
                 {visibles.map((l) => (
                   <tr key={l.id} onClick={() => setAbierto(l.id)} className="fila-click">
-                    <td><b>{l.negocio || l.nombre || "Sin nombre"}</b>{l.nombre && l.negocio ? <small>{l.nombre}</small> : null}</td>
+                    <td><b>{nombreLead(l)}</b><small>{l.tipo ?? ""}</small></td>
                     <td><span className={`lead-etapa-pil e-${l.etapa}`}>{textoEtapa(l.etapa)}</span></td>
                     <td>{SERVICIOS_LEAD.find((s) => s.id === l.servicio_interes)?.texto ?? "—"}</td>
                     <td>{l.valor_estimado ? dinero(l.valor_estimado) : "—"}</td>
@@ -234,4 +264,23 @@ export function Leads() {
       )}
     </>
   );
+}
+
+/** Un puñado de confeti de la marca al ganar un lead. Solo CSS; se limpia solo. */
+function confeti() {
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const colores = ["#014CFD", "#7A3CFF", "#0A8FE0", "#E5602B", "#147A42", "#C77A00", "#D6336C"];
+  const caja = document.createElement("div");
+  caja.className = "confeti";
+  for (let i = 0; i < 46; i++) {
+    const p = document.createElement("i");
+    p.style.setProperty("--x", `${(Math.random() - 0.5) * 120}vw`);
+    p.style.setProperty("--y", `${-20 - Math.random() * 60}vh`);
+    p.style.setProperty("--r", `${Math.random() * 720 - 360}deg`);
+    p.style.background = colores[i % colores.length];
+    p.style.animationDelay = `${Math.random() * 0.15}s`;
+    caja.appendChild(p);
+  }
+  document.body.appendChild(caja);
+  setTimeout(() => caja.remove(), 2200);
 }

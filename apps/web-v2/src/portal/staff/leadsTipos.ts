@@ -76,6 +76,27 @@ export const SERVICIOS_LEAD = [
 
 export const RESPONSABLES = ["Max", "Ale", "Orkut", "Kalfu", "Alberto"];
 
+/** Cómo se llama un lead en pantalla: el negocio; si no lo dejó, la parte inicial de su correo; si no, su rubro. */
+export function nombreLead(l: Pick<Lead, "negocio" | "nombre" | "email" | "tipo" | "whatsapp">): string {
+  const n = (l.negocio ?? "").trim() || (l.nombre ?? "").trim();
+  if (n) return n;
+  const c = (l.email ?? "").split("@")[0].replace(/[._-]+/g, " ").trim();
+  if (c) return c.charAt(0).toUpperCase() + c.slice(1);
+  return (l.tipo ?? "").trim() || (l.whatsapp ?? "").trim() || "Sin nombre";
+}
+
+export const inicialesLead = (l: Parameters<typeof nombreLead>[0]) => {
+  const p = nombreLead(l).split(/\s+/).filter(Boolean);
+  return ((p[0]?.[0] ?? "?") + (p[1]?.[0] ?? "")).toUpperCase();
+};
+
+const PALETA = ["#014CFD", "#7A3CFF", "#0A8FE0", "#E5602B", "#147A42", "#C77A00", "#D6336C", "#0F766E"];
+export const colorLead = (id: number) => PALETA[Math.abs(id) % PALETA.length];
+
+/** Frío: lleva más de tres semanas en una etapa sin avance. No «pide atención»: se ofrece mandarlo a «Sin respuesta». */
+export const DIAS_FRIO = 21;
+export const esFrio = (l: Lead) => ["nuevo", "contactado", "propuesta"].includes(l.etapa) && diasEnEtapa(l) >= DIAS_FRIO && !l.reunion_id;
+
 export const textoEtapa = (e: string) =>
   [...ETAPAS_TABLERO, ...ETAPAS_CAJON].find((x) => x.id === e)?.texto ?? e;
 
@@ -94,6 +115,7 @@ export const dinero = (n: number) => "$" + Math.round(n).toLocaleString("es-CL")
  */
 export function atrasoLead(l: Lead, reunion?: { fecha_hora: string; asistio: boolean | null }): string | null {
   if (["ganado", "perdido", "sin_respuesta"].includes(l.etapa)) return null;
+  if (esFrio(l)) return null;
   if (l.requiere_humano) return "Lo espera una persona";
   const d = diasEnEtapa(l);
   if (l.etapa === "reunion") {
