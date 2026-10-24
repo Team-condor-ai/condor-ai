@@ -165,3 +165,35 @@ html:has(.portal-app), body:has(.portal-app), #root:has(.portal-app) { backgroun
 .acceso .btn-alterno { border-radius: 999px; }
 .acceso .campo { border-radius: 14px; }
 
+
+/* ── Passwords ────────────────────────────────────────────────────────── */
+.cl-layout { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 22px; align-items: start; }
+.cl-lateral { position: sticky; top: 18px; display: grid; gap: 8px; padding: 12px; border-radius: var(--cp-r-3); background: #F7F8FB; border: 1px solid var(--borde-suave); }
+.cl-carpeta, .cl-carpeta-btn.todas { display: flex; align-items: center; border-radius: var(--cp-r-1); transition: background .15s; }
+.cl-carpeta:hover, .cl-carpeta-btn.todas:hover { background: #fff; }
+.cl-carpeta.on, .cl-carpeta-btn.todas.on { background: #fff; box-shadow: var(--sombra); }
+.cl-carpeta-btn { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; padding: 8px 8px; border: 0; background: none; font: 500 13.5px/1.2 var(--cp-texto); color: var(--texto); cursor: pointer; text-align: left; border-radius: var(--cp-r-1); }
+.cl-carpeta-btn.todas { width: 100%; padding: 9px 10px; }
+.cl-carpeta-btn.on, .cl-carpeta.on .cl-nom { font-weight: 600; color: var(--azul-hondo); }
+.cl-nom { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cl-ico { width: 16px; color: var(--texto-3); display: grid; place-items: center; flex: none; }
+.cl-carpeta-btn small { font: 500 11px/1 var(--cp-mono); color: var(--texto-3); }
+.cl-carpeta-acc { display: none; gap: 2px; padding-right: 4px; } .cl-carpeta:hover .cl-carpeta-acc { display: flex; }
+.cl-carpeta-acc button { width: 22px; height: 22px; border: 0; border-radius: 6px; background: transparent; color: var(--texto-2); cursor: pointer; } .cl-carpeta-acc button:hover { background: var(--hover); color: var(--texto); }
+.cl-nueva-carpeta { justify-self: start; margin-top: 4px; }
+.cl-principal .lead-busca { max-width: none; }
+.cl-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.cl-fila { display: grid; grid-template-columns: auto minmax(0, 1.2fr) minmax(120px, 1fr) 212px; align-items: center; gap: 14px; padding: 12px 16px; border-radius: var(--cp-r-3); background: #fff; border: 1px solid var(--borde); box-shadow: var(--sombra); animation: cp-sube .45s var(--cp-suave) both; transition: transform .25s var(--cp-resorte), box-shadow .2s, border-color .2s; }
+.cl-fila:hover { transform: translateY(-2px); border-color: #D8DBE6; box-shadow: 0 14px 28px -18px rgba(21,22,26,.3); }
+.cl-av { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; color: #fff; font: 600 13px/1 var(--cp-display); box-shadow: 0 6px 12px -6px rgba(21,22,26,.4); transition: transform .3s var(--cp-resorte); }
+.cl-fila:hover .cl-av { transform: scale(1.1) rotate(-5deg); }
+.cl-info { min-width: 0; } .cl-info b { display: block; font: 600 14px/1.3 var(--cp-display); letter-spacing: -.02em; overflow-wrap: anywhere; } .cl-info small { color: var(--texto-3); font-size: 12px; overflow-wrap: anywhere; }
+.cl-valor { position: relative; padding: 7px 12px; border-radius: 10px; background: var(--gris-bg); font: 500 13px/1.2 var(--cp-mono); letter-spacing: .04em; color: var(--texto-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; transition: background .2s; }
+.cl-valor.visible { background: var(--azul-suave); color: var(--texto); letter-spacing: 0; user-select: all; }
+.cl-valor i { position: absolute; left: 0; bottom: 0; height: 2px; background: var(--azul); transition: width 1s linear; }
+.cl-acc { display: flex; justify-content: flex-end; align-items: center; gap: 2px; position: relative; }
+.cl-aviso { position: absolute; right: 0; bottom: calc(100% + 6px); white-space: nowrap; padding: 5px 10px; border-radius: 999px; background: var(--cp-tinta); color: #fff; font-size: 11.5px; font-weight: 500; animation: cp-pop .3s var(--cp-resorte); z-index: 2; }
+.cl-vacio { display: grid; gap: 4px; padding: 44px 20px; text-align: center; border: 1.5px dashed #D9DCE6; border-radius: var(--cp-r-3); color: var(--texto-3); } .cl-vacio b { color: var(--texto); font-family: var(--cp-display); font-size: 1.05rem; }
+.cl-clave-campo { display: flex; gap: 6px; } .cl-clave-campo input { flex: 1; }
+.cl-accesos { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 13px; } .cl-accesos li { display: flex; justify-content: space-between; gap: 10px; } .cl-accesos small { color: var(--texto-3); }
+@media (max-width: 980px) { .cl-layout { grid-template-columns: 1fr; } .cl-lateral { position: static; } .cl-fila { grid-template-columns: auto minmax(0, 1fr) auto; } .cl-valor { display: none; } }

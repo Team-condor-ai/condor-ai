@@ -23,6 +23,7 @@ import { Productos } from "./staff/Productos";
 import { EQUIPO_CONDOR } from "./staff/tipos";
 import { Leads } from "./staff/Leads";
 import { Equipo } from "./staff/Equipo";
+import { Claves } from "./staff/Claves";
 import { Dashboard } from "./staff/Dashboard";
 import { Contabilidad } from "./staff/contabilidad/Contabilidad";
 import { Organizacion } from "./staff/organizacion/Organizacion";
@@ -78,6 +79,7 @@ const MENU_STAFF: Grupo[] = [
     entradas: [
       { a: "/acceso/organizacion/tablero", texto: "Tareas", icono: "tablero" },
       { a: "/acceso/organizacion/calendario", texto: "Calendario", icono: "reuniones" },
+      { a: "/acceso/claves", texto: "Passwords", icono: "candado" },
       { a: "/acceso/biblioteca", texto: "Biblioteca", icono: "biblioteca" },
       { a: "/acceso/equipo", texto: "Personas", icono: "clientes" },
     ] },
@@ -200,6 +202,7 @@ function PortalContenido() {
           <Route path="ratia" element={<Navigate to="/acceso/clientes" replace />} />
           <Route path="biblioteca" element={<Biblioteca />} />
           <Route path="equipo" element={<Equipo />} />
+          <Route path="claves" element={<Claves />} />
           <Route path="*" element={<Navigate to="/acceso/dashboard" replace />} />
         </Routes>
       </Marco>,
