@@ -8,6 +8,8 @@ export type Sesion = {
   email: string | null;
   rol: Rol;
   tieneClave: boolean;
+  /** Entró con la clave inicial: el portal le pide elegir la suya antes de seguir. */
+  debeCambiarClave: boolean;
 };
 
 /**
@@ -30,6 +32,7 @@ export function useSesion(): Sesion {
     email: null,
     rol: "ninguno",
     tieneClave: false,
+    debeCambiarClave: false,
   });
 
   useEffect(() => {
@@ -40,7 +43,7 @@ export function useSesion(): Sesion {
       const user = data.user;
       if (!user) {
         if (vivo)
-          setS({ cargando: false, email: null, rol: "ninguno", tieneClave: false });
+          setS({ cargando: false, email: null, rol: "ninguno", tieneClave: false, debeCambiarClave: false });
         return;
       }
       const { data: admin } = await sb.rpc("es_admin");
@@ -50,6 +53,7 @@ export function useSesion(): Sesion {
         email: user.email ?? null,
         rol: admin ? "staff" : "cliente",
         tieneClave: Boolean(user.user_metadata?.password_set),
+        debeCambiarClave: Boolean(user.user_metadata?.cambiar_clave),
       });
     }
 
@@ -106,7 +110,7 @@ export async function entrarConClave(email: string, clave: string) {
 export async function fijarClave(clave: string) {
   const { error } = await sb.auth.updateUser({
     password: clave,
-    data: { password_set: true },
+    data: { password_set: true, cambiar_clave: false },
   });
   if (error) throw error;
 }

@@ -16,6 +16,8 @@ import "./disenio/leads.css";
 
 import { useSesion, salir } from "./auth/sesion";
 import { Login } from "./auth/Login";
+import { ForzarCambio } from "./auth/ForzarCambio";
+import { CambiarClave } from "./auth/CambiarClave";
 import { Lateral, type Entrada, type Grupo } from "./disenio/Lateral";
 import { Ico } from "./disenio/iconos";
 import { BuscadorGlobal } from "./disenio/BuscadorGlobal";
@@ -84,6 +86,7 @@ const MENU_STAFF: Grupo[] = [
       { a: "/acceso/organizacion/tablero", texto: "Tareas", icono: "tablero" },
       { a: "/acceso/organizacion/calendario", texto: "Calendario", icono: "reuniones" },
       { a: "/acceso/equipo", texto: "Personas", icono: "clientes" },
+      { a: "/acceso/mi-cuenta", texto: "Mi cuenta", icono: "ajustes" },
     ] },
 ];
 
@@ -178,6 +181,8 @@ function PortalContenido() {
 
   if (!s.email) return envolver(<Login />);
 
+  if (s.debeCambiarClave) return envolver(<ForzarCambio email={s.email} />);
+
   const correo = s.email;
   // Nombre, rol y foto reales cuando el correo es de alguien del equipo
   // (2-sept-2026, pedido de Joaquín: "donde sale j.ignaciomunozsilva pon
@@ -209,6 +214,7 @@ function PortalContenido() {
           <Route path="cobros" element={<Navigate to="/acceso/contabilidad?tab=cobros" replace />} />
           <Route path="ratia" element={<Navigate to="/acceso/clientes" replace />} />
           <Route path="equipo" element={<Equipo />} />
+          <Route path="mi-cuenta" element={<><div className="barra"><h1>Mi cuenta</h1></div><div className="cuerpo"><div className="bloque"><CambiarClave /></div></div></>} />
           <Route path="claves" element={<Biblioteca tabInicial="passwords" />} />
           <Route path="biblioteca" element={<Biblioteca />} />
           <Route path="*" element={<Navigate to="/acceso/dashboard" replace />} />

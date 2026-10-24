@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { sb } from "../lib/supabase";
 import { Ico } from "../disenio/iconos";
+import { darAcceso } from "../lib/accesos";
 
 type T = { id: string; titulo: string; estado: string; vence: string | null };
 type K = { id: string; titulo: string; tipo: string };
@@ -15,15 +16,36 @@ export function ExtrasCliente({ id, negocio }: { id: string; negocio: string | n
   const [tareas, setTareas] = useState<T[]>([]);
   const [claves, setClaves] = useState<K[]>([]);
   const [reuniones, setReuniones] = useState<R[]>([]);
+  const [correo, setCorreo] = useState<string | null>(null);
+  const [entrega, setEntrega] = useState<string>("");
+  const [errorAcceso, setErrorAcceso] = useState("");
 
   useEffect(() => {
+    void sb.from("clientes").select("email").eq("id", id).maybeSingle().then(({ data }) => setCorreo(data?.email ?? null));
     void sb.from("tareas").select("id,titulo,estado,vence").eq("cliente_id", id).neq("estado", "hecha").order("vence", { nullsFirst: false }).limit(6).then(({ data }) => setTareas((data ?? []) as T[]));
     void sb.from("claves").select("id,titulo,tipo").eq("cliente_id", id).order("titulo").limit(8).then(({ data }) => setClaves((data ?? []) as K[]));
     if (negocio) void sb.from("reuniones").select("id,titulo,fecha_hora").ilike("cliente", `%${negocio.replace(/[%,]/g, "")}%`).order("fecha_hora", { ascending: false }).limit(4).then(({ data }) => setReuniones((data ?? []) as R[]));
   }, [id, negocio]);
 
+  async function acceso() {
+    if (!correo) return;
+    setErrorAcceso("");
+    try { const r = await darAcceso(correo, "cliente"); setEntrega(r.clave); } catch (e) { setErrorAcceso(e instanceof Error ? e.message : String(e)); }
+  }
+
   return (
     <div className="extras-cliente">
+      <section>
+        <header><h4>Acceso al portal</h4></header>
+        {!correo ? <p>Pon el correo del cliente en su ficha para darle acceso.</p> : (
+          <>
+            <p>{correo}</p>
+            <button className="btn chico" style={{ marginTop: 8 }} onClick={acceso}>Crear o restablecer acceso</button>
+            {entrega && <p className="extras-clave">Clave inicial: <code>{entrega}</code> · entra en condorai.cl/acceso y elige la suya.</p>}
+            {errorAcceso && <p className="aviso-error">{errorAcceso}</p>}
+          </>
+        )}
+      </section>
       <section>
         <header><h4>Tareas abiertas</h4><Link to="/acceso/organizacion/tablero">Tablero</Link></header>
         {tareas.length === 0 ? <p>Sin tareas pendientes.</p> : <ul>{tareas.map((t) => <li key={t.id}><b>{t.titulo}</b><small>{t.vence ? new Date(t.vence + "T12:00:00").toLocaleDateString("es-CL", { day: "numeric", month: "short" }) : "Sin fecha"}</small></li>)}</ul>}

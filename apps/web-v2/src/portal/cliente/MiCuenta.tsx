@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { sb } from "../lib/supabase";
+import { CambiarClave } from "../auth/CambiarClave";
 import type { Cliente } from "../staff/tipos";
 
 /**
@@ -160,6 +161,10 @@ export function MiCuenta() {
           >
             {guardando ? "Guardando…" : "Guardar"}
           </button>
+        </section>
+
+        <section className="bloque" style={{ maxWidth: 460 }}>
+          <CambiarClave />
         </section>
 
         <section className="bloque" style={{ maxWidth: 560 }}>
