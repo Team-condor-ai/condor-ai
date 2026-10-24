@@ -4,7 +4,7 @@ import { sb } from "../lib/supabase";
 import { Ico } from "../disenio/iconos";
 import { FichaLead } from "./FichaLead";
 import { useSesion } from "../auth/sesion";
-import { hoyLocal, useMiApodo } from "./personas";
+import { hoyLocal, useMiNombre } from "./personas";
 import { useConfirmacion } from "../disenio/Confirmacion";
 import {
   type Lead,
@@ -69,7 +69,7 @@ export function Leads() {
   useEffect(() => { void cargar(); }, []);
   useEffect(() => { const id = Number(params.get("lead")); if (id) setAbierto(id); }, [params]);
 
-  const miApodo = useMiApodo(useSesion().email);
+  const miApodo = useMiNombre(useSesion().email);
   const [mios, setMios] = useState(false);
   const hoy = hoyLocal();
   const visibles = useMemo(() => {

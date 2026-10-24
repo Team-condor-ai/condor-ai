@@ -5,7 +5,7 @@ import { Ico } from "../disenio/iconos";
 import { iniciales, tono, useEquipo } from "./personas";
 
 type Fila = {
-  email: string; nombre: string;
+  email: string; nombre: string; apodo: string | null;
   leads_avanzados: number; leads_ganados: number; contactos: number; tareas: number;
   lecciones: number; cursos: number; minutos: number; dias: number; puntos: number;
 };
@@ -105,6 +105,7 @@ export function Ranking() {
                     <span className="rk-medalla">{i + 1}</span>
                     {cara(podio[i], true)}
                     <b>{podio[i].nombre}</b>
+                    {podio[i].apodo && <small className="rk-apodo">@{podio[i].apodo}</small>}
                     {deQuien(podio[i].email).length > 0 && <span className="rk-insignias">{deQuien(podio[i].email).map((x) => <span key={x.clave} title={`${x.titulo} · ${x.detalle}`}>{icono(x.clave)}</span>)}</span>}
                     <span className="rk-pts">{podio[i].puntos.toLocaleString("es-CL")} pts</span>
                     <span className="rk-pedestal" />
@@ -132,7 +133,7 @@ export function Ranking() {
                   {filas.map((f, i) => (
                     <tr key={f.email} className={f.email === yo ? "rk-yo" : ""}>
                       <td className="rk-n">{i + 1}</td>
-                      <td><span className="rk-persona">{cara(f)}<b>{f.nombre}</b>{f.email === yo && <em>tú</em>}
+                      <td><span className="rk-persona">{cara(f)}<span className="rk-nombre"><b>{f.nombre}</b>{f.apodo && <small>@{f.apodo}</small>}</span>{f.email === yo && <em>tú</em>}
                         {deQuien(f.email).length > 0 && <span className="rk-insignias">{deQuien(f.email).map((i) => <span key={i.clave} title={`${i.titulo} · ${i.detalle}`}>{icono(i.clave)}</span>)}</span>}</span></td>
                       <td className="num"><span className="rk-barra"><i style={{ width: `${(f.puntos / max) * 100}%` }} /></span><b>{f.puntos.toLocaleString("es-CL")}</b></td>
                       <td className="num">{f.leads_avanzados || "—"}</td>

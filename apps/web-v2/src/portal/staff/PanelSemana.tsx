@@ -98,7 +98,7 @@ export function ResumenSemana() {
       sb.from("leads").select("valor_estimado").eq("etapa", "ganado").gte("etapa_en", desde),
       sb.from("cobros").select("monto,moneda").eq("estado", "pendiente").lt("proximo_cobro", hoy),
       sb.from("tareas").select("id", { count: "exact", head: true }).neq("estado", "hecha").lt("vence", hoy),
-      sb.from("solicitudes").select("id", { count: "exact", head: true }).neq("estado", "lista"),
+      sb.from("chat_mensajes").select("id", { count: "exact", head: true }).in("pedido_estado", ["nueva", "en_curso"]),
       sb.from("curso_progreso").select("leccion_id", { count: "exact", head: true }).gte("hecha_en", desde),
     ]).then(([r, nu, ga, co, ta, so, le]) => {
       const vencidos = (co.data ?? []) as { monto: number; moneda: string }[];
@@ -128,7 +128,7 @@ export function ResumenSemana() {
           <Link to="/acceso/leads"><b>{s.ganados}</b><span>ganados{s.valorGanado ? ` · ${dinero(s.valorGanado)}` : ""}</span></Link>
           <Link to="/acceso/contabilidad?tab=cobros" className={s.vencidos.n ? "mal" : ""}><b>{s.vencidos.n}</b><span>cobros vencidos{s.vencidos.monto ? ` · ${dinero(s.vencidos.monto)}` : ""}</span></Link>
           <Link to="/acceso/organizacion/tablero" className={s.tareasAtrasadas ? "mal" : ""}><b>{s.tareasAtrasadas}</b><span>tareas atrasadas</span></Link>
-          <Link to="/acceso/solicitudes" className={s.solicitudes ? "ojo" : ""}><b>{s.solicitudes}</b><span>pedidos de clientes abiertos</span></Link>
+          <Link to="/acceso/chat" className={s.solicitudes ? "ojo" : ""}><b>{s.solicitudes}</b><span>pedidos de clientes abiertos</span></Link>
           <Link to="/acceso/biblioteca"><b>{s.lecciones}</b><span>lecciones vistas</span></Link>
         </div>
       </div>

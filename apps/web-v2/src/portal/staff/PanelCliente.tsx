@@ -2,7 +2,9 @@ import { useRef, useState } from "react";
 import { PanelLateral } from "../disenio/PanelLateral";
 import { ContenidoCliente } from "./FichaCliente";
 import { ExtrasCliente } from "./ExtrasCliente";
-import { TableroSolicitudes } from "./Solicitudes";
+import { Conversacion } from "../chat/Conversacion";
+import { useSesion } from "../auth/sesion";
+import { useEquipo, useYo } from "./personas";
 import type { Cliente } from "./tipos";
 
 /**
@@ -20,11 +22,11 @@ import type { Cliente } from "./tipos";
  * obligan a mantener las dos, y a la larga una queda atrás.
  */
 /** Pestañas de la ficha (24-oct-2026): antes era todo apilado y había que bajar harto para llegar a los cobros. */
-type Pestana = "resumen" | "cobros" | "solicitudes" | "tareas" | "boveda" | "reuniones";
+type Pestana = "resumen" | "cobros" | "chat" | "tareas" | "boveda" | "reuniones";
 const PESTANAS: { id: Pestana; texto: string }[] = [
   { id: "resumen", texto: "Resumen" },
   { id: "cobros", texto: "Cobros" },
-  { id: "solicitudes", texto: "Solicitudes" },
+  { id: "chat", texto: "Chat" },
   { id: "tareas", texto: "Tareas" },
   { id: "boveda", texto: "Bóveda" },
   { id: "reuniones", texto: "Reuniones" },
@@ -41,6 +43,9 @@ export function PanelCliente({
 }) {
   const [c, setC] = useState<Cliente | null>(null);
   const [pestana, setPestana] = useState<Pestana>("resumen");
+  const email = useSesion().email;
+  const apodo = useYo(email)?.completo ?? (email ?? "").split("@")[0];
+  const equipo = useEquipo().map((p) => p.nombre);
   const primeraCarga = useRef(true);
   const nombre = c ? c.negocio || c.nombre || c.email || "Sin nombre" : "Cargando…";
 
@@ -63,7 +68,7 @@ export function PanelCliente({
       </div>
       <ContenidoCliente id={id} alCargar={recibir} vista={pestana === "resumen" ? "datos" : pestana === "cobros" ? "cobros" : "nada"} />
       {pestana === "resumen" && <ExtrasCliente id={id} negocio={c?.negocio ?? null} vista="acceso" />}
-      {pestana === "solicitudes" && <TableroSolicitudes clienteId={id} compacto />}
+      {pestana === "chat" && <div className="ficha-chat"><Conversacion clienteId={id} soyEquipo yo={email} nombreYo={apodo} equipo={equipo} titulo={nombre} subtitulo={c?.email ?? "Sin correo: no puede entrar al portal"} /></div>}
       {(pestana === "tareas" || pestana === "boveda" || pestana === "reuniones") && <ExtrasCliente id={id} negocio={c?.negocio ?? null} vista={pestana} />}
     </PanelLateral>
   );

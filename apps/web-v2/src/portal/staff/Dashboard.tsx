@@ -1,5 +1,5 @@
 import { ResumenSemana, SeguimientoHoy } from "./PanelSemana";
-import { useMiApodo } from "./personas";
+import { useMiNombre } from "./personas";
 import { useSesion } from "../auth/sesion";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
@@ -12,7 +12,7 @@ type ReunionP = { id: string; titulo: string; fecha_hora: string; cliente: strin
 type CobroP = { id: string; titulo: string; monto: number; moneda: string; estado: string; tipo: string; proximo_cobro: string | null; cliente_id: string };
 type TareaP = { id: string; titulo: string; estado: string; prioridad: string | null; vence: string | null };
 type ClienteP = { id: string; negocio: string | null; nombre: string | null; telefono: string | null };
-type SolicitudP = { id: string; cliente_id: string; titulo: string; estado: string; creado_en: string };
+type ChatP = { cliente_id: string; negocio: string | null; nombre: string | null; ultimo_texto: string | null; ultimo_de_equipo: boolean | null; ultimo_en: string | null; sin_leer: number; pedidos_abiertos: number };
 type ActividadP = { id: string; creado_en: string; quien: string; accion: string; modulo: string };
 
 const cuando = (iso: string) =>
@@ -26,13 +26,13 @@ const cuando = (iso: string) =>
 export function Dashboard() {
   const nombre = useNombreUsuario();
   const email = useSesion().email;
-  const miApodo = useMiApodo(email);
+  const miApodo = useMiNombre(email);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [reuniones, setReuniones] = useState<ReunionP[]>([]);
   const [cobros, setCobros] = useState<CobroP[]>([]);
   const [tareas, setTareas] = useState<TareaP[]>([]);
   const [clientes, setClientes] = useState<ClienteP[]>([]);
-  const [solicitudes, setSolicitudes] = useState<SolicitudP[]>([]);
+  const [chats, setChats] = useState<ChatP[]>([]);
   const [actividad, setActividad] = useState<ActividadP[]>([]);
   const [cargando, setCargando] = useState(true);
 
@@ -44,7 +44,7 @@ export function Dashboard() {
       sb.from("cobros").select("id,titulo,monto,moneda,estado,tipo,proximo_cobro,cliente_id").eq("estado", "pendiente").limit(100),
       sb.from("tareas").select("id,titulo,estado,prioridad,vence").neq("estado", "hecha").order("vence", { ascending: true, nullsFirst: false }).limit(40),
       sb.from("clientes").select("id,negocio,nombre,telefono").eq("archivado", false),
-      sb.from("solicitudes").select("id,cliente_id,titulo,estado,creado_en").neq("estado", "lista").order("creado_en", { ascending: false }).limit(8),
+      sb.rpc("chat_bandeja"),
       sb.from("actividad_reciente").select("*").order("creado_en", { ascending: false }).limit(8),
     ]).then(([l, r, c, t, cl, so, ac]) => {
       setLeads((l.data ?? []) as Lead[]);
@@ -52,17 +52,12 @@ export function Dashboard() {
       setCobros((c.data ?? []) as CobroP[]);
       setTareas((t.data ?? []) as TareaP[]);
       setClientes((cl.data ?? []) as ClienteP[]);
-      setSolicitudes((so.data ?? []) as SolicitudP[]);
+      setChats(((so.data ?? []) as ChatP[]).filter((x) => x.sin_leer > 0 || x.pedidos_abiertos > 0));
       setActividad((ac.data ?? []) as ActividadP[]);
       setCargando(false);
     });
   }, []);
 
-  async function avanzarSolicitud(x: SolicitudP) {
-    const siguiente = x.estado === "nueva" ? "en_curso" : "lista";
-    const { error } = await sb.from("solicitudes").update({ estado: siguiente, actualizado_en: new Date().toISOString() }).eq("id", x.id);
-    if (!error) setSolicitudes((l) => (siguiente === "lista" ? l.filter((y) => y.id !== x.id) : l.map((y) => (y.id === x.id ? { ...y, estado: siguiente } : y))));
-  }
 
   const hoy = new Date();
   const saludo = hoy.getHours() < 12 ? "Buenos días" : hoy.getHours() < 20 ? "Buenas tardes" : "Buenas noches";
@@ -91,7 +86,7 @@ export function Dashboard() {
       <div className="barra">
         <div>
           <p className="rotulo-mini">{fecha.charAt(0).toUpperCase() + fecha.slice(1)}</p>
-          <h1>{nombre ? `${saludo}, ${nombre}` : saludo}</h1>
+          <h1>{nombre ? `${saludo}, ${nombre.split(" ")[0]}` : saludo}</h1>
         </div>
       </div>
 
@@ -156,11 +151,11 @@ export function Dashboard() {
           </section>
 
           <section className="dash-card">
-            <header><h2>Pedidos de clientes</h2><Link to="/acceso/solicitudes">Solicitudes {Ico.galon({ t: 12 })}</Link></header>
-            {solicitudes.length === 0 ? <p className="dash-vacio">Ningún cliente ha pedido cambios.</p> : (
+            <header><h2>Mensajes de clientes</h2><Link to="/acceso/chat">Chat {Ico.galon({ t: 12 })}</Link></header>
+            {chats.length === 0 ? <p className="dash-vacio">Ningún cliente espera respuesta.</p> : (
               <ul className="dash-lista">
-                {solicitudes.slice(0, 6).map((x) => (
-                  <li key={x.id}><Link to={`/acceso/clientes?ver=${x.cliente_id}`}><div><b>{x.titulo}</b><small>{nombreCliente(x.cliente_id)} · {hace(Math.floor((Date.now() - new Date(x.creado_en).getTime()) / 86400000))}</small></div><span className={`dash-sello${x.estado === "en_curso" ? " azul" : ""}`}>{x.estado === "nueva" ? "Nueva" : "En curso"}</span></Link><button className="btn chico" onClick={() => avanzarSolicitud(x)} title={x.estado === "nueva" ? "Marcar en curso" : "Marcar como lista"}>{x.estado === "nueva" ? "Empezar" : "Lista"}</button></li>
+                {chats.slice(0, 6).map((x) => (
+                  <li key={x.cliente_id}><Link to={`/acceso/chat?c=${x.cliente_id}`}><div><b>{x.negocio || x.nombre || "Cliente"}</b><small>{x.ultimo_de_equipo ? "Tú: " : ""}{x.ultimo_texto ?? ""}</small></div>{x.sin_leer > 0 ? <span className="dash-sello">{x.sin_leer} sin leer</span> : <span className="dash-sello azul">{x.pedidos_abiertos} pedido{x.pedidos_abiertos === 1 ? "" : "s"}</span>}</Link></li>
                 ))}
               </ul>
             )}

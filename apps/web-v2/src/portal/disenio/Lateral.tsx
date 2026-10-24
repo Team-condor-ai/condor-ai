@@ -8,6 +8,8 @@ export type Entrada = {
   icono: NombreIcono;
   /** Ícono de marca (Sites, Ecommerce, CRM): se dibuja esta imagen en vez de `Ico[icono]`. */
   imagen?: string;
+  /** Número a la derecha (p. ej. mensajes sin leer). */
+  insignia?: number;
 };
 
 /** Una categoría del menú: su nombre y las páginas que agrupa. */
@@ -78,6 +80,7 @@ export function Lateral({ grupos, nombre, detalle, foto, cuenta, onSalir, buscad
                       <NavLink key={e.a} to={e.a} onClick={cerrar} className={({ isActive }) => "nav-item" + (isActive ? " on" : "")}>
                         {e.imagen ? <img src={e.imagen} alt="" width={18} height={18} /> : Ico[e.icono]()}
                         <span>{e.texto}</span>
+                        {e.insignia ? <em className="nav-insignia">{e.insignia > 99 ? "99+" : e.insignia}</em> : null}
                       </NavLink>
                     ))}
                   </div>

@@ -38,3 +38,5 @@
 @media (max-width: 640px) { .rk-podio { grid-template-columns: repeat(3, 1fr); gap: 8px; } .rk-cara.grande { width: 52px; height: 52px; } .l1 .rk-cara.grande { width: 62px; height: 62px; } }
 .rk-tabla th { padding-left: 10px; padding-right: 10px; } .rk-tabla td { padding-left: 10px; padding-right: 10px; }
 .rk-tabla .rk-barra { width: 56px; }
+.rk-apodo { margin-top: -4px; font: 500 12px/1 var(--cp-mono); color: var(--azul); }
+.rk-nombre { display: grid; gap: 1px; } .rk-nombre small { font: 500 11.5px/1 var(--cp-mono); color: var(--texto-3); }

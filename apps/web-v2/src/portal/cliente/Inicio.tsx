@@ -6,7 +6,7 @@ import { Ico } from "../disenio/iconos";
 type Cliente = { id: string; negocio: string | null; nombre: string | null; plan: string | null; web_url: string | null; linea: string | null; moneda: string | null };
 type Cobro = { id: string; titulo: string; tipo: string; monto: number; moneda: string; estado: string; proximo_cobro: string | null };
 type Pago = { monto: number; estado: string; fecha: string | null; creado_en: string };
-type Sol = { estado: string; creado_en: string; lista_en: string | null };
+type Sol = { pedido_estado: string | null; de_equipo: boolean; leido_en: string | null; creado_en: string };
 type Web = { estado: "probando" | "ok" | "caida"; ms?: number };
 
 const LINEA: Record<string, string> = { sites: "Cóndor Sites", ecommerce: "Cóndor Ecommerce", crm: "Cóndor CRM" };
@@ -44,7 +44,7 @@ export function Inicio() {
       const [co, pa, so, le, pr] = await Promise.all([
         sb.from("cobros").select("id,titulo,tipo,monto,moneda,estado,proximo_cobro").order("numero"),
         sb.from("pagos").select("monto,estado,fecha,creado_en").order("creado_en", { ascending: false }),
-        sb.from("solicitudes").select("estado,creado_en,lista_en").eq("cliente_id", data.id),
+        sb.from("chat_mensajes").select("pedido_estado,de_equipo,leido_en,creado_en").eq("cliente_id", data.id),
         sb.from("lecciones").select("id", { count: "exact", head: true }),
         sb.from("curso_progreso").select("leccion_id", { count: "exact", head: true }),
       ]);
@@ -63,11 +63,9 @@ export function Inicio() {
   const mensual = cobros.find((x) => x.tipo === "mensual" && ["activa", "pendiente"].includes(x.estado));
   const anio = new Date().getFullYear();
   const pagadoAnio = pagos.filter((p) => p.estado === "pagado" && (p.fecha ?? p.creado_en).startsWith(String(anio))).reduce((a, p) => a + p.monto, 0);
-  const abiertas = sols.filter((s) => s.estado !== "lista").length;
-  const listas = sols.filter((s) => s.estado === "lista");
-  const conFecha = listas.filter((s) => s.lista_en);
-  const horasProm = conFecha.length ? conFecha.reduce((a, s) => a + (Date.parse(s.lista_en!) - Date.parse(s.creado_en)), 0) / conFecha.length / 3600000 : null;
-  const tiempo = horasProm === null ? null : horasProm < 24 ? `${Math.max(1, Math.round(horasProm))} h` : `${Math.round(horasProm / 24)} días`;
+  const abiertas = sols.filter((s) => s.pedido_estado === "nueva" || s.pedido_estado === "en_curso").length;
+  const listas = sols.filter((s) => s.pedido_estado === "lista");
+  const sinLeer = sols.filter((s) => s.de_equipo && !s.leido_en).length;
   const pctCursos = cursos.total ? Math.round((cursos.vistas / cursos.total) * 100) : 0;
   const nombre = c.nombre?.split(" ")[0] || c.negocio || "";
 
@@ -91,7 +89,7 @@ export function Inicio() {
             <small>{mensual?.proximo_cobro ? `el ${new Date(mensual.proximo_cobro + "T12:00:00").toLocaleDateString("es-CL", { day: "numeric", month: "long" })}` : pendientes.length ? "pendiente" : "nada pendiente"}</small>
           </Link>
           <Link to="/acceso/boletas"><span>Pagado en {anio}</span><b>{plata(pagadoAnio, c.moneda ?? "CLP")}</b><small>{(() => { const n = pagos.filter((p) => p.estado === "pagado").length; return `${n} pago${n === 1 ? "" : "s"} registrado${n === 1 ? "" : "s"}`; })()}</small></Link>
-          <Link to="/acceso/solicitudes"><span>Tus pedidos</span><b>{abiertas ? `${abiertas} en curso` : `${listas.length} listos`}</b><small>{tiempo ? `Los resolvemos en ${tiempo} en promedio` : "Pídenos un cambio cuando quieras"}</small></Link>
+          <Link to="/acceso/chat" className={sinLeer ? "ojo" : ""}><span>Chat con Cóndor</span><b>{sinLeer ? `${sinLeer} sin leer` : abiertas ? `${abiertas} pedido${abiertas === 1 ? "" : "s"} en curso` : `${listas.length} pedido${listas.length === 1 ? "" : "s"} listo${listas.length === 1 ? "" : "s"}`}</b><small>{sinLeer ? "Tienes respuesta nuestra" : "Escríbenos cuando quieras"}</small></Link>
           <Link to="/acceso/cursos"><span>Tus cursos</span><b>{cursos.total ? `${pctCursos}%` : "—"}</b><small>{cursos.total ? `${cursos.vistas} de ${cursos.total} lecciones vistas` : "Pronto tendrás cursos acá"}</small></Link>
         </div>
 
@@ -116,8 +114,8 @@ export function Inicio() {
 
           <section className="bloque">
             <h3>¿Necesitas algo?</h3>
-            <p className="vacio-linea" style={{ marginBottom: 12 }}>Cambios de textos, fotos, horarios o lo que necesites: pídelo y lo ves avanzar acá mismo.</p>
-            <Link className="btn solido" to="/acceso/solicitudes">{Ico.editar({ t: 15 })} Pedir un cambio</Link>
+            <p className="vacio-linea" style={{ marginBottom: 12 }}>Cambios de textos, fotos, horarios, dudas o ideas: escríbenos por el chat y te respondemos acá mismo.</p>
+            <Link className="btn solido" to="/acceso/chat">{Ico.chat({ t: 15 })} Escribirle a Cóndor</Link>
           </section>
         </div>
       </div>

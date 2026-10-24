@@ -74,7 +74,6 @@ export const SERVICIOS_LEAD = [
   { id: "crm", texto: "CRM" },
 ] as const;
 
-export const RESPONSABLES = ["Max", "Ale", "Orkut", "Kalfu", "Alberto"];
 
 /** Cómo se llama un lead en pantalla: el negocio; si no lo dejó, la parte inicial de su correo; si no, su rubro. */
 export function nombreLead(l: Pick<Lead, "negocio" | "nombre" | "email" | "tipo" | "whatsapp">): string {

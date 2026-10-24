@@ -1,4 +1,4 @@
-import { Suspense, lazy, useState } from "react";
+import { Suspense, lazy, useEffect, useMemo, useState } from "react";
 import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 
 // El CSS del ERP de Planeta, copiado sin tocar. Se importa SOLO acá y no en
@@ -18,12 +18,17 @@ import "./disenio/boveda.css";
 import "./disenio/cursos.css";
 import "./disenio/ranking.css";
 import "./disenio/mejoras.css";
+import "./disenio/chat.css";
 
 import { useSesion, salir, SesionProvider } from "./auth/sesion";
 import { Login } from "./auth/Login";
 import { Inicio } from "./cliente/Inicio";
 import { Ranking } from "./staff/Ranking";
-import { PaginaSolicitudes } from "./staff/Solicitudes";
+import { MiPerfil } from "./staff/MiPerfil";
+import { useYo } from "./staff/personas";
+import { Bandeja } from "./chat/Bandeja";
+import { ChatCliente } from "./chat/ChatCliente";
+import { useNoLeidos } from "./chat/datos";
 import { ForzarCambio } from "./auth/ForzarCambio";
 import { CambiarClave } from "./auth/CambiarClave";
 import { Lateral, type Entrada, type Grupo } from "./disenio/Lateral";
@@ -44,7 +49,6 @@ import { MiPlan } from "./cliente/MiPlan";
 import { ResultadoPago } from "./cliente/ResultadoPago";
 
 import { MiCuenta } from "./cliente/MiCuenta";
-import { Solicitudes } from "./cliente/Solicitudes";
 
 // EL MOTOR DE PDF VA APARTE, Y NO ES UN DETALLE
 // @react-pdf/renderer pesa ~1,1 MB. Importado de frente, el portal entero
@@ -87,7 +91,7 @@ const MENU_STAFF: Grupo[] = [
       { a: "/acceso/productos/sites", texto: "Sites", icono: "sitesProducto", imagen: "/condor/marca/producto-sites-chico.svg" },
       { a: "/acceso/productos/ecommerce", texto: "Ecommerce", icono: "ecommerceProducto", imagen: "/condor/marca/producto-ecommerce-chico.svg" },
       { a: "/acceso/productos/crm", texto: "CRM", icono: "trackProducto", imagen: "/condor/marca/producto-crm-chico.svg" },
-      { a: "/acceso/solicitudes", texto: "Solicitudes", icono: "editar" },
+      { a: "/acceso/chat", texto: "Chat", icono: "chat" },
     ] },
   { titulo: "Recursos", clave: "biblioteca", icono: "biblioteca",
     entradas: [{ a: "/acceso/biblioteca", texto: "Biblioteca", icono: "biblioteca" }] },
@@ -105,7 +109,7 @@ const MENU_STAFF: Grupo[] = [
 const MENU_CLIENTE_BASE: Entrada[] = [
   { a: "/acceso/inicio", texto: "Inicio", icono: "panel" },
   { a: "/acceso/plan", texto: "Mi plan", icono: "plan" },
-  { a: "/acceso/solicitudes", texto: "Pedir un cambio", icono: "editar" },
+  { a: "/acceso/chat", texto: "Chat con Cóndor", icono: "chat" },
   { a: "/acceso/cursos", texto: "Cursos", icono: "biblioteca" },
   { a: "/acceso/boletas", texto: "Comprobantes", icono: "boletas" },
 ];
@@ -118,9 +122,12 @@ function Marco({
   detalle,
   foto,
   buscador,
+  correo,
   children,
 }: {
   buscador?: boolean;
+  /** Del equipo: para mostrar su nombre completo y su apodo (de `admins`) en la tarjeta del menú. */
+  correo?: string;
   menu: Grupo[];
   nombre: string;
   detalle: string;
@@ -129,14 +136,22 @@ function Marco({
 }) {
   const [abierto, setAbierto] = useState(false);
   const navega = useNavigate();
+  const yo = useYo(correo ?? null);
+  // Mensajes sin leer: número en «Chat» del menú y en el título de la pestaña del navegador.
+  const noLeidos = useNoLeidos(!!buscador);
+  useEffect(() => {
+    const base = document.title.replace(/^\(\d+\+?\) /, "");
+    document.title = noLeidos ? `(${noLeidos}) ${base}` : base;
+  }, [noLeidos]);
+  const menuConInsignias = useMemo(() => menu.map((g) => ({ ...g, entradas: g.entradas.map((e) => (e.a === "/acceso/chat" ? { ...e, insignia: noLeidos } : e)) })), [menu, noLeidos]);
 
   return (
     <div className="app">
       <Lateral
         buscador={buscador}
-        grupos={menu}
-        nombre={nombre}
-        detalle={detalle}
+        grupos={menuConInsignias}
+        nombre={yo?.completo ?? nombre}
+        detalle={yo?.apodo ? `@${yo.apodo} · ${detalle}` : detalle}
         foto={foto}
         cuenta={buscador ? "/acceso/mi-cuenta" : "/acceso/cuenta"}
         abierto={abierto}
@@ -209,11 +224,12 @@ function PortalContenido() {
 
   if (s.rol === "staff")
     return envolver(
-      <Marco buscador menu={MENU_STAFF} nombre={nombre} detalle={miembro?.rol ?? "Equipo Cóndor"} foto={miembro?.foto}>
+      <Marco buscador correo={correo} menu={MENU_STAFF} nombre={nombre} detalle={miembro?.rol ?? "Equipo Cóndor"} foto={miembro?.foto}>
         <Routes>
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="ranking" element={<Ranking />} />
-          <Route path="solicitudes" element={<PaginaSolicitudes />} />
+          <Route path="chat" element={<Bandeja />} />
+          <Route path="solicitudes" element={<Navigate to="/acceso/chat" replace />} />
           {/* "clientes" (sin línea) sigue viva por los links viejos que
               traen `?ver=<id>` desde Cobros/Panel/Mapa -- Productos lee ese
               query param sin importar qué línea muestre. */}
@@ -230,7 +246,7 @@ function PortalContenido() {
           <Route path="cobros" element={<Navigate to="/acceso/contabilidad?tab=cobros" replace />} />
           <Route path="ratia" element={<Navigate to="/acceso/clientes" replace />} />
           <Route path="equipo" element={<Equipo />} />
-          <Route path="mi-cuenta" element={<><div className="barra"><h1>Mi cuenta</h1></div><div className="cuerpo"><div className="bloque"><CambiarClave /></div></div></>} />
+          <Route path="mi-cuenta" element={<><div className="barra"><h1>Mi cuenta</h1></div><div className="cuerpo"><MiPerfil /><div className="bloque"><CambiarClave /></div></div></>} />
           <Route path="claves" element={<Biblioteca tabInicial="passwords" />} />
           <Route path="biblioteca" element={<Biblioteca />} />
           <Route path="*" element={<Navigate to="/acceso/dashboard" replace />} />
@@ -255,7 +271,8 @@ function PortalContenido() {
         <Route path="plan" element={<MiPlan />} />
         <Route path="pago/resultado" element={<ResultadoPago />} />
         <Route path="boletas" element={dif(<MisBoletas />)} />
-        <Route path="solicitudes" element={<Solicitudes />} />
+        <Route path="chat" element={<ChatCliente />} />
+        <Route path="solicitudes" element={<Navigate to="/acceso/chat" replace />} />
         <Route path="cursos" element={<><div className="barra"><h1>Cursos</h1></div><div className="cuerpo"><Cursos editable={false} /></div></>} />
         <Route path="cuenta" element={<MiCuenta />} />
         <Route path="*" element={<Navigate to="/acceso/inicio" replace />} />

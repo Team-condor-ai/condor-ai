@@ -1,3 +1,4 @@
+import { useEquipo } from "./personas";
 import { useEffect, useState } from "react";
 import { sb } from "../lib/supabase";
 import { useSesion } from "../auth/sesion";
@@ -10,7 +11,6 @@ import {
   ETAPAS_TABLERO,
   ETAPAS_CAJON,
   SERVICIOS_LEAD,
-  RESPONSABLES,
   textoEtapa,
   nombreLead,
   diasEnEtapa,
@@ -29,6 +29,7 @@ const soloDigitos = (s: string | null) => (s ?? "").replace(/\D/g, "");
  */
 export function FichaLead({ lead, reunion, onCerrar, onCambio }: { lead: Lead | null; reunion: Reunion; onCerrar: () => void; onCambio: () => Promise<void> | void }) {
   const sesion = useSesion();
+  const equipo = useEquipo();
   const [d, setD] = useState<Partial<Lead>>(lead ?? { etapa: "nuevo", requiere_humano: false });
   const [eventos, setEventos] = useState<EventoLead[]>([]);
   const [nota, setNota] = useState("");
@@ -140,7 +141,7 @@ export function FichaLead({ lead, reunion, onCerrar, onCambio }: { lead: Lead | 
               <label>Valor estimado (CLP)<input inputMode="numeric" value={d.valor_estimado ?? ""} onChange={(e) => poner("valor_estimado", (e.target.value.replace(/\D/g, "") ? Number(e.target.value.replace(/\D/g, "")) : null) as Lead["valor_estimado"])} placeholder="0" /></label>
               <label>Responsable
                 <select value={d.responsable ?? ""} onChange={(e) => poner("responsable", e.target.value || null)}>
-                  <option value="">Sin asignar</option>{RESPONSABLES.map((r) => <option key={r}>{r}</option>)}
+                  <option value="">Sin asignar</option>{equipo.map((p) => <option key={p.email} value={p.nombre}>{p.completo}</option>)}{d.responsable && !equipo.some((p) => p.nombre === d.responsable) && <option>{d.responsable}</option>}
                 </select>
               </label>
               <label>Próxima acción<input value={d.proxima_accion ?? ""} onChange={(e) => poner("proxima_accion", e.target.value)} placeholder="Ej.: enviar cotización" /></label>
