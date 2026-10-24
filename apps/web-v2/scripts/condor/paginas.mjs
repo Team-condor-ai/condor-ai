@@ -25,36 +25,23 @@ function tarjetaServicio(s, i) {
 
 export function inicio() {
   const cuerpo = `
-<section class="hero">
+<section class="hero foto">
+  <picture class="hero-fondo" aria-hidden="true"><source media="(max-width: 760px)" srcset="/assets/hero/hero-office-mobile.webp"><img src="/assets/hero/hero-office-panorama.webp" alt="" width="1920" height="900" fetchpriority="high"></picture>
   <div class="wrap">
-    <div class="hero-grid">
-      <div>
-        <p class="rotulo" style="margin-bottom:22px">Cóndor AI · Chile · Perú · Colombia</p>
-        <h1>Te escribieron.<span class="azul">¿Quién respondió?</span></h1>
-        <p class="bajada">Hacemos tu web, tu tienda online y el sistema que atiende, agenda y da seguimiento a cada cliente que llega. Para que ninguno se enfríe.</p>
-        <div class="hero-acciones">
-          <a class="btn" href="/agendar/">Agendar una reunión ${flecha}</a>
-          <a class="btn suave" href="#como">Ver cómo trabajamos</a>
-        </div>
-        <p class="hero-nota">Primera reunión de treinta minutos, sin compromiso.</p>
+    <div class="hero-texto">
+      <p class="rotulo" style="margin-bottom:22px">Cóndor AI · Chile · Perú · Colombia · México · Argentina</p>
+      <h1>Te escribieron.<span class="azul">¿Quién respondió?</span></h1>
+      <p class="bajada">Hacemos tu web, tu tienda online y el sistema que atiende, agenda y da seguimiento a cada cliente que llega. Para que ninguno se enfríe.</p>
+      <div class="hero-acciones">
+        <a class="btn blanco" href="/agendar/">Agendar una reunión ${flecha}</a>
+        <a class="btn suave" href="#como">Ver cómo trabajamos</a>
       </div>
-      <div class="escena" aria-hidden="true">
-        <div class="ico i1"><img src="/condor/marca/producto-crm.svg" alt=""></div>
-        <div class="ico i2"><img src="/condor/marca/producto-ecommerce.svg" alt=""></div>
-        <div class="ico i3"><img src="/condor/marca/producto-sites.svg" alt=""></div>
-        <div class="chat acrilico denso grano">
-          <div class="chat-cab"><span class="av"><img src="/condor/marca/condor-isotipo-blanco.svg" alt=""></span><span><b>Tu negocio</b><small>● En línea ahora</small></span></div>
-          <div class="burbuja entra">Hola, ¿tienen hora para esta semana?<small>10:42 p. m.</small></div>
-          <div class="burbuja sale">¡Hola! Sí. ¿Te acomoda el jueves a las 10:30?<small>10:42 p. m.</small></div>
-          <div class="agendada">${check}<span>Reunión agendada · jueves 10:30</span></div>
-        </div>
-        <span class="escena-nota">Ilustración</span>
-      </div>
+      <p class="hero-nota">Primera reunión de treinta minutos, sin compromiso.</p>
     </div>
     <div class="cifras">
-      <div class="cifra revelar"><b>+2 años</b><span>de recorrido construyendo para negocios de la región</span></div>
-      <div class="cifra revelar" style="--d:.08s"><b>+50 millones</b><span>generados a nuestros clientes</span></div>
-      <div class="cifra revelar" style="--d:.16s"><b>+15 personas</b><span>en el equipo detrás de cada proyecto</span></div>
+      <div class="cifra"><b>+2 años</b><span>de recorrido construyendo para negocios de la región</span></div>
+      <div class="cifra"><b>+50 millones</b><span>generados a nuestros clientes</span></div>
+      <div class="cifra"><b>+15 personas</b><span>en el equipo detrás de cada proyecto</span></div>
     </div>
   </div>
 </section>
@@ -83,14 +70,14 @@ ${franjaMarcas()}
 
 <section class="seccion" id="trabajos">
   <div class="wrap">
-    ${cabSeccion({ rotulo: "Trabajos", titulo: "Sitios reales, en línea hoy.", bajada: "Esto es trabajo entregado. Puedes entrar y probarlo tú mismo." })}
-    <div class="trabajos">${TRABAJOS.map((t, i) => `<a class="trabajo revelar" style="--d:${(i % 2) * 0.08}s" href="${t.url}" target="_blank" rel="noopener">
-      <div class="captura"><img src="${t.img}" alt="Sitio de ${esc(t.marca)}" width="1280" height="800" loading="lazy"><span class="ver acrilico denso">Ver sitio ↗</span></div>
-      <div class="trabajo-txt"><span class="rotulo">${esc(t.tipo)}</span><h3>${esc(t.marca)}</h3><p>${t.texto}</p></div></a>`).join("")}</div>
+    ${cabSeccion({ rotulo: "Trabajos", titulo: "Sitios reales, en línea hoy." })}
+    <div class="trabajos">${TRABAJOS.map((t, i) => `<a class="trabajo revelar" style="--d:${(i % 2) * 0.06}s" href="${t.url}" target="_blank" rel="noopener">
+      <div class="captura"><img src="${t.img}" alt="Sitio de ${esc(t.marca)}" width="1280" height="800" loading="lazy"></div>
+      <div class="trabajo-txt"><span class="rotulo">${esc(t.tipo)}</span><h3>${esc(t.marca)}</h3><p>${t.texto}</p></div><span class="ir" aria-hidden="true">↗</span></a>`).join("")}</div>
   </div>
 </section>
 
-<section class="seccion hundida">
+<section class="seccion oscura">
   <div class="wrap">
     ${cabSeccion({ rotulo: "De frente", titulo: "Lo que normalmente se esconde, aquí está a la vista." })}
     <div class="frente">

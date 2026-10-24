@@ -108,7 +108,7 @@ export const selectorPais = (etiqueta = "Precios para") => `<div class="selector
 
 const chipMarca = (m) => {
   if (!m.logo) return `<span class="marca-chip texto"><b>${esc(m.n)}</b></span>`;
-  return `<span class="marca-chip${m.cuadrado ? " cuadrado" : ""}" title="${esc(m.n)}"><img src="${m.logo}" alt="${m.texto ? "" : esc(m.n)}" loading="lazy">${m.texto ? `<b>${esc(m.n)}</b>` : ""}</span>`;
+  return `<span class="marca-chip" title="${esc(m.n)}"><img src="${m.logo}" alt="${m.texto ? "" : esc(m.n)}" style="height:${m.alto}px" loading="lazy">${m.texto ? `<b>${esc(m.n)}</b>` : ""}</span>`;
 };
 export const franjaMarcas = () => `<section class="marcas" aria-label="Marcas que trabajan con nosotros">
   <p class="rotulo">Marcas que ya trabajan con nosotros</p>

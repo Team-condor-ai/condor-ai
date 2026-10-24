@@ -98,31 +98,32 @@ export const EQUIPO = [
     texto: "Implementa cada cliente en el sistema y da el soporte después. Trabaja junto al CTO." },
 ];
 
-/* ── Marcas (Max, 23-oct). Sin logo en disco: Eternity Homes y Vitalen (van en texto). ── */
+/* ── Marcas (Max, 23-oct). `alto` = altura en px para que todas pesen parecido.
+   Sin logo en disco: Eternity Homes y Vitalen (van en texto hasta que Max mande los archivos). ── */
 export const MARCAS = [
-  { n: "Delta Force", logo: "/condor/clientes/delta-force.png" },
-  { n: "Ebi Foods", logo: "/condor/clientes/ebi-foods.png" },
+  { n: "Delta Force", logo: "/condor/clientes/delta-force.png", alto: 46 },
+  { n: "Ebi Foods", logo: "/condor/clientes/ebi-foods.png", alto: 44 },
   { n: "Eternity Homes" },
-  { n: "Neisstech", logo: "/condor/clientes/neisstech.png" },
-  { n: "Optimizo", logo: "/condor/clientes/optimizo.svg" },
-  { n: "Tecnobox", logo: "/condor/clientes/tecnobox.png" },
-  { n: "Urpa Logístico", logo: "/condor/clientes/urpa-logistico.png" },
-  { n: "Veci", logo: "/condor/clientes/veci.png", cuadrado: true, texto: true },
+  { n: "Neisstech", logo: "/condor/clientes/neisstech.png", alto: 30 },
+  { n: "Optimizo", logo: "/condor/clientes/optimizo.svg", alto: 34 },
+  { n: "Tecnobox", logo: "/condor/clientes/tecnobox.png", alto: 32 },
+  { n: "Urpa Logístico", logo: "/condor/clientes/urpa-logistico.png", alto: 34 },
+  { n: "Veci", logo: "/condor/clientes/veci.png", alto: 34, texto: true },
   { n: "Vitalen" },
-  { n: "Medula", logo: "/condor/clientes/medula.svg", cuadrado: true, texto: true },
-  { n: "Shirushi", logo: "/condor/clientes/shirushi.svg" },
+  { n: "Medula", logo: "/condor/clientes/medula.svg", alto: 30, texto: true },
+  { n: "Shirushi", logo: "/condor/clientes/shirushi.svg", alto: 38 },
 ];
 
 /* Sitios reales y en línea (capturas del 23-oct-2026) */
 export const TRABAJOS = [
   { marca: "Delta Force", tipo: "Escuela de aviación", url: "https://vueladeltaforce.com/", img: "/condor/trabajos/deltaforce.jpg",
-    texto: "Sitio de captación y sistema de seguimiento de interesados para una escuela de aviación." },
+    texto: "Captación de interesados con seguimiento." },
   { marca: "Tecnobox", tipo: "Tienda online", url: "https://tiotecnobox.cl/", img: "/condor/trabajos/tecnobox.jpg",
-    texto: "Tienda online con catálogo, ofertas por temporada y pago propio." },
+    texto: "Catálogo, ofertas por temporada y pago propio." },
   { marca: "Neisstech", tipo: "Soluciones industriales", url: "https://www.neisstech.com/", img: "/condor/trabajos/neisstech.jpg",
-    texto: "Sitio corporativo y páginas de captación para una empresa de soluciones industriales." },
-  { marca: "Medula", tipo: "Producto propio", url: "https://medula.condorai.cl/", img: "/condor/trabajos/medula.jpg",
-    texto: "El cerebro de tu empresa: un producto nuestro, con su propio sitio y su propia marca." },
+    texto: "Sitio corporativo y páginas de captación." },
+  { marca: "Medula", tipo: "Sitio de producto", url: "https://medula.condorai.cl/", img: "/condor/trabajos/medula.jpg",
+    texto: "El sitio de Medula, el producto de Optimizo." },
 ];
 
 /* ── Preguntas frecuentes ───────────────────────────────────────────────

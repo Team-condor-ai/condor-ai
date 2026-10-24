@@ -151,7 +151,7 @@ ${invita("¿Estás en el punto del salto?", "Cuéntanos cómo te escriben hoy y 
 <p>El costo aparece cuando alguien nuevo entra, cuando alguien se va, o cuando necesitas una respuesta y no sabes dónde buscarla. Nadie ha perdido la información; solo no hay <strong>un lugar</strong> donde preguntar.</p>
 
 <h2>Qué es Medula</h2>
-<p>Medula es un producto nuestro y lo describe así: <strong>«el cerebro de tu empresa»</strong>. Reúne clientes, precios, acuerdos y conversaciones en un solo cerebro que aprende de tus aplicaciones. Y las herramientas de inteligencia artificial que ya usas, como ChatGPT y Claude, piensan con él.</p>
+<p>Medula es el producto de Optimizo, empresa con la que trabajamos, y lo describe así: <strong>«el cerebro de tu empresa»</strong>. Reúne clientes, precios, acuerdos y conversaciones en un solo cerebro que aprende de tus aplicaciones. Y las herramientas de inteligencia artificial que ya usas, como ChatGPT y Claude, piensan con él.</p>
 <p>En simple: en lugar de explicarle a una herramienta de IA tu empresa cada vez que la usas, la empresa ya está ahí.</p>
 
 <h2>Cómo empezar a ordenar tu conocimiento (con o sin Medula)</h2>
