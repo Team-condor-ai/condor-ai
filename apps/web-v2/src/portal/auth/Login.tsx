@@ -31,19 +31,6 @@ type Paso = "entrar" | "verificar" | "crear";
 const MIN_CODIGO = 6;
 const MAX_CODIGO = 10;
 
-function Estrella({ t = 22 }: { t?: number }) {
-  return (
-    <svg width={t} height={t} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path
-        d="M12 2.8v18.4M4.7 6.6l14.6 10.8M19.3 6.6L4.7 17.4"
-        stroke="currentColor"
-        strokeWidth="2.8"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
 function OjoAbierto() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -145,19 +132,16 @@ export function Login() {
             <span className="m3" />
           </div>
           <div className="acceso-marca-top">
-            <Estrella t={27} />
+            <img className="acceso-isotipo" src="/condor/marca/condor-logo-horizontal-blanco.svg" alt="condor.ai" width="132" height="28" />
           </div>
           <div className="acceso-marca-pie">
-            <p className="chico">Todo tu proyecto</p>
-            <h2>Planes, cobros y documentos, en un solo lugar</h2>
+            <p className="chico">Portal de clientes</p>
+            <h2>Tu proyecto con Cóndor, a la vista.</h2>
           </div>
         </aside>
 
         <div className="acceso-forma">
           <form onSubmit={enviar} noValidate>
-            <span className="acceso-logo">
-              <Estrella t={17} />
-            </span>
 
             <h1>{titulo}</h1>
             <p className="acceso-bajada">{bajada}</p>

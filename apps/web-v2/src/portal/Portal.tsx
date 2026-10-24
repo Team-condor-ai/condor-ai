@@ -12,6 +12,8 @@ import "./disenio/piezas.css";
 import "./disenio/portal.css";
 import "./disenio/acceso.css";
 import "./disenio/barbara.css";
+import "./disenio/tema-condor.css";
+import "./disenio/leads.css";
 
 import { useSesion, salir } from "./auth/sesion";
 import { Login } from "./auth/Login";
@@ -21,6 +23,7 @@ import { ConfirmacionProvider } from "./disenio/Confirmacion";
 import { Productos } from "./staff/Productos";
 import { EQUIPO_CONDOR } from "./staff/tipos";
 import { Prospeccion } from "./staff/Prospeccion";
+import { Leads } from "./staff/Leads";
 import { Marketing } from "./staff/Marketing";
 import { Dashboard } from "./staff/Dashboard";
 import { Contabilidad } from "./staff/contabilidad/Contabilidad";
@@ -87,6 +90,7 @@ const MENU_STAFF: Grupo[] = [
     clave: "operacion",
     icono: "reuniones",
     entradas: [
+      { a: "/acceso/leads", texto: "Leads", icono: "contacto" },
       { a: "/acceso/prospeccion", texto: "Prospección", icono: "buscar" },
       { a: "/acceso/marketing", texto: "Marketing", icono: "chat" },
       { a: "/acceso/biblioteca", texto: "Biblioteca", icono: "biblioteca" },
@@ -288,6 +292,7 @@ function PortalContenido() {
               query param sin importar qué línea muestre. */}
           <Route path="clientes" element={<Productos />} />
           <Route path="productos/:linea" element={<Productos />} />
+          <Route path="leads" element={<Leads />} />
           <Route path="prospeccion" element={<Prospeccion />} />
           <Route path="marketing" element={<Marketing />} />
           <Route path="contabilidad" element={<Contabilidad />} />

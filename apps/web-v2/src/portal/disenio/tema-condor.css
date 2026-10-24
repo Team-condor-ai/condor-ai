@@ -1,0 +1,133 @@
+/* Portal Cóndor · tema «Acrílico Andino» (24-oct-2026).
+   Se carga DESPUÉS de estilo/piezas/portal/acceso: no reescribe cada pantalla, cambia el idioma visual desde sus
+   variables (todo el portal ya pinta con --fondo, --panel, --borde…) y reemplaza las piezas que más envejecieron:
+   el menú lateral, las barras de título, los botones, las tablas y las etiquetas.
+   Tokens de la marca: public/condor/tokens.css (blanco de base, tinta #151517, azul #014CFD solo como acento). */
+
+@font-face { font-family: "Inter Display"; src: url("/condor/fuentes/InterDisplay-Medium.ttf") format("truetype"); font-weight: 500; font-display: swap; }
+@font-face { font-family: "Inter Display"; src: url("/condor/fuentes/InterDisplay-SemiBold.ttf") format("truetype"); font-weight: 600 800; font-display: swap; }
+@font-face { font-family: "Inter"; src: url("/condor/fuentes/inter-latin-400-normal.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Inter"; src: url("/condor/fuentes/inter-latin-500-normal.woff2") format("woff2"); font-weight: 500; font-display: swap; }
+@font-face { font-family: "Inter"; src: url("/condor/fuentes/inter-latin-600-normal.woff2") format("woff2"); font-weight: 600 700; font-display: swap; }
+@font-face { font-family: "Geist Mono"; src: url("/condor/fuentes/geist-mono-latin-500-normal.woff2") format("woff2"); font-weight: 500; font-display: swap; }
+
+:root {
+  --cp-tinta: #151517; --cp-azul: #014CFD; --cp-azul-hondo: #0039C7; --cp-azul-suave: #EEF3FF;
+  --cp-display: "Inter Display", "Inter", -apple-system, "SF Pro Display", system-ui, sans-serif;
+  --cp-texto: "Inter", -apple-system, "SF Pro Text", system-ui, sans-serif;
+  --cp-mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --cp-resorte: cubic-bezier(.34, 1.56, .64, 1); --cp-suave: cubic-bezier(.32, .72, 0, 1);
+  --cp-r-1: 8px; --cp-r-2: 12px; --cp-r-3: 16px; --cp-r-4: 22px;
+
+  --fondo: #F6F6F8; --panel: #FFFFFF; --panel-2: #F8F8FA; --lateral: #FFFFFF;
+  --borde: #E4E4E8; --borde-suave: #EEEEF1;
+  --texto: #151517; --texto-2: #5C5C62; --texto-3: #80808A;
+  --oscuro: #151517; --sobre-oscuro: #FFFFFF;
+  --hover: #F2F2F5; --activo: #EBEBEF;
+  --ok-bg: #E7F6EE; --ok-tx: #147A42; --ok-bd: #BDE3CC;
+  --warn-bg: #FCF1DE; --warn-tx: #8F5600; --warn-bd: #F0DAB0;
+  --mal-bg: #FDECEC; --mal-tx: #C01E2A; --mal-bd: #F4C4C8;
+  --gris-bg: #F2F2F4; --gris-tx: #5C5C62; --gris-bd: #E2E2E6;
+  --info-bg: #EEF3FF; --info-tx: #0039C7; --info-bd: #C9D8FF;
+  --sombra: 0 1px 2px rgba(21,21,23,.05), 0 1px 1px rgba(21,21,23,.03);
+  --sombra-alta: 0 18px 50px -12px rgba(21,21,23,.22);
+  --azul: #014CFD; --azul-fuerte: #0039C7; --azul-suave: #EEF3FF; --azul-borde: #C9D8FF; --azul-sombra: rgba(1,76,253,.28);
+  --pill: #151517; --pill-borde: rgba(255,255,255,.08); --pill-tx: #fff;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --fondo: #0C0C0E; --panel: #151518; --panel-2: #1A1A1E; --lateral: #111113;
+  --borde: #26262B; --borde-suave: #1E1E22;
+  --texto: #F3F3F5; --texto-2: #A3A3AB; --texto-3: #74747D;
+  --oscuro: #F3F3F5; --sobre-oscuro: #151517;
+  --hover: #1D1D21; --activo: #25252A;
+  --ok-bg: #0F2A1B; --ok-tx: #6FD79A; --ok-bd: #1D4B31;
+  --warn-bg: #2E220D; --warn-tx: #E8B65F; --warn-bd: #4E3915;
+  --mal-bg: #301618; --mal-tx: #F28A8F; --mal-bd: #4E2427;
+  --gris-bg: #1D1D21; --gris-tx: #A3A3AB; --gris-bd: #2B2B31;
+  --info-bg: #0F1D3F; --info-tx: #8FB0FF; --info-bd: #213C7C;
+  --azul: #5B8CFF; --azul-fuerte: #8FB0FF; --azul-suave: #0F1D3F; --azul-borde: #213C7C;
+  --pill: #F3F3F5; --pill-tx: #151517;
+} }
+:root[data-theme="dark"] {
+  --fondo: #0C0C0E; --panel: #151518; --panel-2: #1A1A1E; --lateral: #111113;
+  --borde: #26262B; --borde-suave: #1E1E22;
+  --texto: #F3F3F5; --texto-2: #A3A3AB; --texto-3: #74747D;
+  --oscuro: #F3F3F5; --sobre-oscuro: #151517;
+  --hover: #1D1D21; --activo: #25252A;
+  --ok-bg: #0F2A1B; --ok-tx: #6FD79A; --ok-bd: #1D4B31;
+  --warn-bg: #2E220D; --warn-tx: #E8B65F; --warn-bd: #4E3915;
+  --mal-bg: #301618; --mal-tx: #F28A8F; --mal-bd: #4E2427;
+  --gris-bg: #1D1D21; --gris-tx: #A3A3AB; --gris-bd: #2B2B31;
+  --info-bg: #0F1D3F; --info-tx: #8FB0FF; --info-bd: #213C7C;
+  --azul: #5B8CFF; --azul-fuerte: #8FB0FF; --azul-suave: #0F1D3F; --azul-borde: #213C7C;
+  --pill: #F3F3F5; --pill-tx: #151517;
+}
+
+/* ── Base ─────────────────────────────────────────────────────────────── */
+.portal-app { font-family: var(--cp-texto); font-size: 14px; line-height: 1.5; letter-spacing: -.003em; background: var(--fondo); }
+.portal-app h1, .portal-app h2, .portal-app h3, .portal-app h4 { font-family: var(--cp-display); font-weight: 600; letter-spacing: -.03em; }
+.portal-app :is(a, button, input, select, textarea):focus-visible { outline: 2px solid var(--azul); outline-offset: 2px; }
+.portal-app ::selection { background: var(--azul-suave); color: var(--texto); }
+
+/* ── Menú lateral: de cajas con textura a un menú limpio ──────────────── */
+.portal-app aside { width: 248px; padding: 18px 14px; gap: 14px; background: color-mix(in srgb, var(--lateral) 88%, transparent); -webkit-backdrop-filter: blur(24px) saturate(1.5); backdrop-filter: blur(24px) saturate(1.5); border-right: 1px solid var(--borde); }
+.portal-app .logo { padding: 2px 8px 8px; }
+.portal-app .logo small { font-family: var(--cp-mono); letter-spacing: .16em; font-size: 9px; }
+.portal-app .menu { gap: 14px; padding: 2px 0; }
+.portal-app .nav-grupo[data-cat], .portal-app .nav-grupo { --cat: var(--texto-2); --cat-forma: none; background: transparent; border: 0; border-radius: 0; box-shadow: none; overflow: visible; }
+.portal-app .nav-grupo::before { display: none; }
+.portal-app .nav-grupo-tit { padding: 6px 10px; font: 500 10.5px/1 var(--cp-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--texto-3); border-radius: var(--cp-r-1); }
+.portal-app .nav-grupo-tit:hover { color: var(--texto); background: var(--hover); }
+.portal-app .nav-grupo-tit > svg:first-child { display: none; }
+.portal-app .nav-lista { gap: 2px; margin-top: 4px; }
+.portal-app .nav-item { padding: 8px 12px; border-radius: var(--cp-r-2); font-weight: 500; font-size: 13.5px; transition: background .18s var(--cp-suave), transform .2s var(--cp-resorte); }
+.portal-app .nav-lista .nav-item > svg { color: var(--texto-3); }
+.portal-app .nav-lista .nav-item:hover { background: var(--hover); }
+.portal-app .nav-lista .nav-item:active { transform: scale(.98); }
+.portal-app .nav-lista .nav-item.on { background: var(--pill); color: var(--pill-tx); box-shadow: 0 6px 16px -8px rgba(21,21,23,.5); }
+.portal-app .nav-lista .nav-item.on > svg { color: var(--pill-tx); }
+.portal-app .tarjeta-user { border-radius: var(--cp-r-3); border: 1px solid var(--borde); background: var(--panel); box-shadow: var(--sombra); }
+
+/* ── Barra de título y contenido ──────────────────────────────────────── */
+.portal-app .barra { padding: 22px 28px 6px; background: transparent; border: 0; gap: 12px; }
+.portal-app .barra h1 { font-size: 1.75rem; font-weight: 600; letter-spacing: -.04em; }
+.portal-app .cuerpo { padding: 14px 28px 40px; }
+@media (max-width: 860px) { .portal-app .barra { padding: 16px 16px 4px; } .portal-app .cuerpo { padding: 12px 16px 32px; } }
+
+/* ── Botones ──────────────────────────────────────────────────────────── */
+.portal-app .btn { min-height: 38px; padding: 0 16px; border-radius: 999px; font-weight: 500; font-size: 13.5px; background: var(--panel); border: 1px solid var(--borde); color: var(--texto); box-shadow: var(--sombra); transition: transform .2s var(--cp-resorte), background .15s, border-color .15s, box-shadow .2s; }
+.portal-app .btn:hover { background: var(--hover); border-color: var(--texto-3); }
+.portal-app .btn:active { transform: scale(.97); }
+.portal-app .btn.solido { background: var(--cp-tinta); color: #fff; border-color: var(--cp-tinta); box-shadow: 0 8px 18px -10px rgba(21,21,23,.7); }
+.portal-app .btn.solido:hover { opacity: 1; background: #2A2A2E; }
+.portal-app .btn.chico { min-height: 30px; padding: 0 12px; font-size: 12.5px; }
+.portal-app .btn:disabled { opacity: .5; box-shadow: none; transform: none; }
+.portal-app .icono-btn { border-radius: var(--cp-r-1); }
+
+/* ── Superficies: tablas, tarjetas, paneles ───────────────────────────── */
+.portal-app .tabla-envoltura, .portal-app .panel, .portal-app .tarjeta { border-radius: var(--cp-r-3); border-color: var(--borde); box-shadow: var(--sombra); background: var(--panel); }
+.portal-app table th { font: 500 10.5px/1 var(--cp-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--texto-3); background: transparent; }
+.portal-app table td, .portal-app table th { border-color: var(--borde-suave); }
+.portal-app .fila-click { cursor: pointer; transition: background .12s; }
+.portal-app .fila-click:hover { background: var(--hover); }
+.portal-app input:not([type="checkbox"], [type="radio"]), .portal-app select, .portal-app textarea { border-radius: var(--cp-r-2); border: 1px solid var(--borde); background: var(--panel); font-family: inherit; }
+.portal-app input:focus, .portal-app select:focus, .portal-app textarea:focus { border-color: var(--azul); box-shadow: 0 0 0 3px color-mix(in srgb, var(--azul) 18%, transparent); outline: none; }
+.portal-app .aviso-error { background: var(--mal-bg); color: var(--mal-tx); border: 1px solid var(--mal-bd); border-radius: var(--cp-r-2); padding: 10px 14px; }
+
+@media (prefers-reduced-motion: reduce) { .portal-app * { transition-duration: .01ms !important; animation-duration: .01ms !important; } }
+
+/* ── Acceso (login) ───────────────────────────────────────────────────── */
+:root { --ac-fondo: #F6F6F8; --ac-tarjeta: #FFFFFF; --ac-tinta: #151517; --ac-tinta-2: #5C5C62; --ac-tinta-3: #80808A; --ac-borde: #E4E4E8; --ac-campo: #FFFFFF; --ac-azul: #014CFD; --ac-azul-2: #0039C7; --ac-halo: rgba(1,76,253,.16); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --ac-fondo: #0C0C0E; --ac-tarjeta: #151518; --ac-tinta: #F3F3F5; --ac-tinta-2: #A3A3AB; --ac-tinta-3: #74747D; --ac-borde: #26262B; --ac-campo: #1A1A1E; --ac-azul: #5B8CFF; --ac-azul-2: #8FB0FF; --ac-halo: rgba(91,140,255,.24); } }
+.acceso { font-family: var(--cp-texto); background-color: var(--ac-fondo); background-image: radial-gradient(circle, rgba(21,21,23,.09) 1px, transparent 1.4px); background-size: 28px 28px; }
+.acceso-tarjeta { border-radius: 28px; box-shadow: 0 40px 80px -36px rgba(21,21,23,.32), 0 1px 0 rgba(255,255,255,.8) inset; border: 1px solid var(--ac-borde); }
+.acceso .acceso-marca { border-radius: 20px; background: #0B1220 url("/assets/hero/hero-office-mobile.webp") 62% center / cover no-repeat; }
+.acceso .acceso-marca::after { content: ""; position: absolute; inset: 0; z-index: 1; background: linear-gradient(0deg, rgba(7,13,26,.92) 6%, rgba(7,13,26,.35) 60%, rgba(7,13,26,.55)); }
+.acceso .acceso-lienzo { display: none; }
+.acceso-marca h2 { font-family: var(--cp-display); font-weight: 600; font-size: 26px; letter-spacing: -.04em; line-height: 1.12; }
+.acceso-marca .chico { font: 500 10.5px/1 var(--cp-mono); letter-spacing: .12em; text-transform: uppercase; opacity: .8; }
+.acceso-forma h1 { font-family: var(--cp-display); font-weight: 600; letter-spacing: -.04em; font-size: 30px; }
+.acceso .btn-acceso { background: var(--cp-tinta); border-radius: 999px; box-shadow: 0 12px 24px -12px rgba(21,21,23,.7); }
+.acceso .btn-acceso:hover { background: #2A2A2E; }
+.acceso .btn-alterno { border-radius: 999px; }
+.acceso .campo { border-radius: 14px; }
