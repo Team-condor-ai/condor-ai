@@ -50,54 +50,6 @@ type Props = {
   cerrar: () => void;
 };
 
-/**
- * La tarjeta de un agente.
- *
- * POR QUE NO ES UN `nav-item` MAS
- * ---------------------------------------------------------------------------
- * El resto del menú lleva a pantallas del ERP. Bárbara es el PRODUCTO: la que
- * el equipo le vende a un cliente y usa a diario. Cuando se veía igual que
- * "Créditos API" se perdía entre catorce filas idénticas.
- *
- * Lleva su cara real, su lima y la semilla que muta — la misma firma de
- * movimiento que vive dentro de su módulo. Es la ÚNICA animación con vida
- * propia del menú; todo lo demás (los colores de categoría, las texturas) se
- * disciplina para que esta resalte.
- *
- * Memoria va al lado y no debajo porque no es otra sección: es lo que Bárbara
- * recuerda. Puestas una junto a la otra se leen como una sola cosa con dos
- * puertas, que es lo que son.
- */
-function TarjetaAgente({ entrada, activa }: { entrada: Entrada; activa: boolean }) {
-  if (entrada.agente === "barbara") {
-    return (
-      <>
-        <span className="agente-halo" aria-hidden="true" />
-        <img className="agente-cara" src="/assets/barbara/avatar-mini.webp"
-          alt="" width="64" height="64" decoding="async" />
-        <span className="agente-texto">
-          <b>{entrada.texto}</b>
-          {entrada.oficio && <small>{entrada.oficio}</small>}
-        </span>
-        {/* La semilla: tensión superficial, no una secuencia de polígonos. */}
-        <span className={"agente-semilla" + (activa ? " despierta" : "")} aria-hidden="true">
-          <i />
-        </span>
-      </>
-    );
-  }
-  return (
-    <>
-      <span className="agente-constelacion" aria-hidden="true" />
-      <span className="agente-icono" aria-hidden="true">{Ico[entrada.icono]({ t: 17 })}</span>
-      <span className="agente-texto">
-        <b>{entrada.texto}</b>
-        {entrada.oficio && <small>{entrada.oficio}</small>}
-      </span>
-    </>
-  );
-}
-
 /** El logo real de marca si la entrada trae `imagen`, si no el ícono SVG
  *  monocromo de siempre. */
 function IconoEntrada({ entrada }: { entrada: Entrada }) {
@@ -209,14 +161,8 @@ export function Lateral({ grupos, nombre, detalle, foto, onSalir, abierto, cerra
   return (
     <aside className={abierto ? "abierto" : ""}>
       <div className="logo">
-        {/* El ave se recorta del asset original y queda sin filtros. El texto se
-            compone aparte para adaptarse al tema sin lavar los azules y rojos. */}
-        <span className="logo-lockup" aria-label="condor.ai">
-          <span className="logo-ave" aria-hidden="true">
-            <img src="/assets/logo.png" alt="" />
-          </span>
-          <b>condor.ai</b>
-        </span>
+        <img className="logo-claro" src="/condor/marca/condor-logo-horizontal.svg" alt="condor.ai" width="124" height="26" />
+        <img className="logo-oscuro" src="/condor/marca/condor-logo-horizontal-blanco.svg" alt="" aria-hidden="true" width="124" height="26" />
         <small>PORTAL</small>
       </div>
 
@@ -262,13 +208,9 @@ export function Lateral({ grupos, nombre, detalle, foto, onSalir, abierto, cerra
                           navegarConTransicion(navegar, e.a);
                         }
                       }}
-                      className={({ isActive }) =>
-                        (e.agente ? `agente agente-${e.agente}` : "nav-item") +
-                        (isActive ? " on" : "")}
+                      className={({ isActive }) => "nav-item" + (isActive ? " on" : "")}
                     >
-                      {({ isActive }) => e.agente
-                        ? <TarjetaAgente entrada={e} activa={isActive} />
-                        : <><IconoEntrada entrada={e} /><span>{e.texto}</span></>}
+                      <IconoEntrada entrada={e} /><span>{e.texto}</span>
                     </NavLink>
                   ),
                 )}

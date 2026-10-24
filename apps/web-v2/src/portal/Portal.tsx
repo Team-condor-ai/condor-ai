@@ -21,17 +21,12 @@ import { Ico } from "./disenio/iconos";
 import { ConfirmacionProvider } from "./disenio/Confirmacion";
 import { Productos } from "./staff/Productos";
 import { EQUIPO_CONDOR } from "./staff/tipos";
-import { Prospeccion } from "./staff/Prospeccion";
 import { Leads } from "./staff/Leads";
-import { Marketing } from "./staff/Marketing";
+import { Equipo } from "./staff/Equipo";
 import { Dashboard } from "./staff/Dashboard";
 import { Contabilidad } from "./staff/contabilidad/Contabilidad";
 import { Organizacion } from "./staff/organizacion/Organizacion";
 import { Biblioteca } from "./staff/Biblioteca";
-import { CorreoTecnobox } from "./staff/CorreoTecnobox";
-import { Mcp } from "./staff/Mcp";
-import { CreditosApi } from "./staff/CreditosApi";
-import { Mapa } from "./staff/Mapa";
 
 import { MiPlan } from "./cliente/MiPlan";
 import { ResultadoPago } from "./cliente/ResultadoPago";
@@ -67,71 +62,25 @@ const dif = (n: React.ReactNode) => <Suspense fallback={cargando}>{n}</Suspense>
  * -- es un producto B2C aparte, no una línea de Cóndor.ai.
  */
 const MENU_STAFF: Grupo[] = [
-  {
-    titulo: "Resumen",
-    clave: "resumen",
-    icono: "panel",
-    entradas: [{ a: "/acceso/dashboard", texto: "Panel", icono: "panel" }],
-  },
-  {
-    // Movida arriba, justo bajo Panel (2-sept-2026, pedido de Joaquín):
-    // Prospección y el nuevo Marketing viven acá. "Comercial" se retira
-    // como categoría propia -- Prospección era su única entrada, y
-    // dejarla como grupo de uno solo no aportaba nada frente a agruparla
-    // con el resto de la operación diaria del equipo.
-    titulo: "Operación",
-    clave: "operacion",
-    icono: "reuniones",
+  { titulo: "Inicio", clave: "resumen", icono: "panel",
+    entradas: [{ a: "/acceso/dashboard", texto: "Panel", icono: "panel" }] },
+  { titulo: "Comercial", clave: "operacion", icono: "contacto",
+    entradas: [{ a: "/acceso/leads", texto: "Leads", icono: "contacto" }] },
+  { titulo: "Clientes", clave: "productos", icono: "clientes",
     entradas: [
-      { a: "/acceso/leads", texto: "Leads", icono: "contacto" },
-      { a: "/acceso/prospeccion", texto: "Prospección", icono: "buscar" },
-      { a: "/acceso/marketing", texto: "Marketing", icono: "chat" },
-      { a: "/acceso/biblioteca", texto: "Biblioteca", icono: "biblioteca" },
-      // Bandeja de ecommerce@tecnoboxchile.cl: leer y responder como Tecnobox (26-sept-2026).
-      { a: "/acceso/correo-tecnobox", texto: "Correo Tecnobox", icono: "correos" },
-    ],
-  },
-  {
-    titulo: "Productos",
-    clave: "productos",
-    icono: "clientes",
-    // Logos reales de marca (2-sept-2026, llegaron por WhatsApp — ver
-    // memoria de Cóndor.ai, carpeta branding-2026-09-02). Reemplazan los
-    // íconos monocromos genéricos que tenía cada línea antes de tener el
-    // isotipo oficial.
-    entradas: [
-      { a: "/acceso/productos/sites", texto: "Sites", icono: "sitesProducto", imagen: "/assets/productos/condor-sites.png" },
-      { a: "/acceso/productos/ecommerce", texto: "Ecommerce", icono: "ecommerceProducto", imagen: "/assets/productos/condor-ecommerce.png" },
-      { a: "/acceso/productos/crm", texto: "CRM", icono: "trackProducto", imagen: "/assets/productos/condor-track.png" },
-    ],
-  },
-  {
-    titulo: "Finanzas y contabilidad",
-    clave: "finanzas",
-    icono: "libro",
-    entradas: [
-      { a: "/acceso/contabilidad", texto: "Contabilidad", icono: "libro" },
-    ],
-  },
-  {
-    titulo: "Organización",
-    clave: "organizacion",
-    icono: "tablero",
+      { a: "/acceso/productos/sites", texto: "Sites", icono: "sitesProducto", imagen: "/condor/marca/producto-sites-chico.svg" },
+      { a: "/acceso/productos/ecommerce", texto: "Ecommerce", icono: "ecommerceProducto", imagen: "/condor/marca/producto-ecommerce-chico.svg" },
+      { a: "/acceso/productos/crm", texto: "CRM", icono: "trackProducto", imagen: "/condor/marca/producto-crm-chico.svg" },
+    ] },
+  { titulo: "Finanzas", clave: "finanzas", icono: "libro",
+    entradas: [{ a: "/acceso/contabilidad", texto: "Contabilidad y cobros", icono: "libro" }] },
+  { titulo: "Equipo", clave: "organizacion", icono: "tablero",
     entradas: [
       { a: "/acceso/organizacion/tablero", texto: "Tareas", icono: "tablero" },
       { a: "/acceso/organizacion/calendario", texto: "Calendario", icono: "reuniones" },
-    ],
-  },
-  {
-    titulo: "Sistema",
-    clave: "sistema",
-    icono: "ajustes",
-    entradas: [
-      { a: "/acceso/mapa", texto: "Mapa", icono: "grafo" },
-      { a: "/acceso/creditos-api", texto: "Claves / API Tokens", icono: "creditos" },
-      { a: "/acceso/mcp", texto: "MCP / CLI", icono: "mcp" },
-    ],
-  },
+      { a: "/acceso/biblioteca", texto: "Biblioteca", icono: "biblioteca" },
+      { a: "/acceso/equipo", texto: "Personas", icono: "clientes" },
+    ] },
 ];
 
 const MENU_CLIENTE_BASE: Entrada[] = [
@@ -240,8 +189,7 @@ function PortalContenido() {
           <Route path="clientes" element={<Productos />} />
           <Route path="productos/:linea" element={<Productos />} />
           <Route path="leads" element={<Leads />} />
-          <Route path="prospeccion" element={<Prospeccion />} />
-          <Route path="marketing" element={<Marketing />} />
+          <Route path="prospeccion" element={<Navigate to="/acceso/leads" replace />} />
           <Route path="contabilidad" element={<Contabilidad />} />
           <Route path="organizacion/:vista" element={<Organizacion />} />
           <Route path="reuniones" element={<Navigate to="/acceso/organizacion/calendario" replace />} />
@@ -251,11 +199,7 @@ function PortalContenido() {
           <Route path="cobros" element={<Navigate to="/acceso/contabilidad?tab=cobros" replace />} />
           <Route path="ratia" element={<Navigate to="/acceso/clientes" replace />} />
           <Route path="biblioteca" element={<Biblioteca />} />
-          <Route path="correo-tecnobox" element={<CorreoTecnobox />} />
-          <Route path="mcp" element={<Mcp />} />
-          <Route path="creditos-api" element={<CreditosApi />} />
-          <Route path="mapa" element={<Mapa />} />
-          {/* Bárbara y Memoria salieron del portal el 24-oct-2026 (Max): los enlaces viejos caen al panel. */}
+          <Route path="equipo" element={<Equipo />} />
           <Route path="*" element={<Navigate to="/acceso/dashboard" replace />} />
         </Routes>
       </Marco>,
