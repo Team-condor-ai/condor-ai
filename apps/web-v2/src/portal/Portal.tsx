@@ -24,7 +24,8 @@ import { Productos } from "./staff/Productos";
 import { EQUIPO_CONDOR } from "./staff/tipos";
 import { Leads } from "./staff/Leads";
 import { Equipo } from "./staff/Equipo";
-import { Claves } from "./staff/Claves";
+import { Biblioteca } from "./staff/Biblioteca";
+import { Cursos } from "./staff/Cursos";
 import { Dashboard } from "./staff/Dashboard";
 import { Contabilidad } from "./staff/contabilidad/Contabilidad";
 import { Organizacion } from "./staff/organizacion/Organizacion";
@@ -74,13 +75,14 @@ const MENU_STAFF: Grupo[] = [
       { a: "/acceso/productos/ecommerce", texto: "Ecommerce", icono: "ecommerceProducto", imagen: "/condor/marca/producto-ecommerce-chico.svg" },
       { a: "/acceso/productos/crm", texto: "CRM", icono: "trackProducto", imagen: "/condor/marca/producto-crm-chico.svg" },
     ] },
+  { titulo: "Recursos", clave: "biblioteca", icono: "biblioteca",
+    entradas: [{ a: "/acceso/biblioteca", texto: "Biblioteca", icono: "biblioteca" }] },
   { titulo: "Finanzas", clave: "finanzas", icono: "libro",
     entradas: [{ a: "/acceso/contabilidad", texto: "Contabilidad y cobros", icono: "libro" }] },
   { titulo: "Equipo", clave: "organizacion", icono: "tablero",
     entradas: [
       { a: "/acceso/organizacion/tablero", texto: "Tareas", icono: "tablero" },
       { a: "/acceso/organizacion/calendario", texto: "Calendario", icono: "reuniones" },
-      { a: "/acceso/claves", texto: "Bóveda", icono: "candado" },
       { a: "/acceso/equipo", texto: "Personas", icono: "clientes" },
     ] },
 ];
@@ -88,6 +90,7 @@ const MENU_STAFF: Grupo[] = [
 const MENU_CLIENTE_BASE: Entrada[] = [
   { a: "/acceso/plan", texto: "Mi plan", icono: "plan" },
   { a: "/acceso/solicitudes", texto: "Pedir un cambio", icono: "editar" },
+  { a: "/acceso/cursos", texto: "Cursos", icono: "biblioteca" },
   { a: "/acceso/boletas", texto: "Comprobantes", icono: "boletas" },
 ];
 
@@ -205,9 +208,9 @@ function PortalContenido() {
           <Route path="suscripciones" element={<Navigate to="/acceso/contabilidad?tab=cobros" replace />} />
           <Route path="cobros" element={<Navigate to="/acceso/contabilidad?tab=cobros" replace />} />
           <Route path="ratia" element={<Navigate to="/acceso/clientes" replace />} />
-          <Route path="biblioteca" element={<Navigate to="/acceso/claves" replace />} />
           <Route path="equipo" element={<Equipo />} />
-          <Route path="claves" element={<Claves />} />
+          <Route path="claves" element={<Biblioteca tabInicial="passwords" />} />
+          <Route path="biblioteca" element={<Biblioteca />} />
           <Route path="*" element={<Navigate to="/acceso/dashboard" replace />} />
         </Routes>
       </Marco>,
@@ -230,6 +233,7 @@ function PortalContenido() {
         <Route path="pago/resultado" element={<ResultadoPago />} />
         <Route path="boletas" element={dif(<MisBoletas />)} />
         <Route path="solicitudes" element={<Solicitudes />} />
+        <Route path="cursos" element={<><div className="barra"><h1>Cursos</h1></div><div className="cuerpo"><Cursos editable={false} /></div></>} />
         <Route path="cuenta" element={<MiCuenta />} />
         <Route path="*" element={<Navigate to="/acceso/plan" replace />} />
       </Routes>

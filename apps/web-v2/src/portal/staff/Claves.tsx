@@ -30,7 +30,7 @@ const color = (s: string) => COLORES[[...s].reduce((a, c) => a + c.charCodeAt(0)
  * por `revelar_clave(id)`, que deja anotado quién la pidió (se ve en la ficha de cada clave). Al revelarla se
  * oculta sola a los 20 segundos. «Old Condor Passwords» guarda lo que había en el Centro operativo y en Claves/API.
  */
-export function Claves() {
+export function Claves({ modo, embebido }: { modo?: "passwords" | "archivos"; embebido?: boolean } = {}) {
   const yo = useSesion().email;
   const confirmar = useConfirmacion();
   const [carpetas, setCarpetas] = useState<Carpeta[]>([]);
@@ -63,12 +63,14 @@ export function Claves() {
   const visibles = useMemo(() => {
     const q = busca.trim().toLowerCase();
     let l = claves;
+    if (modo === "archivos") l = l.filter((k) => k.tipo === "archivo");
+    if (modo === "passwords") l = l.filter((k) => k.tipo !== "archivo");
     if (clienteFiltro) l = l.filter((k) => k.cliente_id === clienteFiltro);
     if (sel !== "todas") { const ids = new Set(idsDe(sel)); l = l.filter((k) => k.carpeta_id && ids.has(k.carpeta_id)); }
     if (q) l = claves.filter((k) => [k.titulo, k.usuario, k.url, k.notas].some((v) => (v ?? "").toLowerCase().includes(q)));
     return l;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [claves, carpetas, sel, busca, clienteFiltro]);
+  }, [claves, carpetas, sel, busca, clienteFiltro, modo]);
 
   const cuenta = (id: string) => claves.filter((k) => idsDe(id).includes(k.carpeta_id ?? "")).length;
   const nombreCarpeta = (id: string | null) => carpetas.find((c) => c.id === id)?.nombre ?? "Sin carpeta";
@@ -104,11 +106,15 @@ export function Claves() {
 
   return (
     <>
-      <div className="barra">
-        <h1>Bóveda</h1>
-        <button className="btn solido" onClick={() => setEditando("nueva")}>{Ico.mas({ t: 15 })} Agregar</button>
-      </div>
-      <div className="cuerpo">
+      {embebido ? (
+        <div className="cur-barra"><button className="btn solido" onClick={() => setEditando("nueva")}>{Ico.mas({ t: 15 })} {modo === "archivos" ? "Subir archivo" : "Nueva clave"}</button></div>
+      ) : (
+        <div className="barra">
+          <h1>Bóveda</h1>
+          <button className="btn solido" onClick={() => setEditando("nueva")}>{Ico.mas({ t: 15 })} Agregar</button>
+        </div>
+      )}
+      <div className={embebido ? undefined : "cuerpo"}>
         {error && <p className="aviso-error" role="alert">{error}</p>}
         <div className="cl-layout">
           <nav className="cl-lateral" aria-label="Carpetas">
@@ -134,7 +140,7 @@ export function Claves() {
         </div>
       </div>
       {editando && (
-        <FormClave clave={editando === "nueva" ? null : editando} carpetas={carpetas} carpetaInicial={sel === "todas" ? null : sel} yo={yo} onCerrar={() => setEditando(null)} onGuardado={() => { setEditando(null); void cargar(); }} onBorrado={() => { setEditando(null); void cargar(); }} />
+        <FormClave clave={editando === "nueva" ? null : editando} tipoInicial={modo === "archivos" ? "archivo" : "cuenta"} carpetas={carpetas} carpetaInicial={sel === "todas" ? null : sel} yo={yo} onCerrar={() => setEditando(null)} onGuardado={() => { setEditando(null); void cargar(); }} onBorrado={() => { setEditando(null); void cargar(); }} />
       )}
     </>
   );
@@ -194,9 +200,9 @@ function FilaClave({ k, carpeta, mostrarCarpeta, onEditar }: { k: Clave; carpeta
   );
 }
 
-function FormClave({ clave, carpetas, carpetaInicial, yo, onCerrar, onGuardado, onBorrado }: { clave: Clave | null; carpetas: Carpeta[]; carpetaInicial: string | null; yo: string | null; onCerrar: () => void; onGuardado: () => void; onBorrado: () => void }) {
+function FormClave({ clave, tipoInicial, carpetas, carpetaInicial, yo, onCerrar, onGuardado, onBorrado }: { clave: Clave | null; tipoInicial: Clave["tipo"]; carpetas: Carpeta[]; carpetaInicial: string | null; yo: string | null; onCerrar: () => void; onGuardado: () => void; onBorrado: () => void }) {
   const confirmar = useConfirmacion();
-  const [f, setF] = useState({ titulo: clave?.titulo ?? "", usuario: clave?.usuario ?? "", clave: "", url: clave?.url ?? "", notas: clave?.notas ?? "", carpeta_id: clave?.carpeta_id ?? carpetaInicial ?? "", tipo: clave?.tipo ?? "cuenta", cliente_id: clave?.cliente_id ?? "" });
+  const [f, setF] = useState({ titulo: clave?.titulo ?? "", usuario: clave?.usuario ?? "", clave: "", url: clave?.url ?? "", notas: clave?.notas ?? "", carpeta_id: clave?.carpeta_id ?? carpetaInicial ?? "", tipo: clave?.tipo ?? tipoInicial, cliente_id: clave?.cliente_id ?? "" });
   const [accesos, setAccesos] = useState<Acceso[]>([]);
   const [ver, setVer] = useState(false);
   const [error, setError] = useState("");

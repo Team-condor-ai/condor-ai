@@ -265,3 +265,39 @@ html:has(.portal-app), body:has(.portal-app), #root:has(.portal-app) { backgroun
 .portal-app .tabla-caja tbody tr { transition: background .12s; } .portal-app .tabla-caja tbody tr:hover { background: var(--hover); }
 .portal-app .kpi { border-radius: var(--cp-r-3); background: #fff; border: 1px solid var(--borde); box-shadow: var(--sombra); transition: transform .25s var(--cp-resorte); } .portal-app .kpi:hover { transform: translateY(-3px); }
 .portal-app .kpi .tile { border-radius: 12px; background: var(--azul-suave); color: var(--azul); }
+
+/* ── Biblioteca y cursos ──────────────────────────────────────────────── */
+.bib-tabs { display: inline-flex; gap: 4px; padding: 4px; margin-bottom: 20px; border-radius: 999px; background: var(--gris-bg); }
+.bib-tabs button { display: inline-flex; align-items: center; gap: 8px; border: 0; background: none; padding: 9px 18px; border-radius: 999px; font: 500 13.5px/1 var(--cp-texto); color: var(--texto-2); cursor: pointer; transition: all .3s var(--cp-resorte); }
+.bib-tabs button:hover { color: var(--texto); } .bib-tabs button.on { background: #fff; color: var(--texto); box-shadow: var(--sombra); transform: scale(1.03); }
+.cur-barra { display: flex; justify-content: flex-end; margin-bottom: 14px; }
+.cur-rejilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 16px; }
+.cur-tarjeta { display: grid; gap: 0; padding: 0; text-align: left; border: 1px solid var(--borde); border-radius: var(--cp-r-3); background: #fff; overflow: hidden; box-shadow: var(--sombra); cursor: pointer; font: inherit; color: var(--texto); animation: cp-sube .5s var(--cp-suave) both; transition: transform .3s var(--cp-resorte), box-shadow .25s; }
+.cur-tarjeta:hover { transform: translateY(-5px) rotate(-.5deg); box-shadow: 0 22px 36px -22px rgba(21,22,26,.45); }
+.cur-portada { position: relative; height: 112px; display: flex; align-items: flex-end; justify-content: space-between; padding: 12px; }
+.cur-portada::after { content: ""; position: absolute; inset: 0; background: radial-gradient(70% 100% at 100% 0, rgba(255,255,255,.28), transparent 60%); }
+.cur-portada em, .cur-portada i { position: relative; z-index: 1; font: 600 11px/1 var(--cp-texto); font-style: normal; padding: 4px 10px; border-radius: 999px; background: rgba(255,255,255,.9); color: var(--texto); }
+.cur-texto { display: grid; gap: 3px; padding: 14px 16px 12px; } .cur-texto b { font: 600 15px/1.3 var(--cp-display); letter-spacing: -.02em; } .cur-texto small { color: var(--texto-3); }
+.cur-barra-av { display: block; height: 4px; background: var(--gris-bg); } .cur-barra-av i { display: block; height: 100%; background: var(--e-ganado); border-radius: 0 4px 4px 0; transition: width .6s var(--cp-suave); }
+.cur-detalle { display: grid; gap: 16px; }
+.cur-cab { display: flex; justify-content: space-between; align-items: flex-end; gap: 18px; flex-wrap: wrap; padding: 26px 28px; border-radius: var(--cp-r-4); color: #fff; }
+.cur-cab h2 { margin: 6px 0 4px; font-size: 1.8rem; letter-spacing: -.045em; color: #fff; } .cur-cab p { margin: 0; max-width: 52ch; opacity: .9; }
+.cur-cat { font: 500 10.5px/1 var(--cp-mono); letter-spacing: .12em; text-transform: uppercase; opacity: .85; }
+.cur-cab-der { display: grid; justify-items: end; gap: 2px; } .cur-cab-der b { font: 600 2.2rem/1 var(--cp-display); letter-spacing: -.05em; } .cur-cab-der span { opacity: .85; font-size: 12.5px; } .cur-acc { display: flex; gap: 6px; margin-top: 8px; } .cur-cab .btn { background: rgba(255,255,255,.18); border-color: rgba(255,255,255,.4); color: #fff; box-shadow: none; }
+.cur-cuerpo { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 18px; align-items: start; }
+.cur-visor { display: grid; gap: 14px; }
+.cur-video { position: relative; aspect-ratio: 16 / 9; border-radius: var(--cp-r-3); overflow: hidden; background: #000; box-shadow: var(--sombra-alta); } .cur-video iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.cur-info h3, .cur-enlace h3 { margin: 0 0 6px; font-size: 1.2rem; } .cur-info p, .cur-enlace p { margin: 0 0 10px; color: var(--texto-2); }
+.cur-enlace { display: grid; gap: 10px; justify-items: start; padding: 28px; border-radius: var(--cp-r-3); background: #F7F8FB; border: 1px solid var(--borde-suave); }
+.cur-lista { padding: 14px; border-radius: var(--cp-r-3); background: #fff; border: 1px solid var(--borde); box-shadow: var(--sombra); }
+.cur-lista > header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; } .cur-lista h3 { margin: 0; font: 500 10.5px/1 var(--cp-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--texto-3); }
+.cur-lista ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; } .cur-lista li { display: flex; align-items: center; border-radius: var(--cp-r-2); transition: background .15s; } .cur-lista li:hover, .cur-lista li.on { background: var(--azul-suave); }
+.cur-lista li > button:first-child { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; padding: 10px; border: 0; background: none; text-align: left; font: inherit; color: var(--texto); cursor: pointer; }
+.cur-n { flex: none; width: 28px; height: 28px; display: grid; place-items: center; border-radius: 50%; background: var(--gris-bg); font: 600 12px/1 var(--cp-mono); color: var(--texto-2); } .cur-lista li.on .cur-n { background: var(--azul); color: #fff; } .cur-lista li.hecha .cur-n { background: var(--ok-bg); color: var(--ok-tx); }
+.cur-t b { display: block; font-weight: 500; font-size: 13.5px; } .cur-t small { color: var(--texto-3); }
+.cur-mini { display: none; padding-right: 6px; gap: 2px; } .cur-lista li:hover .cur-mini { display: flex; } .cur-mini button { width: 24px; height: 24px; border: 0; border-radius: 6px; background: transparent; color: var(--texto-2); cursor: pointer; } .cur-mini button:hover { background: #fff; color: var(--texto); }
+.cur-modal { padding: 24px; max-width: 520px; } .cur-modal h3 { margin: 0 0 14px; font-size: 1.2rem; }
+.cur-form { display: grid; gap: 12px; } .cur-form label { display: grid; gap: 6px; font-size: 12px; font-weight: 500; color: var(--texto-2); } .cur-form input:not([type="checkbox"]), .cur-form textarea { width: 100%; padding: 10px 13px; font-size: 14px; } .cur-form-pie { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
+@media (max-width: 980px) { .cur-cuerpo { grid-template-columns: 1fr; } }
+
+.cur-detalle > .btn { justify-self: start; }

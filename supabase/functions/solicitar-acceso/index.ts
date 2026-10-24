@@ -16,32 +16,32 @@ const EMAIL_FROM = Deno.env.get("EMAIL_FROM") || "condor AI <onboarding@resend.d
 const LIMITE = 5, VENTANA_MIN = 15;
 
 function emailCodigo(codigo: string) {
-  return `<!DOCTYPE html><html><body style="margin:0;background:#f4f4f7;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif">
-  <table width="100%" cellpadding="0" cellspacing="0" style="padding:32px 0"><tr><td align="center">
-    <table width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 14px 40px -18px rgba(20,20,40,.25)">
-      <tr><td style="background:linear-gradient(115deg,#2747ff 0%,#7a5bff 48%,#ff3b4e 100%);padding:32px;text-align:center">
-        <div style="color:#fff;font-size:22px;font-weight:700;letter-spacing:.5px">condor&nbsp;AI</div>
-        <div style="color:rgba(255,255,255,.9);font-size:14px;margin-top:4px">Acceso a tu portal</div>
+  return `<!DOCTYPE html><html><body style="margin:0;background:#ffffff;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#151517">
+  <table width="100%" cellpadding="0" cellspacing="0" style="padding:36px 16px"><tr><td align="center">
+    <table width="100%" cellpadding="0" cellspacing="0" style="max-width:460px;border:1px solid #E9EAF0;border-radius:22px;overflow:hidden">
+      <tr><td style="padding:28px 32px 0"><span style="font-size:22px;font-weight:700;letter-spacing:-.04em">condor<span style="color:#014CFD">.ai</span></span></td></tr>
+      <tr><td style="padding:22px 32px 8px">
+        <p style="font-size:20px;font-weight:600;letter-spacing:-.03em;margin:0 0 8px">Tu código de acceso</p>
+        <p style="font-size:14px;color:#5B5E6B;margin:0 0 22px;line-height:1.55">Escríbelo en el portal para entrar. Vence en 1 hora.</p>
+        <div style="display:inline-block;background:#EEF3FF;border:1px solid #C9D8FF;border-radius:14px;padding:16px 26px;font-size:34px;font-weight:700;letter-spacing:.3em;color:#014CFD">${codigo}</div>
+        <p style="font-size:12.5px;color:#8A8D9A;margin:22px 0 0;line-height:1.6">Si no fuiste tú, ignora este correo: nadie puede entrar sin el código.</p>
       </td></tr>
-      <tr><td style="padding:36px 32px;text-align:center">
-        <p style="font-size:15px;color:#444;margin:0 0 18px">Tu código de acceso es:</p>
-        <div style="display:inline-block;background:#f3f4ff;border:1px solid #dfe3ff;border-radius:14px;padding:16px 28px;font-size:34px;font-weight:700;letter-spacing:.32em;color:#2747ff">${codigo}</div>
-        <p style="font-size:13px;color:#888;margin:22px 0 0;line-height:1.6">Escríbelo en la página para entrar.<br>Vence en 1 hora. Si no fuiste tú, ignora este correo.</p>
-      </td></tr>
-      <tr><td style="background:#fafafa;padding:16px;text-align:center;font-size:12px;color:#999">condor&nbsp;AI · Inteligencia artificial para hacer crecer tu negocio</td></tr>
+      <tr><td style="padding:22px 32px 26px;font-size:12px;color:#8A8D9A">Cóndor AI · Santiago, Chile</td></tr>
     </table></td></tr></table></body></html>`;
 }
 
-async function enviarResend(to: string, codigo: string) {
+// Devuelve null si salió bien, o el motivo del fallo (se guarda en acceso_errores para poder diagnosticar).
+async function enviarResend(to: string, codigo: string): Promise<string | null> {
   const KEY = Deno.env.get("RESEND_API_KEY");
-  if (!KEY) return false;
+  if (!KEY) return "Falta el secreto RESEND_API_KEY";
   try {
     const r = await fetch("https://api.resend.com/emails", {
       method: "POST", headers: { Authorization: "Bearer " + KEY, "Content-Type": "application/json" },
       body: JSON.stringify({ from: EMAIL_FROM, to: [to], subject: "Tu código de acceso · condor AI", html: emailCodigo(codigo) }),
     });
-    return r.ok;
-  } catch { return false; }
+    if (r.ok) return null;
+    return `Resend ${r.status} (from: ${EMAIL_FROM}): ${(await r.text()).slice(0, 300)}`;
+  } catch (e) { return "Resend no respondió: " + String(e).slice(0, 200); }
 }
 
 Deno.serve(async (req) => {
@@ -91,8 +91,14 @@ Deno.serve(async (req) => {
     await sb.auth.admin.createUser({ email, email_confirm: true }).catch(() => {}); // si ya existe, no pasa nada
     const { data: link } = await sb.auth.admin.generateLink({ type: "magiclink", email });
     const codigo = (link?.properties as any)?.email_otp;
-    if (codigo) await enviarResend(email, codigo);
-  } catch (_e) { /* no revelamos errores internos */ }
+    if (!codigo) await sb.from("acceso_errores").insert({ email, etapa: "generar_codigo", detalle: "Supabase no devolvió el código" });
+    else {
+      const fallo = await enviarResend(email, codigo);
+      if (fallo) await sb.from("acceso_errores").insert({ email, etapa: "enviar_correo", detalle: fallo });
+    }
+  } catch (e) { // no revelamos errores internos al navegador, pero sí quedan anotados para el equipo
+    try { await sb.from("acceso_errores").insert({ email, etapa: "excepcion", detalle: String(e).slice(0, 300) }); } catch { /* */ }
+  }
 
   return json(generica);
 });
