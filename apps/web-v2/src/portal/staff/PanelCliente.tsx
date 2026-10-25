@@ -3,6 +3,7 @@ import { PanelLateral } from "../disenio/PanelLateral";
 import { ContenidoCliente } from "./FichaCliente";
 import { ExtrasCliente } from "./ExtrasCliente";
 import { Conversacion } from "../chat/Conversacion";
+import { FichaContrato } from "../legal/FichaContrato";
 import { useSesion } from "../auth/sesion";
 import { useEquipo, useYo } from "./personas";
 import type { Cliente } from "./tipos";
@@ -22,11 +23,12 @@ import type { Cliente } from "./tipos";
  * obligan a mantener las dos, y a la larga una queda atrás.
  */
 /** Pestañas de la ficha (24-oct-2026): antes era todo apilado y había que bajar harto para llegar a los cobros. */
-type Pestana = "resumen" | "cobros" | "chat" | "tareas" | "boveda" | "reuniones";
+type Pestana = "resumen" | "cobros" | "chat" | "contrato" | "tareas" | "boveda" | "reuniones";
 const PESTANAS: { id: Pestana; texto: string }[] = [
   { id: "resumen", texto: "Resumen" },
   { id: "cobros", texto: "Cobros" },
   { id: "chat", texto: "Chat" },
+  { id: "contrato", texto: "Contrato" },
   { id: "tareas", texto: "Tareas" },
   { id: "boveda", texto: "Bóveda" },
   { id: "reuniones", texto: "Reuniones" },
@@ -69,6 +71,7 @@ export function PanelCliente({
       <ContenidoCliente id={id} alCargar={recibir} vista={pestana === "resumen" ? "datos" : pestana === "cobros" ? "cobros" : "nada"} />
       {pestana === "resumen" && <ExtrasCliente id={id} negocio={c?.negocio ?? null} vista="acceso" />}
       {pestana === "chat" && <div className="ficha-chat"><Conversacion clienteId={id} soyEquipo yo={email} nombreYo={apodo} equipo={equipo} titulo={nombre} subtitulo={c?.email ?? "Sin correo: no puede entrar al portal"} /></div>}
+      {pestana === "contrato" && <FichaContrato clienteId={id} proximoCobro={c?.proximo_cobro ?? null} />}
       {(pestana === "tareas" || pestana === "boveda" || pestana === "reuniones") && <ExtrasCliente id={id} negocio={c?.negocio ?? null} vista={pestana} />}
     </PanelLateral>
   );

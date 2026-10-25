@@ -226,7 +226,7 @@ export function MiPlan() {
           <h3>Contacto</h3>
           <p className="parrafo">
             ¿Necesitas cambiar algo de tu plan? Escríbenos a{" "}
-            <a href="mailto:contacto@teamcondorcl.com">contacto@teamcondorcl.com</a>.
+            <a href="mailto:contacto@condorai.cl">contacto@condorai.cl</a>.
           </p>
         </section>
       </div>

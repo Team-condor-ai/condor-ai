@@ -16,7 +16,7 @@ export function ChatCliente() {
       <div className="barra"><h1>Chat con Cóndor</h1></div>
       <div className="cuerpo chat-pagina">
         {cliente === undefined ? <p className="vacio">Cargando…</p>
-          : cliente === null ? <p className="vacio">Tu cuenta todavía no tiene un plan asociado. Escríbenos a contacto@teamcondorcl.com y lo activamos.</p>
+          : cliente === null ? <p className="vacio">Tu cuenta todavía no tiene un plan asociado. Escríbenos a contacto@condorai.cl y lo activamos.</p>
           : <Conversacion clienteId={cliente.id} soyEquipo={false} yo={email} nombreYo={cliente.nombre || cliente.negocio || "Cliente"}
               titulo="Equipo Cóndor" subtitulo="Te respondemos acá mismo, normalmente el mismo día hábil." />}
       </div>

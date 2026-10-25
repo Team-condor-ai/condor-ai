@@ -4,8 +4,8 @@
 export const SITIO = "https://condorai.cl";
 export const WSP = "56988989824";
 export const WSP_VISIBLE = "+56 9 8898 9824";
-export const CORREO = "contacto@teamcondorcl.com"; // Max, 23-oct: se mantiene este correo
-export const FECHA_LEGAL = "23 de octubre de 2026";
+export const CORREO = "contacto@condorai.cl"; // Max, 25-oct: un solo correo para todo
+export const FECHA_LEGAL = "25 de octubre de 2026";
 
 export const wsp = (texto) => `https://wa.me/${WSP}?text=${encodeURIComponent(texto)}`;
 

@@ -2,23 +2,12 @@ import { useEffect, useState } from "react";
 import { sb } from "../lib/supabase";
 import { CambiarClave } from "../auth/CambiarClave";
 import type { Cliente } from "../staff/tipos";
+import { MiCuentaLegal } from "../legal/MiCuentaLegal";
 
 /**
- * Datos de contacto y baja del servicio.
- *
- * LA BAJA TIENE FRICCIÓN A PROPÓSITO
- * ---------------------------------------------------------------------------
- * Se pidió que el cliente pueda cancelar solo, pero con muchas advertencias.
- * Acá eso significa tres cosas concretas, no un `confirm()`:
- *
- *   1. Se le muestra QUÉ pierde, con nombre y apellido (su plan, su web).
- *   2. Se le dice HASTA CUÁNDO tiene servicio pagado — la mayoría cancela
- *      creyendo que pierde el mes ya pagado, y con eso solo se apura.
- *   3. Tiene que ESCRIBIR "CANCELAR". Un botón se aprieta sin querer; una
- *      palabra escrita, no.
- *
- * Y la baja NO borra nada: marca `archivado`. La ficha y los pagos quedan,
- * porque son contabilidad.
+ * Datos de contacto, contraseña, suscripción y términos del cliente.
+ * La baja vive en `legal/MiCuentaLegal.tsx` desde el 25-oct-2026: ya no archiva al instante ni pide escribir
+ * «CANCELAR» (los términos prometen cancelar sin trámites); el servicio sigue hasta el fin del período.
  */
 export function MiCuenta() {
   const [c, setC] = useState<Cliente | null>(null);
@@ -28,8 +17,6 @@ export function MiCuenta() {
   const [guardando, setGuardando] = useState(false);
   const [aviso, setAviso] = useState("");
   const [error, setError] = useState("");
-  const [bajando, setBajando] = useState(false);
-  const [palabra, setPalabra] = useState("");
   const [hayTelefono, setHayTelefono] = useState(true);
 
   useEffect(() => {
@@ -82,32 +69,6 @@ export function MiCuenta() {
     // Cóndor en vez de hacerlo acá.
     setAviso("Listo, guardamos tus datos.");
     setGuardando(false);
-  }
-
-  async function darDeBaja() {
-    if (!c) return;
-    setGuardando(true);
-    const { data, error } = await sb
-      .from("clientes")
-      .update({ archivado: true, mensual_estado: "pendiente" })
-      .eq("id", c.id)
-      .select();
-    setGuardando(false);
-    if (error) setError(error.message);
-    else if (!data || data.length === 0) {
-      // Mismo caso que arriba: sin filas afectadas, la baja no ocurrió.
-      // Decirle "listo" a alguien que quiso cancelar y no se canceló es
-      // exactamente cómo se llega a un cobro reclamado el mes siguiente.
-      setError(
-        "No pudimos registrar la baja desde acá. Escríbenos a " +
-        "contacto@teamcondorcl.com y la procesamos hoy.",
-      );
-    } else {
-      setBajando(false);
-      setAviso(
-        "Registramos tu solicitud. Te escribimos hoy para confirmar y coordinar el cierre.",
-      );
-    }
   }
 
   if (cargando)
@@ -167,87 +128,7 @@ export function MiCuenta() {
           <CambiarClave />
         </section>
 
-        <section className="bloque" style={{ maxWidth: 560 }}>
-          <h3>Suscripción</h3>
-
-          {!bajando ? (
-            <>
-              <p className="parrafo">
-                Tu plan <b>{c.plan || "—"}</b> está{" "}
-                {c.archivado ? "dado de baja" : "activo"}.
-              </p>
-              {!c.archivado && (
-                <button className="btn peligro" onClick={() => setBajando(true)}>
-                  Dar de baja mi plan
-                </button>
-              )}
-            </>
-          ) : (
-            <div className="caja-baja">
-              <h4>Antes de darte de baja</h4>
-
-              <p className="parrafo">Si cancelas, desde el cierre pierdes:</p>
-              <ul className="lista-perdida">
-                <li>
-                  Tu plan <b>{c.plan || "—"}</b>
-                  {c.concepto ? ` — ${c.concepto}` : ""}
-                </li>
-                {c.web_url && <li>El mantenimiento de {c.web_url}</li>}
-                <li>El soporte y las mejoras continuas</li>
-                <li>Tu precio actual: al volver, rige la tarifa vigente</li>
-              </ul>
-
-              {c.proximo_cobro && (
-                <p className="parrafo">
-                  Tu servicio está pagado hasta el{" "}
-                  <b>
-                    {new Date(c.proximo_cobro + "T12:00:00").toLocaleDateString(
-                      "es-CL",
-                      { day: "numeric", month: "long", year: "numeric" },
-                    )}
-                  </b>
-                  . No pierdes lo que ya pagaste.
-                </p>
-              )}
-
-              <p className="parrafo">
-                ¿Hay algo que podamos arreglar? Muchas veces se resuelve con un
-                cambio de plan.{" "}
-                <a href="mailto:contacto@teamcondorcl.com">Escríbenos primero</a>
-                .
-              </p>
-
-              <label className="campo-lbl">
-                Para confirmar, escribe <b>CANCELAR</b>
-                <input
-                  className="campo"
-                  value={palabra}
-                  onChange={(e) => setPalabra(e.target.value)}
-                  placeholder="CANCELAR"
-                />
-              </label>
-
-              <div style={{ display: "flex", gap: 9, marginTop: 12 }}>
-                <button
-                  className="btn solido"
-                  onClick={() => {
-                    setBajando(false);
-                    setPalabra("");
-                  }}
-                >
-                  Mejor me quedo
-                </button>
-                <button
-                  className="btn peligro"
-                  disabled={palabra.trim().toUpperCase() !== "CANCELAR" || guardando}
-                  onClick={darDeBaja}
-                >
-                  Confirmar la baja
-                </button>
-              </div>
-            </div>
-          )}
-        </section>
+        <MiCuentaLegal />
       </div>
     </>
   );

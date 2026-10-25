@@ -16,6 +16,7 @@ import "./disenio/leads.css";
 import "./disenio/dialogos.css";
 import "./disenio/boveda.css";
 import "./disenio/cursos.css";
+import "./disenio/legal.css";
 import "./disenio/ranking.css";
 import "./disenio/mejoras.css";
 import "./disenio/chat.css";
@@ -49,6 +50,7 @@ import { MiPlan } from "./cliente/MiPlan";
 import { ResultadoPago } from "./cliente/ResultadoPago";
 
 import { MiCuenta } from "./cliente/MiCuenta";
+import { PuertaTerminos } from "./legal/Puerta";
 
 // EL MOTOR DE PDF VA APARTE, Y NO ES UN DETALLE
 // @react-pdf/renderer pesa ~1,1 MB. Importado de frente, el portal entero
@@ -264,7 +266,9 @@ function PortalContenido() {
     { titulo: "Cuenta", clave: "resumen", icono: "ajustes", entradas: [ITEM_CUENTA] },
   ];
 
+  // Sin aceptar los términos vigentes de su servicio y país, el cliente no pasa de la puerta (legal/Puerta.tsx).
   return envolver(
+    <PuertaTerminos>
     <Marco menu={menuCliente} nombre={nombre} detalle={correo}>
       <Routes>
         <Route path="inicio" element={<Inicio />} />
@@ -277,6 +281,7 @@ function PortalContenido() {
         <Route path="cuenta" element={<MiCuenta />} />
         <Route path="*" element={<Navigate to="/acceso/inicio" replace />} />
       </Routes>
-    </Marco>,
+    </Marco>
+    </PuertaTerminos>,
   );
 }

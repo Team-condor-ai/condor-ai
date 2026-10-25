@@ -61,7 +61,7 @@ export const EMPRESA = {
   giro: "Desarrollo de software y consultoría en inteligencia artificial",
   direccion: "", // ← falta
   ciudad: "Santiago, Chile",
-  correo: "contacto@teamcondorcl.com",
+  correo: "contacto@condorai.cl",
   telefono: "+56 9 8898 9824",
   web: "condorai.cl",
 };

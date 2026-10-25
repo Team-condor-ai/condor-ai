@@ -199,7 +199,7 @@ export function Login() {
 
                 <p className="acceso-pie">
                   ¿No tienes acceso todavía?{" "}
-                  <a className="enlace-fuerte" href="mailto:contacto@teamcondorcl.com">
+                  <a className="enlace-fuerte" href="mailto:contacto@condorai.cl">
                     Escríbenos
                   </a>
                 </p>
