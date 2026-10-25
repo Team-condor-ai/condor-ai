@@ -175,7 +175,7 @@ export const CONTRATOS = {
       { n: 1, titulo: "Servicio", parrafos: [`Cóndor diseña, publica y mantiene el sitio web del Cliente: diseño propio para su negocio, hosting, soporte y ajustes menores cada mes.`] },
       { n: 2, titulo: "Precio", parrafos: [`El de la Propuesta o el publicado para el país del Cliente al contratar (cláusula 4 de los Términos Generales). La creación inicial no tiene costo, salvo que la Propuesta diga otra cosa.`] },
       { n: 3, titulo: "Puesta en marcha", parrafos: [`La primera versión se entrega en el plazo de la Propuesta o, si no lo indica, dentro de 15 días hábiles desde que el Cliente entrega los contenidos y accesos. El Cliente tiene 5 días hábiles para pedir correcciones razonables antes de publicar.`] },
-      { n: 4, titulo: "Ajustes menores", parrafos: [`Incluyen cambios de textos, imágenes, datos de contacto, horarios y enlaces sobre lo ya publicado, hasta 4 solicitudes al mes, atendidas dentro de 5 días hábiles. No se acumulan de un mes a otro. Los rediseños, las secciones o funciones nuevas y las integraciones se cotizan aparte y solo se hacen con aprobación escrita.`] },
+      { n: 4, titulo: "Ajustes menores", parrafos: [`Incluyen cambios de textos, imágenes, datos de contacto, horarios y enlaces sobre lo ya publicado, hasta 4 solicitudes por semana, atendidas dentro de 5 días hábiles. Cada solicitud debe venir completa en un solo mensaje: qué cambiar, dónde y el material necesario (textos, imágenes o enlaces); si falta algo, el plazo corre desde que llega. Las solicitudes no usadas no se acumulan de una semana a otra. Los rediseños, las secciones o funciones nuevas y las integraciones se cotizan aparte y solo se hacen con aprobación escrita.`] },
       { n: 5, titulo: "Dominio y hosting", parrafos: [`El dominio se registra a nombre del Cliente, que es su titular y puede transferirlo cuando quiera. Si Cóndor gestiona su renovación, informa antes el costo. Cóndor administra el hosting mientras el Servicio esté vigente.`] },
       { n: 6, titulo: "Término", parrafos: [`Se aplican las cláusulas 7 y 8 de los Términos Generales. El sitio sigue en línea hasta el final del Período pagado; luego se da de baja y, dentro de 10 días hábiles, el Cliente recibe la carpeta completa del proyecto y las credenciales de hosting, DNS y dominio para volver a publicarlo donde quiera.`] },
       { n: 7, titulo: "Contenidos", parrafos: [`El Cliente garantiza que los contenidos que entrega son lícitos y suyos o autorizados, y mantiene indemne a Cóndor frente a reclamos de terceros por ellos.`] },
@@ -275,7 +275,7 @@ export function resumen(servicio) {
     ["Te respondemos", "En máximo 5 días hábiles, y las urgencias primero."],
   ];
   const propio = {
-    sites: ["Tu sitio, siempre al día", "Hosting incluido y hasta 4 ajustes menores al mes."],
+    sites: ["Tu sitio, siempre al día", "Hosting incluido y hasta 4 ajustes menores por semana. Pídelos completos: qué cambiar, dónde y con el material."],
     ecommerce: ["6,7 % por venta", "Además de la tarifa mensual; incluye la gestión de anuncios. La plata de tus ventas llega directo a tus cuentas."],
     crm: ["Precio a medida", "El precio y cualquier plazo inicial están en tu propuesta."],
   }[servicio];

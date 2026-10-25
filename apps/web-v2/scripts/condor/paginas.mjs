@@ -156,7 +156,7 @@ function preciosSites() {
         <article class="precio-card"><span class="tag">Mes a mes</span><h3>Plan mensual</h3>
           <div class="monto"><strong>${dinero(m, p.id)}</strong><span>${p.moneda} / mes</span></div>
           <p class="nota">${p.impuesto} · creación sin costo adicional</p>
-          <ul><li>Diseño y publicación de tu sitio</li><li>Hosting y soporte</li><li>Ajustes menores cada mes</li></ul>
+          <ul><li>Diseño y publicación de tu sitio</li><li>Hosting y soporte</li><li>Hasta 4 ajustes menores por semana</li></ul>
           <a class="btn suave bloque" href="${msg("mensual", dinero(m, p.id))}" target="_blank" rel="noopener">Elegir plan mensual ${flecha}</a></article>
         <article class="precio-card dest"><span class="tag">Ahorras ${Math.round(DESCUENTO_ANUAL * 100)} %</span><h3>Plan anual</h3>
           <div class="monto"><strong>${dinero(a, p.id)}</strong><span>${p.moneda} / año</span></div>
@@ -200,7 +200,7 @@ const CONTENIDO = {
     incluye: [
       ["pantalla", "Diseño a tu medida", "Una web pensada para tu negocio, que se ve bien en celular y en computador."],
       ["servidor", "Hosting y soporte", "Nosotros lo publicamos y lo mantenemos en línea. Si algo falla, nos escribes."],
-      ["ajuste", "Ajustes menores cada mes", "Textos, imágenes, horarios y datos de contacto. Pides el cambio y lo hacemos."],
+      ["ajuste", "Hasta 4 ajustes por semana", "Textos, imágenes, horarios y datos de contacto. Nos pides el cambio completo y lo hacemos."],
       ["chat", "Contacto directo", "Botón de WhatsApp y formulario, para que quien te encuentra pueda escribirte en un clic."],
       ["mundo", "Dominio a tu nombre", "Si ya tienes uno, lo conectamos. Si no, te ayudamos a elegirlo. Queda a nombre de tu empresa."],
       ["etiqueta", "Sin costo de creación", "Pagas solo la mensualidad. La creación del sitio no se cobra aparte."],

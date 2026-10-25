@@ -51,7 +51,7 @@ export const SERVICIOS = {
     momento: "Te encuentran", num: "01",
     pregunta: "¿Tu web existe… o trabaja?",
     resumen: "Tu sitio web, publicado y mantenido por nosotros. Quien te busca encuentra quién eres, qué haces y cómo escribirte.",
-    puntos: ["Diseño propio para tu negocio", "Hosting y soporte incluidos", "Ajustes menores cada mes", "Sin costo de creación"],
+    puntos: ["Diseño propio para tu negocio", "Hosting y soporte incluidos", "Hasta 4 ajustes menores por semana", "Sin costo de creación"],
   },
   ecommerce: {
     clave: "ecommerce", href: "/productos/ecommerce/", nombre: "Cóndor Ecommerce", icono: "/condor/marca/producto-ecommerce.svg",
@@ -132,7 +132,7 @@ export const FAQ = [
   { id: "plazos", q: "¿Cuánto demora tener mi web o mi tienda?",
     a: ["El plazo depende del contenido y del alcance, y lo dejamos por escrito en la propuesta antes de empezar.", "Para una tienda online, nuestro objetivo es publicar entre 7 y 10 días hábiles desde que arranca la construcción."] },
   { id: "soporte", q: "¿Qué incluye el soporte?",
-    a: ["Los ajustes menores sobre lo que ya está publicado: textos, imágenes, horarios, datos de contacto y contenido. Nos escribes por WhatsApp o correo y lo resolvemos.", "Las funciones nuevas, las integraciones y los rediseños completos se cotizan por separado, siempre antes de trabajar."] },
+    a: ["Los ajustes menores sobre lo que ya está publicado: textos, imágenes, horarios, datos de contacto y contenido, hasta 4 por semana. Nos escribes por el chat de tu portal, WhatsApp o correo, con el cambio completo (qué, dónde y el material), y lo resolvemos.", "Las funciones nuevas, las integraciones y los rediseños completos se cotizan por separado, siempre antes de trabajar."] },
   { id: "cancelar", q: "¿Cómo cancelo?",
     a: ["Nos avisas por escrito, por correo o WhatsApp, y te explicamos el cierre paso a paso.", "Tienes la política completa en la página de <a href=\"/legal/cancelacion/\">cancelación</a>."] },
   { id: "dejar-de-pagar", q: "¿Qué pasa con mi web si dejo de pagar?",
