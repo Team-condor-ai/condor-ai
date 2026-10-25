@@ -4,7 +4,7 @@ import { sb } from "../../lib/supabase";
 import { useSesion } from "../../auth/sesion";
 import { Ico } from "../../disenio/iconos";
 import { useConfirmacion } from "../../disenio/Confirmacion";
-import { type Curso, type Fase, type Leccion, duracion, embed, guardarPosicion, leerPosicion, ordenadas, segDe, useCursos } from "./datos";
+import { type Curso, type Fase, type Leccion, type Recurso, conEnlaces, duracion, embed, guardarPosicion, leerPosicion, ordenadas, segDe, useCursos } from "./datos";
 import { precargarReproductor, VideoHls } from "./VideoHls";
 import { FormCurso, FormFase, FormLeccion } from "./Formularios";
 import { type Companero, useCompaneros } from "./companeros";
@@ -144,6 +144,7 @@ export function Cursos({ editable }: { editable: boolean }) {
                       <button onClick={() => ir(curso.id, l.id)}>
                         <span className="cur-n">{d.hechas.has(l.id) ? "✓" : n}</span>
                         <span className="cur-t"><b>{l.titulo}</b>{l.descripcion && <small>{l.descripcion}</small>}</span>
+                        {(l.recursos?.length ?? 0) > 0 && <span className="cur-con-recursos" title={`${l.recursos!.length} recurso${l.recursos!.length === 1 ? "" : "s"}: ${l.recursos!.map((r) => r.titulo).join(", ")}`}>{Ico.documentos({ t: 13 })}{l.recursos!.length}</span>}
                         <Caritas personas={enLeccion(curso.id, l.id)} />
                         <span className="cur-dur">{l.video_ruta || embed(l.url) ? Ico.video({ t: 13 }) : Ico.documentos({ t: 13 })}{segDe(l) ? duracion(segDe(l)) : ""}</span>
                       </button>
@@ -230,7 +231,8 @@ function Leccion({ curso, leccion: l, anterior, siguiente, lista, fases, hechas,
           <div className="cur-info">
             <p className="rotulo-mini">{faseDe(l.fase_id) || curso.titulo}</p>
             <h2>{l.titulo}</h2>
-            {l.descripcion && <p>{l.descripcion}</p>}
+            {l.descripcion && <p>{conEnlaces(l.descripcion)}</p>}
+            {(l.recursos?.length ?? 0) > 0 && <Recursos lista={l.recursos!} />}
             {l.archivo_ruta && <button className="btn chico" onClick={async () => { const { data } = await sb.storage.from("cursos").createSignedUrl(l.archivo_ruta!, 300, { download: l.archivo_nombre ?? true }); if (data) window.open(data.signedUrl, "_blank", "noopener"); }}>{Ico.descargar({ t: 14 })} {l.archivo_nombre ?? "Material"}</button>}
           </div>
           <div className="cur-nav">
@@ -383,4 +385,37 @@ function useAvisoLlegada(leccion: string, aca: Companero[]): Companero | null {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clave]);
   return aviso;
+}
+
+/* ── Recursos de la lección ── */
+const TIPO_RECURSO: Record<string, { texto: string; icono: "documentos" | "carpetaMas" | "descargar" | "abrirWeb" }> = {
+  plantilla: { texto: "Plantilla para copiar", icono: "documentos" },
+  carpeta: { texto: "Carpeta", icono: "carpetaMas" },
+  archivo: { texto: "Archivo", icono: "descargar" },
+  documento: { texto: "Documento", icono: "documentos" },
+  enlace: { texto: "Enlace", icono: "abrirWeb" },
+};
+
+/** Plantillas, carpetas y herramientas de la lección, como tarjetas que se abren aparte. */
+function Recursos({ lista }: { lista: Recurso[] }) {
+  return (
+    <section className="cur-recursos">
+      <p className="rotulo-mini">Recursos de esta lección</p>
+      <ul>
+        {lista.map((r) => {
+          const t = TIPO_RECURSO[r.tipo ?? "enlace"] ?? TIPO_RECURSO.enlace;
+          let dominio = ""; try { dominio = new URL(r.url).hostname.replace(/^www\./, ""); } catch { /* */ }
+          return (
+            <li key={r.url}>
+              <a href={r.url} target="_blank" rel="noreferrer">
+                <span className={`cur-rec-ico ${r.tipo ?? "enlace"}`}>{Ico[t.icono]({ t: 16 })}</span>
+                <span className="cur-rec-txt"><b>{r.titulo}</b><small>{t.texto} · {dominio}</small></span>
+                {Ico.abrirWeb({ t: 14 })}
+              </a>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
 }

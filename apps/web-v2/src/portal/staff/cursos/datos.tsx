@@ -7,7 +7,15 @@ export type Leccion = {
   id: string; curso_id: string; fase_id: string | null; titulo: string; descripcion: string | null; url: string | null;
   archivo_ruta: string | null; archivo_nombre: string | null; duracion_min: number | null; duracion_seg: number | null;
   video_ruta: string | null; poster_ruta: string | null; orden: number;
+  /** Enlaces de la lección: plantillas para copiar, carpetas, archivos, herramientas. */
+  recursos: Recurso[] | null;
 };
+export type Recurso = { titulo: string; url: string; tipo?: "plantilla" | "carpeta" | "archivo" | "documento" | "enlace" };
+
+/** Texto con sus URLs convertidas en enlaces que se abren aparte. */
+export function conEnlaces(t: string) {
+  return t.split(/(https?:\/\/[^\s)]+)/g).map((p, i) => (/^https?:\/\//.test(p) ? <a key={i} href={p} target="_blank" rel="noreferrer">{p}</a> : p));
+}
 
 /** Duración legible: 754 s → «12 min»; 4 300 s → «1 h 12 min». */
 export function duracion(seg: number) {

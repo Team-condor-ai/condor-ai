@@ -7,6 +7,15 @@ import type { Curso, Fase, Leccion } from "./datos";
 /** Un curso para clientes se puede dejar solo para una línea (p. ej. «Cómo usar tu CRM» solo para clientes CRM). */
 const LINEAS = [{ id: "sites", texto: "Sites" }, { id: "ecommerce", texto: "Ecommerce" }, { id: "crm", texto: "CRM" }];
 
+/** «Nombre | enlace» por línea → recursos; el tipo se adivina por el enlace (copia de Google, carpeta de Drive…). */
+function leerRecursos(t: string) {
+  return t.split("\n").map((l) => l.trim()).filter(Boolean).map((l) => {
+    const i = l.lastIndexOf("|"); const titulo = (i >= 0 ? l.slice(0, i) : l).trim(); const url = (i >= 0 ? l.slice(i + 1) : l).trim();
+    const tipo = /docs\.google\.com\/.*\/copy/.test(url) ? "plantilla" : /drive\.google\.com\/drive\/folders/.test(url) ? "carpeta" : /drive\.google\.com\/file/.test(url) ? "archivo" : /canva\.com|notion\.site|docs\.google\.com/.test(url) ? "documento" : "enlace";
+    return { titulo: titulo || url, url, tipo };
+  }).filter((r) => /^https?:\/\//.test(r.url));
+}
+
 const limpio = (n: string) => n.replace(/[^\w.-]+/g, "_");
 async function subir(ruta: string, f: File) {
   const { error } = await sb.storage.from("cursos").upload(ruta, f, { upsert: true, contentType: f.type || undefined });
@@ -89,7 +98,7 @@ export function FormFase({ curso, fase, orden, onCerrar, onListo }: { curso: Cur
 
 export function FormLeccion({ curso, leccion, faseId, fases, orden, onCerrar, onListo }: { curso: Curso; leccion: Leccion | null; faseId: string | null; fases: Fase[]; orden: number; onCerrar: () => void; onListo: () => void }) {
   const confirmar = useConfirmacion();
-  const [f, setF] = useState({ titulo: leccion?.titulo ?? "", descripcion: leccion?.descripcion ?? "", url: leccion?.url ?? "", fase_id: leccion?.fase_id ?? faseId ?? "", duracion: leccion?.duracion_seg ? String(Math.round(leccion.duracion_seg / 60)) : leccion?.duracion_min ? String(leccion.duracion_min) : "", orden: String(leccion?.orden ?? orden) });
+  const [f, setF] = useState({ titulo: leccion?.titulo ?? "", descripcion: leccion?.descripcion ?? "", url: leccion?.url ?? "", fase_id: leccion?.fase_id ?? faseId ?? "", duracion: leccion?.duracion_seg ? String(Math.round(leccion.duracion_seg / 60)) : leccion?.duracion_min ? String(leccion.duracion_min) : "", orden: String(leccion?.orden ?? orden), recursos: (leccion?.recursos ?? []).map((r) => `${r.titulo} | ${r.url}`).join("\n") });
   const [video, setVideo] = useState<File | null>(null);
   const [material, setMaterial] = useState<File | null>(null);
   const [error, setError] = useState(""); const [guardando, setGuardando] = useState(false);
@@ -98,7 +107,7 @@ export function FormLeccion({ curso, leccion, faseId, fases, orden, onCerrar, on
     if (!f.titulo.trim()) { setError("Ponle un título."); return; }
     setGuardando(true); setError("");
     try {
-      const datos: Record<string, unknown> = { titulo: f.titulo.trim(), descripcion: f.descripcion.trim() || null, url: f.url.trim() || null, fase_id: f.fase_id || null, orden: Number(f.orden) || 0 };
+      const datos: Record<string, unknown> = { titulo: f.titulo.trim(), descripcion: f.descripcion.trim() || null, url: f.url.trim() || null, fase_id: f.fase_id || null, orden: Number(f.orden) || 0, recursos: leerRecursos(f.recursos) };
       if (f.duracion && !leccion?.duracion_seg) datos.duracion_min = Number(f.duracion);
       if (video) { const ruta = `${curso.id}/videos/${Date.now()}-${limpio(video.name)}`; await subir(ruta, video); datos.video_ruta = ruta; }
       if (material) { const ruta = `${curso.id}/material/${Date.now()}-${limpio(material.name)}`; await subir(ruta, material); datos.archivo_ruta = ruta; datos.archivo_nombre = material.name; }
@@ -121,6 +130,7 @@ export function FormLeccion({ curso, leccion, faseId, fases, orden, onCerrar, on
         <label>Fase<select value={f.fase_id} onChange={(e) => setF({ ...f, fase_id: e.target.value })}><option value="">Sin fase</option>{fases.map((x) => <option key={x.id} value={x.id}>{x.titulo}</option>)}</select></label>
         <label>Orden<input inputMode="numeric" value={f.orden} onChange={(e) => setF({ ...f, orden: e.target.value.replace(/\D/g, "") })} /></label>
         <label className="ancho">Qué se ve en esta lección<textarea rows={4} value={f.descripcion} onChange={(e) => setF({ ...f, descripcion: e.target.value })} /></label>
+        <label className="ancho">Recursos <small style={{ fontWeight: 400, color: "var(--texto-3)" }}>· uno por línea: Nombre | enlace</small><textarea rows={3} value={f.recursos} onChange={(e) => setF({ ...f, recursos: e.target.value })} placeholder="Calculadora ecommerce | https://docs.google.com/…" /></label>
         <label className="ancho">Video desde un enlace (YouTube, Vimeo, Loom)<input value={f.url} onChange={(e) => setF({ ...f, url: e.target.value })} placeholder="https://" /></label>
         <label>O un video corto (mp4, hasta 50 MB)<input type="file" accept="video/mp4" onChange={(e) => setVideo(e.target.files?.[0] ?? null)} /></label>
         <label>Material descargable<input type="file" onChange={(e) => setMaterial(e.target.files?.[0] ?? null)} /></label>
