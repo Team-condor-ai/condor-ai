@@ -58,7 +58,7 @@ export const SERVICIOS = {
     momento: "Te compran", num: "02",
     pregunta: "¿Tu tienda vende o solo está abierta?",
     resumen: "Una tienda online administrada de punta a punta: construcción, pagos, stock y, si quieres, la gestión de tus campañas.",
-    puntos: ["Pagos con Mercado Pago y dLocal Go", "Stock y boleta electrónica", "Reporte mensual claro", "Gestión de anuncios incluida en la comisión"],
+    puntos: ["Pagos con Mercado Pago, PayPal, Webpay y más", "Stock y boleta electrónica", "Reporte mensual claro", "Gestión de anuncios incluida en la comisión"],
   },
   crm: {
     clave: "crm", href: "/productos/crm/", nombre: "Cóndor CRM", icono: "/condor/marca/producto-crm.svg",

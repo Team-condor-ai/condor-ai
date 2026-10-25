@@ -186,7 +186,7 @@ export const CONTRATOS = {
     titulo: "Contrato de suscripción a Cóndor Ecommerce",
     bajada: "Incorpora los Términos Generales y el Anexo del país del Cliente.",
     secciones: [
-      { n: 1, titulo: "Servicio", parrafos: [`Administración de la tienda en línea del Cliente de punta a punta: construcción, pagos con Mercado Pago y dLocal Go, stock, boleta electrónica, reporte mensual y, si el Cliente lo pide, gestión de sus campañas de anuncios.`] },
+      { n: 1, titulo: "Servicio", parrafos: [`Administración de la tienda en línea del Cliente de punta a punta: construcción sobre Shopify, pagos con las pasarelas compatibles con Shopify en el país del Cliente (como Mercado Pago, PayPal, Shopify Payments en México, o Flow con Webpay y Khipu en Chile), stock, boleta electrónica, reporte mensual y, si el Cliente lo pide, gestión de sus campañas de anuncios.`] },
       { n: 2, titulo: "Precio y comisión", parrafos: [
         `2.1. Una tarifa mensual (la de la Propuesta o la publicada para el país del Cliente) más una <b>comisión de 6,7 %</b> sobre el monto facturado de cada venta de la tienda, que incluye la gestión de anuncios.`,
         `2.2. La comisión se liquida cada mes con el detalle de cada venta. Las ventas anuladas, devueltas o con contracargo no generan comisión; si ya se cobró, se descuenta en la liquidación siguiente. Las tarifas de las pasarelas las cobran directamente esos proveedores y son del Cliente.`,

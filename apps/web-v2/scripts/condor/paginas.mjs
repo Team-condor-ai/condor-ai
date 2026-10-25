@@ -219,7 +219,7 @@ const CONTENIDO = {
       ["Nadie mira los números", "Sin un reporte claro, no sabes qué vende ni qué sobra."],
     ] },
     incluye: [
-      ["tarjeta", "Pagos configurados y probados", "Mercado Pago y dLocal Go, para que tu cliente pague con tarjeta y los medios de su país."],
+      ["tarjeta", "Pagos configurados y probados", "Mercado Pago, PayPal, Shopify Payments, Webpay o Khipu según tu país, para que tu cliente pague con tarjeta y los medios que ya usa."],
       ["etiqueta", "Boleta electrónica", "Emisión de boleta electrónica para tus ventas en Chile."],
       ["caja", "Stock al día", "Sincronizado con tu bodega o tu sistema, sin planillas paralelas."],
       ["grafico", "Reporte mensual", "Ventas facturadas y comisión desglosadas, con el corte del mes anterior."],
