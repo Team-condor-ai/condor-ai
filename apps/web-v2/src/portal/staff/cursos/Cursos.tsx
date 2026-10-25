@@ -24,7 +24,7 @@ const GRADIENTES = ["linear-gradient(135deg,#014CFD,#7A3CFF)", "linear-gradient(
 export function Cursos({ editable }: { editable: boolean }) {
   const yo = useSesion().email;
   const confirmar = useConfirmacion();
-  const d = useCursos();
+  const d = useCursos(yo);
   const [params, setParams] = useSearchParams();
   const cursoId = params.get("curso"), leccionId = params.get("leccion");
   const ir = (curso: string | null, leccion?: string | null) => {

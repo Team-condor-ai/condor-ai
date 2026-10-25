@@ -31,7 +31,7 @@ export function embed(url: string | null): string | null {
 }
 
 /** Carga cursos, fases, lecciones y el avance propio, con miniaturas firmadas (el bucket `cursos` es privado). */
-export function useCursos() {
+export function useCursos(email: string | null) {
   const [cursos, setCursos] = useState<Curso[]>([]);
   const [fases, setFases] = useState<Fase[]>([]);
   const [lecciones, setLecciones] = useState<Leccion[]>([]);
@@ -45,7 +45,9 @@ export function useCursos() {
       sb.from("cursos").select("*").order("orden").order("creado_en"),
       sb.from("curso_fases").select("*").order("orden"),
       sb.from("lecciones").select("*").order("orden").order("creado_en"),
-      sb.from("curso_progreso").select("leccion_id"),
+      // Solo MI avance: el equipo puede leer el de todos (para ver a los compañeros) y sin este filtro
+      // la barra de cada uno sumaba las lecciones vistas por los demás (lo vio Kalfu, 24-oct-2026).
+      sb.from("curso_progreso").select("leccion_id").eq("email", (email ?? "").toLowerCase()),
     ]);
     const fallo = c.error ?? f.error ?? l.error;
     setError(fallo ? "No se pudieron cargar los cursos: " + fallo.message : "");
@@ -58,7 +60,7 @@ export function useCursos() {
       const { data } = await sb.storage.from("cursos").createSignedUrls([...new Set(rutas)], 3600);
       setImagenes(Object.fromEntries((data ?? []).filter((x) => x.signedUrl && x.path).map((x) => [x.path as string, x.signedUrl as string])));
     }
-  }, []);
+  }, [email]);
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { void cargar(); }, [cargar]);
 
