@@ -383,6 +383,7 @@ export function diasParaSeguimiento(p: Pick<Prospecto, "estado" | "ultima_activi
 export const EQUIPO_CONDOR: { email: string; nombre: string; rol: string; foto: string; metaSemanal: number }[] = [
   { email: "maximilianopinocv@gmail.com", nombre: "Max", rol: "Presidente", foto: "/assets/avatares/maximiliano-mini.jpg", metaSemanal: 50 },
   { email: "alejandrotobarq@gmail.com", nombre: "Ale", rol: "CEO", foto: "/assets/avatares/alejandro-mini.jpg", metaSemanal: 30 },
+  { email: "ahu3rta8888@gmail.com", nombre: "Alberto", rol: "COO", foto: "/assets/avatares/alberto-mini.jpg", metaSemanal: 0 },
 ];
 
 /** Compatibilidad: mismo contenido que se usaba antes bajo este nombre. */

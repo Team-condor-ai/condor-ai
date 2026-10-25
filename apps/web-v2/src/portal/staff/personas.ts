@@ -13,6 +13,7 @@ export type Persona = { email: string; nombre: string; completo: string; apodo: 
 const FOTOS: Record<string, string> = {
   "maximilianopinocv@gmail.com": "/assets/avatares/maximiliano-mini.jpg",
   "alejandrotobarq@gmail.com": "/assets/avatares/alejandro-mini.jpg",
+  "ahu3rta8888@gmail.com": "/assets/avatares/alberto-mini.jpg",
 };
 
 export const iniciales = (t: string) => {

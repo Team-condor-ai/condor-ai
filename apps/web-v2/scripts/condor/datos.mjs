@@ -94,8 +94,8 @@ export const EQUIPO = [
     texto: "Responsable de los sistemas: la arquitectura del CRM, las plantillas, las integraciones y la parte técnica de cada proyecto." },
   { slug: "kalfu", nombre: "Kalfu", rol: "CMO", nivel: 3, iniciales: "K",
     texto: "Marca y contenido: cómo se ve y cómo habla Cóndor, los guiones, el video y los textos de cada mensaje." },
-  { slug: "alberto", nombre: "Alberto Huerta", rol: "Head of Automation", nivel: 3, iniciales: "AH",
-    texto: "Implementa cada cliente en el sistema y da el soporte después. Trabaja junto al CTO." },
+  { slug: "alberto", nombre: "Alberto Huerta", rol: "COO", nivel: 3, iniciales: "AH", foto: "/condor/equipo/alberto.jpg",
+    texto: "Operaciones: implementa cada cliente en el sistema y se encarga del soporte después. Trabaja junto al CTO." },
 ];
 
 /* ── Marcas (Max, 23-oct). `alto` = altura en px para que todas pesen parecido.
