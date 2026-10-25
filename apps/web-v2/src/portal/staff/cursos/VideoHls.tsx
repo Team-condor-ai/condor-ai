@@ -7,6 +7,10 @@ import { sb, SUPABASE_URL, SUPABASE_ANON } from "../../lib/supabase";
  * de calidad sola si la conexión no da. Cada pedido lleva la sesión, así que solo lo ve quien tiene permiso.
  * hls.js se carga recién al abrir una lección: no pesa en el resto del portal.
  */
+/** hls.js se baja una sola vez; el catálogo y la página del curso lo piden por adelantado (24-oct-2026). */
+let reproductor: Promise<typeof import("hls.js")> | null = null;
+export const precargarReproductor = () => (reproductor ??= import("hls.js"));
+
 export function VideoHls({ ruta, poster, inicio = 0, onTiempo, onFin, videoRef }: { ruta: string; poster?: string; inicio?: number; onTiempo?: (t: number, total: number) => void; onFin?: () => void; videoRef?: RefObject<HTMLVideoElement | null> }) {
   const propio = useRef<HTMLVideoElement>(null);
   const video = videoRef ?? propio;
@@ -24,22 +28,26 @@ export function VideoHls({ ruta, poster, inicio = 0, onTiempo, onFin, videoRef }
         if (f?.signedUrl) { v.src = f.signedUrl; if (inicio > 5) v.currentTime = inicio; } else setError("No se pudo cargar el video.");
         return;
       }
-      const { data } = await sb.auth.getSession();
+      // La sesión y el reproductor se piden a la vez (antes uno esperaba al otro).
+      const [{ data }, { default: Hls }] = await Promise.all([sb.auth.getSession(), precargarReproductor()]);
       const token = data.session?.access_token;
       const url = `${SUPABASE_URL}/storage/v1/object/authenticated/cursos/${ruta}`;
-      const { default: Hls } = await import("hls.js");
       if (!vivo) return;
       if (Hls.isSupported()) {
         const h = new Hls({
-          capLevelToPlayerSize: true, startLevel: -1, maxBufferLength: 30,
+          // Parte en la calidad liviana (540p, ~400 KB el primer trozo) para que se vea al tiro, y sube sola a
+          // 1080p apenas mide que la conexión da. `startPosition` retoma donde quedó sin bajar el comienzo.
+          capLevelToPlayerSize: true, startLevel: 0, startPosition: inicio > 5 ? inicio : -1,
+          startFragPrefetch: true, maxBufferLength: 30, backBufferLength: 60,
           xhrSetup: (xhr) => { xhr.setRequestHeader("apikey", SUPABASE_ANON); if (token) xhr.setRequestHeader("Authorization", `Bearer ${token}`); },
         });
         h.on(Hls.Events.ERROR, (_e, d) => { if (d.fatal) setError(d.type === "networkError" ? "No se pudo cargar el video. Revisa tu conexión." : "El video no se pudo reproducir."); });
+        // Empieza solo al abrir la lección (se abrió con un clic, así que el navegador lo permite con sonido).
+        h.on(Hls.Events.MANIFEST_PARSED, () => { if (vivo) void v.play().catch(() => {}); });
         h.loadSource(url); h.attachMedia(v); hls = h;
       } else {
         setError("Este navegador no puede reproducir el video. Prueba con Chrome, Safari o Firefox actualizados.");
       }
-      if (inicio > 5) v.currentTime = inicio;
     })();
     return () => { vivo = false; hls?.destroy(); };
   }, [ruta, inicio, video]);

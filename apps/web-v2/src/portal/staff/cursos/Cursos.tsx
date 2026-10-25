@@ -5,7 +5,7 @@ import { useSesion } from "../../auth/sesion";
 import { Ico } from "../../disenio/iconos";
 import { useConfirmacion } from "../../disenio/Confirmacion";
 import { type Curso, type Fase, type Leccion, duracion, embed, guardarPosicion, leerPosicion, ordenadas, segDe, useCursos } from "./datos";
-import { VideoHls } from "./VideoHls";
+import { precargarReproductor, VideoHls } from "./VideoHls";
 import { FormCurso, FormFase, FormLeccion } from "./Formularios";
 import { type Companero, useCompaneros } from "./companeros";
 import { iniciales, tono } from "../personas";
@@ -38,6 +38,8 @@ export function Cursos({ editable }: { editable: boolean }) {
   const [editLeccion, setEditLeccion] = useState<{ curso: Curso; leccion: Leccion | null; faseId: string | null } | null>(null);
 
   const curso = d.cursos.find((c) => c.id === cursoId) ?? null;
+  // Con la Biblioteca abierta, el reproductor se baja en segundo plano: la lección parte sin esa espera.
+  useEffect(() => { const t = window.setTimeout(() => void precargarReproductor(), 600); return () => window.clearTimeout(t); }, []);
   const cursoDe = useCallback((leccion: string) => d.lecciones.find((l) => l.id === leccion)?.curso_id, [d.lecciones]);
   const eq = useCompaneros(editable, yo, cursoDe);
   const { anunciar } = eq;
